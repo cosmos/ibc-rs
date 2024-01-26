@@ -8,7 +8,7 @@ on:
     tags:
       - v[0-9]+.*
     branches:
-      - 'release/*'
+      - "release/*"
       - main
     paths:
       - .github/workflows/cw-check.yml
@@ -32,7 +32,7 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
         with:
-          is_ci : true
+          is_ci: true
       - name: Run cw-check
         run: |
           cd ci/cw-check

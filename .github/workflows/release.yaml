@@ -1,6 +1,6 @@
-# Attempts to perform a release when a particular tag is pushed. This job uses 
-# the `cargo release` command and assumes that the `CRATES_TOKEN`secret has 
-# been set and contains an API token with which we can publish our crates to 
+# Attempts to perform a release when a particular tag is pushed. This job uses
+# the `cargo release` command and assumes that the `CRATES_TOKEN`secret has
+# been set and contains an API token with which we can publish our crates to
 # crates.io.
 #
 # The `ibc-derive` publishing process is managed manually since it's not
@@ -51,7 +51,7 @@ jobs:
         run: yes | cargo release --workspace --no-push --no-tag --exclude ibc-derive --allow-branch HEAD --execute
         env:
           CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
-  
+
   gh-release:
     if: github.ref_type == 'tag'
     name: Create GitHub release
