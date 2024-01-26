@@ -2,9 +2,11 @@ use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ConsensusState as TmConsensusState,
 };
 use ibc::core::client::context::client_state::ClientStateCommon;
+use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
 use ibc::core::client::types::Height;
 use ibc::core::entrypoint::{execute, validate};
+use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::ValidationContext;
 use ibc_testkit::fixtures::clients::tendermint::{
@@ -85,4 +87,35 @@ fn test_tm_create_client_ok() {
     let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();
     assert_eq!(expected_client_state.client_type(), client_type);
     assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
+}
+
+#[test]
+fn test_invalid_frozen_tm_client_creation() {
+    let signer = dummy_account_id();
+
+    let ctx = MockContext::default();
+
+    let router = MockRouter::new_with_transfer();
+
+    let tm_header = dummy_tendermint_header();
+
+    let tm_client_state = dummy_tm_client_state_from_header(tm_header.clone())
+        .inner()
+        .clone()
+        .with_frozen_height(Height::min(0));
+
+    let msg = MsgCreateClient::new(
+        tm_client_state.into(),
+        TmConsensusState::from(tm_header).into(),
+        signer,
+    );
+
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+
+    let res = validate(&ctx, &router, msg_envelope.clone());
+
+    assert!(matches!(
+        res,
+        Err(ContextError::ClientError(ClientError::ClientFrozen { .. }))
+    ))
 }
