@@ -61,8 +61,8 @@ pub enum Error {
     HeaderTimestampTooLow { actual: String, min: String },
     /// header revision height = `{height}` is invalid
     InvalidHeaderHeight { height: u64 },
-    /// Disallowed to create a new client with a frozen height
-    FrozenHeightNotAllowed,
+    /// frozen height not found
+    MissingFrozenHeight,
     /// the header's trusted revision number (`{trusted_revision}`) and the update's revision number (`{header_revision}`) should be the same
     MismatchHeightRevisions {
         trusted_revision: u64,

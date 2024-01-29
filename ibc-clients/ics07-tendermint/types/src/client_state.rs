@@ -284,7 +284,11 @@ impl TryFrom<RawTmClientState> for ClientState {
             .try_into()
             .map_err(|_| Error::MissingLatestHeight)?;
 
-        let frozen_height = raw.frozen_height.and_then(|h| Height::try_from(h).ok());
+        // NOTE: In `RawClientState`, a `frozen_height` of `0` means "not
+        // frozen". See:
+        // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
+        let frozen_height =
+            Height::try_from(raw.frozen_height.ok_or(Error::MissingFrozenHeight)?).ok();
 
         // We use set this deprecated field just so that we can properly convert
         // it back in its raw form
