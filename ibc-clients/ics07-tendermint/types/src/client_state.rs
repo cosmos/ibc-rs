@@ -6,6 +6,7 @@ use core::str::FromStr;
 use core::time::Duration;
 
 use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::proto::v1::Height as RawHeight;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::specs::ProofSpecs;
 use ibc_core_host_types::identifiers::ChainId;
@@ -283,10 +284,11 @@ impl TryFrom<RawTmClientState> for ClientState {
             .try_into()
             .map_err(|_| Error::MissingLatestHeight)?;
 
-        // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
-        // See:
+        // NOTE: In `RawClientState`, a `frozen_height` of `0` means "not
+        // frozen". See:
         // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-        let frozen_height = raw.frozen_height.and_then(|h| Height::try_from(h).ok());
+        let frozen_height =
+            Height::try_from(raw.frozen_height.ok_or(Error::MissingFrozenHeight)?).ok();
 
         // We use set this deprecated field just so that we can properly convert
         // it back in its raw form
@@ -322,7 +324,17 @@ impl From<ClientState> for RawTmClientState {
             trusting_period: Some(value.trusting_period.into()),
             unbonding_period: Some(value.unbonding_period.into()),
             max_clock_drift: Some(value.max_clock_drift.into()),
-            frozen_height: value.frozen_height.map(|height| height.into()),
+            // NOTE: The protobuf encoded `frozen_height` of an active client
+            // must be set to `0` so that `ibc-go` driven chains can properly
+            // decode the `ClientState` value. In `RawClientState`, a
+            // `frozen_height` of `0` means "not frozen". See:
+            // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
+            frozen_height: Some(value.frozen_height.map(|height| height.into()).unwrap_or(
+                RawHeight {
+                    revision_number: 0,
+                    revision_height: 0,
+                },
+            )),
             latest_height: Some(value.latest_height.into()),
             proof_specs: value.proof_specs.into(),
             upgrade_path: value.upgrade_path,

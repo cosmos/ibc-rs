@@ -10,6 +10,7 @@ use ibc::clients::tendermint::types::{
 use ibc::core::client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::msgs::{ClientMsg, MsgSubmitMisbehaviour, MsgUpdateClient};
+use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::specs::ProofSpecs;
 use ibc::core::entrypoint::{execute, validate};
@@ -588,7 +589,10 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
                 ),
                 proof_specs: ProofSpecs::default().into(),
                 upgrade_path: Default::default(),
-                frozen_height: None,
+                frozen_height: Some(RawHeight {
+                    revision_number: 0,
+                    revision_height: 0,
+                }),
                 allow_update_after_expiry: false,
                 allow_update_after_misbehaviour: false,
             };
