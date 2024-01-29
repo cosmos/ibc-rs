@@ -49,7 +49,7 @@ jobs:
           echo "Checking tabs"
           ! rg '\t' --type toml --type rust
           echo "Checking anything except newline at end of file"
-          fd --type file --extension rs --extension toml --exec sh -c \
+          fd --type file --extension toml --extension rs --exec sh -c \
             'test "$(tail -c1 {})" = "" || echo {}' \
             | tee /dev/stderr \
             | test "$(wc -l)" -eq 0
