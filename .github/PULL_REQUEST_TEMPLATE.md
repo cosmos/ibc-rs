@@ -26,3 +26,5 @@ ______
 
 - [ ] Reviewed `Files changed` in the GitHub PR explorer.
 - [ ] Manually tested (in case integration/unit/mock tests are absent).
+- [ ] __If new version release__: Notify the comms team about the pending release and [prepare a message](https://www.notion.so/informalsystems/Communications-pipeline-b8c0eeb71dc24203a048fa6ccf189e1a?pvs=4) to announce it
+
