@@ -59,7 +59,7 @@ mod tests {
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::testapp::ibc::core::types::MockClientConfig;
+    use crate::testapp::ibc::core::types::{MockClientConfig, MockContext};
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
@@ -126,7 +126,7 @@ mod tests {
         let mut ctx_a = MockContextConfig::builder()
             .host_id(chain_id_a.clone())
             .latest_height(chain_a_start_height)
-            .build()
+            .build::<MockContext>()
             .with_client_config(
                 MockClientConfig::builder()
                     .client_chain_id(chain_id_b.clone())
@@ -142,7 +142,7 @@ mod tests {
             .host_id(chain_id_b)
             .host_type(HostType::SyntheticTendermint)
             .latest_height(chain_b_start_height)
-            .build()
+            .build::<MockContext>()
             .with_client_config(
                 MockClientConfig::builder()
                     .client_chain_id(chain_id_a)

@@ -101,7 +101,7 @@ fn test_consensus_state_pruning() {
         .latest_height(client_height)
         .latest_timestamp(Timestamp::now())
         .max_history_size(u64::MAX)
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id.clone())
@@ -217,7 +217,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     let mut ctx = MockContextConfig::builder()
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
@@ -233,7 +233,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
         .host_id(chain_id_b)
         .host_type(HostType::SyntheticTendermint)
         .latest_height(update_height)
-        .build();
+        .build::<MockContext>();
 
     let signer = dummy_account_id();
 
@@ -273,7 +273,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     let mut ctx_a = MockContextConfig::builder()
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             // client state initialized with client_height, and
             // [{id: 1, power: 50}, {id: 2, power: 50}] for validator set and next validator set.
@@ -320,7 +320,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
         .latest_height(update_height)
         .max_history_size(ctx_b_val_history.len() as u64 - 1)
         .validator_set_history(ctx_b_val_history)
-        .build();
+        .build::<MockContext>();
 
     let signer = dummy_account_id();
 
@@ -365,7 +365,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     let ctx_a = MockContextConfig::builder()
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             // client state initialized with client_height, and
             // [{id: 1, power: 50}, {id: 2, power: 50}] for validator set and next validator set.
@@ -413,7 +413,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .latest_height(update_height)
         .max_history_size(ctx_b_val_history.len() as u64 - 1)
         .validator_set_history(ctx_b_val_history)
-        .build();
+        .build::<MockContext>();
 
     let signer = dummy_account_id();
 
@@ -450,7 +450,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     let mut ctx = MockContextConfig::builder()
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
@@ -470,7 +470,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
         .host_id(chain_id_b)
         .host_type(HostType::SyntheticTendermint)
         .latest_height(update_height)
-        .build();
+        .build::<MockContext>();
 
     let signer = dummy_account_id();
 
@@ -515,7 +515,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
     let mut ctx_a = MockContextConfig::builder()
         .host_id(ctx_a_chain_id)
         .latest_height(start_height)
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(ctx_b_chain_id.clone())
@@ -532,7 +532,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
         .host_id(ctx_b_chain_id)
         .host_type(HostType::SyntheticTendermint)
         .latest_height(client_height)
-        .build();
+        .build::<MockContext>();
 
     let signer = dummy_account_id();
 
@@ -648,7 +648,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
     let ctx = MockContextConfig::builder()
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(chain_start_height)
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_id(client_id.clone())
@@ -663,7 +663,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
         .host_id(ChainId::new("mockgaiaB-1").unwrap())
         .host_type(HostType::SyntheticTendermint)
         .latest_height(client_height)
-        .build();
+        .build::<MockContext>();
 
     let signer = dummy_account_id();
 
@@ -818,7 +818,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
     let mut ctx_a = MockContextConfig::builder()
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
@@ -835,7 +835,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
         .host_id(chain_id_b.clone())
         .host_type(HostType::SyntheticTendermint)
         .latest_height(misbehaviour_height)
-        .build();
+        .build::<MockContext>();
 
     // Get chain-B's header at `misbehaviour_height`
     let header1: TmHeader = {
@@ -880,7 +880,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let mut ctx_a = MockContextConfig::builder()
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
@@ -949,7 +949,7 @@ fn test_expired_client() {
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
@@ -987,7 +987,7 @@ fn test_client_update_max_clock_drift() {
         .host_id(ChainId::new("mockgaiaA-1").unwrap())
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
-        .build()
+        .build::<MockContext>()
         .with_client_config(
             MockClientConfig::builder()
                 .client_chain_id(chain_id_b.clone())
@@ -1007,7 +1007,7 @@ fn test_client_update_max_clock_drift() {
         .latest_height(client_height)
         .latest_timestamp(timestamp)
         .max_history_size(u64::MAX)
-        .build();
+        .build::<MockContext>();
 
     while ctx_b.host_timestamp().expect("no error")
         < (ctx_a.host_timestamp().expect("no error") + max_clock_drift).expect("no error")

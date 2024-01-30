@@ -16,7 +16,7 @@ use crate::testapp::ibc::core::types::{MockContext, MockIbcStore, DEFAULT_BLOCK_
 
 /// Configuration of the `MockContext` type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
-#[builder(build_method(into = MockContext))]
+#[builder(build_method(into))]
 pub struct MockContextConfig {
     #[builder(default = HostType::Mock)]
     host_type: HostType,
