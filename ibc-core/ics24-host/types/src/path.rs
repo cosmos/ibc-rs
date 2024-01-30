@@ -993,6 +993,28 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_parse_next_sequence_fn() {
+        let path = "nextClientSequence";
+
+        assert!(matches!(
+            Path::from_str(path),
+            Ok(Path::NextClientSequence(NextClientSequencePath))
+        ));
+
+        let path = "nextConnectionSequence";
+        assert!(matches!(
+            Path::from_str(path),
+            Ok(Path::NextConnectionSequence(NextConnectionSequencePath))
+        ));
+
+        let path = "nextChannelSequence";
+        assert!(matches!(
+            Path::from_str(path),
+            Ok(Path::NextChannelSequence(NextChannelSequencePath))
+        ));
+    }
+
+    #[test]
     fn invalid_path_doesnt_parse() {
         let invalid_path = Path::from_str("clients/clientType");
 
@@ -1023,6 +1045,37 @@ mod tests {
     }
 
     #[test]
+    fn test_parse_client_processed_paths_fn() {
+        let path = "clients/07-tendermint-0/processedTimes/15-31";
+        let components: Vec<&str> = path.split('/').collect();
+
+        assert_eq!(
+            parse_client_paths(&components),
+            Some(Path::ClientConsensusStateProcessedTime(
+                ClientConsensusStateProcessedTimePath {
+                    client_id: ClientId::default(),
+                    revision_number: 15,
+                    revision_height: 31,
+                }
+            ))
+        );
+
+        let path = "clients/07-tendermint-0/processedHeights/15-31";
+        let components: Vec<&str> = path.split('/').collect();
+
+        assert_eq!(
+            parse_client_paths(&components),
+            Some(Path::ClientConsensusStateProcessedHeight(
+                ClientConsensusStateProcessedHeightPath {
+                    client_id: ClientId::default(),
+                    revision_number: 15,
+                    revision_height: 31,
+                }
+            ))
+        );
+    }
+
+    #[test]
     fn client_state_path_parses() {
         let path = "clients/07-tendermint-0/clientState";
         let path = Path::from_str(path);
@@ -1031,6 +1084,35 @@ mod tests {
         assert_eq!(
             path.unwrap(),
             Path::ClientState(ClientStatePath(ClientId::default()))
+        );
+    }
+
+    #[test]
+    fn test_parse_client_processed_paths_parses() {
+        let path = "clients/07-tendermint-0/processedTimes/15-31";
+
+        assert_eq!(
+            Path::from_str(path).ok(),
+            Some(Path::ClientConsensusStateProcessedTime(
+                ClientConsensusStateProcessedTimePath {
+                    client_id: ClientId::default(),
+                    revision_number: 15,
+                    revision_height: 31,
+                }
+            ))
+        );
+
+        let path = "clients/07-tendermint-0/processedHeights/15-31";
+
+        assert_eq!(
+            Path::from_str(path).ok(),
+            Some(Path::ClientConsensusStateProcessedHeight(
+                ClientConsensusStateProcessedHeightPath {
+                    client_id: ClientId::default(),
+                    revision_number: 15,
+                    revision_height: 31,
+                }
+            ))
         );
     }
 
