@@ -126,30 +126,37 @@ mod tests {
         let mut ctx_a = MockContextConfig::builder()
             .host_id(chain_id_a.clone())
             .latest_height(chain_a_start_height)
-            .build::<MockContext>()
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_chain_id(chain_id_b.clone())
-                    .client_id(client_on_a_for_b.clone())
-                    .latest_height(client_on_a_for_b_height)
-                    .client_type(tm_client_type()) // The target host chain (B) is synthetic TM.
-                    .build(),
-            );
+            .build::<MockContext>();
+
+        let mut ctx_b = MockContextConfig::builder()
+            .host_id(chain_id_b.clone())
+            .host_type(HostType::SyntheticTendermint)
+            .latest_height(chain_b_start_height)
+            .latest_timestamp(ctx_a.timestamp_at(chain_a_start_height.decrement().unwrap())) // chain B is running slower than chain A
+            .build::<MockContext>();
+
+        ctx_a = ctx_a.with_client_config(
+            MockClientConfig::builder()
+                .client_chain_id(chain_id_b)
+                .client_id(client_on_a_for_b.clone())
+                .latest_height(client_on_a_for_b_height)
+                .latest_timestamp(ctx_b.timestamp_at(client_on_a_for_b_height))
+                .client_type(tm_client_type()) // The target host chain (B) is synthetic TM.
+                .build(),
+        );
+
+        ctx_b = ctx_b.with_client_config(
+            MockClientConfig::builder()
+                .client_chain_id(chain_id_a)
+                .client_id(client_on_b_for_a.clone())
+                .latest_height(client_on_b_for_a_height)
+                .latest_timestamp(ctx_a.timestamp_at(client_on_b_for_a_height))
+                .build(),
+        );
+
         // dummy; not actually used in client updates
         let mut router_a = MockRouter::new_with_transfer();
 
-        let mut ctx_b = MockContextConfig::builder()
-            .host_id(chain_id_b)
-            .host_type(HostType::SyntheticTendermint)
-            .latest_height(chain_b_start_height)
-            .build::<MockContext>()
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_chain_id(chain_id_a)
-                    .client_id(client_on_b_for_a.clone())
-                    .latest_height(client_on_b_for_a_height)
-                    .build(),
-            );
         // dummy; not actually used in client updates
         let mut router_b = MockRouter::new_with_transfer();
 
