@@ -22,8 +22,13 @@ const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 /// The Path enum abstracts out the different sub-paths.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Display)]
 pub enum Path {
+    NextClientSequence(NextClientSequencePath),
+    NextConnectionSequence(NextConnectionSequencePath),
+    NextChannelSequence(NextChannelSequencePath),
     ClientState(ClientStatePath),
     ClientConsensusState(ClientConsensusStatePath),
+    ClientConsensusStateProcessedTime(ClientConsensusStateProcessedTimePath),
+    ClientConsensusStateProcessedHeight(ClientConsensusStateProcessedHeightPath),
     ClientConnection(ClientConnectionPath),
     Connection(ConnectionPath),
     Ports(PortPath),
