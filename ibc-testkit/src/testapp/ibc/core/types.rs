@@ -136,8 +136,8 @@ pub struct MockClientConfig {
     latest_height: Height,
     #[builder(default)]
     consensus_state_heights: Vec<Height>,
-    #[builder(default = Timestamp::now())]
-    latest_timestamp: Timestamp,
+    #[builder(default, setter(strip_option))]
+    latest_timestamp: Option<Timestamp>,
 
     #[builder(default = Duration::from_secs(64000))]
     trusting_period: Duration,
@@ -457,6 +457,10 @@ impl MockContext {
             client.consensus_state_heights
         };
 
+        let client_latest_timestamp = client
+            .latest_timestamp
+            .unwrap_or_else(|| self.latest_timestamp());
+
         let (client_state, consensus_states): (
             AnyClientState,
             BTreeMap<Height, AnyConsensusState>,
@@ -470,8 +474,7 @@ impl MockContext {
                         (
                             cs_height,
                             MockHeader::new(cs_height).with_timestamp(
-                                client
-                                    .latest_timestamp
+                                client_latest_timestamp
                                     .sub(self.block_time * (n_blocks as u32))
                                     .expect("never fails"),
                             ),
@@ -480,7 +483,7 @@ impl MockContext {
                     .collect();
 
                 let client_state = MockClientState::new(
-                    MockHeader::new(client.latest_height).with_timestamp(client.latest_timestamp),
+                    MockHeader::new(client.latest_height).with_timestamp(client_latest_timestamp),
                 );
 
                 let cs_states = blocks
@@ -501,8 +504,7 @@ impl MockContext {
                             HostBlock::generate_tm_block(
                                 client.client_chain_id.clone(),
                                 cs_height.revision_height(),
-                                client
-                                    .latest_timestamp
+                                client_latest_timestamp
                                     .sub(self.block_time * (n_blocks as u32))
                                     .expect("never fails"),
                             ),
@@ -763,6 +765,19 @@ impl MockContext {
 
     pub fn ibc_store_share(&self) -> Arc<Mutex<MockIbcStore>> {
         self.ibc_store.clone()
+    }
+
+    pub fn latest_timestamp(&self) -> Timestamp {
+        self.host_block(&self.latest_height())
+            .expect("Never fails")
+            .timestamp()
+    }
+
+    pub fn timestamp_at(&self, height: Height) -> Timestamp {
+        let n_blocks = blocks_since(self.latest_height(), height).expect("less or equal height");
+        self.latest_timestamp()
+            .sub(self.block_time * (n_blocks as u32))
+            .expect("Never fails")
     }
 
     pub fn query_latest_header(&self) -> Option<HostBlock> {
