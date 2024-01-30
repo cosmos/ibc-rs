@@ -532,7 +532,8 @@ impl FromStr for Path {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let components: Vec<&str> = s.split('/').collect();
 
-        parse_client_paths(&components)
+        parse_next_sequence(&components)
+            .or_else(|| parse_client_paths(&components))
             .or_else(|| parse_connections(&components))
             .or_else(|| parse_ports(&components))
             .or_else(|| parse_channel_ends(&components))
@@ -544,6 +545,19 @@ impl FromStr for Path {
             .ok_or(PathError::ParseFailure {
                 path: s.to_string(),
             })
+    }
+}
+
+fn parse_next_sequence(components: &[&str]) -> Option<Path> {
+    if components.len() != 1 {
+        return None;
+    }
+
+    match *components.first()? {
+        "nextClientSequence" => Some(NextClientSequencePath.into()),
+        "nextConnectionSequence" => Some(NextConnectionSequencePath.into()),
+        "nextChannelSequence" => Some(NextChannelSequencePath.into()),
+        _ => None,
     }
 }
 
