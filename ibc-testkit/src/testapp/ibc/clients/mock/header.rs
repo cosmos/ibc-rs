@@ -7,6 +7,7 @@ use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::proto::Header as RawMockHeader;
+use crate::testapp::ibc::utils::{timestamp_gpb_to_ibc, timestamp_ibc_to_gpb};
 
 pub const MOCK_HEADER_TYPE_URL: &str = "/ibc.mock.Header";
 
@@ -45,11 +46,16 @@ impl TryFrom<RawMockHeader> for MockHeader {
         Ok(MockHeader {
             height: raw
                 .height
-                .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(ClientError::MissingClientMessage)?,
-
-            timestamp: Timestamp::from_nanoseconds(raw.timestamp)
-                .map_err(ClientError::InvalidPacketTimestamp)?,
+                .ok_or(ClientError::Other {
+                    description: "missing height".into(),
+                })?
+                .try_into()?,
+            timestamp: raw
+                .timestamp
+                .map(timestamp_gpb_to_ibc)
+                .ok_or(ClientError::Other {
+                    description: "missing timestamp".into(),
+                })?,
         })
     }
 }
@@ -58,7 +64,7 @@ impl From<MockHeader> for RawMockHeader {
     fn from(value: MockHeader) -> Self {
         RawMockHeader {
             height: Some(value.height.into()),
-            timestamp: value.timestamp.nanoseconds(),
+            timestamp: Some(timestamp_ibc_to_gpb(value.timestamp)),
         }
     }
 }

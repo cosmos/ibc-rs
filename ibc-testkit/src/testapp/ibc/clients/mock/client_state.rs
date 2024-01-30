@@ -21,9 +21,8 @@ use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::mock::misbehaviour::Misbehaviour;
-use crate::testapp::ibc::clients::mock::proto::{
-    ClientState as RawMockClientState, Header as RawMockHeader,
-};
+use crate::testapp::ibc::clients::mock::proto::ClientState as RawMockClientState;
+use crate::testapp::ibc::utils::{duration_gpb_to_ibc, duration_ibc_to_gbp};
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
@@ -39,14 +38,18 @@ pub fn client_type() -> ClientType {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct MockClientState {
     pub header: MockHeader,
-    pub frozen_height: Option<Height>,
+    pub max_clock_drift: Option<Duration>,
+    pub trusing_period: Option<Duration>,
+    pub frozen: bool,
 }
 
 impl MockClientState {
     pub fn new(header: MockHeader) -> Self {
         Self {
             header,
-            frozen_height: None,
+            max_clock_drift: None,
+            trusing_period: None,
+            frozen: false,
         }
     }
 
@@ -58,15 +61,15 @@ impl MockClientState {
         None
     }
 
-    pub fn with_frozen_height(self, frozen_height: Height) -> Self {
+    pub fn with_frozen_height(self, _frozen_height: Height) -> Self {
         Self {
-            frozen_height: Some(frozen_height),
+            frozen: true,
             ..self
         }
     }
 
     pub fn is_frozen(&self) -> bool {
-        self.frozen_height.is_some()
+        self.frozen
     }
 
     fn expired(&self, _elapsed: Duration) -> bool {
@@ -80,17 +83,27 @@ impl TryFrom<RawMockClientState> for MockClientState {
     type Error = ClientError;
 
     fn try_from(raw: RawMockClientState) -> Result<Self, Self::Error> {
-        Ok(Self::new(raw.header.expect("Never fails").try_into()?))
+        Ok(Self {
+            header: raw
+                .header
+                .ok_or(ClientError::Other {
+                    description: "header is not present".into(),
+                })?
+                .try_into()?,
+            max_clock_drift: raw.max_clock_drift.map(duration_gpb_to_ibc),
+            trusing_period: raw.trusing_period.map(duration_gpb_to_ibc),
+            frozen: raw.frozen,
+        })
     }
 }
 
 impl From<MockClientState> for RawMockClientState {
     fn from(value: MockClientState) -> Self {
         RawMockClientState {
-            header: Some(RawMockHeader {
-                height: Some(value.header.height().into()),
-                timestamp: value.header.timestamp.nanoseconds(),
-            }),
+            header: Some(value.header.into()),
+            max_clock_drift: value.max_clock_drift.map(duration_ibc_to_gbp),
+            trusing_period: value.trusing_period.map(duration_ibc_to_gbp),
+            frozen: value.frozen,
         }
     }
 }

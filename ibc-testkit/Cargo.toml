@@ -35,6 +35,7 @@ ibc-proto = { workspace = true }
 # cosmos dependencies
 tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
+tendermint-proto   = { workspace = true }
 
 [dev-dependencies]
 env_logger         = "0.11.0"
