@@ -569,8 +569,9 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
             _ => None,
         }
     } else if components.len() == 4 {
-        if "consensusStates" != components[2] {
-            return None;
+        match components[2] {
+            "consensusStates" | "processedTimes" | "processedHeights" => {}
+            _ => {}
         }
 
         let epoch_height = match components.last() {
@@ -597,14 +598,33 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
             Err(_) => return None,
         };
 
-        Some(
-            ClientConsensusStatePath {
-                client_id,
-                revision_number,
-                revision_height,
-            }
-            .into(),
-        )
+        match components[2] {
+            "consensusStates" => Some(
+                ClientConsensusStatePath {
+                    client_id,
+                    revision_number,
+                    revision_height,
+                }
+                .into(),
+            ),
+            "processedTimes" => Some(
+                ClientConsensusStateProcessedTimePath {
+                    client_id,
+                    revision_number,
+                    revision_height,
+                }
+                .into(),
+            ),
+            "processedHeights" => Some(
+                ClientConsensusStateProcessedHeightPath {
+                    client_id,
+                    revision_number,
+                    revision_height,
+                }
+                .into(),
+            ),
+            _ => None,
+        }
     } else {
         None
     }
