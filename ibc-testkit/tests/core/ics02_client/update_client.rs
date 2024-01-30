@@ -602,14 +602,9 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
             ClientState::from(client_state).into()
         };
 
-        let mut ibc_store = ctx_a.ibc_store.lock();
-        let client_record = ibc_store.clients.get_mut(&client_id).unwrap();
+        ctx_a = ctx_a.with_client_state(&client_id, client_state);
 
-        client_record
-            .consensus_states
-            .insert(client_height, consensus_state);
-
-        client_record.client_state = Some(client_state);
+        ctx_a = ctx_a.with_consensus_state(&client_id, client_height, consensus_state);
     }
 
     let latest_header_height = block.height();

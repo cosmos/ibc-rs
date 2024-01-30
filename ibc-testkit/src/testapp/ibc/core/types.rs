@@ -6,6 +6,8 @@ use core::cmp::min;
 use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
+use ibc::core::client::context::ClientExecutionContext;
+use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath};
 
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::TENDERMINT_CLIENT_TYPE;
@@ -423,7 +425,31 @@ impl MockContext {
         )
     }
 
-    pub fn with_client_config(self, client: MockClientConfig) -> Self {
+    pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
+        let client_state_path = ClientStatePath::new(client_id);
+        self.store_client_state(client_state_path, client_state)
+            .expect("error writing to store");
+        self
+    }
+
+    pub fn with_consensus_state(
+        mut self,
+        client_id: &ClientId,
+        height: Height,
+        consensus_state: AnyConsensusState,
+    ) -> Self {
+        let consensus_state_path = ClientConsensusStatePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        );
+        self.store_consensus_state(consensus_state_path, consensus_state)
+            .expect("error writing to store");
+
+        self
+    }
+
+    pub fn with_client_config(mut self, client: MockClientConfig) -> Self {
         let cs_heights = if client.consensus_state_heights.is_empty() {
             vec![client.latest_height]
         } else {
@@ -436,7 +462,10 @@ impl MockContext {
             .then(|| a.revision_height() - b.revision_height())
         }
 
-        let (client_state, consensus_states) = match client.client_type.as_str() {
+        let (client_state, consensus_states): (
+            AnyClientState,
+            BTreeMap<Height, AnyConsensusState>,
+        ) = match client.client_type.as_str() {
             MOCK_CLIENT_TYPE => {
                 let blocks: Vec<_> = cs_heights
                     .into_iter()
@@ -508,15 +537,12 @@ impl MockContext {
             _ => panic!("unknown client type"),
         };
 
-        let client_record = MockClientRecord {
-            client_state: Some(client_state),
-            consensus_states,
-        };
+        self = self.with_client_state(&client.client_id, client_state);
 
-        self.ibc_store
-            .lock()
-            .clients
-            .insert(client.client_id.clone(), client_record);
+        for (height, consensus_state) in consensus_states {
+            self = self.with_consensus_state(&client.client_id, height, consensus_state);
+        }
+
         self
     }
 
