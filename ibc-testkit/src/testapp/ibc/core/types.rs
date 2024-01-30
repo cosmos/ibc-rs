@@ -41,6 +41,7 @@ use crate::testapp::ibc::clients::mock::client_state::{
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
+use crate::testapp::ibc::utils::blocks_since;
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
 /// An object that stores all IBC related data.
@@ -455,12 +456,6 @@ impl MockContext {
         } else {
             client.consensus_state_heights
         };
-
-        fn blocks_since(a: Height, b: Height) -> Option<u64> {
-            (a.revision_number() == b.revision_number()
-                && a.revision_height() >= b.revision_height())
-            .then(|| a.revision_height() - b.revision_height())
-        }
 
         let (client_state, consensus_states): (
             AnyClientState,

@@ -1,5 +1,6 @@
 use core::time::Duration;
 
+use ibc::core::client::types::Height;
 use ibc::primitives::Timestamp;
 use ibc_proto::google::protobuf::{Duration as GDuration, Timestamp as GTimestamp};
 
@@ -27,4 +28,9 @@ pub fn duration_ibc_to_gbp(ibc_duration: Duration) -> GDuration {
         seconds: ibc_duration.as_secs() as i64,
         nanos: ibc_duration.subsec_nanos() as i32,
     }
+}
+
+pub fn blocks_since(a: Height, b: Height) -> Option<u64> {
+    (a.revision_number() == b.revision_number() && a.revision_height() >= b.revision_height())
+        .then(|| a.revision_height() - b.revision_height())
 }
