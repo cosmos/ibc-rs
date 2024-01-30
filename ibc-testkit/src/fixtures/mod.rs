@@ -12,7 +12,7 @@ pub enum Expect {
     Failure(Option<ContextError>),
 }
 
-#[derive(Clone, Debug)]
+#[derive(Debug)]
 pub struct Fixture<M: Debug> {
     pub ctx: MockContext,
     pub msg: M,

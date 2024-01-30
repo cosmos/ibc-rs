@@ -128,7 +128,7 @@ fn conn_open_init_no_context() {
 fn conn_open_init_no_version() {
     let mut fxt = conn_open_init_fixture(Ctx::WithClient, Msg::NoVersion);
     conn_open_init_validate(&fxt, Expect::Success);
-    let expected_version = ValidationContext::get_compatible_versions(&fxt.ctx.clone());
+    let expected_version = ValidationContext::get_compatible_versions(&fxt.ctx);
     conn_open_init_execute(&mut fxt, Expect::Success, expected_version);
 }
 #[test]
