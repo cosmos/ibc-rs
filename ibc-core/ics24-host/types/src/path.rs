@@ -51,6 +51,57 @@ pub enum Path {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "nextClientSequence")]
+pub struct NextClientSequencePath;
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "nextConnectionSequence")]
+pub struct NextConnectionSequencePath;
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "nextChannelSequence")]
+pub struct NextChannelSequencePath;
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "clients/{_0}/clientState")]
 pub struct ClientStatePath(pub ClientId);
 
@@ -88,6 +139,68 @@ impl ClientConsensusStatePath {
         revision_height: u64,
     ) -> ClientConsensusStatePath {
         ClientConsensusStatePath {
+            client_id,
+            revision_number,
+            revision_height,
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "clients/{client_id}/processedTimes/{revision_number}-{revision_height}")]
+pub struct ClientConsensusStateProcessedTimePath {
+    pub client_id: ClientId,
+    pub revision_number: u64,
+    pub revision_height: u64,
+}
+
+impl ClientConsensusStateProcessedTimePath {
+    pub fn new(client_id: ClientId, revision_number: u64, revision_height: u64) -> Self {
+        Self {
+            client_id,
+            revision_number,
+            revision_height,
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "clients/{client_id}/processedHeights/{revision_number}-{revision_height}")]
+pub struct ClientConsensusStateProcessedHeightPath {
+    pub client_id: ClientId,
+    pub revision_number: u64,
+    pub revision_height: u64,
+}
+
+impl ClientConsensusStateProcessedHeightPath {
+    pub fn new(client_id: ClientId, revision_number: u64, revision_height: u64) -> Self {
+        Self {
             client_id,
             revision_number,
             revision_height,
