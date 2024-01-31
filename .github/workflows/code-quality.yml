@@ -12,47 +12,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v2
 
-      - name: Download ripgrep
-        uses: dsaltares/fetch-gh-release-asset@master
-        with:
-          repo: BurntSushi/ripgrep
-          version: "tags/${{ env.RIPGREP_VERSION }}"
-          file: "ripgrep-${{ env.RIPGREP_VERSION }}-x86_64-unknown-linux-musl.tar.gz"
-
-      - name: Download fd
-        uses: dsaltares/fetch-gh-release-asset@master
-        with:
-          repo: sharkdp/fd
-          version: "tags/v${{ env.FD_VERSION }}"
-          file: "fd-v${{ env.FD_VERSION }}-x86_64-unknown-linux-musl.tar.gz"
-
-      - name: Create local bin directory
-        run: |
-          mkdir -p ~/local/bin
-          echo "${HOME}/local/bin" >> $GITHUB_PATH
-
-      - name: Setup ripgrep and fd
-        run: |
-          tar -xzf "ripgrep-${{ env.RIPGREP_VERSION }}-x86_64-unknown-linux-musl.tar.gz"
-          tar -xzf "fd-v${{ env.FD_VERSION }}-x86_64-unknown-linux-musl.tar.gz"
-          mv "ripgrep-${{ env.RIPGREP_VERSION }}-x86_64-unknown-linux-musl/rg" rg
-          mv "fd-v${{ env.FD_VERSION }}-x86_64-unknown-linux-musl/fd" fd
-          rm -r "ripgrep-${{ env.RIPGREP_VERSION }}-x86_64-unknown-linux-musl"
-          rm -r "fd-v${{ env.FD_VERSION }}-x86_64-unknown-linux-musl"
-          chmod +x rg fd
-          mv rg fd ~/local/bin
-
       - name: Whitestapace lints
-        run: |
-          echo "Checking trailing whitespaces"
-          ! rg '\s+$' --type toml --type rust
-          echo "Checking tabs"
-          ! rg '\t' --type toml --type rust
-          echo "Checking anything except newline at end of file"
-          fd --type file --extension toml --extension rs --exec sh -c \
-            'test "$(tail -c1 {})" = "" || echo {}' \
-            | tee /dev/stderr \
-            | test "$(wc -l)" -eq 0
+        run: bash ci/code-quality/whitespace-lints.sh
 
       - name: Spell Check with Typos
         uses: crate-ci/typos@master
