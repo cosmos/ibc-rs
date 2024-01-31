@@ -31,8 +31,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
-        with:
-          is_ci: true
       - name: Run cw-check
         run: |
           cd ci/cw-check
