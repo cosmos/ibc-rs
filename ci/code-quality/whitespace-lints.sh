@@ -33,7 +33,7 @@ check_code_quality() {
 
     if find . -type f -name "*.toml" -o -name "*.rs" \
         -not -path '*/.*' -not -path '*/target/*' \
-        -exec $GREP "$1" "$2" {} \; | $GREP '.*'; then
+        -exec "$GREP" "$1" "$2" {} \; | "$GREP" '.*'; then
         echo "$3"
         return 1
     else
