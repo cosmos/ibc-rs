@@ -1047,33 +1047,29 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_client_processed_paths_fn() {
-        let path = "clients/07-tendermint-0/processedTimes/15-31";
+    fn test_parse_client_update_paths_fn() {
+        let path = "clients/07-tendermint-0/consensusStates/15-31/processedTime";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_client_paths(&components),
-            Some(Path::ClientConsensusStateProcessedTime(
-                ClientConsensusStateProcessedTimePath {
-                    client_id: ClientId::default(),
-                    revision_number: 15,
-                    revision_height: 31,
-                }
-            ))
+            Some(Path::ClientUpdateTime(ClientUpdateTimePath {
+                client_id: ClientId::default(),
+                revision_number: 15,
+                revision_height: 31,
+            }))
         );
 
-        let path = "clients/07-tendermint-0/processedHeights/15-31";
+        let path = "clients/07-tendermint-0/consensusStates/15-31/processedHeight";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
             parse_client_paths(&components),
-            Some(Path::ClientConsensusStateProcessedHeight(
-                ClientConsensusStateProcessedHeightPath {
-                    client_id: ClientId::default(),
-                    revision_number: 15,
-                    revision_height: 31,
-                }
-            ))
+            Some(Path::ClientUpdateHeight(ClientUpdateHeightPath {
+                client_id: ClientId::default(),
+                revision_number: 15,
+                revision_height: 31,
+            }))
         );
     }
 
@@ -1090,31 +1086,27 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_client_processed_paths_parses() {
-        let path = "clients/07-tendermint-0/processedTimes/15-31";
+    fn test_parse_client_update_paths_parses() {
+        let path = "clients/07-tendermint-0/consensusStates/15-31/processedTime";
 
         assert_eq!(
             Path::from_str(path).ok(),
-            Some(Path::ClientConsensusStateProcessedTime(
-                ClientConsensusStateProcessedTimePath {
-                    client_id: ClientId::default(),
-                    revision_number: 15,
-                    revision_height: 31,
-                }
-            ))
+            Some(Path::ClientUpdateTime(ClientUpdateTimePath {
+                client_id: ClientId::default(),
+                revision_number: 15,
+                revision_height: 31,
+            }))
         );
 
-        let path = "clients/07-tendermint-0/processedHeights/15-31";
+        let path = "clients/07-tendermint-0/consensusStates/15-31/processedHeight";
 
         assert_eq!(
             Path::from_str(path).ok(),
-            Some(Path::ClientConsensusStateProcessedHeight(
-                ClientConsensusStateProcessedHeightPath {
-                    client_id: ClientId::default(),
-                    revision_number: 15,
-                    revision_height: 31,
-                }
-            ))
+            Some(Path::ClientUpdateHeight(ClientUpdateHeightPath {
+                client_id: ClientId::default(),
+                revision_number: 15,
+                revision_height: 31,
+            }))
         );
     }
 
