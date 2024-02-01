@@ -9,7 +9,7 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20"]
 readme       = "./../../README.md"
 description  = """
-    Maintained by `ibc-rs`, encapsulates essential ICS-20 Fungible Token Transfer data structures and 
+    Maintained by `ibc-rs`, encapsulates essential ICS-20 Fungible Token Transfer data structures and
     domain types, as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal
     applicability to facilitate development and integration across diverse IBC-enabled projects.
 """
@@ -58,7 +58,7 @@ serde = [
 schema = [
     "dep:schemars",
     "ibc-core/schema",
-    "ibc-proto/json-schema", 
+    "ibc-proto/json-schema",
     "serde",
     "std"
 ]
