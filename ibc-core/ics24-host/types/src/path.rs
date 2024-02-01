@@ -27,8 +27,8 @@ pub enum Path {
     NextChannelSequence(NextChannelSequencePath),
     ClientState(ClientStatePath),
     ClientConsensusState(ClientConsensusStatePath),
-    ClientConsensusStateProcessedTime(ClientConsensusStateProcessedTimePath),
-    ClientConsensusStateProcessedHeight(ClientConsensusStateProcessedHeightPath),
+    ClientUpdateTime(ClientUpdateTimePath),
+    ClientUpdateHeight(ClientUpdateHeightPath),
     ClientConnection(ClientConnectionPath),
     Connection(ConnectionPath),
     Ports(PortPath),
@@ -165,14 +165,16 @@ impl ClientConsensusStatePath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{client_id}/processedTimes/{revision_number}-{revision_height}")]
-pub struct ClientConsensusStateProcessedTimePath {
+#[display(
+    fmt = "clients/{client_id}/consensusStates/{revision_number}-{revision_height}/processedTime"
+)]
+pub struct ClientUpdateTimePath {
     pub client_id: ClientId,
     pub revision_number: u64,
     pub revision_height: u64,
 }
 
-impl ClientConsensusStateProcessedTimePath {
+impl ClientUpdateTimePath {
     pub fn new(client_id: ClientId, revision_number: u64, revision_height: u64) -> Self {
         Self {
             client_id,
@@ -196,14 +198,16 @@ impl ClientConsensusStateProcessedTimePath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{client_id}/processedHeights/{revision_number}-{revision_height}")]
-pub struct ClientConsensusStateProcessedHeightPath {
+#[display(
+    fmt = "clients/{client_id}/consensusStates/{revision_number}-{revision_height}/processedHeight"
+)]
+pub struct ClientUpdateHeightPath {
     pub client_id: ClientId,
     pub revision_number: u64,
     pub revision_height: u64,
 }
 
-impl ClientConsensusStateProcessedHeightPath {
+impl ClientUpdateHeightPath {
     pub fn new(client_id: ClientId, revision_number: u64, revision_height: u64) -> Self {
         Self {
             client_id,
