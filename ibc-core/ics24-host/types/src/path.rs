@@ -1058,27 +1058,27 @@ mod tests {
         Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::default()))
     )]
     #[case(
-        "commitments/ports/transfer/channels/channel-0/sequences/1",
+        "commitments/ports/transfer/channels/channel-0/sequences/0",
         Path::Commitment(CommitmentPath {
             port_id: PortId::transfer(),
             channel_id: ChannelId::default(),
-            sequence: Sequence::from(1),
+            sequence: Sequence::default(),
         })
     )]
     #[case(
-        "acks/ports/transfer/channels/channel-0/sequences/1",
+        "acks/ports/transfer/channels/channel-0/sequences/0",
         Path::Ack(AckPath {
             port_id: PortId::transfer(),
             channel_id: ChannelId::default(),
-            sequence: Sequence::from(1),
+            sequence: Sequence::default(),
         })
     )]
     #[case(
-        "receipts/ports/transfer/channels/channel-0/sequences/1",
+        "receipts/ports/transfer/channels/channel-0/sequences/0",
         Path::Receipt(ReceiptPath {
             port_id: PortId::transfer(),
             channel_id: ChannelId::default(),
-            sequence: Sequence::from(1),
+            sequence: Sequence::default(),
         })
     )]
     #[case(
