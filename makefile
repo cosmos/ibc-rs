@@ -31,7 +31,5 @@ test: ## Run tests with all features and without default features.
 check-release: ## Check that the release build compiles.
 	cargo release --workspace --no-push --no-tag --no-publish --exclude ibc-derive
 
-release: ## Performs an actual release and publishes to crates.io.
+release: ## Perform an actual release and publishes to crates.io.
 	cargo release --workspace --no-push --no-tag --exclude ibc-derive --allow-branch HEAD --execute
-
-
