@@ -3,8 +3,8 @@ set -euo pipefail
 
 # use ggrep for macOS, and grep for Linux
 case "$OSTYPE" in
-    linux-gnu*) GREP="grep" ;;
     darwin*) GREP="ggrep" ;;
+    linux-gnu*) GREP="grep" ;;
     *) echo "Unknown OS: $OSTYPE" && exit 1 ;;
 esac
 
