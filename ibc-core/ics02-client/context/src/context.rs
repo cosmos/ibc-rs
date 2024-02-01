@@ -17,7 +17,7 @@ pub trait ClientValidationContext {
     fn update_meta(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<(Timestamp, Height), ContextError>;
 }
 
@@ -60,7 +60,7 @@ pub trait ClientExecutionContext: Sized {
     /// and height as the time at which this update (or header) was processed.
     fn store_update_meta(
         &mut self,
-        client_id: &ClientId,
+        client_id: ClientId,
         height: Height,
         host_timestamp: Timestamp,
         host_height: Height,
@@ -75,7 +75,7 @@ pub trait ClientExecutionContext: Sized {
     /// Note that this timestamp is determined by the host.
     fn delete_update_meta(
         &mut self,
-        client_id: &ClientId,
+        client_id: ClientId,
         height: Height,
     ) -> Result<(), ContextError>;
 }

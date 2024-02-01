@@ -152,7 +152,7 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
     context
         .get_client_execution_context()
         .store_update_meta(
-            &ClientId::default(),
+            ClientId::default(),
             Height::new(0, 2).unwrap(),
             Timestamp::from_nanoseconds(5000).unwrap(),
             Height::new(0, 5).unwrap(),

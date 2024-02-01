@@ -204,7 +204,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         );
 
     ctx.store_update_meta(
-        &ClientId::default(),
+        ClientId::default(),
         client_height,
         Timestamp::from_nanoseconds(5).unwrap(),
         Height::new(0, 4).unwrap(),
@@ -286,7 +286,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
 
     ctx.get_client_execution_context()
         .store_update_meta(
-            &ClientId::default(),
+            ClientId::default(),
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 5).unwrap(),
@@ -335,7 +335,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
         );
 
     ctx.store_update_meta(
-        &ClientId::default(),
+        ClientId::default(),
         client_height,
         Timestamp::from_nanoseconds(1000).unwrap(),
         Height::new(0, 4).unwrap(),
