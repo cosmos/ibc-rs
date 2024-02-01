@@ -3,7 +3,7 @@
 use core::marker::{Send, Sync};
 
 use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::{Height, Status};
+use ibc_core_client_types::{Height, Status, UpdateKind};
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -165,6 +165,8 @@ where
         &self,
         ctx: &mut E,
         client_id: &ClientId,
+        _client_message: Any,
+        _update_kind: &UpdateKind,
     ) -> Result<(), ClientError>;
 
     // Update the client state and consensus state in the store with the upgraded ones.

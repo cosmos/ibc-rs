@@ -1,6 +1,9 @@
 use core::str::FromStr;
 use core::time::Duration;
 
+use ibc::clients::tendermint::types::{
+    TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
+};
 use ibc::core::client::context::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
@@ -223,10 +226,9 @@ where
         _ctx: &V,
         _client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        match update_kind {
-            UpdateKind::UpdateClient => {
+        match client_message.type_url.as_str() {
+            TENDERMINT_HEADER_TYPE_URL => {
                 let header = MockHeader::try_from(client_message)?;
 
                 if self.latest_height() >= header.height() {
@@ -236,7 +238,7 @@ where
                     });
                 }
             }
-            UpdateKind::SubmitMisbehaviour => {
+            TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
                 let _misbehaviour = Misbehaviour::try_from(client_message)?;
             }
         }
@@ -249,11 +251,10 @@ where
         _ctx: &V,
         _client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
-        match update_kind {
-            UpdateKind::UpdateClient => Ok(false),
-            UpdateKind::SubmitMisbehaviour => {
+        match client_message.type_url.as_str() {
+            TENDERMINT_HEADER_TYPE_URL => Ok(false),
+            TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
                 let misbehaviour = Misbehaviour::try_from(client_message)?;
                 let header_1 = misbehaviour.header1;
                 let header_2 = misbehaviour.header2;

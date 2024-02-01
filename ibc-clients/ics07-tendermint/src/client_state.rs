@@ -21,7 +21,7 @@ use ibc_core_client::context::client_state::{
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc_core_client::types::error::{ClientError, UpgradeClientError};
-use ibc_core_client::types::{Height, Status};
+use ibc_core_client::types::{Height, Status, UpdateKind};
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -399,6 +399,8 @@ where
         &self,
         ctx: &mut E,
         client_id: &ClientId,
+        _client_message: Any,
+        _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         // NOTE: frozen height is  set to `Height {revision_height: 0,
         // revision_number: 1}` and it is the same for all misbehaviour. This
