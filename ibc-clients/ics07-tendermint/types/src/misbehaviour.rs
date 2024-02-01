@@ -10,7 +10,7 @@ use ibc_proto::Protobuf;
 use crate::error::Error;
 use crate::header::Header;
 
-const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
+pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
 
 /// Tendermint light client's misbehaviour type
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]

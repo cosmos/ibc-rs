@@ -47,7 +47,12 @@ where
         MsgEnvelope::Client(msg) => match msg {
             ClientMsg::CreateClient(msg) => create_client::validate(ctx, msg),
             ClientMsg::UpdateClient(msg) => {
+                // MsgUpdateClient may now contain a misbehaviour report in its `client_message`
+                // field, so validating the msg with the assumption that it is a client update
+                // means that we're not properly handling misbehaviour reports. So we need to
+                // check here whether the MsgUpdateClient contains a misbehaviour report or not.
                 update_client::validate(ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg))
+                // update_client::validate(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
             }
             ClientMsg::Misbehaviour(msg) => {
                 update_client::validate(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))

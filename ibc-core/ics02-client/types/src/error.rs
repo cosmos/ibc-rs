@@ -96,6 +96,8 @@ pub enum ClientError {
     ClientSpecific { description: String },
     /// client counter overflow error
     CounterOverflow,
+    /// update client message did not contain valid header or misbehaviour
+    InvalidUpdateClientMessage,
     /// other error: `{description}`
     Other { description: String },
 }
