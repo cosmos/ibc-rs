@@ -586,18 +586,13 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
             "connections" => Some(ClientConnectionPath(client_id).into()),
             _ => None,
         }
-    } else if components.len() == 4 {
+    } else if components.len() == 4 || components.len() == 5 {
         match components[2] {
-            "consensusStates" | "processedTimes" | "processedHeights" => {}
-            _ => {}
+            "consensusStates" => {}
+            _ => return None,
         }
 
-        let epoch_height = match components.last() {
-            Some(eh) => *eh,
-            None => return None,
-        };
-
-        let epoch_height: Vec<&str> = epoch_height.split('-').collect();
+        let epoch_height: Vec<&str> = components[3].split('-').collect();
 
         if epoch_height.len() != 2 {
             return None;
@@ -616,8 +611,8 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
             Err(_) => return None,
         };
 
-        match components[2] {
-            "consensusStates" => Some(
+        match components.len() {
+            4 => Some(
                 ClientConsensusStatePath {
                     client_id,
                     revision_number,
@@ -625,22 +620,25 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
                 }
                 .into(),
             ),
-            "processedTimes" => Some(
-                ClientConsensusStateProcessedTimePath {
-                    client_id,
-                    revision_number,
-                    revision_height,
-                }
-                .into(),
-            ),
-            "processedHeights" => Some(
-                ClientConsensusStateProcessedHeightPath {
-                    client_id,
-                    revision_number,
-                    revision_height,
-                }
-                .into(),
-            ),
+            5 => match components[4] {
+                "processedTime" => Some(
+                    ClientUpdateTimePath {
+                        client_id,
+                        revision_number,
+                        revision_height,
+                    }
+                    .into(),
+                ),
+                "processedHeight" => Some(
+                    ClientUpdateHeightPath {
+                        client_id,
+                        revision_number,
+                        revision_height,
+                    }
+                    .into(),
+                ),
+                _ => None,
+            },
             _ => None,
         }
     } else {
