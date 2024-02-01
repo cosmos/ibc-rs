@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
+# Use ggrep if available (for macOS), otherwise grep.
+GREP=$(command -v ggrep || command -v grep)
+
 check_binary() {
     # exactly one argument is passed
     if [ $# -ne 1 ] || [ "$1" = "" ]; then
@@ -14,8 +17,7 @@ check_binary() {
     fi
 }
 
-
-check_binary grep
+check_binary "$GREP"
 check_binary find
 
 check_code_quality() {
@@ -25,7 +27,9 @@ check_code_quality() {
         exit 1
     fi
 
-    if find . -type f \( -name "*.toml" -o -name "*.rs" \) -not -path '*/.*' -exec grep "$1" "$2" {} \; | grep '.*'; then
+    if find . -type f -name "*.toml" -o -name "*.rs" \
+        -not -path '*/.*' -not -path '*/target/*' \
+        -exec $GREP "$1" "$2" {} \; | $GREP '.*'; then
         echo "$3"
         return 1
     else
@@ -37,6 +41,10 @@ exit_code=0
 
 check_code_quality -nHIP "\s+$" "found: trailing whitespaces" || exit_code=1
 check_code_quality -nHIP $"\t" "found: tabs" || exit_code=1
-check_code_quality -zLIP ".*\n\Z" "not found: newline at EOF" || exit_code=1
+check_code_quality -zLIP ".*\n\Z" "found: newline at EOF" || exit_code=1
+
+if [ "$exit_code" -eq 0 ]; then
+    echo "All code quality checks passed successfully."
+fi
 
 exit "$exit_code"
