@@ -1090,7 +1090,9 @@ mod tests {
         Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(0))
     )]
     fn successful_cases(#[case] path_str: &str, #[case] path: Path) {
+        // can be parsed into Path
         assert_eq!(Path::from_str(path_str).expect("no error"), path);
+        // can be converted back to string
         assert_eq!(path_str, path.to_string());
     }
 
@@ -1099,6 +1101,7 @@ mod tests {
     #[case("channels/channel-0")]
     #[case("sequences/0")]
     fn failure_cases(#[case] path_str: &str) {
+        // cannot be parsed into Path
         assert!(Path::from_str(path_str).is_err());
     }
 
