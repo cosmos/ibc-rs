@@ -45,7 +45,7 @@ exit_code=0
 
 check_code_quality -nHIP "\s+$" "found: trailing whitespaces" || exit_code=1
 check_code_quality -nHIP $"\t" "found: tabs" || exit_code=1
-check_code_quality -zLIP ".*\n\Z" "found: newline at EOF" || exit_code=1
+check_code_quality -zLIP ".*\n\Z" "found: no newline at EOF" || exit_code=1
 
 if [ "$exit_code" -eq 0 ]; then
     echo "All code quality checks passed successfully."
