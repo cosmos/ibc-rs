@@ -1089,7 +1089,7 @@ mod tests {
         "upgradedIBCState/0/upgradedConsState",
         Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(0))
     )]
-    fn successful_cases(#[case] path_str: &str, #[case] path: Path) {
+    fn test_successful_parsing(#[case] path_str: &str, #[case] path: Path) {
         // can be parsed into Path
         assert_eq!(Path::from_str(path_str).expect("no error"), path);
         // can be converted back to string
@@ -1100,7 +1100,7 @@ mod tests {
     #[case("clients/clientType")]
     #[case("channels/channel-0")]
     #[case("sequences/0")]
-    fn failure_cases(#[case] path_str: &str) {
+    fn test_failure_parsing(#[case] path_str: &str) {
         // cannot be parsed into Path
         assert!(Path::from_str(path_str).is_err());
     }
