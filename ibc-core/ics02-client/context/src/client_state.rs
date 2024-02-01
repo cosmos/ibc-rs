@@ -165,8 +165,8 @@ where
         &self,
         ctx: &mut E,
         client_id: &ClientId,
-        _client_message: Any,
-        _update_kind: &UpdateKind,
+        client_message: Any,
+        update_kind: &UpdateKind,
     ) -> Result<(), ClientError>;
 
     // Update the client state and consensus state in the store with the upgraded ones.
