@@ -14,7 +14,7 @@ use super::consensus_state::ConsensusState;
 pub trait ClientValidationContext {
     /// Returns the time and height when the client state for the given
     /// [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_meta(
+    fn update_meta(
         &self,
         client_id: &ClientId,
         height: Height,

@@ -75,7 +75,7 @@ pub enum Error {
     /// verification failed: `{detail}`
     VerificationError { detail: LightClientErrorDetail },
     /// Processed time or height for the client `{client_id}` at height `{height}` not found
-    ProcessedTimeNotFound { client_id: ClientId, height: Height },
+    UpdateMetaDataNotFound { client_id: ClientId, height: Height },
     /// The given hash of the validators does not matches the given hash in the signed header. Expected: `{signed_header_validators_hash}`, got: `{validators_hash}`
     MismatchValidatorsHashes {
         validators_hash: Hash,

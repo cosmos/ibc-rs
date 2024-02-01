@@ -156,7 +156,7 @@ impl TmValidationContext for MockContext {
 }
 
 impl ClientValidationContext for MockContext {
-    fn client_update_meta(
+    fn update_meta(
         &self,
         client_id: &ClientId,
         height: Height,
@@ -168,7 +168,7 @@ impl ClientValidationContext for MockContext {
             let height = ibc_store.client_processed_heights.get(&key)?;
             Some((*time, *height))
         })()
-        .ok_or(ClientError::ProcessedTimeNotFound {
+        .ok_or(ClientError::UpdateMetaDataNotFound {
             client_id: key.0,
             height,
         })
