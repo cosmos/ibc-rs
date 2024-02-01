@@ -220,7 +220,7 @@ impl ClientState {
                 break;
             }
             ctx.delete_consensus_state(client_consensus_state_path)?;
-            ctx.delete_update_meta(client_id, height)?;
+            ctx.delete_update_meta(client_id.clone(), height)?;
         }
 
         Ok(())

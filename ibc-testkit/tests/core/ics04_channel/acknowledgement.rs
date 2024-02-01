@@ -175,7 +175,7 @@ fn ack_success_happy_path(fixture: Fixture) {
         );
     ctx.get_client_execution_context()
         .store_update_meta(
-            &ClientId::default(),
+            ClientId::default(),
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 4).unwrap(),

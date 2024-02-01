@@ -159,9 +159,9 @@ impl ClientValidationContext for MockContext {
     fn update_meta(
         &self,
         client_id: &ClientId,
-        height: Height,
+        height: &Height,
     ) -> Result<(Timestamp, Height), ContextError> {
-        let key = (client_id.clone(), height);
+        let key = (client_id.clone(), *height);
         (|| {
             let ibc_store = self.ibc_store.lock();
             let time = ibc_store.client_processed_times.get(&key)?;
@@ -170,7 +170,7 @@ impl ClientValidationContext for MockContext {
         })()
         .ok_or(ClientError::UpdateMetaDataNotFound {
             client_id: key.0,
-            height,
+            height: key.1,
         })
         .map_err(ContextError::from)
     }
@@ -256,7 +256,7 @@ impl ClientExecutionContext for MockContext {
 
     fn delete_update_meta(
         &mut self,
-        client_id: &ClientId,
+        client_id: ClientId,
         height: Height,
     ) -> Result<(), ContextError> {
         let key = (client_id.clone(), height);
@@ -268,7 +268,7 @@ impl ClientExecutionContext for MockContext {
 
     fn store_update_meta(
         &mut self,
-        client_id: &ClientId,
+        client_id: ClientId,
         height: Height,
         host_timestamp: Timestamp,
         host_height: Height,
@@ -279,7 +279,7 @@ impl ClientExecutionContext for MockContext {
             .insert((client_id.clone(), height), host_timestamp);
         ibc_store
             .client_processed_heights
-            .insert((client_id.clone(), height), host_height);
+            .insert((client_id, height), host_height);
         Ok(())
     }
 }
