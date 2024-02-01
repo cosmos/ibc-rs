@@ -6,10 +6,9 @@ use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusStat
 use ibc::clients::tendermint::types::{
     TENDERMINT_CLIENT_STATE_TYPE_URL, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
-use ibc::core::client::context::client_state::ClientState as ClientStateTrait;
-use ibc::core::client::context::consensus_state::ConsensusState as ConsensusStateTrait;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::primitives::prelude::*;
+use ibc::derive::{ClientState, ConsensusState};
 use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::client_state::{
@@ -20,10 +19,9 @@ use crate::testapp::ibc::clients::mock::consensus_state::{
 };
 use crate::testapp::ibc::core::types::MockContext;
 
-#[derive(Debug, Clone, From, PartialEq, ClientStateTrait)]
-#[generics(ClientValidationContext = MockContext,
-           ClientExecutionContext = MockContext)
-]
+#[derive(Debug, Clone, From, PartialEq, ClientState)]
+#[validation(MockContext)]
+#[execution(MockContext)]
 pub enum AnyClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),
@@ -56,7 +54,7 @@ impl From<AnyClientState> for Any {
     }
 }
 
-#[derive(Debug, Clone, From, TryInto, PartialEq, ConsensusStateTrait)]
+#[derive(Debug, Clone, From, TryInto, PartialEq, ConsensusState)]
 pub enum AnyConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),

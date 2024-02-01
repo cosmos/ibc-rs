@@ -1,12 +1,13 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
-use ibc_core_client_context::client_state::{ClientStateCommon, ClientStateExecution};
+use ibc_core_client_context::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation,
+};
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::CreateClient;
 use ibc_core_client_types::msgs::MsgCreateClient;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 
@@ -27,17 +28,18 @@ where
 
     let client_state = ctx.decode_client_state(client_state)?;
 
-    client_state.verify_consensus_state(consensus_state)?;
+    let client_id = client_state.client_type().build_client_id(id_counter);
 
-    let client_type = client_state.client_type();
+    let status = client_state.status(ctx.get_client_validation_context(), &client_id)?;
 
-    let client_id = ClientId::new(client_type, id_counter).map_err(|e| {
-        ClientError::ClientIdentifierConstructor {
-            client_type: client_state.client_type(),
-            counter: id_counter,
-            validation_error: e,
+    if status.is_frozen() {
+        return Err(ClientError::ClientFrozen {
+            description: "the client is frozen".to_string(),
         }
-    })?;
+        .into());
+    };
+
+    client_state.verify_consensus_state(consensus_state)?;
 
     if ctx.client_state(&client_id).is_ok() {
         return Err(ClientError::ClientStateAlreadyExists { client_id }.into());
@@ -58,18 +60,9 @@ where
 
     // Construct this client's identifier
     let id_counter = ctx.client_counter()?;
-
     let client_state = ctx.decode_client_state(client_state)?;
-
     let client_type = client_state.client_type();
-
-    let client_id = ClientId::new(client_type.clone(), id_counter).map_err(|e| {
-        ContextError::from(ClientError::ClientIdentifierConstructor {
-            client_type: client_type.clone(),
-            counter: id_counter,
-            validation_error: e,
-        })
-    })?;
+    let client_id = client_type.build_client_id(id_counter);
 
     client_state.initialise(
         ctx.get_client_execution_context(),

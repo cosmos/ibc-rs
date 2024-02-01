@@ -10,7 +10,7 @@ keywords     = ["blockchain", "cosmos", "ibc", "host"]
 readme       = "./../README.md"
 description  = """
     Maintained by `ibc-rs`, contains essential top-level traits designed for the seamless integration
-    of host chains, facilitating access to the host's storage, the efficient retrieval of states and 
+    of host chains, facilitating access to the host's storage, the efficient retrieval of states and
     metadata crucial for the execution of any IBC datagrams.
 """
 
@@ -62,6 +62,7 @@ serde = [
 ]
 schema = [
     "ibc-core-client-types/schema",
+    "ibc-core-client-context/schema",
     "ibc-core-connection-types/schema",
     "ibc-core-channel-types/schema",
     "ibc-core-commitment-types/schema",
@@ -73,6 +74,7 @@ schema = [
 ]
 borsh = [
     "ibc-core-client-types/borsh",
+    "ibc-core-client-context/borsh",
     "ibc-core-connection-types/borsh",
     "ibc-core-channel-types/borsh",
     "ibc-core-commitment-types/borsh",

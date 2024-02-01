@@ -9,7 +9,7 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "core"]
 readme       = "README.md"
 description  = """
-    Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement IBC core (TAO) 
+    Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement IBC core (TAO)
     modules, facilitating seamless integration of IBC core business logic into any blockchain system.
 """
 
@@ -24,6 +24,7 @@ ibc-core-commitment-types = { workspace = true }
 ibc-core-host             = { workspace = true }
 ibc-core-router           = { workspace = true }
 ibc-core-handler          = { workspace = true }
+ibc-derive                = { workspace = true }
 ibc-primitives            = { workspace = true }
 
 [features]
@@ -36,6 +37,7 @@ std = [
     "ibc-core-host/std",
     "ibc-core-router/std",
     "ibc-core-handler/std",
+    "ibc-primitives/std",
 ]
 serde = [
     "ibc-core-client/serde",
@@ -45,6 +47,7 @@ serde = [
     "ibc-core-host/serde",
     "ibc-core-router/serde",
     "ibc-core-handler/serde",
+    "ibc-primitives/serde",
 ]
 borsh = [
     "ibc-core-client/borsh",
@@ -54,6 +57,7 @@ borsh = [
     "ibc-core-host/borsh",
     "ibc-core-router/borsh",
     "ibc-core-handler/borsh",
+    "ibc-primitives/borsh",
 ]
 schema = [
     "ibc-core-client/schema",
@@ -63,6 +67,7 @@ schema = [
     "ibc-core-host/schema",
     "ibc-core-router/schema",
     "ibc-core-handler/schema",
+    "ibc-primitives/schema",
     "serde",
     "std"
 ]
@@ -70,6 +75,7 @@ parity-scale-codec = [
     "ibc-core-client/parity-scale-codec",
     "ibc-core-connection/parity-scale-codec",
     "ibc-core-channel/parity-scale-codec",
+    "ibc-core-commitment-types/parity-scale-codec",
     "ibc-core-host/parity-scale-codec",
     "ibc-core-router/parity-scale-codec",
     "ibc-core-handler/parity-scale-codec",

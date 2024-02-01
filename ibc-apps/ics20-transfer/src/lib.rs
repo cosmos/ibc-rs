@@ -24,7 +24,6 @@ pub mod types {
     pub use ibc_app_transfer_types::*;
 }
 
-#[cfg(feature = "serde")]
 pub mod context;
 #[cfg(feature = "serde")]
 pub mod handler;

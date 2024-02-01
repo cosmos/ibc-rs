@@ -5,10 +5,11 @@ use core::str::FromStr;
 use derive_more::{Display, From};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
+#[cfg(feature = "serde")]
+use ibc_core::primitives::serializers;
 use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
 
 use super::error::TokenTransferError;
-use crate::serializers;
 
 /// The "base" of a denomination.
 ///

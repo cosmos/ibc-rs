@@ -17,6 +17,11 @@ pub enum TokenTransferError {
     ContextError(ContextError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
+    /// insufficient funds: tried to send `{send_attempt}`, sender only has `{available_funds}`
+    InsufficientFunds {
+        send_attempt: String,
+        available_funds: String,
+    },
     /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
     DestinationChannelNotFound {
         port_id: PortId,
@@ -70,6 +75,8 @@ pub enum TokenTransferError {
     InvalidCoin { coin: String },
     /// decoding raw bytes as UTF8 string error: `{0}`
     Utf8Decode(Utf8Error),
+    /// other error: `{0}`
+    Other(String),
 }
 
 #[cfg(feature = "std")]

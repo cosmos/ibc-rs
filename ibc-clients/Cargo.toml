@@ -9,7 +9,7 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "applications", "tendermint"]
 readme       = "README.md"
 description  = """
-    Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement 
+    Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement
     various IBC light clients, enabling smooth integration with IBC-enabled blockchains.
 """
 
@@ -18,17 +18,21 @@ all-features = true
 
 [dependencies]
 ibc-client-tendermint = { workspace = true }
+ibc-client-wasm-types = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
     "ibc-client-tendermint/std",
+    "ibc-client-wasm-types/std",
 ]
 serde = [
     "ibc-client-tendermint/serde",
+    "ibc-client-wasm-types/serde",
 ]
 schema = [
     "ibc-client-tendermint/schema",
+    "ibc-client-wasm-types/schema",
     "serde",
     "std"
 ]

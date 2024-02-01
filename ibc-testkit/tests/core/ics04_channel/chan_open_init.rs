@@ -6,12 +6,12 @@ use ibc::core::connection::types::{ConnectionEnd, State as ConnectionState};
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
+use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_init;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_init;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use rstest::*;
 use test_log::test;
 
@@ -33,7 +33,7 @@ fn fixture() -> Fixture {
 
     let msg_conn_init = dummy_msg_conn_open_init();
 
-    let client_id_on_a = ClientId::new(tm_client_type(), 0).unwrap();
+    let client_id_on_a = tm_client_type().build_client_id(0);
     let client_height = Height::new(0, 10).unwrap();
 
     let conn_end_on_a = ConnectionEnd::new(
@@ -46,7 +46,12 @@ fn fixture() -> Fixture {
     .unwrap();
 
     let ctx = default_ctx
-        .with_client(&client_id_on_a, client_height)
+        .with_client_config(
+            MockClientConfig::builder()
+                .client_id(client_id_on_a.clone())
+                .latest_height(client_height)
+                .build(),
+        )
         .with_connection(ConnectionId::default(), conn_end_on_a);
 
     Fixture { ctx, router, msg }
@@ -94,13 +99,15 @@ fn chan_open_init_execute_happy_path(fixture: Fixture) {
 
     assert_eq!(ctx.channel_counter().unwrap(), 1);
 
-    assert_eq!(ctx.events.len(), 2);
+    let ibc_events = ctx.get_events();
+
+    assert_eq!(ibc_events.len(), 2);
 
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Channel)
     ));
-    assert!(matches!(ctx.events[1], IbcEvent::OpenInitChannel(_)));
+    assert!(matches!(ibc_events[1], IbcEvent::OpenInitChannel(_)));
 }
 
 #[rstest]

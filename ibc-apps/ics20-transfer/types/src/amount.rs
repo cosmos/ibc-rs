@@ -4,6 +4,8 @@ use core::str::FromStr;
 
 use derive_more::{Display, From, Into};
 use ibc_core::primitives::prelude::*;
+#[cfg(feature = "serde")]
+use ibc_core::primitives::serializers;
 use primitive_types::U256;
 
 use super::error::TokenTransferError;
@@ -14,8 +16,8 @@ use super::error::TokenTransferError;
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display, From, Into)]
 pub struct Amount(
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
-    #[serde(serialize_with = "crate::serializers::serialize")]
-    #[serde(deserialize_with = "deserialize")]
+    #[cfg_attr(feature = "serde", serde(serialize_with = "serializers::serialize"))]
+    #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize"))]
     U256,
 );
 

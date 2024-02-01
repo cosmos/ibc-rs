@@ -9,8 +9,8 @@ repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "./../../README.md"
 description  = """
-    Maintaind by `ibc-rs`, contains essential APIs to interface with the host chain's store, 
-    enabling smooth client state transitions. Additionally, provides necessary traits for 
+    Maintaind by `ibc-rs`, contains essential APIs to interface with the host chain's store,
+    enabling smooth client state transitions. Additionally, provides necessary traits for
     implementing custom IBC light clients.
 """
 
@@ -28,7 +28,6 @@ ibc-core-client-types     = { workspace = true }
 ibc-core-commitment-types = { workspace = true }
 ibc-core-host-types       = { workspace = true }
 ibc-core-handler-types    = { workspace = true }
-ibc-derive                = { workspace = true }
 ibc-primitives            = { workspace = true }
 
 # cosmos dependencies
@@ -64,6 +63,7 @@ schema = [
     "ibc-core-client-types/schema",
     "ibc-core-host-types/schema",
     "ibc-core-handler-types/schema",
+    "ibc-primitives/schema",
     "serde",
     "std"
 ]

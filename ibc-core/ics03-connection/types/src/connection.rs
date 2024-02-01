@@ -559,6 +559,6 @@ impl TryFrom<i32> for State {
 
 impl From<State> for i32 {
     fn from(value: State) -> Self {
-        value.into()
+        value as i32
     }
 }

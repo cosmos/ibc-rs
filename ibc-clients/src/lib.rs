@@ -16,3 +16,9 @@ pub mod tendermint {
     #[doc(inline)]
     pub use ibc_client_tendermint::*;
 }
+
+/// Re-exports implementations of ICS-08 Wasm light client types.
+pub mod wasm_types {
+    #[doc(inline)]
+    pub use ibc_client_wasm_types::*;
+}

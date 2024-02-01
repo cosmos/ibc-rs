@@ -1,5 +1,147 @@
 # CHANGELOG
 
+## v0.50.0
+
+*January 24, 2024*
+
+This release introduces several noteworthy libraries. A standout addition is the
+implementation of the ICS-721 NFT transfer application, enabling the transfer of
+NFT packets across chains that support this capability.
+
+In addition, It incorporates the ICS-08 Wasm light client data structure and
+types. This empowers light client developers to create CosmWasm contracts for
+deployment on Cosmos chains compatible with the version of `ibc-go` supporting
+ICS-08 Wasm client.
+
+Furthermore, this release addresses the issue with the macro derivation of the
+`ClientState` when contexts include generic types, exposes additional convenient
+types and serializers through `ibc-primitives` and includes a more flexible
+constructor for `MockContext` types within the `ibc-testkit` crate, allowing to
+write tests with diverse parameter combinations.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- [ibc] Bump `ibc-proto-rs` to v0.41.0
+  ([\#1036](https://github.com/cosmos/ibc-rs/pull/1036)).
+
+### BUG FIXES
+
+- [ibc-derive] Refactor `ClientState` macro derivation to handle contexts with
+  generic types. ([\#910](https://github.com/cosmos/ibc-rs/issues/910))
+- [ibc-derive] Adapt macro derivations to integrate with projects dependent on
+  `ibc-core` ([\#999](https://github.com/cosmos/ibc-rs/issues/999)).
+
+### FEATURES
+
+- [ibc-app-nft-transfer] Implement ICS-721 NFT transfer application
+  ([\#346](https://github.com/cosmos/ibc-rs/issues/346))
+- [ibc-client-wasm-types] Implement ICS-08 Wasm light client domain types
+  ([\#1030](https://github.com/cosmos/ibc-rs/issues/1030)).
+
+### IMPROVEMENTS
+
+- [ibc-data-types] Re-export clients' domain type from `ibc-data-types`
+  ([\#1041](https://github.com/cosmos/ibc-rs/pull/1041)).
+- [ibc-testkit] Deprecate `MockContext::new*` in favor of `MockContextConfig`.
+  ([\#1042](https://github.com/cosmos/ibc-rs/issues/1042))
+- [ibc-testkit] Remove field access of `MockContext`.
+  ([\#1043](https://github.com/cosmos/ibc-rs/issues/1043))
+- [ibc-testkit] Deprecate `MockContext::with_client*` in favor of
+  `MockContext::with_client_config`.
+  ([\#1049](https://github.com/cosmos/ibc-rs/issues/1049))
+- [ibc-primitives] Re-export additional google proto types, like `Timestamp`
+  and `Duration` for added convenience when developing IBC light clients or
+  applications. ([\#1054](https://github.com/cosmos/ibc-rs/pull/1054))
+- [ibc-primitives] Relocate `serializers.rs` module to reside within the
+  `ibc-primitives` crate extending its utility for a broader range of IBC
+  applications. ([\#1055](https://github.com/cosmos/ibc-rs/issues/1055))
+
+## v0.49.1
+
+*January 3, 2024*
+
+This release continues the trend of further decoupling dependencies between the
+different ibc-rs sub-crates and modules.
+
+In particular, the `prost` dependency is now only imported in the
+`ibc-primitives` crate; note that error variants originating from `prost` have
+largely been removed, which is a breaking change. The `bytes` dependency was
+also removed. Additionally, `CommitmentProofBytes` can now be accessed without
+explicit ownership of the object for which the proof is being queried for.
+
+Some other improvements of note include making the CosmWasm check more rigorous,
+streamlining the `Msg` trait and renaming it to `ToProto`, as well as
+implementing custom JSON and Borsh `ChainId` deserialization.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- `[ibc-app-transfer]` Refactor `send-coins-*()` methods by breaking them down
+  into distinct escrow and unescrow methods, enhancing both clarity and
+  specificity in functionality.
+  ([\#837](https://github.com/cosmos/ibc-rs/issues/837))
+- `[ibc-app-transfer]` Add `memo` field to `escrow-coins-*()` and
+  `burn-coins-*()` methods, allowing implementors to pass in arbitrary data
+  necessary for their use case.
+  ([\#839](https://github.com/cosmos/ibc-rs/issues/837))
+- `[ibc-core-host-type]` Optimize `IdentifierError` variants and make them
+  mutually exclusive. ([\#978](https://github.com/cosmos/ibc-rs/issues/978))
+- `[ibc-data-types]` Bump ibc-proto-rs dependency to v0.39.1.
+  ([\#993](https://github.com/cosmos/ibc-rs/issues/993))
+- `[ibc]` Minimize `prost` dependency by introducing `ToVec` trait
+  - Now `prost` is only imported in `ibc-primitives` crate
+  - Remove error variants originating from `prost` (Breaking change)
+  - Eliminate the need for the `bytes` dependency
+ ([\#997](https://github.com/cosmos/ibc-rs/issues/997))
+- `[ibc-core-host-types]` Introduce `ClientType::build_client_id` which avoids unnecessary validation.
+  ([#1014](https://github.com/cosmos/ibc-rs/issues/1014))
+- `[ibc-core-host-types]` Optimise `ClientId::new` to avoid unnecessary validation and temporary
+  string allocation. ([#1014](https://github.com/cosmos/ibc-rs/issues/1014))
+
+### FEATURES
+
+- `[ibc-core-commitment-types]` implement `AsRef<Vec<u8>>` and
+  `AsRef<[u8]>` for `CommitmentProofBytes` so it’s possible to gain
+  access to the proof byte slice without having to own the object.
+  ([#1008](https://github.com/cosmos/ibc-rs/pull/1008))
+
+### IMPROVEMENTS
+
+- `[cw-check]` More rigorous CosmWasm check by upgrading dependencies and
+  including `std` and `schema` features for `ibc-core`.
+  ([\#992](https://github.com/cosmos/ibc-rs/pull/992))
+- `[ibc-primitives]` streamline `Msg` trait and rename to `ToProto`
+ ([#993](https://github.com/cosmos/ibc-rs/issues/993))
+- `[ibc-core-host-types]` Implement custom JSON and Borsh deserialization for `ChainId` ([#996](https://github.com/cosmos/ibc-rs/pull/1013))
+- `[ibc-core-client-types]` Add a convenient `Status::verify_is_active` method.
+  ([#1005](https://github.com/cosmos/ibc-rs/pull/1005))
+- `[ibc-primitives]` Derive `Hash` on `Timestamp` instead of explicit
+  implementation ([#1011](https://github.com/cosmos/ibc-rs/pull/1005))
+- `[ibc-derive]` Use global paths in generated code by macros to prevent
+  namespace conflicts with local modules
+  ([#1017](https://github.com/cosmos/ibc-rs/pull/1017))
+
+## v0.48.2
+
+*December 22, 2023*
+
+This patch release resolves two issues. It corrects the packet sequence number
+encoding within Timeout message handlers to align with the big-endian format and
+addresses a recursive call error during the conversion from connection `State`
+to `i32`.
+
+There are no consensus-breaking changes.
+
+### BUG FIXES
+
+- `[ibc-core-host-types]` Encode packet sequence into a big endian bytes.
+  ([\#1004](https://github.com/cosmos/ibc-rs/pull/1004))
+- `[ibc-core-connection-types]` Fix recursive call in connection `State`
+  conversion to `i32` ([\#1010](https://github.com/cosmos/ibc-rs/issues/1010))
+
 ## v0.48.1
 
 *November 27, 2023*

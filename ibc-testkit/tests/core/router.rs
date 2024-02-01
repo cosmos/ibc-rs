@@ -190,12 +190,14 @@ fn routing_module_and_keepers() {
             "ICS26 routing dispatch test 'client creation' failed for message {create_client_msg:?} with result: {res:?}",
         );
 
+    let ibc_events = ctx.get_events();
+
     // Figure out the ID of the client that was just created.
     assert!(matches!(
-        ctx.events[0],
+        ibc_events[0],
         IbcEvent::Message(MessageEvent::Client)
     ));
-    let client_id_event = ctx.events.get(1);
+    let client_id_event = ibc_events.get(1);
     assert!(
         client_id_event.is_some(),
         "There was no event generated for client creation!"

@@ -1,10 +1,8 @@
 use ibc::apps::transfer::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
 use ibc::apps::transfer::types::error::TokenTransferError;
-use ibc::apps::transfer::types::PrefixedCoin;
+use ibc::apps::transfer::types::{Memo, PrefixedCoin};
 use ibc::core::host::types::identifiers::{ChannelId, PortId};
 use ibc::core::primitives::Signer;
-use ibc::cosmos_host::utils::cosmos_adr028_escrow_address;
-use subtle_encoding::bech32;
 
 use super::types::DummyTransferModule;
 
@@ -15,15 +13,6 @@ impl TokenTransferValidationContext for DummyTransferModule {
         Ok(PortId::transfer())
     }
 
-    fn get_escrow_account(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<Self::AccountId, TokenTransferError> {
-        let addr = cosmos_adr028_escrow_address(port_id, channel_id);
-        Ok(bech32::encode("cosmos", addr).into())
-    }
-
     fn can_send_coins(&self) -> Result<(), TokenTransferError> {
         Ok(())
     }
@@ -31,11 +20,22 @@ impl TokenTransferValidationContext for DummyTransferModule {
     fn can_receive_coins(&self) -> Result<(), TokenTransferError> {
         Ok(())
     }
-
-    fn send_coins_validate(
+    fn escrow_coins_validate(
         &self,
         _from_account: &Self::AccountId,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _coin: &PrefixedCoin,
+        _memo: &Memo,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn unescrow_coins_validate(
+        &self,
         _to_account: &Self::AccountId,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
         _coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError> {
         Ok(())
@@ -53,16 +53,29 @@ impl TokenTransferValidationContext for DummyTransferModule {
         &self,
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
+        _memo: &Memo,
     ) -> Result<(), TokenTransferError> {
         Ok(())
     }
 }
 
 impl TokenTransferExecutionContext for DummyTransferModule {
-    fn send_coins_execute(
+    fn escrow_coins_execute(
         &mut self,
         _from_account: &Self::AccountId,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
+        _coin: &PrefixedCoin,
+        _memo: &Memo,
+    ) -> Result<(), TokenTransferError> {
+        Ok(())
+    }
+
+    fn unescrow_coins_execute(
+        &mut self,
         _to_account: &Self::AccountId,
+        _port_id: &PortId,
+        _channel_id: &ChannelId,
         _coin: &PrefixedCoin,
     ) -> Result<(), TokenTransferError> {
         Ok(())
@@ -80,6 +93,7 @@ impl TokenTransferExecutionContext for DummyTransferModule {
         &mut self,
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
+        _memo: &Memo,
     ) -> Result<(), TokenTransferError> {
         Ok(())
     }

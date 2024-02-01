@@ -3,9 +3,6 @@
 use core::marker::{Send, Sync};
 
 use ibc_core_commitment_types::commitment::CommitmentRoot;
-/// Derive macro that implements [`ConsensusState`] for enums containing
-/// variants that implement [`ConsensusState`]
-pub use ibc_derive::ConsensusState;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 

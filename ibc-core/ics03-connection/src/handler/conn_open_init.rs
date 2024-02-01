@@ -1,6 +1,5 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
 use ibc_core_client::context::client_state::ClientStateValidation;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection_types::events::OpenInit;
 use ibc_core_connection_types::msgs::MsgConnectionOpenInit;
 use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
@@ -20,13 +19,9 @@ where
     // An IBC client running on the local (host) chain should exist.
     let client_state_of_b_on_a = ctx_a.client_state(&msg.client_id_on_a)?;
 
-    {
-        let status = client_state_of_b_on_a
-            .status(ctx_a.get_client_validation_context(), &msg.client_id_on_a)?;
-        if !status.is_active() {
-            return Err(ClientError::ClientNotActive { status }.into());
-        }
-    }
+    client_state_of_b_on_a
+        .status(ctx_a.get_client_validation_context(), &msg.client_id_on_a)?
+        .verify_is_active()?;
 
     if let Some(version) = msg.version {
         version.verify_is_supported(&ctx_a.get_compatible_versions())?;

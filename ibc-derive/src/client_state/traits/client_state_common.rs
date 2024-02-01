@@ -9,54 +9,62 @@ use crate::utils::{get_enum_variant_type_path, Imports};
 pub(crate) fn impl_ClientStateCommon(
     client_state_enum_name: &Ident,
     enum_variants: &Punctuated<Variant, Comma>,
+    imports: &Imports,
 ) -> TokenStream {
     let verify_consensus_state_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         quote! { verify_consensus_state(cs, consensus_state) },
+        imports,
     );
     let client_type_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         quote! {client_type(cs)},
+        imports,
     );
     let latest_height_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         quote! {latest_height(cs)},
+        imports,
     );
     let validate_proof_height_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         quote! {validate_proof_height(cs, proof_height)},
+        imports,
     );
     let verify_upgrade_client_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         quote! {verify_upgrade_client(cs, upgraded_client_state, upgraded_consensus_state, proof_upgrade_client, proof_upgrade_consensus_state, root)},
+        imports,
     );
     let verify_membership_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         quote! {verify_membership(cs, prefix, proof, root, path, value)},
+        imports,
     );
     let verify_non_membership_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         quote! {verify_non_membership(cs, prefix, proof, root, path)},
+        imports,
     );
 
     let HostClientState = client_state_enum_name;
 
-    let Any = Imports::Any();
-    let CommitmentRoot = Imports::CommitmentRoot();
-    let CommitmentPrefix = Imports::CommitmentPrefix();
-    let CommitmentProofBytes = Imports::CommitmentProofBytes();
-    let ClientStateCommon = Imports::ClientStateCommon();
-    let ClientType = Imports::ClientType();
-    let ClientError = Imports::ClientError();
-    let Height = Imports::Height();
-    let Path = Imports::Path();
+    let Any = imports.any();
+    let CommitmentRoot = imports.commitment_root();
+    let CommitmentPrefix = imports.commitment_prefix();
+    let CommitmentProofBytes = imports.commitment_proof_bytes();
+    let ClientStateCommon = imports.client_state_common();
+    let ClientType = imports.client_type();
+    let ClientError = imports.client_error();
+    let Height = imports.height();
+    let Path = imports.path();
 
     quote! {
         impl #ClientStateCommon for #HostClientState {
@@ -156,8 +164,9 @@ fn delegate_call_in_match(
     enum_name: &Ident,
     enum_variants: Iter<'_, Variant>,
     fn_call: TokenStream,
+    imports: &Imports,
 ) -> Vec<TokenStream> {
-    let ClientStateCommon = Imports::ClientStateCommon();
+    let ClientStateCommon = imports.client_state_common();
 
     enum_variants
         .map(|variant| {

@@ -10,7 +10,6 @@
 
 use ibc_client_tendermint_types::error::Error;
 use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
-use ibc_client_tendermint_types::proto::{Any, Protobuf};
 use ibc_client_tendermint_types::{
     client_type as tm_client_type, ClientState as ClientStateType,
     ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
@@ -32,6 +31,7 @@ use ibc_core_host::types::path::{
 };
 use ibc_core_host::ExecutionContext;
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
 
 use super::consensus_state::ConsensusState as TmConsensusState;
@@ -199,7 +199,7 @@ impl ClientStateCommon for ClientState {
     ) -> Result<(), ClientError> {
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
         let merkle_proof =
-            MerkleProof::try_from(proof.clone()).map_err(ClientError::InvalidCommitmentProof)?;
+            MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
         merkle_proof
             .verify_membership(
@@ -221,7 +221,7 @@ impl ClientStateCommon for ClientState {
     ) -> Result<(), ClientError> {
         let merkle_path = apply_prefix(prefix, vec![path.to_string()]);
         let merkle_proof =
-            MerkleProof::try_from(proof.clone()).map_err(ClientError::InvalidCommitmentProof)?;
+            MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
         merkle_proof
             .verify_non_membership(&self.0.proof_specs, root.clone().into(), merkle_path)
@@ -399,6 +399,11 @@ where
         _client_message: Any,
         _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
+        // NOTE: frozen height is  set to `Height {revision_height: 0,
+        // revision_number: 1}` and it is the same for all misbehaviour. This
+        // aligns with the
+        // [`ibc-go`](https://github.com/cosmos/ibc-go/blob/0e3f428e66d6fc0fc6b10d2f3c658aaa5000daf7/modules/light-clients/07-tendermint/misbehaviour.go#L18-L19)
+        // implementation.
         let frozen_client_state = self.0.clone().with_frozen_height(Height::min(0));
 
         let wrapped_frozen_client_state = ClientState::from(frozen_client_state);

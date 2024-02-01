@@ -193,10 +193,8 @@ enum AnyConsensusState {
 }
 
 #[derive(ClientState)]
-#[generics(
-    ClientValidationContext = MyClientValidationContext,
-    ClientExecutionContext  = MyClientExecutionContext
-)]
+#[validation(MyClientValidationContext)]
+#[execution(MyClientExecutionContext)]
 enum AnyClientState {
     Tendermint(TmClientState),
     Near(NearClientState),

@@ -14,7 +14,7 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use test_log::test;
 
 #[test]
@@ -92,7 +92,11 @@ fn send_packet_processing() {
             name: "Good parameters".to_string(),
             ctx: context
                 .clone()
-                .with_client(&ClientId::default(), client_height)
+                .with_client_config(
+                    MockClientConfig::builder()
+                        .latest_height(client_height)
+                        .build(),
+                )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
                     PortId::transfer(),
@@ -107,7 +111,11 @@ fn send_packet_processing() {
             name: "Packet timeout height same as destination chain height".to_string(),
             ctx: context
                 .clone()
-                .with_client(&ClientId::default(), client_height)
+                .with_client_config(
+                    MockClientConfig::builder()
+                        .latest_height(client_height)
+                        .build(),
+                )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
                     PortId::transfer(),
@@ -122,7 +130,11 @@ fn send_packet_processing() {
             name: "Packet timeout height one more than destination chain height".to_string(),
             ctx: context
                 .clone()
-                .with_client(&ClientId::default(), client_height)
+                .with_client_config(
+                    MockClientConfig::builder()
+                        .latest_height(client_height)
+                        .build(),
+                )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
                     PortId::transfer(),
@@ -136,7 +148,11 @@ fn send_packet_processing() {
         Test {
             name: "Packet timeout due to timestamp".to_string(),
             ctx: context
-                .with_client(&ClientId::default(), client_height)
+                .with_client_config(
+                    MockClientConfig::builder()
+                        .latest_height(client_height)
+                        .build(),
+                )
                 .with_connection(ConnectionId::default(), conn_end_on_a)
                 .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)
                 .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
@@ -160,15 +176,17 @@ fn send_packet_processing() {
                         test.ctx.clone()
                     );
 
-                assert!(!test.ctx.events.is_empty()); // Some events must exist.
+                let ibc_events = test.ctx.get_events();
 
-                assert_eq!(test.ctx.events.len(), 2);
+                assert!(!ibc_events.is_empty()); // Some events must exist.
+
+                assert_eq!(ibc_events.len(), 2);
                 assert!(matches!(
-                    &test.ctx.events[0],
+                    &ibc_events[0],
                     &IbcEvent::Message(MessageEvent::Channel)
                 ));
                 // TODO: The object in the output is a PacketResult what can we check on it?
-                assert!(matches!(&test.ctx.events[1], &IbcEvent::SendPacket(_)));
+                assert!(matches!(&ibc_events[1], &IbcEvent::SendPacket(_)));
             }
             Err(e) => {
                 assert!(

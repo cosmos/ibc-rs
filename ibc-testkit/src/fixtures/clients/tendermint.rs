@@ -169,16 +169,27 @@ pub fn dummy_ics07_header() -> Header {
 mod tests {
 
     use ibc::primitives::proto::Any;
+    use rstest::rstest;
 
     use super::*;
 
-    #[test]
-    fn tm_client_state_conversions_healthy() {
+    #[rstest]
+    // try conversions for when the client is not frozen
+    #[case::valid_client(0, 0, false)]
+    // try conversions for when the client is frozen
+    #[case::frozen_client(0, 1, true)]
+    fn tm_client_state_conversions_healthy(
+        #[case] revision_number: u64,
+        #[case] revision_height: u64,
+        #[case] is_frozen: bool,
+    ) {
+        let frozen_height = RawHeight {
+            revision_number,
+            revision_height,
+        };
+
         // check client state creation path from a proto type
-        let tm_client_state_from_raw = dummy_tm_client_state_from_raw(RawHeight {
-            revision_number: 0,
-            revision_height: 0,
-        });
+        let tm_client_state_from_raw = dummy_tm_client_state_from_raw(frozen_height);
         assert!(tm_client_state_from_raw.is_ok());
 
         let any_from_tm_client_state = Any::from(
@@ -190,10 +201,20 @@ mod tests {
         let tm_client_state_from_any = ClientStateType::try_from(any_from_tm_client_state);
         assert!(tm_client_state_from_any.is_ok());
         assert_eq!(
+            Some(is_frozen),
+            tm_client_state_from_any
+                .as_ref()
+                .map(|x| x.is_frozen())
+                .ok()
+        );
+        assert_eq!(
             tm_client_state_from_raw.expect("Never fails"),
             tm_client_state_from_any.expect("Never fails").into()
         );
+    }
 
+    #[test]
+    fn tm_client_state_from_header_healthy() {
         // check client state creation path from a tendermint header
         let tm_header = dummy_tendermint_header();
         let tm_client_state_from_header = dummy_tm_client_state_from_header(tm_header);
@@ -204,17 +225,5 @@ mod tests {
             tm_client_state_from_header,
             tm_client_state_from_any.expect("Never fails").into()
         );
-    }
-
-    #[test]
-    fn tm_client_state_malformed_with_frozen_height() {
-        let tm_client_state_from_raw = dummy_tm_client_state_from_raw(RawHeight {
-            revision_number: 0,
-            revision_height: 10,
-        });
-        match tm_client_state_from_raw {
-            Err(Error::FrozenHeightNotAllowed) => {}
-            _ => panic!("Expected to fail with FrozenHeightNotAllowed error"),
-        }
     }
 }

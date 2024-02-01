@@ -10,7 +10,7 @@ keywords     = ["blockchain", "cosmos", "ibc", "host", "types"]
 readme       = "./../../README.md"
 description  = """
     Maintained by `ibc-rs`, encapsulates essential ICS-24 Host Requirements data structures and domain types,
-    as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal applicability 
+    as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal applicability
     to facilitate development and integration across diverse IBC-enabled projects.
 """
 
@@ -33,7 +33,8 @@ parity-scale-codec  = { workspace = true, optional = true }
 scale-info          = { workspace = true, optional = true }
 
 [dev-dependencies]
-rstest = { workspace = true }
+rstest     = { workspace = true }
+serde_json = { workspace = true }
 
 [features]
 default = ["std"]

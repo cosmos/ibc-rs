@@ -6,13 +6,13 @@ use core::str::FromStr;
 use core::time::Duration;
 
 use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::proto::v1::Height as RawHeight;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::specs::ProofSpecs;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::ZERO_DURATION;
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::Protobuf;
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
@@ -62,6 +62,7 @@ impl ClientState {
         latest_height: Height,
         proof_specs: ProofSpecs,
         upgrade_path: Vec<String>,
+        frozen_height: Option<Height>,
         allow_update: AllowUpdate,
     ) -> Self {
         Self {
@@ -74,11 +75,13 @@ impl ClientState {
             proof_specs,
             upgrade_path,
             allow_update,
-            frozen_height: None,
+            frozen_height,
             verifier: ProdVerifier::default(),
         }
     }
 
+    /// Constructs a new Tendermint `ClientState` by given parameters and checks
+    /// if the parameters are valid.
     #[allow(clippy::too_many_arguments)]
     pub fn new(
         chain_id: ChainId,
@@ -100,6 +103,7 @@ impl ClientState {
             latest_height,
             proof_specs,
             upgrade_path,
+            None, // New valid client must not be frozen.
             allow_update,
         );
         client_state.validate()?;
@@ -280,16 +284,11 @@ impl TryFrom<RawTmClientState> for ClientState {
             .try_into()
             .map_err(|_| Error::MissingLatestHeight)?;
 
-        // In `RawClientState`, a `frozen_height` of `0` means "not frozen".
-        // See:
+        // NOTE: In `RawClientState`, a `frozen_height` of `0` means "not
+        // frozen". See:
         // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-        if raw
-            .frozen_height
-            .and_then(|h| Height::try_from(h).ok())
-            .is_some()
-        {
-            return Err(Error::FrozenHeightNotAllowed);
-        }
+        let frozen_height =
+            Height::try_from(raw.frozen_height.ok_or(Error::MissingFrozenHeight)?).ok();
 
         // We use set this deprecated field just so that we can properly convert
         // it back in its raw form
@@ -308,6 +307,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             latest_height,
             raw.proof_specs.into(),
             raw.upgrade_path,
+            frozen_height,
             allow_update,
         );
 
@@ -324,6 +324,11 @@ impl From<ClientState> for RawTmClientState {
             trusting_period: Some(value.trusting_period.into()),
             unbonding_period: Some(value.unbonding_period.into()),
             max_clock_drift: Some(value.max_clock_drift.into()),
+            // NOTE: The protobuf encoded `frozen_height` of an active client
+            // must be set to `0` so that `ibc-go` driven chains can properly
+            // decode the `ClientState` value. In `RawClientState`, a
+            // `frozen_height` of `0` means "not frozen". See:
+            // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
             frozen_height: Some(value.frozen_height.map(|height| height.into()).unwrap_or(
                 RawHeight {
                     revision_number: 0,

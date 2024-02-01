@@ -2,75 +2,114 @@ use proc_macro2::TokenStream;
 use quote::quote;
 use syn::{Path, Variant};
 
+/// The IBC crates that we already support in the derive macro
+pub enum SupportedCrate {
+    Ibc,
+    IbcCore,
+}
+
 /// Encodes the ibc-rs types that will be used in the macro
 ///
-/// Note: we use `ibc` as our top-level crate, due to the
-/// `extern crate ibc as ibc;` statement we inject.
-pub struct Imports;
+/// Note: we use `ibc` or `ibc-core` as our top-level crate, due to the `extern
+/// crate ibc as ibc;` statement we inject.
+pub struct Imports {
+    prefix: TokenStream,
+}
 
 impl Imports {
-    pub fn CommitmentRoot() -> TokenStream {
-        quote! {ibc::core::commitment_types::commitment::CommitmentRoot}
+    pub fn new(crate_name: SupportedCrate) -> Self {
+        let prefix = match crate_name {
+            SupportedCrate::Ibc => quote! {::ibc::core},
+            SupportedCrate::IbcCore => quote! {::ibc_core},
+        };
+
+        Self { prefix }
     }
 
-    pub fn CommitmentPrefix() -> TokenStream {
-        quote! {ibc::core::commitment_types::commitment::CommitmentPrefix}
+    pub fn prefix(&self) -> &TokenStream {
+        &self.prefix
+    }
+}
+
+impl Imports {
+    pub fn commitment_root(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::commitment_types::commitment::CommitmentRoot}
     }
 
-    pub fn CommitmentProofBytes() -> TokenStream {
-        quote! {ibc::core::commitment_types::commitment::CommitmentProofBytes}
+    pub fn commitment_prefix(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::commitment_types::commitment::CommitmentPrefix}
     }
 
-    pub fn Path() -> TokenStream {
-        quote! {ibc::core::host::types::path::Path}
+    pub fn commitment_proof_bytes(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::commitment_types::commitment::CommitmentProofBytes}
     }
 
-    pub fn ConsensusState() -> TokenStream {
-        quote! {ibc::core::client::context::consensus_state::ConsensusState}
+    pub fn path(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::host::types::path::Path}
     }
 
-    pub fn ClientStateCommon() -> TokenStream {
-        quote! {ibc::core::client::context::client_state::ClientStateCommon}
+    pub fn consensus_state(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::client::context::consensus_state::ConsensusState}
     }
 
-    pub fn ClientStateValidation() -> TokenStream {
-        quote! {ibc::core::client::context::client_state::ClientStateValidation}
+    pub fn client_state_common(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::client::context::client_state::ClientStateCommon}
     }
 
-    pub fn ClientStateExecution() -> TokenStream {
-        quote! {ibc::core::client::context::client_state::ClientStateExecution}
+    pub fn client_state_validation(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::client::context::client_state::ClientStateValidation}
     }
 
-    pub fn ClientId() -> TokenStream {
-        quote! {ibc::core::host::types::identifiers::ClientId}
+    pub fn client_state_execution(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::client::context::client_state::ClientStateExecution}
     }
 
-    pub fn ClientType() -> TokenStream {
-        quote! {ibc::core::host::types::identifiers::ClientType}
+    pub fn client_id(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::host::types::identifiers::ClientId}
     }
 
-    pub fn ClientError() -> TokenStream {
-        quote! {ibc::core::client::types::error::ClientError}
+    pub fn client_type(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::host::types::identifiers::ClientType}
     }
 
-    pub fn Height() -> TokenStream {
-        quote! {ibc::core::client::types::Height}
+    pub fn client_error(&self) -> TokenStream {
+        let prefix = self.prefix();
+        quote! {#prefix::client::types::error::ClientError}
     }
 
-    pub fn Any() -> TokenStream {
-        quote! {ibc::primitives::proto::Any}
+    pub fn height(&self) -> TokenStream {
+        let prefix = self.prefix();
+        quote! {#prefix::client::types::Height}
     }
 
-    pub fn Timestamp() -> TokenStream {
-        quote! {ibc::core::primitives::Timestamp}
+    pub fn any(&self) -> TokenStream {
+        let prefix = self.prefix();
+        quote! {#prefix::primitives::proto::Any}
     }
 
-    pub fn UpdateKind() -> TokenStream {
-        quote! {ibc::core::client::types::UpdateKind}
+    pub fn timestamp(&self) -> TokenStream {
+        let prefix = self.prefix();
+        quote! {#prefix::primitives::Timestamp}
     }
 
-    pub fn Status() -> TokenStream {
-        quote! {ibc::core::client::types::Status}
+    pub fn update_kind(&self) -> TokenStream {
+        let prefix = self.prefix();
+        quote! {#prefix::client::types::UpdateKind}
+    }
+
+    pub fn status(&self) -> TokenStream {
+        let prefix = self.prefix();
+        quote! {#prefix::client::types::Status}
     }
 }
 
@@ -80,7 +119,7 @@ impl Imports {
 /// For example, given
 /// ```ignore
 ///
-/// #[derive(ClientState)]
+/// #[derive(IbcClientState)]
 /// enum HostClientState {
 ///     Tendermint(TmClientState),
 /// }
