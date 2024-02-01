@@ -1,8 +1,12 @@
 #!/bin/bash
 set -euo pipefail
 
-# Use ggrep if available (for macOS), otherwise grep.
-GREP=$(command -v ggrep || command -v grep)
+# use ggrep for macOS, and grep for Linux
+case "$OSTYPE" in
+    linux-gnu*) GREP="grep" ;;
+    darwin*) GREP="ggrep" ;;
+    *) echo "Unknown OS: $OSTYPE" && exit 1 ;;
+esac
 
 check_binary() {
     # exactly one argument is passed
