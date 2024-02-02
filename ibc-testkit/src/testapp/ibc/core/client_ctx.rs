@@ -60,7 +60,7 @@ impl<S> ClientValidationContext for MockGenericContext<S>
 where
     S: ProvableStore + Debug,
 {
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`IbcHeight`]
+    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
     fn client_update_time(
         &self,
         client_id: &ClientId,
@@ -79,7 +79,7 @@ where
         Ok(processed_timestamp)
     }
 
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`IbcHeight`]
+    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
     fn client_update_height(
         &self,
         client_id: &ClientId,

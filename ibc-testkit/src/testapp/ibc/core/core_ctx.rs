@@ -274,7 +274,7 @@ impl<S> ProvableContext for MockGenericContext<S>
 where
     S: ProvableStore + Debug,
 {
-    /// Returns the proof for the given [`IbcHeight`] and [`Path`]
+    /// Returns the proof for the given [`Height`] and [`Path`]
     fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>> {
         self.ibc_store
             .store
