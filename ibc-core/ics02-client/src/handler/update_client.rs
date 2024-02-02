@@ -63,7 +63,6 @@ where
             ctx.get_client_execution_context(),
             &client_id,
             client_message,
-            &update_kind,
         )?;
 
         let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(

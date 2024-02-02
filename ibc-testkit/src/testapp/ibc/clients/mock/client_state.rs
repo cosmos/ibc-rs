@@ -9,7 +9,7 @@ use ibc::core::client::context::client_state::{
 };
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
-use ibc::core::client::types::{Height, Status, UpdateKind};
+use ibc::core::client::types::{Height, Status};
 use ibc::core::commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -241,6 +241,7 @@ where
             TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
                 let _misbehaviour = Misbehaviour::try_from(client_message)?;
             }
+            _ => {}
         }
 
         Ok(())
@@ -264,6 +265,7 @@ where
 
                 Ok(header_heights_equal && headers_are_in_future)
             }
+            _ => Ok(false),
         }
     }
 
@@ -362,7 +364,6 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         _client_message: Any,
-        _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         let frozen_client_state = self.with_frozen_height(Height::min(0));
 
