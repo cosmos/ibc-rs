@@ -48,7 +48,6 @@ impl From<MockConsensusState> for RawMockConsensusState {
     fn from(value: MockConsensusState) -> Self {
         RawMockConsensusState {
             header: Some(value.header.into()),
-            bytes: value.root.into_vec(),
         }
     }
 }

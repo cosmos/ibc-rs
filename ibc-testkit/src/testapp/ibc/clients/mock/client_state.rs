@@ -22,7 +22,6 @@ use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::mock::misbehaviour::Misbehaviour;
 use crate::testapp::ibc::clients::mock::proto::ClientState as RawMockClientState;
-use crate::testapp::ibc::utils::{duration_gpb_to_ibc, duration_ibc_to_gbp};
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
@@ -38,8 +37,7 @@ pub fn client_type() -> ClientType {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct MockClientState {
     pub header: MockHeader,
-    pub max_clock_drift: Option<Duration>,
-    pub trusting_period: Option<Duration>,
+    pub trusting_period: Duration,
     pub frozen: bool,
 }
 
@@ -47,8 +45,7 @@ impl MockClientState {
     pub fn new(header: MockHeader) -> Self {
         Self {
             header,
-            max_clock_drift: None,
-            trusting_period: None,
+            trusting_period: Duration::from_nanos(0),
             frozen: false,
         }
     }
@@ -59,6 +56,13 @@ impl MockClientState {
 
     pub fn refresh_time(&self) -> Option<Duration> {
         None
+    }
+
+    pub fn with_trusting_period(self, trusting_period: Duration) -> Self {
+        Self {
+            trusting_period,
+            ..self
+        }
     }
 
     pub fn with_frozen_height(self, _frozen_height: Height) -> Self {
@@ -90,8 +94,7 @@ impl TryFrom<RawMockClientState> for MockClientState {
                     description: "header is not present".into(),
                 })?
                 .try_into()?,
-            max_clock_drift: raw.max_clock_drift.map(duration_gpb_to_ibc),
-            trusting_period: raw.trusting_period.map(duration_gpb_to_ibc),
+            trusting_period: Duration::from_nanos(raw.trusting_period),
             frozen: raw.frozen,
         })
     }
@@ -101,8 +104,7 @@ impl From<MockClientState> for RawMockClientState {
     fn from(value: MockClientState) -> Self {
         RawMockClientState {
             header: Some(value.header.into()),
-            max_clock_drift: value.max_clock_drift.map(duration_ibc_to_gbp),
-            trusting_period: value.trusting_period.map(duration_ibc_to_gbp),
+            trusting_period: value.trusting_period.as_nanos() as _,
             frozen: value.frozen,
         }
     }
