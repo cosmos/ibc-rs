@@ -39,7 +39,7 @@ pub fn client_type() -> ClientType {
 pub struct MockClientState {
     pub header: MockHeader,
     pub max_clock_drift: Option<Duration>,
-    pub trusing_period: Option<Duration>,
+    pub trusting_period: Option<Duration>,
     pub frozen: bool,
 }
 
@@ -48,7 +48,7 @@ impl MockClientState {
         Self {
             header,
             max_clock_drift: None,
-            trusing_period: None,
+            trusting_period: None,
             frozen: false,
         }
     }
@@ -91,7 +91,7 @@ impl TryFrom<RawMockClientState> for MockClientState {
                 })?
                 .try_into()?,
             max_clock_drift: raw.max_clock_drift.map(duration_gpb_to_ibc),
-            trusing_period: raw.trusing_period.map(duration_gpb_to_ibc),
+            trusting_period: raw.trusting_period.map(duration_gpb_to_ibc),
             frozen: raw.frozen,
         })
     }
@@ -102,7 +102,7 @@ impl From<MockClientState> for RawMockClientState {
         RawMockClientState {
             header: Some(value.header.into()),
             max_clock_drift: value.max_clock_drift.map(duration_ibc_to_gbp),
-            trusing_period: value.trusing_period.map(duration_ibc_to_gbp),
+            trusting_period: value.trusting_period.map(duration_ibc_to_gbp),
             frozen: value.frozen,
         }
     }
