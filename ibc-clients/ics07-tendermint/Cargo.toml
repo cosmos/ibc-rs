@@ -9,7 +9,7 @@ repository   = { workspace = true }
 readme       = "./../README.md"
 keywords     = ["blockchain", "consensus", "cosmos", "ibc", "tendermint"]
 description  = """
-    Maintained by `ibc-rs`, contains the implementation of the ICS-07 Tendermint Client logic 
+    Maintained by `ibc-rs`, contains the implementation of the ICS-07 Tendermint Client logic
     and re-exports essential data structures and domain types from `ibc-client-tendermint-types` crate.
 """
 

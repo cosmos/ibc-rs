@@ -140,17 +140,10 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
 
     context
         .get_client_execution_context()
-        .store_update_time(
+        .store_update_meta(
             ClientId::default(),
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
-        )
-        .unwrap();
-    context
-        .get_client_execution_context()
-        .store_update_height(
-            ClientId::default(),
-            client_height,
             Height::new(0, 5).unwrap(),
         )
         .unwrap();

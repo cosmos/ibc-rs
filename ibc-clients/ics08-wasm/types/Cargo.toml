@@ -10,7 +10,7 @@ keywords     = ["blockchain", "cosmos", "ibc", "wasm", "ics08"]
 readme       = "./../../README.md"
 description  = """
     Maintained by `ibc-rs`, encapsulates essential ICS-08 Wasm Light Client data structures and domain types,
-    as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal applicability 
+    as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal applicability
     to facilitate development and integration across diverse IBC-enabled projects.
 """
 
@@ -34,29 +34,29 @@ serde_json = { workspace = true }
 [features]
 default = ["std"]
 std = [
-	"ibc-core-client/std",
-	"ibc-core-host-types/std",
-	"ibc-primitives/std",
-	"ibc-proto/std",
-	"base64/std",
-	"serde/std"
+    "ibc-core-client/std",
+    "ibc-core-host-types/std",
+    "ibc-primitives/std",
+    "ibc-proto/std",
+    "base64/std",
+    "serde/std"
 ]
 serde = [
-	"ibc-core-client/serde",
-	"ibc-core-host-types/serde",
-	"ibc-primitives/serde",
-	"ibc-proto/serde",
-	"dep:serde"
+    "ibc-core-client/serde",
+    "ibc-core-host-types/serde",
+    "ibc-primitives/serde",
+    "ibc-proto/serde",
+    "dep:serde"
 ]
 schema = [
-	"ibc-core-client/schema",
-	"ibc-core-host-types/schema",
-	"ibc-primitives/schema",
-	"ibc-proto/json-schema",
-	"serde",
-	"std"
+    "ibc-core-client/schema",
+    "ibc-core-host-types/schema",
+    "ibc-primitives/schema",
+    "ibc-proto/json-schema",
+    "serde",
+    "std"
 ]
 cosmwasm = [
-	"cosmwasm-schema",
-	"schema"
+    "cosmwasm-schema",
+    "schema"
 ]

@@ -22,8 +22,13 @@ const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 /// The Path enum abstracts out the different sub-paths.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Display)]
 pub enum Path {
+    NextClientSequence(NextClientSequencePath),
+    NextConnectionSequence(NextConnectionSequencePath),
+    NextChannelSequence(NextChannelSequencePath),
     ClientState(ClientStatePath),
     ClientConsensusState(ClientConsensusStatePath),
+    ClientUpdateTime(ClientUpdateTimePath),
+    ClientUpdateHeight(ClientUpdateHeightPath),
     ClientConnection(ClientConnectionPath),
     Connection(ConnectionPath),
     Ports(PortPath),
@@ -36,6 +41,57 @@ pub enum Path {
     Receipt(ReceiptPath),
     UpgradeClient(UpgradeClientPath),
 }
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "nextClientSequence")]
+pub struct NextClientSequencePath;
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "nextConnectionSequence")]
+pub struct NextConnectionSequencePath;
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "nextChannelSequence")]
+pub struct NextChannelSequencePath;
 
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -88,6 +144,72 @@ impl ClientConsensusStatePath {
         revision_height: u64,
     ) -> ClientConsensusStatePath {
         ClientConsensusStatePath {
+            client_id,
+            revision_number,
+            revision_height,
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
+    fmt = "clients/{client_id}/consensusStates/{revision_number}-{revision_height}/processedTime"
+)]
+pub struct ClientUpdateTimePath {
+    pub client_id: ClientId,
+    pub revision_number: u64,
+    pub revision_height: u64,
+}
+
+impl ClientUpdateTimePath {
+    pub fn new(client_id: ClientId, revision_number: u64, revision_height: u64) -> Self {
+        Self {
+            client_id,
+            revision_number,
+            revision_height,
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
+    fmt = "clients/{client_id}/consensusStates/{revision_number}-{revision_height}/processedHeight"
+)]
+pub struct ClientUpdateHeightPath {
+    pub client_id: ClientId,
+    pub revision_number: u64,
+    pub revision_height: u64,
+}
+
+impl ClientUpdateHeightPath {
+    pub fn new(client_id: ClientId, revision_number: u64, revision_height: u64) -> Self {
+        Self {
             client_id,
             revision_number,
             revision_height,
@@ -414,7 +536,8 @@ impl FromStr for Path {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let components: Vec<&str> = s.split('/').collect();
 
-        parse_client_paths(&components)
+        parse_next_sequence(&components)
+            .or_else(|| parse_client_paths(&components))
             .or_else(|| parse_connections(&components))
             .or_else(|| parse_ports(&components))
             .or_else(|| parse_channel_ends(&components))
@@ -426,6 +549,19 @@ impl FromStr for Path {
             .ok_or(PathError::ParseFailure {
                 path: s.to_string(),
             })
+    }
+}
+
+fn parse_next_sequence(components: &[&str]) -> Option<Path> {
+    if components.len() != 1 {
+        return None;
+    }
+
+    match *components.first()? {
+        "nextClientSequence" => Some(NextClientSequencePath.into()),
+        "nextConnectionSequence" => Some(NextConnectionSequencePath.into()),
+        "nextChannelSequence" => Some(NextChannelSequencePath.into()),
+        _ => None,
     }
 }
 
@@ -450,17 +586,13 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
             "connections" => Some(ClientConnectionPath(client_id).into()),
             _ => None,
         }
-    } else if components.len() == 4 {
-        if "consensusStates" != components[2] {
-            return None;
+    } else if components.len() == 4 || components.len() == 5 {
+        match components[2] {
+            "consensusStates" => {}
+            _ => return None,
         }
 
-        let epoch_height = match components.last() {
-            Some(eh) => *eh,
-            None => return None,
-        };
-
-        let epoch_height: Vec<&str> = epoch_height.split('-').collect();
+        let epoch_height: Vec<&str> = components[3].split('-').collect();
 
         if epoch_height.len() != 2 {
             return None;
@@ -479,14 +611,36 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
             Err(_) => return None,
         };
 
-        Some(
-            ClientConsensusStatePath {
-                client_id,
-                revision_number,
-                revision_height,
-            }
-            .into(),
-        )
+        match components.len() {
+            4 => Some(
+                ClientConsensusStatePath {
+                    client_id,
+                    revision_number,
+                    revision_height,
+                }
+                .into(),
+            ),
+            5 => match components[4] {
+                "processedTime" => Some(
+                    ClientUpdateTimePath {
+                        client_id,
+                        revision_number,
+                        revision_height,
+                    }
+                    .into(),
+                ),
+                "processedHeight" => Some(
+                    ClientUpdateHeightPath {
+                        client_id,
+                        revision_number,
+                        revision_height,
+                    }
+                    .into(),
+                ),
+                _ => None,
+            },
+            _ => None,
+        }
     } else {
         None
     }
@@ -840,11 +994,115 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn invalid_path_doesnt_parse() {
-        let invalid_path = Path::from_str("clients/clientType");
+    #[rstest::rstest]
+    #[case("nextClientSequence", Path::NextClientSequence(NextClientSequencePath))]
+    #[case(
+        "nextConnectionSequence",
+        Path::NextConnectionSequence(NextConnectionSequencePath)
+    )]
+    #[case(
+        "nextChannelSequence",
+        Path::NextChannelSequence(NextChannelSequencePath)
+    )]
+    #[case(
+        "clients/07-tendermint-0/clientState",
+        Path::ClientState(ClientStatePath(ClientId::default()))
+    )]
+    #[case(
+        "clients/07-tendermint-0/consensusStates/15-31",
+        Path::ClientConsensusState(ClientConsensusStatePath {
+            client_id: ClientId::default(),
+            revision_number: 15,
+            revision_height: 31,
+        })
+    )]
+    #[case(
+        "clients/07-tendermint-0/consensusStates/15-31/processedTime",
+        Path::ClientUpdateTime(ClientUpdateTimePath {
+            client_id: ClientId::default(),
+            revision_number: 15,
+            revision_height: 31,
+        })
+    )]
+    #[case(
+        "clients/07-tendermint-0/consensusStates/15-31/processedHeight",
+        Path::ClientUpdateHeight(ClientUpdateHeightPath {
+            client_id: ClientId::default(),
+            revision_number: 15,
+            revision_height: 31,
+        })
+    )]
+    #[case(
+        "clients/07-tendermint-0/connections",
+        Path::ClientConnection(ClientConnectionPath(ClientId::default()))
+    )]
+    #[case(
+        "connections/connection-0",
+        Path::Connection(ConnectionPath(ConnectionId::new(0)))
+    )]
+    #[case("ports/transfer", Path::Ports(PortPath(PortId::transfer())))]
+    #[case(
+        "channelEnds/ports/transfer/channels/channel-0",
+        Path::ChannelEnd(ChannelEndPath(PortId::transfer(), ChannelId::default()))
+    )]
+    #[case(
+        "nextSequenceSend/ports/transfer/channels/channel-0",
+        Path::SeqSend(SeqSendPath(PortId::transfer(), ChannelId::default()))
+    )]
+    #[case(
+        "nextSequenceRecv/ports/transfer/channels/channel-0",
+        Path::SeqRecv(SeqRecvPath(PortId::transfer(), ChannelId::default()))
+    )]
+    #[case(
+        "nextSequenceAck/ports/transfer/channels/channel-0",
+        Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::default()))
+    )]
+    #[case(
+        "commitments/ports/transfer/channels/channel-0/sequences/0",
+        Path::Commitment(CommitmentPath {
+            port_id: PortId::transfer(),
+            channel_id: ChannelId::default(),
+            sequence: Sequence::default(),
+        })
+    )]
+    #[case(
+        "acks/ports/transfer/channels/channel-0/sequences/0",
+        Path::Ack(AckPath {
+            port_id: PortId::transfer(),
+            channel_id: ChannelId::default(),
+            sequence: Sequence::default(),
+        })
+    )]
+    #[case(
+        "receipts/ports/transfer/channels/channel-0/sequences/0",
+        Path::Receipt(ReceiptPath {
+            port_id: PortId::transfer(),
+            channel_id: ChannelId::default(),
+            sequence: Sequence::default(),
+        })
+    )]
+    #[case(
+        "upgradedIBCState/0/upgradedClient",
+        Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(0))
+    )]
+    #[case(
+        "upgradedIBCState/0/upgradedConsState",
+        Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(0))
+    )]
+    fn test_successful_parsing(#[case] path_str: &str, #[case] path: Path) {
+        // can be parsed into Path
+        assert_eq!(Path::from_str(path_str).expect("no error"), path);
+        // can be converted back to string
+        assert_eq!(path_str, path.to_string());
+    }
 
-        assert!(invalid_path.is_err());
+    #[rstest::rstest]
+    #[case("clients/clientType")]
+    #[case("channels/channel-0")]
+    #[case("sequences/0")]
+    fn test_failure_parsing(#[case] path_str: &str) {
+        // cannot be parsed into Path
+        assert!(Path::from_str(path_str).is_err());
     }
 
     #[test]
@@ -871,42 +1129,29 @@ mod tests {
     }
 
     #[test]
-    fn client_state_path_parses() {
-        let path = "clients/07-tendermint-0/clientState";
-        let path = Path::from_str(path);
+    fn test_parse_client_update_paths_fn() {
+        let path = "clients/07-tendermint-0/consensusStates/15-31/processedTime";
+        let components: Vec<&str> = path.split('/').collect();
 
-        assert!(path.is_ok());
         assert_eq!(
-            path.unwrap(),
-            Path::ClientState(ClientStatePath(ClientId::default()))
-        );
-    }
-
-    #[test]
-    fn client_consensus_state_path_parses() {
-        let path = "clients/07-tendermint-0/consensusStates/15-31";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::ClientConsensusState(ClientConsensusStatePath {
+            parse_client_paths(&components),
+            Some(Path::ClientUpdateTime(ClientUpdateTimePath {
                 client_id: ClientId::default(),
                 revision_number: 15,
                 revision_height: 31,
-            })
+            }))
         );
-    }
 
-    #[test]
-    fn client_connections_path_parses() {
-        let path = "clients/07-tendermint-0/connections";
-        let path = Path::from_str(path);
+        let path = "clients/07-tendermint-0/consensusStates/15-31/processedHeight";
+        let components: Vec<&str> = path.split('/').collect();
 
-        assert!(path.is_ok());
         assert_eq!(
-            path.unwrap(),
-            Path::ClientConnection(ClientConnectionPath(ClientId::default()))
+            parse_client_paths(&components),
+            Some(Path::ClientUpdateHeight(ClientUpdateHeightPath {
+                client_id: ClientId::default(),
+                revision_number: 15,
+                revision_height: 31,
+            }))
         );
     }
 
@@ -922,18 +1167,6 @@ mod tests {
     }
 
     #[test]
-    fn connections_path_parses() {
-        let path = "connections/connection-0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::Connection(ConnectionPath(ConnectionId::new(0)))
-        );
-    }
-
-    #[test]
     fn test_parse_ports_fn() {
         let path = "ports/transfer";
         let components: Vec<&str> = path.split('/').collect();
@@ -942,15 +1175,6 @@ mod tests {
             parse_ports(&components),
             Some(Path::Ports(PortPath(PortId::transfer()))),
         );
-    }
-
-    #[test]
-    fn ports_path_parses() {
-        let path = "ports/transfer";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(path.unwrap(), Path::Ports(PortPath(PortId::transfer())));
     }
 
     #[test]
@@ -965,14 +1189,6 @@ mod tests {
     }
 
     #[test]
-    fn channels_path_doesnt_parse() {
-        let path = "channels/channel-0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_err());
-    }
-
-    #[test]
     fn test_parse_sequences_fn() {
         let path = "sequences/0";
         let components: Vec<&str> = path.split('/').collect();
@@ -981,14 +1197,6 @@ mod tests {
             parse_sequences(&components),
             Some(SubPath::Sequences(Sequence::default()))
         );
-    }
-
-    #[test]
-    fn sequences_path_doesnt_parse() {
-        let path = "sequences/0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_err());
     }
 
     #[test]
@@ -1002,18 +1210,6 @@ mod tests {
                 PortId::transfer(),
                 ChannelId::default()
             ))),
-        );
-    }
-
-    #[test]
-    fn channel_ends_path_parses() {
-        let path = "channelEnds/ports/transfer/channels/channel-0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::ChannelEnd(ChannelEndPath(PortId::transfer(), ChannelId::default())),
         );
     }
 
@@ -1054,42 +1250,6 @@ mod tests {
     }
 
     #[test]
-    fn sequence_send_path_parses() {
-        let path = "nextSequenceSend/ports/transfer/channels/channel-0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::SeqSend(SeqSendPath(PortId::transfer(), ChannelId::default())),
-        );
-    }
-
-    #[test]
-    fn sequence_recv_path_parses() {
-        let path = "nextSequenceRecv/ports/transfer/channels/channel-0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::SeqRecv(SeqRecvPath(PortId::transfer(), ChannelId::default())),
-        );
-    }
-
-    #[test]
-    fn sequence_ack_path_parses() {
-        let path = "nextSequenceAck/ports/transfer/channels/channel-0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::default())),
-        );
-    }
-
-    #[test]
     fn test_parse_commitments_fn() {
         let path = "commitments/ports/transfer/channels/channel-0/sequences/0";
         let components: Vec<&str> = path.split('/').collect();
@@ -1101,22 +1261,6 @@ mod tests {
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
             })),
-        );
-    }
-
-    #[test]
-    fn commitments_path_parses() {
-        let path = "commitments/ports/transfer/channels/channel-0/sequences/0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::Commitment(CommitmentPath {
-                port_id: PortId::transfer(),
-                channel_id: ChannelId::default(),
-                sequence: Sequence::default(),
-            }),
         );
     }
 
@@ -1136,22 +1280,6 @@ mod tests {
     }
 
     #[test]
-    fn acks_path_parses() {
-        let path = "acks/ports/transfer/channels/channel-0/sequences/0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::Ack(AckPath {
-                port_id: PortId::transfer(),
-                channel_id: ChannelId::default(),
-                sequence: Sequence::default(),
-            }),
-        );
-    }
-
-    #[test]
     fn test_parse_receipts_fn() {
         let path = "receipts/ports/transfer/channels/channel-0/sequences/0";
         let components: Vec<&str> = path.split('/').collect();
@@ -1163,22 +1291,6 @@ mod tests {
                 channel_id: ChannelId::default(),
                 sequence: Sequence::default(),
             })),
-        );
-    }
-
-    #[test]
-    fn receipts_path_parses() {
-        let path = "receipts/ports/transfer/channels/channel-0/sequences/0";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::Receipt(ReceiptPath {
-                port_id: PortId::transfer(),
-                channel_id: ChannelId::default(),
-                sequence: Sequence::default(),
-            }),
         );
     }
 
@@ -1203,29 +1315,5 @@ mod tests {
                 UpgradeClientPath::UpgradedClientConsensusState(0)
             )),
         )
-    }
-
-    #[test]
-    fn upgrade_client_state_path_parses() {
-        let path = "upgradedIBCState/0/upgradedClient";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(0)),
-        );
-    }
-
-    #[test]
-    fn upgrade_client_consensus_state_path_parses() {
-        let path = "upgradedIBCState/0/upgradedConsState";
-        let path = Path::from_str(path);
-
-        assert!(path.is_ok());
-        assert_eq!(
-            path.unwrap(),
-            Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(0)),
-        );
     }
 }
