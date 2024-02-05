@@ -1,9 +1,6 @@
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc::clients::tendermint::types::{
-    TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
-};
 use ibc::core::client::context::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
@@ -22,8 +19,8 @@ use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
-use crate::testapp::ibc::clients::mock::header::MockHeader;
-use crate::testapp::ibc::clients::mock::misbehaviour::Misbehaviour;
+use crate::testapp::ibc::clients::mock::header::{MockHeader, MOCK_HEADER_TYPE_URL};
+use crate::testapp::ibc::clients::mock::misbehaviour::{Misbehaviour, MOCK_MISBEHAVIOUR_TYPE_URL};
 use crate::testapp::ibc::clients::mock::proto::{
     ClientState as RawMockClientState, Header as RawMockHeader,
 };
@@ -228,7 +225,7 @@ where
         client_message: Any,
     ) -> Result<(), ClientError> {
         match client_message.type_url.as_str() {
-            TENDERMINT_HEADER_TYPE_URL => {
+            MOCK_HEADER_TYPE_URL => {
                 let header = MockHeader::try_from(client_message)?;
 
                 if self.latest_height() >= header.height() {
@@ -238,7 +235,7 @@ where
                     });
                 }
             }
-            TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
+            MOCK_MISBEHAVIOUR_TYPE_URL => {
                 let _misbehaviour = Misbehaviour::try_from(client_message)?;
             }
             _ => {}
@@ -254,8 +251,8 @@ where
         client_message: Any,
     ) -> Result<bool, ClientError> {
         match client_message.type_url.as_str() {
-            TENDERMINT_HEADER_TYPE_URL => Ok(false),
-            TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
+            MOCK_HEADER_TYPE_URL => Ok(false),
+            MOCK_MISBEHAVIOUR_TYPE_URL => {
                 let misbehaviour = Misbehaviour::try_from(client_message)?;
                 let header_1 = misbehaviour.header1;
                 let header_2 = misbehaviour.header2;

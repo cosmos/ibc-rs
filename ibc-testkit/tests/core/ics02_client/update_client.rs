@@ -798,7 +798,6 @@ fn test_misbehaviour_client_ok(fixture: Fixture, #[case] msg_envelope: MsgEnvelo
     let Fixture {
         mut ctx,
         mut router,
-        ..
     } = fixture;
 
     let client_id = ClientId::default();
@@ -812,13 +811,58 @@ fn test_misbehaviour_client_ok(fixture: Fixture, #[case] msg_envelope: MsgEnvelo
     ensure_misbehaviour(&ctx, &client_id, &mock_client_type());
 }
 
-/// Tests misbehaviour handling failure for a non-existent client
 #[rstest]
-#[case::msg_submit_misbehaviour(msg_submit_misbehaviour())]
-#[case::msg_update_client(msg_update_client())]
-fn test_misbehaviour_nonexisting_client(fixture: Fixture, #[case] msg_envelope: MsgEnvelope) {
-    let Fixture { ctx, router } = fixture;
+fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
+    let Fixture { router, .. } = fixture;
 
+    let client_id = ClientId::from_str("mockclient1").unwrap();
+    let height = Height::new(0, 46).unwrap();
+    let msg = MsgSubmitMisbehaviour {
+        client_id: ClientId::from_str("nonexistingclient").unwrap(),
+        misbehaviour: MockMisbehaviour {
+            client_id: client_id.clone(),
+            header1: MockHeader::new(height),
+            header2: MockHeader::new(height),
+        }
+        .into(),
+        signer: dummy_account_id(),
+    };
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
+
+    let ctx = MockContext::default().with_client_config(
+        MockClientConfig::builder()
+            .client_id(client_id.clone())
+            .latest_height(Height::new(0, 42).unwrap())
+            .build(),
+    );
+    let res = validate(&ctx, &router, msg_envelope);
+    assert!(res.is_err());
+}
+
+#[rstest]
+fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
+    let Fixture { router, .. } = fixture;
+
+    let client_id = ClientId::from_str("mockclient1").unwrap();
+    let height = Height::new(0, 46).unwrap();
+    let msg = MsgUpdateClient {
+        client_id: ClientId::from_str("nonexistingclient").unwrap(),
+        client_message: MockMisbehaviour {
+            client_id: client_id.clone(),
+            header1: MockHeader::new(height),
+            header2: MockHeader::new(height),
+        }
+        .into(),
+        signer: dummy_account_id(),
+    };
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
+
+    let ctx = MockContext::default().with_client_config(
+        MockClientConfig::builder()
+            .client_id(client_id.clone())
+            .latest_height(Height::new(0, 42).unwrap())
+            .build(),
+    );
     let res = validate(&ctx, &router, msg_envelope);
     assert!(res.is_err());
 }

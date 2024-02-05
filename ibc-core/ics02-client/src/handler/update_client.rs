@@ -49,7 +49,7 @@ where
         MsgUpdateOrMisbehaviour::Misbehaviour(_) => UpdateKind::SubmitMisbehaviour,
     };
     let client_message = msg.client_message();
-
+    std::dbg!(&client_message);
     let client_state = ctx.client_state(&client_id)?;
 
     let found_misbehaviour = client_state.check_for_misbehaviour(
