@@ -12,6 +12,13 @@ use crate::error::ClientError;
 pub const SUBMIT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
 /// A type of message that submits client misbehaviour proof.
+///
+/// Deprecated since v0.50. Misbehaviour reports should now be submitted in the `client_message`
+/// field of update client messages.
+#[deprecated(
+    since = "0.50.0",
+    note = "Misbehaviour reports should be submitted as part of `MsgUpdateClient::client_message`"
+)]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
