@@ -33,23 +33,83 @@ use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as Mock
 use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use rstest::*;
 use tendermint_testgen::Validator as TestgenValidator;
-use test_log::test;
 
-#[test]
-fn test_update_client_ok() {
+struct Fixture {
+    ctx: MockContext,
+    router: MockRouter,
+}
+
+#[fixture]
+fn fixture() -> Fixture {
     let client_id = ClientId::default();
 
-    let signer = dummy_account_id();
-
-    let timestamp = Timestamp::now();
-
-    let mut ctx = MockContext::default().with_client_config(
+    let ctx = MockContext::default().with_client_config(
         MockClientConfig::builder()
             .client_id(client_id.clone())
             .latest_height(Height::new(0, 42).unwrap())
             .build(),
     );
+
+    let router = MockRouter::new_with_transfer();
+
+    Fixture { ctx, router }
+}
+
+/// rstest fixture that returns a `MsgEnvelope` with the `client_message`
+/// field set to a `MockMisbehaviour` report.
+#[fixture]
+fn msg_update_client() -> MsgEnvelope {
+    let client_id = ClientId::default();
+    let timestamp = Timestamp::now();
+    let height = Height::new(0, 46).unwrap();
+    let msg = MsgUpdateClient {
+        client_id: client_id.clone(),
+        client_message: MockMisbehaviour {
+            client_id: client_id.clone(),
+            header1: MockHeader::new(height).with_timestamp(timestamp),
+            header2: MockHeader::new(height).with_timestamp(timestamp),
+        }
+        .into(),
+        signer: dummy_account_id(),
+    };
+
+    MsgEnvelope::from(ClientMsg::from(msg))
+}
+
+/// rstest fixture that returns a `MsgEnvelope` with the `misbehaviour`
+/// field set to a `MockMisbehaviour` report.
+#[fixture]
+fn msg_submit_misbehaviour() -> MsgEnvelope {
+    let client_id = ClientId::default();
+    let timestamp = Timestamp::now();
+    let height = Height::new(0, 46).unwrap();
+    let msg = MsgSubmitMisbehaviour {
+        client_id: client_id.clone(),
+        misbehaviour: MockMisbehaviour {
+            client_id: client_id.clone(),
+            header1: MockHeader::new(height).with_timestamp(timestamp),
+            header2: MockHeader::new(height).with_timestamp(timestamp),
+        }
+        .into(),
+        signer: dummy_account_id(),
+    };
+
+    MsgEnvelope::from(ClientMsg::from(msg))
+}
+
+#[rstest]
+fn test_update_client_ok(fixture: Fixture) {
+    let Fixture {
+        mut ctx,
+        mut router,
+    } = fixture;
+
+    let client_id = ClientId::default();
+    let signer = dummy_account_id();
+    let timestamp = Timestamp::now();
+
     let height = Height::new(0, 46).unwrap();
     let msg = MsgUpdateClient {
         client_id,
@@ -58,8 +118,6 @@ fn test_update_client_ok() {
     };
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
-
-    let mut router = MockRouter::new_with_transfer();
 
     let res = validate(&ctx, &router, msg_envelope.clone());
 
@@ -87,7 +145,7 @@ fn test_update_client_ok() {
 /// thus checks that the consensus state at height 1 is not contained in
 /// the store. It also checks that the consensus state at height 2 is
 /// contained in the store and has not expired.
-#[test]
+#[rstest]
 fn test_consensus_state_pruning() {
     let chain_id = ChainId::new("mockgaiaA-1").unwrap();
 
@@ -179,20 +237,11 @@ fn test_consensus_state_pruning() {
     );
 }
 
-#[test]
-fn test_update_nonexisting_client() {
-    let client_id = ClientId::from_str("mockclient1").unwrap();
+#[rstest]
+fn test_update_nonexisting_client(fixture: Fixture) {
+    let Fixture { ctx, router } = fixture;
 
     let signer = dummy_account_id();
-
-    let ctx = MockContext::default().with_client_config(
-        MockClientConfig::builder()
-            .client_id(client_id.clone())
-            .latest_height(Height::new(0, 42).unwrap())
-            .build(),
-    );
-
-    let router = MockRouter::new_with_transfer();
 
     let msg = MsgUpdateClient {
         client_id: ClientId::from_str("nonexistingclient").unwrap(),
@@ -207,7 +256,7 @@ fn test_update_nonexisting_client() {
     assert!(res.is_err());
 }
 
-#[test]
+#[rstest]
 fn test_update_synthetic_tendermint_client_adjacent_ok() {
     let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
@@ -264,7 +313,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     assert_eq!(client_state.latest_height(), latest_header_height);
 }
 
-#[test]
+#[rstest]
 fn test_update_synthetic_tendermint_client_validator_change_ok() {
     let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
@@ -356,7 +405,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     assert_eq!(client_state.latest_height(), latest_header_height);
 }
 
-#[test]
+#[rstest]
 fn test_update_synthetic_tendermint_client_validator_change_fail() {
     let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
@@ -440,7 +489,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     assert!(res.is_err());
 }
 
-#[test]
+#[rstest]
 fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
@@ -503,7 +552,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     assert_eq!(client_state.latest_height(), latest_header_height);
 }
 
-#[test]
+#[rstest]
 fn test_update_synthetic_tendermint_client_duplicate_ok() {
     let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
@@ -636,7 +685,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
     assert_eq!(client_state, ctx_a.latest_client_states(&msg.client_id));
 }
 
-#[test]
+#[rstest]
 fn test_update_synthetic_tendermint_client_lower_height() {
     let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
@@ -681,20 +730,17 @@ fn test_update_synthetic_tendermint_client_lower_height() {
     assert!(res.is_err());
 }
 
-#[test]
-fn test_update_client_events() {
+#[rstest]
+fn test_update_client_events(fixture: Fixture) {
+    let Fixture {
+        mut ctx,
+        mut router,
+    } = fixture;
+
     let client_id = ClientId::default();
     let signer = dummy_account_id();
-
     let timestamp = Timestamp::now();
 
-    let mut ctx = MockContext::default().with_client_config(
-        MockClientConfig::builder()
-            .client_id(client_id.clone())
-            .latest_height(Height::new(0, 42).unwrap())
-            .build(),
-    );
-    let mut router = MockRouter::new_with_transfer();
     let height = Height::new(0, 46).unwrap();
     let header: Any = MockHeader::new(height).with_timestamp(timestamp).into();
     let msg = MsgUpdateClient {
@@ -742,35 +788,24 @@ fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &Cl
 }
 
 /// Tests misbehaviour handling for the mock client.
-/// Misbehaviour evidence consists of identical headers - mock misbehaviour handler considers it
-/// a valid proof of misbehaviour
-#[test]
-fn test_misbehaviour_client_ok() {
-    let client_id = ClientId::default();
-    let timestamp = Timestamp::now();
-    let height = Height::new(0, 46).unwrap();
-    let msg = MsgSubmitMisbehaviour {
-        client_id: client_id.clone(),
-        misbehaviour: MockMisbehaviour {
-            client_id: client_id.clone(),
-            header1: MockHeader::new(height).with_timestamp(timestamp),
-            header2: MockHeader::new(height).with_timestamp(timestamp),
-        }
-        .into(),
-        signer: dummy_account_id(),
-    };
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
+///
+/// Misbehaviour evidence consists of identical headers - mock misbehaviour handler
+/// considers it a valid proof of misbehaviour.
+#[rstest]
+#[case::msg_submit_misbehaviour(msg_submit_misbehaviour())]
+#[case::msg_update_client(msg_update_client())]
+fn test_misbehaviour_client_ok(fixture: Fixture, #[case] msg_envelope: MsgEnvelope) {
+    let Fixture {
+        mut ctx,
+        mut router,
+        ..
+    } = fixture;
 
-    let mut ctx = MockContext::default().with_client_config(
-        MockClientConfig::builder()
-            .client_id(client_id.clone())
-            .latest_height(Height::new(0, 42).unwrap())
-            .build(),
-    );
-    let mut router = MockRouter::new_with_transfer();
+    let client_id = ClientId::default();
 
     let res = validate(&ctx, &router, msg_envelope.clone());
     assert!(res.is_ok());
+
     let res = execute(&mut ctx, &mut router, msg_envelope);
     assert!(res.is_ok());
 
@@ -778,36 +813,19 @@ fn test_misbehaviour_client_ok() {
 }
 
 /// Tests misbehaviour handling failure for a non-existent client
-#[test]
-fn test_misbehaviour_nonexisting_client() {
-    let client_id = ClientId::from_str("mockclient1").unwrap();
-    let height = Height::new(0, 46).unwrap();
-    let msg = MsgSubmitMisbehaviour {
-        client_id: ClientId::from_str("nonexistingclient").unwrap(),
-        misbehaviour: MockMisbehaviour {
-            client_id: client_id.clone(),
-            header1: MockHeader::new(height),
-            header2: MockHeader::new(height),
-        }
-        .into(),
-        signer: dummy_account_id(),
-    };
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
+#[rstest]
+#[case::msg_submit_misbehaviour(msg_submit_misbehaviour())]
+#[case::msg_update_client(msg_update_client())]
+fn test_misbehaviour_nonexisting_client(fixture: Fixture, #[case] msg_envelope: MsgEnvelope) {
+    let Fixture { ctx, router } = fixture;
 
-    let ctx = MockContext::default().with_client_config(
-        MockClientConfig::builder()
-            .client_id(client_id.clone())
-            .latest_height(Height::new(0, 42).unwrap())
-            .build(),
-    );
-    let router = MockRouter::new_with_transfer();
     let res = validate(&ctx, &router, msg_envelope);
     assert!(res.is_err());
 }
 
 /// Tests misbehaviour handling for the synthetic Tendermint client.
 /// Misbehaviour evidence consists of equivocal headers.
-#[test]
+#[rstest]
 fn test_misbehaviour_synthetic_tendermint_equivocation() {
     let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
@@ -869,7 +887,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
     ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
 }
 
-#[test]
+#[rstest]
 fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
@@ -932,7 +950,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
 }
 
-#[test]
+#[rstest]
 fn test_expired_client() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
@@ -971,7 +989,7 @@ fn test_expired_client() {
     assert!(client_state.status(&ctx, &client_id).unwrap().is_expired());
 }
 
-#[test]
+#[rstest]
 fn test_client_update_max_clock_drift() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
