@@ -218,13 +218,9 @@ impl ClientState {
 
             if tm_consensus_state_expiry > host_timestamp {
                 break;
-            } else {
-                let client_id = client_id.clone();
-
-                ctx.delete_consensus_state(client_consensus_state_path)?;
-                ctx.delete_update_time(client_id.clone(), height)?;
-                ctx.delete_update_height(client_id, height)?;
             }
+            ctx.delete_consensus_state(client_consensus_state_path)?;
+            ctx.delete_update_meta(client_id.clone(), height)?;
         }
 
         Ok(())
