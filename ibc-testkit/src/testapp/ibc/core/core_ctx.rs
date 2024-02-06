@@ -21,7 +21,8 @@ use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    CommitmentPath, ConnectionPath, Path, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    CommitmentPath, ConnectionPath, NextChannelSequencePath, NextClientSequencePath,
+    NextConnectionSequencePath, Path, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::core::primitives::prelude::*;
@@ -108,7 +109,13 @@ where
     }
 
     fn client_counter(&self) -> Result<u64, ContextError> {
-        Ok(*self.ibc_store.client_counter.lock())
+        Ok(self
+            .ibc_store
+            .client_counter
+            .get(StoreHeight::Pending, &NextClientSequencePath {})
+            .ok_or(ClientError::Other {
+                description: "client counter not found".into(),
+            })?)
     }
 
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
@@ -132,7 +139,13 @@ where
     }
 
     fn connection_counter(&self) -> Result<u64, ContextError> {
-        Ok(*self.ibc_store.conn_counter.lock())
+        Ok(self
+            .ibc_store
+            .conn_counter
+            .get(StoreHeight::Pending, &NextConnectionSequencePath {})
+            .ok_or(ConnectionError::Other {
+                description: "connection counter not found".into(),
+            })?)
     }
 
     fn get_compatible_versions(&self) -> Vec<ConnectionVersion> {
@@ -252,7 +265,13 @@ where
     /// The value of this counter should increase only via method
     /// `ChannelKeeper::increase_channel_counter`.
     fn channel_counter(&self) -> Result<u64, ContextError> {
-        Ok(*self.ibc_store.channel_counter.lock())
+        Ok(self
+            .ibc_store
+            .channel_counter
+            .get(StoreHeight::Pending, &NextChannelSequencePath {})
+            .ok_or(ChannelError::Other {
+                description: "channel counter not found".into(),
+            })?)
     }
 
     /// Returns the maximum expected time per block
@@ -646,7 +665,21 @@ where
     /// Increases the counter which keeps track of how many clients have been created.
     /// Should never fail.
     fn increase_client_counter(&mut self) -> Result<(), ContextError> {
-        *self.ibc_store.client_counter.lock() += 1;
+        let current_sequence = self
+            .ibc_store
+            .client_counter
+            .get(StoreHeight::Pending, &NextClientSequencePath {})
+            .ok_or(ClientError::Other {
+                description: "client counter not found".into(),
+            })?;
+
+        self.ibc_store
+            .client_counter
+            .set(NextClientSequencePath {}, current_sequence + 1)
+            .map_err(|e| ClientError::Other {
+                description: format!("client counter update failed: {e:?}"),
+            })?;
+
         Ok(())
     }
 
@@ -690,7 +723,21 @@ where
     /// Increases the counter which keeps track of how many connections have been created.
     /// Should never fail.
     fn increase_connection_counter(&mut self) -> Result<(), ContextError> {
-        *self.ibc_store.conn_counter.lock() += 1;
+        let current_sequence = self
+            .ibc_store
+            .conn_counter
+            .get(StoreHeight::Pending, &NextConnectionSequencePath {})
+            .ok_or(ConnectionError::Other {
+                description: "connection counter not found".into(),
+            })?;
+
+        self.ibc_store
+            .conn_counter
+            .set(NextConnectionSequencePath {}, current_sequence + 1)
+            .map_err(|e| ConnectionError::Other {
+                description: format!("connection counter update failed: {e:?}"),
+            })?;
+
         Ok(())
     }
 
@@ -792,7 +839,21 @@ where
     }
 
     fn increase_channel_counter(&mut self) -> Result<(), ContextError> {
-        *self.ibc_store.channel_counter.lock() += 1;
+        let current_sequence = self
+            .ibc_store
+            .channel_counter
+            .get(StoreHeight::Pending, &NextChannelSequencePath {})
+            .ok_or(ChannelError::Other {
+                description: "channel counter not found".into(),
+            })?;
+
+        self.ibc_store
+            .channel_counter
+            .set(NextChannelSequencePath {}, current_sequence + 1)
+            .map_err(|e| ChannelError::Other {
+                description: format!("channel counter update failed: {e:?}"),
+            })?;
+
         Ok(())
     }
 

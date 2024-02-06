@@ -12,7 +12,9 @@ use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, PortId};
-use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path};
+use ibc::core::host::types::path::{
+    ClientConsensusStatePath, ClientStatePath, ClientUpdateHeightPath, ClientUpdateTimePath, Path,
+};
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::prelude::{format, *};
@@ -66,12 +68,15 @@ where
         client_id: &ClientId,
         height: &Height,
     ) -> Result<Timestamp, ContextError> {
+        let client_update_time_path = ClientUpdateTimePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        );
         let processed_timestamp = self
             .ibc_store
             .client_processed_times
-            .lock()
-            .get(&(client_id.clone(), *height))
-            .cloned()
+            .get(StoreHeight::Pending, &client_update_time_path)
             .ok_or(ClientError::ProcessedTimeNotFound {
                 client_id: client_id.clone(),
                 height: *height,
@@ -85,12 +90,15 @@ where
         client_id: &ClientId,
         height: &Height,
     ) -> Result<Height, ContextError> {
+        let client_update_height_path = ClientUpdateHeightPath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        );
         let processed_height = self
             .ibc_store
             .client_processed_heights
-            .lock()
-            .get(&(client_id.clone(), *height))
-            .cloned()
+            .get(StoreHeight::Pending, &client_update_height_path)
             .ok_or(ClientError::ProcessedHeightNotFound {
                 client_id: client_id.clone(),
                 height: *height,
@@ -149,10 +157,17 @@ where
         height: Height,
         timestamp: Timestamp,
     ) -> Result<(), ContextError> {
+        let client_update_time_path = ClientUpdateTimePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        );
         self.ibc_store
             .client_processed_times
-            .lock()
-            .insert((client_id, height), timestamp);
+            .set(client_update_time_path, timestamp)
+            .map_err(|_| ClientError::Other {
+                description: "store update error".into(),
+            })?;
         Ok(())
     }
 
@@ -165,10 +180,17 @@ where
         height: Height,
         host_height: Height,
     ) -> Result<(), ContextError> {
+        let client_update_height_path = ClientUpdateHeightPath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        );
         self.ibc_store
             .client_processed_heights
-            .lock()
-            .insert((client_id, height), host_height);
+            .set(client_update_height_path, host_height)
+            .map_err(|_| ClientError::Other {
+                description: "store update error".into(),
+            })?;
         Ok(())
     }
 
@@ -178,10 +200,14 @@ where
         client_id: ClientId,
         height: Height,
     ) -> Result<(), ContextError> {
+        let client_update_time_path = ClientUpdateTimePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        );
         self.ibc_store
             .client_processed_times
-            .lock()
-            .remove(&(client_id, height));
+            .delete(client_update_time_path);
         Ok(())
     }
 
@@ -191,10 +217,14 @@ where
         client_id: ClientId,
         height: Height,
     ) -> Result<(), ContextError> {
+        let client_update_height_path = ClientUpdateHeightPath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        );
         self.ibc_store
             .client_processed_heights
-            .lock()
-            .remove(&(client_id, height));
+            .delete(client_update_height_path);
         Ok(())
     }
 

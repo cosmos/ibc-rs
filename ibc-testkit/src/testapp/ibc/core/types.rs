@@ -25,7 +25,9 @@ use ibc::core::host::types::identifiers::{
 };
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    CommitmentPath, ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    ClientUpdateHeightPath, ClientUpdateTimePath, CommitmentPath, ConnectionPath,
+    NextChannelSequencePath, NextClientSequencePath, NextConnectionSequencePath, ReceiptPath,
+    SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::core::primitives::prelude::*;
@@ -33,6 +35,7 @@ use ibc::core::primitives::Timestamp;
 use ibc::core::router::router::Router;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::Channel as RawChannelEnd;
+use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::core::connection::v1::ConnectionEnd as RawConnectionEnd;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
@@ -60,18 +63,18 @@ where
     /// Handle to store instance.
     /// The module is guaranteed exclusive access to all paths in the store key-space.
     pub store: SharedStore<S>,
-    /// Counter for clients
-    pub client_counter: Arc<Mutex<u64>>,
-    /// Counter for connections
-    pub conn_counter: Arc<Mutex<u64>>,
-    /// Counter for channels
-    pub channel_counter: Arc<Mutex<u64>>,
+    /// A typed-store for next client counter sequence
+    pub client_counter: JsonStore<SharedStore<S>, NextClientSequencePath, u64>,
+    /// A typed-store for next connection counter sequence
+    pub conn_counter: JsonStore<SharedStore<S>, NextConnectionSequencePath, u64>,
+    /// A typed-store for next channel counter sequence
+    pub channel_counter: JsonStore<SharedStore<S>, NextChannelSequencePath, u64>,
     /// Tracks the processed time for client updates
-    pub client_processed_times: Arc<Mutex<BTreeMap<(ClientId, Height), Timestamp>>>,
-    /// Tracks the processed height for client updates
-    pub client_processed_heights: Arc<Mutex<BTreeMap<(ClientId, Height), Height>>>,
-    /// Map of host consensus states
-    pub consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
+    // pub client_processed_times: Arc<Mutex<BTreeMap<(ClientId, Height), Timestamp>>>,
+    pub client_processed_times: JsonStore<SharedStore<S>, ClientUpdateTimePath, Timestamp>,
+    /// A typed-store to track the processed height for client updates
+    pub client_processed_heights:
+        ProtobufStore<SharedStore<S>, ClientUpdateHeightPath, Height, RawHeight>,
     /// A typed-store for AnyClientState
     pub client_state_store: ProtobufStore<SharedStore<S>, ClientStatePath, AnyClientState, Any>,
     /// A typed-store for AnyConsensusState
@@ -96,6 +99,8 @@ where
     pub packet_receipt_store: TypedSet<SharedStore<S>, ReceiptPath>,
     /// A typed-store for packet ack
     pub packet_ack_store: BinStore<SharedStore<S>, AckPath, AcknowledgementCommitment>,
+    /// Map of host consensus states
+    pub consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
     /// IBC Events
     pub events: Arc<Mutex<Vec<IbcEvent>>>,
     /// message logs
@@ -108,12 +113,29 @@ where
 {
     pub fn new(store: S) -> Self {
         let shared_store = SharedStore::new(store);
+
+        let mut client_counter = TypedStore::new(shared_store.clone());
+        let mut conn_counter = TypedStore::new(shared_store.clone());
+        let mut channel_counter = TypedStore::new(shared_store.clone());
+
+        client_counter
+            .set(NextClientSequencePath {}, 0)
+            .expect("no error");
+
+        conn_counter
+            .set(NextConnectionSequencePath {}, 0)
+            .expect("no error");
+
+        channel_counter
+            .set(NextChannelSequencePath {}, 0)
+            .expect("no error");
+
         Self {
-            client_counter: Arc::new(Mutex::new(0)),
-            conn_counter: Arc::new(Mutex::new(0)),
-            channel_counter: Arc::new(Mutex::new(0)),
-            client_processed_times: Arc::new(Mutex::new(Default::default())),
-            client_processed_heights: Arc::new(Mutex::new(Default::default())),
+            client_counter,
+            conn_counter,
+            channel_counter,
+            client_processed_times: TypedStore::new(shared_store.clone()),
+            client_processed_heights: TypedStore::new(shared_store.clone()),
             consensus_states: Arc::new(Mutex::new(Default::default())),
             client_state_store: TypedStore::new(shared_store.clone()),
             consensus_state_store: TypedStore::new(shared_store.clone()),
