@@ -112,7 +112,7 @@ where
         Ok(self
             .ibc_store
             .client_counter
-            .get(StoreHeight::Pending, &NextClientSequencePath {})
+            .get(StoreHeight::Pending, &NextClientSequencePath)
             .ok_or(ClientError::Other {
                 description: "client counter not found".into(),
             })?)
@@ -142,7 +142,7 @@ where
         Ok(self
             .ibc_store
             .conn_counter
-            .get(StoreHeight::Pending, &NextConnectionSequencePath {})
+            .get(StoreHeight::Pending, &NextConnectionSequencePath)
             .ok_or(ConnectionError::Other {
                 description: "connection counter not found".into(),
             })?)
@@ -268,7 +268,7 @@ where
         Ok(self
             .ibc_store
             .channel_counter
-            .get(StoreHeight::Pending, &NextChannelSequencePath {})
+            .get(StoreHeight::Pending, &NextChannelSequencePath)
             .ok_or(ChannelError::Other {
                 description: "channel counter not found".into(),
             })?)
@@ -668,14 +668,14 @@ where
         let current_sequence = self
             .ibc_store
             .client_counter
-            .get(StoreHeight::Pending, &NextClientSequencePath {})
+            .get(StoreHeight::Pending, &NextClientSequencePath)
             .ok_or(ClientError::Other {
                 description: "client counter not found".into(),
             })?;
 
         self.ibc_store
             .client_counter
-            .set(NextClientSequencePath {}, current_sequence + 1)
+            .set(NextClientSequencePath, current_sequence + 1)
             .map_err(|e| ClientError::Other {
                 description: format!("client counter update failed: {e:?}"),
             })?;
@@ -726,14 +726,14 @@ where
         let current_sequence = self
             .ibc_store
             .conn_counter
-            .get(StoreHeight::Pending, &NextConnectionSequencePath {})
+            .get(StoreHeight::Pending, &NextConnectionSequencePath)
             .ok_or(ConnectionError::Other {
                 description: "connection counter not found".into(),
             })?;
 
         self.ibc_store
             .conn_counter
-            .set(NextConnectionSequencePath {}, current_sequence + 1)
+            .set(NextConnectionSequencePath, current_sequence + 1)
             .map_err(|e| ConnectionError::Other {
                 description: format!("connection counter update failed: {e:?}"),
             })?;
@@ -842,14 +842,14 @@ where
         let current_sequence = self
             .ibc_store
             .channel_counter
-            .get(StoreHeight::Pending, &NextChannelSequencePath {})
+            .get(StoreHeight::Pending, &NextChannelSequencePath)
             .ok_or(ChannelError::Other {
                 description: "channel counter not found".into(),
             })?;
 
         self.ibc_store
             .channel_counter
-            .set(NextChannelSequencePath {}, current_sequence + 1)
+            .set(NextChannelSequencePath, current_sequence + 1)
             .map_err(|e| ChannelError::Other {
                 description: format!("channel counter update failed: {e:?}"),
             })?;

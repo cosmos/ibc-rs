@@ -119,15 +119,15 @@ where
         let mut channel_counter = TypedStore::new(shared_store.clone());
 
         client_counter
-            .set(NextClientSequencePath {}, 0)
+            .set(NextClientSequencePath, 0)
             .expect("no error");
 
         conn_counter
-            .set(NextConnectionSequencePath {}, 0)
+            .set(NextConnectionSequencePath, 0)
             .expect("no error");
 
         channel_counter
-            .set(NextChannelSequencePath {}, 0)
+            .set(NextChannelSequencePath, 0)
             .expect("no error");
 
         Self {
