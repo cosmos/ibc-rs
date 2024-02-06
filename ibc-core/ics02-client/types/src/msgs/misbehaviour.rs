@@ -13,7 +13,7 @@ pub const SUBMIT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMis
 
 /// A type of message that submits client misbehaviour proof.
 ///
-/// Deprecated since v0.50.0. Misbehaviour reports should be submitted via the `MsgUpdateClient`
+/// Deprecated since v0.51.0. Misbehaviour reports should be submitted via the `MsgUpdateClient`
 /// type through its `client_message` field.
 #[deprecated(
     since = "0.51.0",
