@@ -9,6 +9,7 @@ use ibc::clients::tendermint::types::{
 };
 use ibc::core::client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc::core::client::context::ClientValidationContext;
+#[allow(deprecated)]
 use ibc::core::client::types::msgs::{ClientMsg, MsgSubmitMisbehaviour, MsgUpdateClient};
 use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
@@ -80,6 +81,7 @@ fn msg_update_client() -> MsgEnvelope {
 
 /// rstest fixture that returns a `MsgEnvelope` with the `misbehaviour`
 /// field set to a `MockMisbehaviour` report.
+#[allow(deprecated)]
 #[fixture]
 fn msg_submit_misbehaviour() -> MsgEnvelope {
     let client_id = ClientId::default();
@@ -801,6 +803,7 @@ fn test_misbehaviour_client_ok(fixture: Fixture, #[case] msg_envelope: MsgEnvelo
     ensure_misbehaviour(&ctx, &client_id, &mock_client_type());
 }
 
+#[allow(deprecated)]
 #[rstest]
 fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
     let Fixture { router, .. } = fixture;
@@ -859,6 +862,7 @@ fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
 
 /// Tests misbehaviour handling for the synthetic Tendermint client.
 /// Misbehaviour evidence consists of equivocal headers.
+#[allow(deprecated)]
 #[rstest]
 fn test_misbehaviour_synthetic_tendermint_equivocation() {
     let client_id = tm_client_type().build_client_id(0);
@@ -921,6 +925,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
     ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
 }
 
+#[allow(deprecated)]
 #[rstest]
 fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let client_id = tm_client_type().build_client_id(0);
