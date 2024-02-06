@@ -2,7 +2,7 @@ name: Check Markdown links
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: "0 0 * * *"
 
   workflow_dispatch:
 
@@ -14,6 +14,6 @@ jobs:
       - name: markdown-link-check
         uses: gaurav-nelson/github-action-markdown-link-check@1.0.13
         with:
-          config-file: '.github/markdown-link-check.json'
-          use-quiet-mode: 'yes'
-          use-verbose-mode: 'yes'
+          config-file: ".github/markdown-link-check.json"
+          use-quiet-mode: "yes"
+          use-verbose-mode: "yes"
