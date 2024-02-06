@@ -9,8 +9,7 @@ use ibc::clients::tendermint::types::{
 };
 use ibc::core::client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc::core::client::context::ClientValidationContext;
-#[allow(deprecated)]
-use ibc::core::client::types::msgs::{ClientMsg, MsgSubmitMisbehaviour, MsgUpdateClient};
+use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
 use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::specs::ProofSpecs;
@@ -65,28 +64,6 @@ fn msg_update_client(client_id: &ClientId) -> MsgEnvelope {
     let msg = MsgUpdateClient {
         client_id: client_id.clone(),
         client_message: MockMisbehaviour {
-            client_id: client_id.clone(),
-            header1: MockHeader::new(height).with_timestamp(timestamp),
-            header2: MockHeader::new(height).with_timestamp(timestamp),
-        }
-        .into(),
-        signer: dummy_account_id(),
-    };
-
-    MsgEnvelope::from(ClientMsg::from(msg))
-}
-
-/// rstest fixture that returns a `MsgEnvelope` with the `misbehaviour`
-/// field set to a `MockMisbehaviour` report.
-#[allow(deprecated)]
-#[fixture]
-fn msg_submit_misbehaviour() -> MsgEnvelope {
-    let client_id = ClientId::default();
-    let timestamp = Timestamp::now();
-    let height = Height::new(0, 46).unwrap();
-    let msg = MsgSubmitMisbehaviour {
-        client_id: client_id.clone(),
-        misbehaviour: MockMisbehaviour {
             client_id: client_id.clone(),
             header1: MockHeader::new(height).with_timestamp(timestamp),
             header2: MockHeader::new(height).with_timestamp(timestamp),
