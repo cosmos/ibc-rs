@@ -12,19 +12,13 @@ use super::consensus_state::ConsensusState;
 /// [crate::client_state::ClientStateValidation] must
 /// inherit from this trait.
 pub trait ClientValidationContext {
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(
+    /// Returns the time and height when the client state for the given
+    /// [`ClientId`] was updated with a header for the given [`Height`]
+    fn update_meta(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Timestamp, ContextError>;
-
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError>;
+    ) -> Result<(Timestamp, Height), ContextError>;
 }
 
 /// Defines the methods that all client `ExecutionContext`s (precisely the
@@ -61,38 +55,25 @@ pub trait ClientExecutionContext: Sized {
     ) -> Result<(), ContextError>;
 
     /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified time as the time at which
-    /// this update (or header) was processed.
-    fn store_update_time(
+    ///
+    /// Implementations are expected to use this to record the specified time
+    /// and height as the time at which this update (or header) was processed.
+    fn store_update_meta(
         &mut self,
         client_id: ClientId,
         height: Height,
         host_timestamp: Timestamp,
-    ) -> Result<(), ContextError>;
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified height as the height at
-    /// at which this update (or header) was processed.
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
         host_height: Height,
     ) -> Result<(), ContextError>;
 
-    /// Delete the update time associated with the client at the specified height. This update
-    /// time should be associated with a consensus state through the specified height.
+    /// Delete the update time and height associated with the client at the
+    /// specified height.
+    ///
+    /// This update time should be associated with a consensus state through the
+    /// specified height.
     ///
     /// Note that this timestamp is determined by the host.
-    fn delete_update_time(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-    ) -> Result<(), ContextError>;
-
-    /// Delete the update height associated with the client at the specified height. This update
-    /// time should be associated with a consensus state through the specified height.
-    fn delete_update_height(
+    fn delete_update_meta(
         &mut self,
         client_id: ClientId,
         height: Height,

@@ -337,8 +337,12 @@ where
             ),
             tm_consensus_state.into(),
         )?;
-        ctx.store_update_time(client_id.clone(), self.latest_height(), host_timestamp)?;
-        ctx.store_update_height(client_id.clone(), self.latest_height(), host_height)?;
+        ctx.store_update_meta(
+            client_id.clone(),
+            self.latest_height(),
+            host_timestamp,
+            host_height,
+        )?;
 
         Ok(())
     }
@@ -388,8 +392,12 @@ where
                 ClientStatePath::new(client_id),
                 ClientState::from(new_client_state).into(),
             )?;
-            ctx.store_update_time(client_id.clone(), header_height, host_timestamp)?;
-            ctx.store_update_height(client_id.clone(), header_height, host_height)?;
+            ctx.store_update_meta(
+                client_id.clone(),
+                header_height,
+                host_timestamp,
+                host_height,
+            )?;
         }
 
         Ok(vec![header_height])
@@ -483,8 +491,12 @@ where
             ),
             TmConsensusState::from(new_consensus_state).into(),
         )?;
-        ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
-        ctx.store_update_height(client_id.clone(), latest_height, host_height)?;
+        ctx.store_update_meta(
+            client_id.clone(),
+            latest_height,
+            host_timestamp,
+            host_height,
+        )?;
 
         Ok(latest_height)
     }

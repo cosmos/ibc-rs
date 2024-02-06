@@ -205,10 +205,7 @@ fn test_consensus_state_pruning() {
         expired_height.revision_number(),
         expired_height.revision_height(),
     );
-    assert!(ctx
-        .client_update_height(&client_id, &expired_height)
-        .is_err());
-    assert!(ctx.client_update_time(&client_id, &expired_height).is_err());
+    assert!(ctx.update_meta(&client_id, &expired_height).is_err());
     assert!(ctx.consensus_state(&client_cons_state_path).is_err());
 
     // Check that latest valid consensus state exists.
@@ -219,14 +216,7 @@ fn test_consensus_state_pruning() {
         earliest_valid_height.revision_height(),
     );
 
-    assert!(ctx
-        .client_update_height(&client_id, &earliest_valid_height)
-        .is_ok());
-
-    assert!(ctx
-        .client_update_time(&client_id, &earliest_valid_height)
-        .is_ok());
-
+    assert!(ctx.update_meta(&client_id, &earliest_valid_height).is_ok());
     assert!(ctx.consensus_state(&client_cons_state_path).is_ok());
 
     let end_host_timestamp = ctx.host_timestamp().unwrap();

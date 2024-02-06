@@ -10,8 +10,8 @@ keywords     = ["blockchain", "consensus", "cosmos", "ibc"]
 readme       = "README.md"
 description  = """
     Maintained by `ibc-rs`, serves as a top-level library that contain a comprehensive set of
-    Inter-Blockchain Communication (IBC) implementations, re-exporting data structures and 
-    implementations of various IBC core, clients and applications from the `ibc-core`, 
+    Inter-Blockchain Communication (IBC) implementations, re-exporting data structures and
+    implementations of various IBC core, clients and applications from the `ibc-core`,
     `ibc-clients` and `ibc-apps` crates.
 """
 
@@ -56,7 +56,7 @@ schema = [
     "ibc-core/schema",
     "ibc-core-host-cosmos/schema",
     "ibc-primitives/schema",
-    "serde", 
+    "serde",
     "std"
 ]
 parity-scale-codec = [

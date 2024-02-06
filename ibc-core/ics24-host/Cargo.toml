@@ -10,7 +10,7 @@ keywords     = ["blockchain", "cosmos", "ibc", "host"]
 readme       = "./../README.md"
 description  = """
     Maintained by `ibc-rs`, contains essential top-level traits designed for the seamless integration
-    of host chains, facilitating access to the host's storage, the efficient retrieval of states and 
+    of host chains, facilitating access to the host's storage, the efficient retrieval of states and
     metadata crucial for the execution of any IBC datagrams.
 """
 
