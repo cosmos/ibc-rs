@@ -31,7 +31,7 @@ pub(crate) fn impl_ClientStateExecution(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
-        quote! { update_state_on_misbehaviour(cs, ctx, client_id, client_message, update_kind) },
+        quote! { update_state_on_misbehaviour(cs, ctx, client_id, client_message) },
         imports,
     );
 
@@ -48,7 +48,6 @@ pub(crate) fn impl_ClientStateExecution(
     let ClientId = imports.client_id();
     let ClientError = imports.client_error();
     let ClientStateExecution = imports.client_state_execution();
-    let UpdateKind = imports.update_kind();
     let Height = imports.height();
 
     // The types we need for the generated code.
@@ -91,7 +90,6 @@ pub(crate) fn impl_ClientStateExecution(
                 ctx: &mut #ClientExecutionContext,
                 client_id: &#ClientId,
                 client_message: #Any,
-                update_kind: &#UpdateKind,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#update_state_on_misbehaviour_impl),*

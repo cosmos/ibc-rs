@@ -17,7 +17,7 @@ pub(crate) fn impl_ClientStateValidation(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
-        quote! { verify_client_message(cs, ctx, client_id, client_message, update_kind) },
+        quote! { verify_client_message(cs, ctx, client_id, client_message) },
         imports,
     );
 
@@ -25,7 +25,7 @@ pub(crate) fn impl_ClientStateValidation(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
-        quote! { check_for_misbehaviour(cs, ctx, client_id, client_message, update_kind) },
+        quote! { check_for_misbehaviour(cs, ctx, client_id, client_message) },
         imports,
     );
 
@@ -43,7 +43,6 @@ pub(crate) fn impl_ClientStateValidation(
     let ClientError = imports.client_error();
     let ClientStateValidation = imports.client_state_validation();
     let Status = imports.status();
-    let UpdateKind = imports.update_kind();
 
     // The types we need for the generated code.
     let HostClientState = client_state_enum_name;
@@ -63,7 +62,6 @@ pub(crate) fn impl_ClientStateValidation(
                 ctx: &#ClientValidationContext,
                 client_id: &#ClientId,
                 client_message: #Any,
-                update_kind: &#UpdateKind,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#verify_client_message_impl),*
@@ -75,7 +73,6 @@ pub(crate) fn impl_ClientStateValidation(
                 ctx: &#ClientValidationContext,
                 client_id: &#ClientId,
                 client_message: #Any,
-                update_kind: &#UpdateKind,
             ) -> core::result::Result<bool, #ClientError> {
                 match self {
                     #(#check_for_misbehaviour_impl),*

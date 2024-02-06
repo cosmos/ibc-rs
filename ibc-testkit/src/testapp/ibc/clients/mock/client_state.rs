@@ -6,7 +6,7 @@ use ibc::core::client::context::client_state::{
 };
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
-use ibc::core::client::types::{Height, Status, UpdateKind};
+use ibc::core::client::types::{Height, Status};
 use ibc::core::commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -19,8 +19,8 @@ use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
-use crate::testapp::ibc::clients::mock::header::MockHeader;
-use crate::testapp::ibc::clients::mock::misbehaviour::Misbehaviour;
+use crate::testapp::ibc::clients::mock::header::{MockHeader, MOCK_HEADER_TYPE_URL};
+use crate::testapp::ibc::clients::mock::misbehaviour::{Misbehaviour, MOCK_MISBEHAVIOUR_TYPE_URL};
 use crate::testapp::ibc::clients::mock::proto::{
     ClientState as RawMockClientState, Header as RawMockHeader,
 };
@@ -223,10 +223,9 @@ where
         _ctx: &V,
         _client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        match update_kind {
-            UpdateKind::UpdateClient => {
+        match client_message.type_url.as_str() {
+            MOCK_HEADER_TYPE_URL => {
                 let header = MockHeader::try_from(client_message)?;
 
                 if self.latest_height() >= header.height() {
@@ -236,9 +235,10 @@ where
                     });
                 }
             }
-            UpdateKind::SubmitMisbehaviour => {
+            MOCK_MISBEHAVIOUR_TYPE_URL => {
                 let _misbehaviour = Misbehaviour::try_from(client_message)?;
             }
+            _ => {}
         }
 
         Ok(())
@@ -249,11 +249,10 @@ where
         _ctx: &V,
         _client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
-        match update_kind {
-            UpdateKind::UpdateClient => Ok(false),
-            UpdateKind::SubmitMisbehaviour => {
+        match client_message.type_url.as_str() {
+            MOCK_HEADER_TYPE_URL => Ok(false),
+            MOCK_MISBEHAVIOUR_TYPE_URL => {
                 let misbehaviour = Misbehaviour::try_from(client_message)?;
                 let header_1 = misbehaviour.header1;
                 let header_2 = misbehaviour.header2;
@@ -263,6 +262,7 @@ where
 
                 Ok(header_heights_equal && headers_are_in_future)
             }
+            _ => Ok(false),
         }
     }
 
@@ -365,7 +365,6 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         _client_message: Any,
-        _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         let frozen_client_state = self.with_frozen_height(Height::min(0));
 

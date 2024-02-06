@@ -3,7 +3,7 @@
 use core::marker::{Send, Sync};
 
 use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::{Height, Status, UpdateKind};
+use ibc_core_client_types::{Height, Status};
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -107,7 +107,6 @@ where
         ctx: &V,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateKind,
     ) -> Result<(), ClientError>;
 
     /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
@@ -117,7 +116,6 @@ where
         ctx: &V,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateKind,
     ) -> Result<bool, ClientError>;
 
     /// Returns the status of the client. Only Active clients are allowed to process packets.
@@ -168,7 +166,6 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateKind,
     ) -> Result<(), ClientError>;
 
     // Update the client state and consensus state in the store with the upgraded ones.
