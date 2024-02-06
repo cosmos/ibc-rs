@@ -1,5 +1,6 @@
-//! Defines the client message types that are sent to the chain by the relayer.
 #![allow(deprecated)]
+
+//! Defines the client message types that are sent to the chain by the relayer.
 
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
