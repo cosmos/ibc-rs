@@ -5,7 +5,7 @@ use ibc_core_client_context::client_state::{
 };
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::{ClientMisbehaviour, UpdateClient};
-use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;
+use ibc_core_client_types::msgs::MsgUpdateClient;
 use ibc_core_client_types::UpdateKind;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
@@ -13,7 +13,7 @@ use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
 {
@@ -39,15 +39,11 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
     let client_id = msg.client_id().clone();
-    let update_kind = match msg {
-        MsgUpdateOrMisbehaviour::UpdateClient(_) => UpdateKind::UpdateClient,
-        MsgUpdateOrMisbehaviour::Misbehaviour(_) => UpdateKind::SubmitMisbehaviour,
-    };
     let client_message = msg.client_message();
     let client_state = ctx.client_state(&client_id)?;
 
@@ -71,12 +67,13 @@ where
         ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
         ctx.emit_ibc_event(event)?;
     } else {
-        if !matches!(update_kind, UpdateKind::UpdateClient) {
-            return Err(ClientError::MisbehaviourHandlingFailure {
-                reason: "misbehaviour submitted, but none found".to_string(),
-            }
-            .into());
-        }
+        // TODO: Figure out whether this error is still relevant
+        // if !matches!(update_kind, UpdateKind::UpdateClient) {
+        //     return Err(ClientError::MisbehaviourHandlingFailure {
+        //         reason: "misbehaviour submitted, but none found".to_string(),
+        //     }
+        //     .into());
+        // }
 
         let header = client_message;
 

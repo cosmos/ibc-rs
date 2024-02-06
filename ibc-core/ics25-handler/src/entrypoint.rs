@@ -10,7 +10,7 @@ use ibc_core_channel::types::msgs::{
     channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
 };
 use ibc_core_client::handler::{create_client, update_client, upgrade_client};
-use ibc_core_client::types::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
+use ibc_core_client::types::msgs::ClientMsg;
 use ibc_core_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
@@ -46,12 +46,7 @@ where
     match msg {
         MsgEnvelope::Client(msg) => match msg {
             ClientMsg::CreateClient(msg) => create_client::validate(ctx, msg),
-            ClientMsg::UpdateClient(msg) => {
-                update_client::validate(ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg))
-            }
-            ClientMsg::Misbehaviour(msg) => {
-                update_client::validate(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
-            }
+            ClientMsg::UpdateClient(msg) => update_client::validate(ctx, msg),
             ClientMsg::UpgradeClient(msg) => upgrade_client::validate(ctx, msg),
         },
         MsgEnvelope::Connection(msg) => match msg {
@@ -117,12 +112,7 @@ where
     match msg {
         MsgEnvelope::Client(msg) => match msg {
             ClientMsg::CreateClient(msg) => create_client::execute(ctx, msg),
-            ClientMsg::UpdateClient(msg) => {
-                update_client::execute(ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg))
-            }
-            ClientMsg::Misbehaviour(msg) => {
-                update_client::execute(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
-            }
+            ClientMsg::UpdateClient(msg) => update_client::execute(ctx, msg),
             ClientMsg::UpgradeClient(msg) => upgrade_client::execute(ctx, msg),
         },
         MsgEnvelope::Connection(msg) => match msg {
