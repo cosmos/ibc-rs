@@ -48,6 +48,11 @@ Our release process is as follows:
     then update the release description and append:
    `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`
 
+Communications (non-technical) release pipeline:
+
+- Notify the communications team about the pending release and prepare a message to announce it.
+- Coordinate with other organizations that are active in IBC development (e.g., Interchain) to ensure they are in the loop.
+
 All done! 🎉
 
 [crates.io]: https://crates.io
