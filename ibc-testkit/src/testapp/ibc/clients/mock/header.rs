@@ -45,11 +45,15 @@ impl TryFrom<RawMockHeader> for MockHeader {
         Ok(MockHeader {
             height: raw
                 .height
-                .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(ClientError::MissingClientMessage)?,
-
-            timestamp: Timestamp::from_nanoseconds(raw.timestamp)
-                .map_err(ClientError::InvalidPacketTimestamp)?,
+                .ok_or(ClientError::Other {
+                    description: "missing height".into(),
+                })?
+                .try_into()?,
+            timestamp: Timestamp::from_nanoseconds(raw.timestamp).map_err(|err| {
+                ClientError::Other {
+                    description: err.to_string(),
+                }
+            })?,
         })
     }
 }

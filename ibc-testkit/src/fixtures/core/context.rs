@@ -1,22 +1,22 @@
-use alloc::sync::Arc;
+use alloc::fmt::Debug;
 use core::cmp::min;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 
+use basecoin_store::context::ProvableStore;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
-use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
 use typed_builder::TypedBuilder;
 
 use crate::hosts::block::{HostBlock, HostType};
-use crate::testapp::ibc::core::types::{MockContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
+use crate::testapp::ibc::core::types::{MockGenericContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 
 /// Configuration of the `MockContext` type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
-#[builder(build_method(into = MockContext))]
+#[builder(build_method(into))]
 pub struct MockContextConfig {
     #[builder(default = HostType::Mock)]
     host_type: HostType,
@@ -41,7 +41,10 @@ pub struct MockContextConfig {
     latest_timestamp: Timestamp,
 }
 
-impl From<MockContextConfig> for MockContext {
+impl<S> From<MockContextConfig> for MockGenericContext<S>
+where
+    S: ProvableStore + Debug + Default,
+{
     fn from(params: MockContextConfig) -> Self {
         assert_ne!(
             params.max_history_size, 0,
@@ -115,13 +118,13 @@ impl From<MockContextConfig> for MockContext {
                 .collect()
         };
 
-        MockContext {
+        MockGenericContext {
             host_chain_type: params.host_type,
             host_chain_id: params.host_id.clone(),
             max_history_size: params.max_history_size,
             history,
             block_time: params.block_time,
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            ibc_store: MockIbcStore::default(),
         }
     }
 }

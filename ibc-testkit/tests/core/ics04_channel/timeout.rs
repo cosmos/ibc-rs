@@ -43,9 +43,10 @@ fn fixture() -> Fixture {
 
     let router = MockRouter::new_with_transfer();
 
+    // in case of timeout, timeout timestamp should be less than host's timestamp
+    let timeout_timestamp = ctx.latest_timestamp().nanoseconds() - 1;
     let msg_proof_height = 2;
     let msg_timeout_height = 5;
-    let timeout_timestamp = Timestamp::now().nanoseconds();
 
     let msg = MsgTimeout::try_from(dummy_raw_msg_timeout(
         msg_proof_height,

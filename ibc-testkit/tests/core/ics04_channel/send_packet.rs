@@ -26,8 +26,6 @@ fn send_packet_processing() {
         want_pass: bool,
     }
 
-    let context = MockContext::default();
-
     let chan_end_on_a = ChannelEnd::new(
         State::Open,
         Order::default(),
@@ -84,14 +82,13 @@ fn send_packet_processing() {
     let tests: Vec<Test> = vec![
         Test {
             name: "Processing fails because no channel exists in the context".to_string(),
-            ctx: context.clone(),
+            ctx: MockContext::default(),
             packet: packet.clone(),
             want_pass: false,
         },
         Test {
             name: "Good parameters".to_string(),
-            ctx: context
-                .clone()
+            ctx: MockContext::default()
                 .with_client_config(
                     MockClientConfig::builder()
                         .latest_height(client_height)
@@ -109,8 +106,7 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height same as destination chain height".to_string(),
-            ctx: context
-                .clone()
+            ctx: MockContext::default()
                 .with_client_config(
                     MockClientConfig::builder()
                         .latest_height(client_height)
@@ -128,8 +124,7 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height one more than destination chain height".to_string(),
-            ctx: context
-                .clone()
+            ctx: MockContext::default()
                 .with_client_config(
                     MockClientConfig::builder()
                         .latest_height(client_height)
@@ -147,7 +142,7 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout due to timestamp".to_string(),
-            ctx: context
+            ctx: MockContext::default()
                 .with_client_config(
                     MockClientConfig::builder()
                         .latest_height(client_height)
@@ -173,7 +168,7 @@ fn send_packet_processing() {
                         "send_packet: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
                         test.name,
                         test.packet.clone(),
-                        test.ctx.clone()
+                        test.ctx
                     );
 
                 let ibc_events = test.ctx.get_events();
@@ -194,7 +189,7 @@ fn send_packet_processing() {
                     "send_packet: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
                     test.name,
                     test.packet.clone(),
-                    test.ctx.clone(),
+                    test.ctx,
                     e,
                 );
             }

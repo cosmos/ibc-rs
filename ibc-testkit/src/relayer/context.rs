@@ -1,3 +1,6 @@
+use alloc::fmt::Debug;
+
+use basecoin_store::context::ProvableStore;
 use ibc::core::client::types::Height;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::ClientId;
@@ -6,7 +9,7 @@ use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 
 use crate::testapp::ibc::clients::AnyClientState;
-use crate::testapp::ibc::core::types::MockContext;
+use crate::testapp::ibc::core::types::MockGenericContext;
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
 /// relay packets between chains. This trait comprises the dependencies towards a single chain.
 /// Most of the functions in this represent wrappers over the ABCI interface.
@@ -24,7 +27,10 @@ pub trait RelayerContext {
     fn signer(&self) -> Signer;
 }
 
-impl RelayerContext for MockContext {
+impl<S> RelayerContext for MockGenericContext<S>
+where
+    S: ProvableStore + Debug,
+{
     fn query_latest_height(&self) -> Result<Height, ContextError> {
         ValidationContext::host_height(self)
     }
@@ -59,7 +65,7 @@ mod tests {
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::testapp::ibc::core::types::MockClientConfig;
+    use crate::testapp::ibc::core::types::{MockClientConfig, MockContext};
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
@@ -126,30 +132,37 @@ mod tests {
         let mut ctx_a = MockContextConfig::builder()
             .host_id(chain_id_a.clone())
             .latest_height(chain_a_start_height)
-            .build()
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_chain_id(chain_id_b.clone())
-                    .client_id(client_on_a_for_b.clone())
-                    .latest_height(client_on_a_for_b_height)
-                    .client_type(tm_client_type()) // The target host chain (B) is synthetic TM.
-                    .build(),
-            );
+            .build::<MockContext>();
+
+        let mut ctx_b = MockContextConfig::builder()
+            .host_id(chain_id_b.clone())
+            .host_type(HostType::SyntheticTendermint)
+            .latest_height(chain_b_start_height)
+            .latest_timestamp(ctx_a.timestamp_at(chain_a_start_height.decrement().unwrap())) // chain B is running slower than chain A
+            .build::<MockContext>();
+
+        ctx_a = ctx_a.with_client_config(
+            MockClientConfig::builder()
+                .client_chain_id(chain_id_b)
+                .client_id(client_on_a_for_b.clone())
+                .latest_height(client_on_a_for_b_height)
+                .latest_timestamp(ctx_b.timestamp_at(client_on_a_for_b_height))
+                .client_type(tm_client_type()) // The target host chain (B) is synthetic TM.
+                .build(),
+        );
+
+        ctx_b = ctx_b.with_client_config(
+            MockClientConfig::builder()
+                .client_chain_id(chain_id_a)
+                .client_id(client_on_b_for_a.clone())
+                .latest_height(client_on_b_for_a_height)
+                .latest_timestamp(ctx_a.timestamp_at(client_on_b_for_a_height))
+                .build(),
+        );
+
         // dummy; not actually used in client updates
         let mut router_a = MockRouter::new_with_transfer();
 
-        let mut ctx_b = MockContextConfig::builder()
-            .host_id(chain_id_b)
-            .host_type(HostType::SyntheticTendermint)
-            .latest_height(chain_b_start_height)
-            .build()
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_chain_id(chain_id_a)
-                    .client_id(client_on_b_for_a.clone())
-                    .latest_height(client_on_b_for_a_height)
-                    .build(),
-            );
         // dummy; not actually used in client updates
         let mut router_b = MockRouter::new_with_transfer();
 

@@ -1,5 +1,8 @@
 pub mod mock;
 
+use alloc::fmt::Debug;
+
+use basecoin_store::context::ProvableStore;
 use derive_more::{From, TryInto};
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
@@ -17,11 +20,11 @@ use crate::testapp::ibc::clients::mock::client_state::{
 use crate::testapp::ibc::clients::mock::consensus_state::{
     MockConsensusState, MOCK_CONSENSUS_STATE_TYPE_URL,
 };
-use crate::testapp::ibc::core::types::MockContext;
+use crate::testapp::ibc::core::types::MockGenericContext;
 
 #[derive(Debug, Clone, From, PartialEq, ClientState)]
-#[validation(MockContext)]
-#[execution(MockContext)]
+#[validation(MockGenericContext<S: ProvableStore + Debug>)]
+#[execution(MockGenericContext<S: ProvableStore + Debug>)]
 pub enum AnyClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),

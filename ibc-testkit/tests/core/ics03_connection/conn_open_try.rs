@@ -53,7 +53,7 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
     let ctx_new = MockContextConfig::builder()
         .max_history_size(max_history_size)
         .latest_height(host_chain_height)
-        .build();
+        .build::<MockContext>();
     let ctx = match ctx_variant {
         Ctx::Default => MockContext::default(),
         Ctx::WithClient => ctx_new.with_client_config(

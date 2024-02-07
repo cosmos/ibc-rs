@@ -1,17 +1,20 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-use alloc::collections::btree_map::BTreeMap;
+use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 use core::cmp::min;
 use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 
+use basecoin_store::context::ProvableStore;
+use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore, SharedStore};
+use basecoin_store::types::{BinStore, JsonStore, ProtobufStore, TypedSet, TypedStore};
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::TENDERMINT_CLIENT_TYPE;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
-use ibc::core::channel::types::packet::Receipt;
+use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
@@ -20,15 +23,24 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{
     ChainId, ChannelId, ClientId, ClientType, ConnectionId, PortId, Sequence,
 };
-use ibc::core::host::ValidationContext;
+use ibc::core::host::types::path::{
+    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
+    ClientUpdateHeightPath, ClientUpdateTimePath, CommitmentPath, ConnectionPath,
+    NextChannelSequencePath, NextClientSequencePath, NextConnectionSequencePath, ReceiptPath,
+    SeqAckPath, SeqRecvPath, SeqSendPath,
+};
+use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::core::router::router::Router;
+use ibc_proto::google::protobuf::Any;
+use ibc_proto::ibc::core::channel::v1::Channel as RawChannelEnd;
+use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+use ibc_proto::ibc::core::connection::v1::ConnectionEnd as RawConnectionEnd;
 use parking_lot::Mutex;
 use tendermint_testgen::Validator as TestgenValidator;
 use typed_builder::TypedBuilder;
 
-use super::client_ctx::{MockClientRecord, PortChannelIdMap};
 use crate::fixtures::clients::tendermint::ClientStateConfig as TmClientStateConfig;
 use crate::fixtures::core::context::MockContextConfig;
 use crate::hosts::block::{HostBlock, HostType};
@@ -39,69 +51,124 @@ use crate::testapp::ibc::clients::mock::client_state::{
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
+use crate::testapp::ibc::utils::blocks_since;
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
 /// An object that stores all IBC related data.
-#[derive(Clone, Debug, Default)]
-pub struct MockIbcStore {
-    /// The set of all clients, indexed by their id.
-    pub clients: BTreeMap<ClientId, MockClientRecord>,
+#[derive(Debug)]
+pub struct MockIbcStore<S>
+where
+    S: ProvableStore + Debug,
+{
+    /// Handle to store instance.
+    /// The module is guaranteed exclusive access to all paths in the store key-space.
+    pub store: SharedStore<S>,
+    /// A typed-store for next client counter sequence
+    pub client_counter: JsonStore<SharedStore<S>, NextClientSequencePath, u64>,
+    /// A typed-store for next connection counter sequence
+    pub conn_counter: JsonStore<SharedStore<S>, NextConnectionSequencePath, u64>,
+    /// A typed-store for next channel counter sequence
+    pub channel_counter: JsonStore<SharedStore<S>, NextChannelSequencePath, u64>,
+    /// Tracks the processed time for client updates
+    pub client_processed_times: JsonStore<SharedStore<S>, ClientUpdateTimePath, Timestamp>,
+    /// A typed-store to track the processed height for client updates
+    pub client_processed_heights:
+        ProtobufStore<SharedStore<S>, ClientUpdateHeightPath, Height, RawHeight>,
+    /// A typed-store for AnyClientState
+    pub client_state_store: ProtobufStore<SharedStore<S>, ClientStatePath, AnyClientState, Any>,
+    /// A typed-store for AnyConsensusState
+    pub consensus_state_store:
+        ProtobufStore<SharedStore<S>, ClientConsensusStatePath, AnyConsensusState, Any>,
+    /// A typed-store for ConnectionEnd
+    pub connection_end_store:
+        ProtobufStore<SharedStore<S>, ConnectionPath, ConnectionEnd, RawConnectionEnd>,
+    /// A typed-store for ConnectionIds
+    pub connection_ids_store: JsonStore<SharedStore<S>, ClientConnectionPath, Vec<ConnectionId>>,
+    /// A typed-store for ChannelEnd
+    pub channel_end_store: ProtobufStore<SharedStore<S>, ChannelEndPath, ChannelEnd, RawChannelEnd>,
+    /// A typed-store for send sequences
+    pub send_sequence_store: JsonStore<SharedStore<S>, SeqSendPath, Sequence>,
+    /// A typed-store for receive sequences
+    pub recv_sequence_store: JsonStore<SharedStore<S>, SeqRecvPath, Sequence>,
+    /// A typed-store for ack sequences
+    pub ack_sequence_store: JsonStore<SharedStore<S>, SeqAckPath, Sequence>,
+    /// A typed-store for packet commitments
+    pub packet_commitment_store: BinStore<SharedStore<S>, CommitmentPath, PacketCommitment>,
+    /// A typed-store for packet receipts
+    pub packet_receipt_store: TypedSet<SharedStore<S>, ReceiptPath>,
+    /// A typed-store for packet ack
+    pub packet_ack_store: BinStore<SharedStore<S>, AckPath, AcknowledgementCommitment>,
+    /// Map of host consensus states
+    pub consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
+    /// IBC Events
+    pub events: Arc<Mutex<Vec<IbcEvent>>>,
+    /// message logs
+    pub logs: Arc<Mutex<Vec<String>>>,
+}
 
-    /// Tracks the processed time for clients header updates
-    pub client_processed_times: BTreeMap<(ClientId, Height), Timestamp>,
+impl<S> MockIbcStore<S>
+where
+    S: ProvableStore + Debug,
+{
+    pub fn new(store: S) -> Self {
+        let shared_store = SharedStore::new(store);
 
-    /// Tracks the processed height for the clients
-    pub client_processed_heights: BTreeMap<(ClientId, Height), Height>,
+        let mut client_counter = TypedStore::new(shared_store.clone());
+        let mut conn_counter = TypedStore::new(shared_store.clone());
+        let mut channel_counter = TypedStore::new(shared_store.clone());
 
-    /// Counter for the client identifiers, necessary for `increase_client_counter` and the
-    /// `client_counter` methods.
-    pub client_ids_counter: u64,
+        client_counter
+            .set(NextClientSequencePath, 0)
+            .expect("no error");
 
-    /// Association between client ids and connection ids.
-    pub client_connections: BTreeMap<ClientId, ConnectionId>,
+        conn_counter
+            .set(NextConnectionSequencePath, 0)
+            .expect("no error");
 
-    /// All the connections in the store.
-    pub connections: BTreeMap<ConnectionId, ConnectionEnd>,
+        channel_counter
+            .set(NextChannelSequencePath, 0)
+            .expect("no error");
 
-    /// Counter for connection identifiers (see `increase_connection_counter`).
-    pub connection_ids_counter: u64,
+        Self {
+            client_counter,
+            conn_counter,
+            channel_counter,
+            client_processed_times: TypedStore::new(shared_store.clone()),
+            client_processed_heights: TypedStore::new(shared_store.clone()),
+            consensus_states: Arc::new(Mutex::new(Default::default())),
+            client_state_store: TypedStore::new(shared_store.clone()),
+            consensus_state_store: TypedStore::new(shared_store.clone()),
+            connection_end_store: TypedStore::new(shared_store.clone()),
+            connection_ids_store: TypedStore::new(shared_store.clone()),
+            channel_end_store: TypedStore::new(shared_store.clone()),
+            send_sequence_store: TypedStore::new(shared_store.clone()),
+            recv_sequence_store: TypedStore::new(shared_store.clone()),
+            ack_sequence_store: TypedStore::new(shared_store.clone()),
+            packet_commitment_store: TypedStore::new(shared_store.clone()),
+            packet_receipt_store: TypedStore::new(shared_store.clone()),
+            packet_ack_store: TypedStore::new(shared_store.clone()),
+            events: Arc::new(Mutex::new(Vec::new())),
+            logs: Arc::new(Mutex::new(Vec::new())),
+            store: shared_store,
+        }
+    }
+}
 
-    /// Association between connection ids and channel ids.
-    pub connection_channels: BTreeMap<ConnectionId, Vec<(PortId, ChannelId)>>,
-
-    /// Counter for channel identifiers (see `increase_channel_counter`).
-    pub channel_ids_counter: u64,
-
-    /// All the channels in the store. TODO Make new key PortId X ChannelId
-    pub channels: PortChannelIdMap<ChannelEnd>,
-
-    /// Tracks the sequence number for the next packet to be sent.
-    pub next_sequence_send: PortChannelIdMap<Sequence>,
-
-    /// Tracks the sequence number for the next packet to be received.
-    pub next_sequence_recv: PortChannelIdMap<Sequence>,
-
-    /// Tracks the sequence number for the next packet to be acknowledged.
-    pub next_sequence_ack: PortChannelIdMap<Sequence>,
-
-    pub packet_acknowledgement: PortChannelIdMap<BTreeMap<Sequence, AcknowledgementCommitment>>,
-
-    /// Constant-size commitments to packets data fields
-    pub packet_commitment: PortChannelIdMap<BTreeMap<Sequence, PacketCommitment>>,
-
-    /// Used by unordered channel
-    pub packet_receipt: PortChannelIdMap<BTreeMap<Sequence, Receipt>>,
-
-    /// Emitted IBC events in order
-    pub events: Vec<IbcEvent>,
-
-    /// Logs of the IBC module
-    pub logs: Vec<String>,
+impl<S> Default for MockIbcStore<S>
+where
+    S: ProvableStore + Debug + Default,
+{
+    fn default() -> Self {
+        Self::new(S::default())
+    }
 }
 
 /// A context implementing the dependencies necessary for testing any IBC module.
 #[derive(Debug)]
-pub struct MockContext {
+pub struct MockGenericContext<S>
+where
+    S: ProvableStore + Debug,
+{
     /// The type of host chain underlying this mock context.
     pub host_chain_type: HostType,
 
@@ -119,8 +186,10 @@ pub struct MockContext {
     pub block_time: Duration,
 
     /// An object that stores all IBC related data.
-    pub ibc_store: Arc<Mutex<MockIbcStore>>,
+    pub ibc_store: MockIbcStore<S>,
 }
+
+pub type MockContext = MockGenericContext<RevertibleStore<GrowingStore<InMemoryStore>>>;
 
 #[derive(Debug, TypedBuilder)]
 pub struct MockClientConfig {
@@ -133,8 +202,8 @@ pub struct MockClientConfig {
     latest_height: Height,
     #[builder(default)]
     consensus_state_heights: Vec<Height>,
-    #[builder(default = Timestamp::now())]
-    latest_timestamp: Timestamp,
+    #[builder(default, setter(strip_option))]
+    latest_timestamp: Option<Timestamp>,
 
     #[builder(default = Duration::from_secs(64000))]
     trusting_period: Duration,
@@ -147,35 +216,21 @@ pub struct MockClientConfig {
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
-impl Default for MockContext {
+impl<S> Default for MockGenericContext<S>
+where
+    S: ProvableStore + Debug + Default,
+{
     fn default() -> Self {
         MockContextConfig::builder().build()
     }
 }
 
-/// A manual clone impl is provided because the tests are oblivious to the fact that the `ibc_store`
-/// is a shared ptr.
-impl Clone for MockContext {
-    fn clone(&self) -> Self {
-        let ibc_store = {
-            let ibc_store = self.ibc_store.lock().clone();
-            Arc::new(Mutex::new(ibc_store))
-        };
-
-        Self {
-            host_chain_type: self.host_chain_type,
-            host_chain_id: self.host_chain_id.clone(),
-            max_history_size: self.max_history_size,
-            history: self.history.clone(),
-            block_time: self.block_time,
-            ibc_store,
-        }
-    }
-}
-
 /// Implementation of internal interface for use in testing. The methods in this interface should
 /// _not_ be accessible to any Ics handler.
-impl MockContext {
+impl<S> MockGenericContext<S>
+where
+    S: ProvableStore + Debug,
+{
     /// Creates a mock context. Parameter `max_history_size` determines how many blocks will
     /// the chain maintain in its history, which also determines the pruning window. Parameter
     /// `latest_height` determines the current height of the chain. This context
@@ -189,7 +244,10 @@ impl MockContext {
         host_type: HostType,
         max_history_size: u64,
         latest_height: Height,
-    ) -> Self {
+    ) -> Self
+    where
+        S: Default,
+    {
         assert_ne!(
             max_history_size, 0,
             "The chain must have a non-zero max_history_size"
@@ -212,7 +270,7 @@ impl MockContext {
 
         let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
         let next_block_timestamp = Timestamp::now().add(block_time).expect("Never fails");
-        MockContext {
+        Self {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
             max_history_size,
@@ -232,7 +290,7 @@ impl MockContext {
                 })
                 .collect(),
             block_time,
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            ibc_store: MockIbcStore::default(),
         }
     }
 
@@ -249,7 +307,10 @@ impl MockContext {
         host_type: HostType,
         validator_history: &[Vec<TestgenValidator>],
         latest_height: Height,
-    ) -> Self {
+    ) -> Self
+    where
+        S: Default,
+    {
         let max_history_size = validator_history.len() as u64 - 1;
 
         assert_ne!(
@@ -295,14 +356,18 @@ impl MockContext {
             })
             .collect();
 
-        MockContext {
+        Self {
             host_chain_type: host_type,
             host_chain_id: host_id.clone(),
             max_history_size,
             history,
             block_time,
-            ibc_store: Arc::new(Mutex::new(MockIbcStore::default())),
+            ibc_store: MockIbcStore::default(),
         }
+    }
+
+    pub fn chain_revision_number(&self) -> u64 {
+        self.host_chain_id.revision_number()
     }
 
     /// Associates a client record to this context.
@@ -443,20 +508,45 @@ impl MockContext {
         )
     }
 
-    pub fn with_client_config(self, client: MockClientConfig) -> Self {
+    pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
+        let client_state_path = ClientStatePath::new(client_id);
+        self.store_client_state(client_state_path, client_state)
+            .expect("error writing to store");
+        self
+    }
+
+    pub fn with_consensus_state(
+        mut self,
+        client_id: &ClientId,
+        height: Height,
+        consensus_state: AnyConsensusState,
+    ) -> Self {
+        let consensus_state_path = ClientConsensusStatePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        );
+        self.store_consensus_state(consensus_state_path, consensus_state)
+            .expect("error writing to store");
+
+        self
+    }
+
+    pub fn with_client_config(mut self, client: MockClientConfig) -> Self {
         let cs_heights = if client.consensus_state_heights.is_empty() {
             vec![client.latest_height]
         } else {
             client.consensus_state_heights
         };
 
-        fn blocks_since(a: Height, b: Height) -> Option<u64> {
-            (a.revision_number() == b.revision_number()
-                && a.revision_height() >= b.revision_height())
-            .then(|| a.revision_height() - b.revision_height())
-        }
+        let client_latest_timestamp = client
+            .latest_timestamp
+            .unwrap_or_else(|| self.latest_timestamp());
 
-        let (client_state, consensus_states) = match client.client_type.as_str() {
+        let (client_state, consensus_states): (
+            AnyClientState,
+            BTreeMap<Height, AnyConsensusState>,
+        ) = match client.client_type.as_str() {
             MOCK_CLIENT_TYPE => {
                 let blocks: Vec<_> = cs_heights
                     .into_iter()
@@ -466,8 +556,7 @@ impl MockContext {
                         (
                             cs_height,
                             MockHeader::new(cs_height).with_timestamp(
-                                client
-                                    .latest_timestamp
+                                client_latest_timestamp
                                     .sub(self.block_time * (n_blocks as u32))
                                     .expect("never fails"),
                             ),
@@ -476,7 +565,7 @@ impl MockContext {
                     .collect();
 
                 let client_state = MockClientState::new(
-                    MockHeader::new(client.latest_height).with_timestamp(client.latest_timestamp),
+                    MockHeader::new(client.latest_height).with_timestamp(client_latest_timestamp),
                 );
 
                 let cs_states = blocks
@@ -497,8 +586,7 @@ impl MockContext {
                             HostBlock::generate_tm_block(
                                 client.client_chain_id.clone(),
                                 cs_height.revision_height(),
-                                client
-                                    .latest_timestamp
+                                client_latest_timestamp
                                     .sub(self.block_time * (n_blocks as u32))
                                     .expect("never fails"),
                             ),
@@ -528,89 +616,73 @@ impl MockContext {
             _ => panic!("unknown client type"),
         };
 
-        let client_record = MockClientRecord {
-            client_state: Some(client_state),
-            consensus_states,
-        };
+        self = self.with_client_state(&client.client_id, client_state);
 
-        self.ibc_store
-            .lock()
-            .clients
-            .insert(client.client_id.clone(), client_record);
+        for (height, consensus_state) in consensus_states {
+            self = self.with_consensus_state(&client.client_id, height, consensus_state);
+        }
+
         self
     }
 
     /// Associates a connection to this context.
     pub fn with_connection(
-        self,
+        mut self,
         connection_id: ConnectionId,
         connection_end: ConnectionEnd,
     ) -> Self {
-        self.ibc_store
-            .lock()
-            .connections
-            .insert(connection_id, connection_end);
+        let connection_path = ConnectionPath::new(&connection_id);
+        self.store_connection(&connection_path, connection_end)
+            .expect("error writing to store");
         self
     }
 
     /// Associates a channel (in an arbitrary state) to this context.
     pub fn with_channel(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         channel_end: ChannelEnd,
     ) -> Self {
-        let mut channels = self.ibc_store.lock().channels.clone();
-        channels
-            .entry(port_id)
-            .or_default()
-            .insert(chan_id, channel_end);
-        self.ibc_store.lock().channels = channels;
+        let channel_end_path = ChannelEndPath::new(&port_id, &chan_id);
+        self.store_channel(&channel_end_path, channel_end)
+            .expect("error writing to store");
         self
     }
 
     pub fn with_send_sequence(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         seq_number: Sequence,
     ) -> Self {
-        let mut next_sequence_send = self.ibc_store.lock().next_sequence_send.clone();
-        next_sequence_send
-            .entry(port_id)
-            .or_default()
-            .insert(chan_id, seq_number);
-        self.ibc_store.lock().next_sequence_send = next_sequence_send;
+        let seq_send_path = SeqSendPath::new(&port_id, &chan_id);
+        self.store_next_sequence_send(&seq_send_path, seq_number)
+            .expect("error writing to store");
         self
     }
 
     pub fn with_recv_sequence(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         seq_number: Sequence,
     ) -> Self {
-        let mut next_sequence_recv = self.ibc_store.lock().next_sequence_recv.clone();
-        next_sequence_recv
-            .entry(port_id)
-            .or_default()
-            .insert(chan_id, seq_number);
-        self.ibc_store.lock().next_sequence_recv = next_sequence_recv;
+        let seq_recv_path = SeqRecvPath::new(&port_id, &chan_id);
+        self.store_next_sequence_recv(&seq_recv_path, seq_number)
+            .expect("error writing to store");
         self
     }
 
     pub fn with_ack_sequence(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         seq_number: Sequence,
     ) -> Self {
-        let mut next_sequence_ack = self.ibc_store.lock().next_sequence_send.clone();
-        next_sequence_ack
-            .entry(port_id)
-            .or_default()
-            .insert(chan_id, seq_number);
-        self.ibc_store.lock().next_sequence_ack = next_sequence_ack;
+        let seq_ack_path = SeqAckPath::new(&port_id, &chan_id);
+        self.store_next_sequence_ack(&seq_ack_path, seq_number)
+            .expect("error writing to store");
         self
     }
 
@@ -636,20 +708,15 @@ impl MockContext {
     }
 
     pub fn with_packet_commitment(
-        self,
+        mut self,
         port_id: PortId,
         chan_id: ChannelId,
         seq: Sequence,
         data: PacketCommitment,
     ) -> Self {
-        let mut packet_commitment = self.ibc_store.lock().packet_commitment.clone();
-        packet_commitment
-            .entry(port_id)
-            .or_default()
-            .entry(chan_id)
-            .or_default()
-            .insert(seq, data);
-        self.ibc_store.lock().packet_commitment = packet_commitment;
+        let commitment_path = CommitmentPath::new(&port_id, &chan_id, seq);
+        self.store_packet_commitment(&commitment_path, data)
+            .expect("error writing to store");
         self
     }
 
@@ -734,11 +801,8 @@ impl MockContext {
     }
 
     pub fn latest_client_states(&self, client_id: &ClientId) -> AnyClientState {
-        self.ibc_store.lock().clients[client_id]
-            .client_state
-            .as_ref()
-            .expect("Never fails")
-            .clone()
+        self.client_state(client_id)
+            .expect("error reading from store")
     }
 
     pub fn latest_consensus_states(
@@ -746,35 +810,42 @@ impl MockContext {
         client_id: &ClientId,
         height: &Height,
     ) -> AnyConsensusState {
-        self.ibc_store.lock().clients[client_id]
-            .consensus_states
-            .get(height)
-            .expect("Never fails")
-            .clone()
+        self.consensus_state(&ClientConsensusStatePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        ))
+        .expect("error reading from store")
     }
 
     pub fn latest_height(&self) -> Height {
-        self.history
-            .last()
-            .expect("history cannot be empty")
-            .height()
+        self.host_height().expect("Never fails")
     }
 
-    pub fn ibc_store_share(&self) -> Arc<Mutex<MockIbcStore>> {
-        self.ibc_store.clone()
+    pub fn latest_timestamp(&self) -> Timestamp {
+        self.host_block(&self.latest_height())
+            .expect("Never fails")
+            .timestamp()
+    }
+
+    pub fn timestamp_at(&self, height: Height) -> Timestamp {
+        let n_blocks = blocks_since(self.latest_height(), height).expect("less or equal height");
+        self.latest_timestamp()
+            .sub(self.block_time * (n_blocks as u32))
+            .expect("Never fails")
     }
 
     pub fn query_latest_header(&self) -> Option<HostBlock> {
-        let block_ref = self.host_block(&self.host_height().expect("Never fails"));
+        let block_ref = self.host_block(&self.latest_height());
         block_ref.cloned()
     }
 
     pub fn get_events(&self) -> Vec<IbcEvent> {
-        self.ibc_store.lock().events.clone()
+        self.ibc_store.events.lock().clone()
     }
 
     pub fn get_logs(&self) -> Vec<String> {
-        self.ibc_store.lock().logs.clone()
+        self.ibc_store.logs.lock().clone()
     }
 }
 
