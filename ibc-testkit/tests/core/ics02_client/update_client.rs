@@ -9,7 +9,7 @@ use ibc::clients::tendermint::types::{
 };
 use ibc::core::client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc::core::client::context::ClientValidationContext;
-use ibc::core::client::types::msgs::{ClientMsg, MsgSubmitMisbehaviour, MsgUpdateClient};
+use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
 use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::specs::ProofSpecs;
@@ -57,37 +57,13 @@ fn fixture() -> Fixture {
     Fixture { ctx, router }
 }
 
-/// rstest fixture that returns a `MsgEnvelope` with the `client_message`
-/// field set to a `MockMisbehaviour` report.
-#[fixture]
-fn msg_update_client() -> MsgEnvelope {
-    let client_id = ClientId::default();
+/// Returns a `MsgEnvelope` with the `client_message` field set to a `MockMisbehaviour` report.
+fn msg_update_client(client_id: &ClientId) -> MsgEnvelope {
     let timestamp = Timestamp::now();
     let height = Height::new(0, 46).unwrap();
     let msg = MsgUpdateClient {
         client_id: client_id.clone(),
         client_message: MockMisbehaviour {
-            client_id: client_id.clone(),
-            header1: MockHeader::new(height).with_timestamp(timestamp),
-            header2: MockHeader::new(height).with_timestamp(timestamp),
-        }
-        .into(),
-        signer: dummy_account_id(),
-    };
-
-    MsgEnvelope::from(ClientMsg::from(msg))
-}
-
-/// rstest fixture that returns a `MsgEnvelope` with the `misbehaviour`
-/// field set to a `MockMisbehaviour` report.
-#[fixture]
-fn msg_submit_misbehaviour() -> MsgEnvelope {
-    let client_id = ClientId::default();
-    let timestamp = Timestamp::now();
-    let height = Height::new(0, 46).unwrap();
-    let msg = MsgSubmitMisbehaviour {
-        client_id: client_id.clone(),
-        misbehaviour: MockMisbehaviour {
             client_id: client_id.clone(),
             header1: MockHeader::new(height).with_timestamp(timestamp),
             header2: MockHeader::new(height).with_timestamp(timestamp),
@@ -782,15 +758,14 @@ fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &Cl
 /// Misbehaviour evidence consists of identical headers - mock misbehaviour handler
 /// considers it a valid proof of misbehaviour.
 #[rstest]
-#[case::msg_submit_misbehaviour(msg_submit_misbehaviour())]
-#[case::msg_update_client(msg_update_client())]
-fn test_misbehaviour_client_ok(fixture: Fixture, #[case] msg_envelope: MsgEnvelope) {
+fn test_misbehaviour_client_ok(fixture: Fixture) {
     let Fixture {
         mut ctx,
         mut router,
     } = fixture;
 
     let client_id = ClientId::default();
+    let msg_envelope = msg_update_client(&client_id);
 
     let res = validate(&ctx, &router, msg_envelope.clone());
     assert!(res.is_ok());
@@ -806,18 +781,8 @@ fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
     let Fixture { router, .. } = fixture;
 
     let client_id = ClientId::from_str("mockclient1").unwrap();
-    let height = Height::new(0, 46).unwrap();
-    let msg = MsgSubmitMisbehaviour {
-        client_id: ClientId::from_str("nonexistingclient").unwrap(),
-        misbehaviour: MockMisbehaviour {
-            client_id: client_id.clone(),
-            header1: MockHeader::new(height),
-            header2: MockHeader::new(height),
-        }
-        .into(),
-        signer: dummy_account_id(),
-    };
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
+
+    let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient").unwrap());
 
     let ctx = MockContext::default().with_client_config(
         MockClientConfig::builder()
@@ -834,18 +799,8 @@ fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
     let Fixture { router, .. } = fixture;
 
     let client_id = ClientId::from_str("mockclient1").unwrap();
-    let height = Height::new(0, 46).unwrap();
-    let msg = MsgUpdateClient {
-        client_id: ClientId::from_str("nonexistingclient").unwrap(),
-        client_message: MockMisbehaviour {
-            client_id: client_id.clone(),
-            header1: MockHeader::new(height),
-            header2: MockHeader::new(height),
-        }
-        .into(),
-        signer: dummy_account_id(),
-    };
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
+
+    let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient").unwrap());
 
     let ctx = MockContext::default().with_client_config(
         MockClientConfig::builder()
@@ -907,9 +862,9 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
         tm_block.into()
     };
 
-    let msg = MsgSubmitMisbehaviour {
+    let msg = MsgUpdateClient {
         client_id: client_id.clone(),
-        misbehaviour: TmMisbehaviour::new(client_id.clone(), header1, header2).into(),
+        client_message: TmMisbehaviour::new(client_id.clone(), header1, header2).into(),
         signer: dummy_account_id(),
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
@@ -969,9 +924,10 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
         tm_block
     };
 
-    let msg = MsgSubmitMisbehaviour {
+    let msg = MsgUpdateClient {
         client_id: client_id.clone(),
-        misbehaviour: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into()).into(),
+        client_message: TmMisbehaviour::new(client_id.clone(), header1.into(), header2.into())
+            .into(),
         signer: dummy_account_id(),
     };
 

@@ -12,6 +12,13 @@ use crate::error::ClientError;
 pub const SUBMIT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
 /// A type of message that submits client misbehaviour proof.
+///
+/// Deprecated since v0.51.0. Misbehaviour reports should be submitted via the `MsgUpdateClient`
+/// type through its `client_message` field.
+#[deprecated(
+    since = "0.51.0",
+    note = "Misbehaviour reports should be submitted via `MsgUpdateClient` through its `client_message` field"
+)]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
@@ -32,7 +39,6 @@ impl Protobuf<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {}
 impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
     type Error = ClientError;
 
-    #[allow(deprecated)]
     fn try_from(raw: RawMsgSubmitMisbehaviour) -> Result<Self, Self::Error> {
         let raw_misbehaviour = raw
             .misbehaviour
@@ -51,7 +57,6 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
 
 impl From<MsgSubmitMisbehaviour> for RawMsgSubmitMisbehaviour {
     fn from(ics_msg: MsgSubmitMisbehaviour) -> Self {
-        #[allow(deprecated)]
         RawMsgSubmitMisbehaviour {
             client_id: ics_msg.client_id.to_string(),
             misbehaviour: Some(ics_msg.misbehaviour),
