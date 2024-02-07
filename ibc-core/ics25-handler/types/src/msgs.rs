@@ -6,6 +6,7 @@ use ibc_core_channel_types::msgs::{
     CHAN_OPEN_INIT_TYPE_URL, CHAN_OPEN_TRY_TYPE_URL, RECV_PACKET_TYPE_URL,
     TIMEOUT_ON_CLOSE_TYPE_URL, TIMEOUT_TYPE_URL,
 };
+#[allow(deprecated)]
 use ibc_core_client_types::msgs::{
     ClientMsg, MsgCreateClient, MsgSubmitMisbehaviour, MsgUpdateClient, MsgUpgradeClient,
     CREATE_CLIENT_TYPE_URL, SUBMIT_MISBEHAVIOUR_TYPE_URL, UPDATE_CLIENT_TYPE_URL,
@@ -35,6 +36,7 @@ pub enum MsgEnvelope {
     Packet(PacketMsg),
 }
 
+#[allow(deprecated)]
 impl TryFrom<Any> for MsgEnvelope {
     type Error = RouterError;
 

@@ -13,6 +13,7 @@ use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
 use ibc_client_tendermint_types::{
     client_type as tm_client_type, ClientState as ClientStateType,
     ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
+    TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
 use ibc_core_client::context::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation,
@@ -20,7 +21,7 @@ use ibc_core_client::context::client_state::{
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc_core_client::types::error::{ClientError, UpgradeClientError};
-use ibc_core_client::types::{Height, Status, UpdateKind};
+use ibc_core_client::types::{Height, Status};
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -240,17 +241,17 @@ where
         ctx: &V,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
-        match update_kind {
-            UpdateKind::UpdateClient => {
+        match client_message.type_url.as_str() {
+            TENDERMINT_HEADER_TYPE_URL => {
                 let header = TmHeader::try_from(client_message)?;
                 self.verify_header(ctx, client_id, header)
             }
-            UpdateKind::SubmitMisbehaviour => {
+            TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
                 let misbehaviour = TmMisbehaviour::try_from(client_message)?;
                 self.verify_misbehaviour(ctx, client_id, misbehaviour)
             }
+            _ => Err(ClientError::InvalidUpdateClientMessage),
         }
     }
 
@@ -259,17 +260,17 @@ where
         ctx: &V,
         client_id: &ClientId,
         client_message: Any,
-        update_kind: &UpdateKind,
     ) -> Result<bool, ClientError> {
-        match update_kind {
-            UpdateKind::UpdateClient => {
+        match client_message.type_url.as_str() {
+            TENDERMINT_HEADER_TYPE_URL => {
                 let header = TmHeader::try_from(client_message)?;
                 self.check_for_misbehaviour_update_client(ctx, client_id, header)
             }
-            UpdateKind::SubmitMisbehaviour => {
+            TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
                 let misbehaviour = TmMisbehaviour::try_from(client_message)?;
                 self.check_for_misbehaviour_misbehavior(&misbehaviour)
             }
+            _ => Err(ClientError::InvalidUpdateClientMessage),
         }
     }
 
@@ -336,8 +337,12 @@ where
             ),
             tm_consensus_state.into(),
         )?;
-        ctx.store_update_time(client_id.clone(), self.latest_height(), host_timestamp)?;
-        ctx.store_update_height(client_id.clone(), self.latest_height(), host_height)?;
+        ctx.store_update_meta(
+            client_id.clone(),
+            self.latest_height(),
+            host_timestamp,
+            host_height,
+        )?;
 
         Ok(())
     }
@@ -387,8 +392,12 @@ where
                 ClientStatePath::new(client_id),
                 ClientState::from(new_client_state).into(),
             )?;
-            ctx.store_update_time(client_id.clone(), header_height, host_timestamp)?;
-            ctx.store_update_height(client_id.clone(), header_height, host_height)?;
+            ctx.store_update_meta(
+                client_id.clone(),
+                header_height,
+                host_timestamp,
+                host_height,
+            )?;
         }
 
         Ok(vec![header_height])
@@ -399,7 +408,6 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         _client_message: Any,
-        _update_kind: &UpdateKind,
     ) -> Result<(), ClientError> {
         // NOTE: frozen height is  set to `Height {revision_height: 0,
         // revision_number: 1}` and it is the same for all misbehaviour. This
@@ -483,8 +491,12 @@ where
             ),
             TmConsensusState::from(new_consensus_state).into(),
         )?;
-        ctx.store_update_time(client_id.clone(), latest_height, host_timestamp)?;
-        ctx.store_update_height(client_id.clone(), latest_height, host_height)?;
+        ctx.store_update_meta(
+            client_id.clone(),
+            latest_height,
+            host_timestamp,
+            host_height,
+        )?;
 
         Ok(latest_height)
     }

@@ -70,7 +70,6 @@ where
     /// A typed-store for next channel counter sequence
     pub channel_counter: JsonStore<SharedStore<S>, NextChannelSequencePath, u64>,
     /// Tracks the processed time for client updates
-    // pub client_processed_times: Arc<Mutex<BTreeMap<(ClientId, Height), Timestamp>>>,
     pub client_processed_times: JsonStore<SharedStore<S>, ClientUpdateTimePath, Timestamp>,
     /// A typed-store to track the processed height for client updates
     pub client_processed_heights:

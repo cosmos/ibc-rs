@@ -102,11 +102,6 @@ impl Imports {
         quote! {#prefix::primitives::Timestamp}
     }
 
-    pub fn update_kind(&self) -> TokenStream {
-        let prefix = self.prefix();
-        quote! {#prefix::client::types::UpdateKind}
-    }
-
     pub fn status(&self) -> TokenStream {
         let prefix = self.prefix();
         quote! {#prefix::client::types::Status}

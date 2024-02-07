@@ -20,10 +20,6 @@ where
     ctx.validate_message_signer(msg.signer())?;
 
     let client_id = msg.client_id().clone();
-    let update_kind = match msg {
-        MsgUpdateOrMisbehaviour::UpdateClient(_) => UpdateKind::UpdateClient,
-        MsgUpdateOrMisbehaviour::Misbehaviour(_) => UpdateKind::SubmitMisbehaviour,
-    };
 
     // Read client state from the host chain store. The client should already exist.
     let client_state = ctx.client_state(&client_id)?;
@@ -38,7 +34,6 @@ where
         ctx.get_client_validation_context(),
         &client_id,
         client_message,
-        &update_kind,
     )?;
 
     Ok(())
@@ -54,14 +49,12 @@ where
         MsgUpdateOrMisbehaviour::Misbehaviour(_) => UpdateKind::SubmitMisbehaviour,
     };
     let client_message = msg.client_message();
-
     let client_state = ctx.client_state(&client_id)?;
 
     let found_misbehaviour = client_state.check_for_misbehaviour(
         ctx.get_client_validation_context(),
         &client_id,
         client_message.clone(),
-        &update_kind,
     )?;
 
     if found_misbehaviour {
@@ -69,7 +62,6 @@ where
             ctx.get_client_execution_context(),
             &client_id,
             client_message,
-            &update_kind,
         )?;
 
         let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(

@@ -62,12 +62,13 @@ impl<S> ClientValidationContext for MockGenericContext<S>
 where
     S: ProvableStore + Debug,
 {
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(
+    /// Returns the time and height when the client state for the given
+    /// [`ClientId`] was updated with a header for the given [`Height`]
+    fn update_meta(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Timestamp, ContextError> {
+    ) -> Result<(Timestamp, Height), ContextError> {
         let client_update_time_path = ClientUpdateTimePath::new(
             client_id.clone(),
             height.revision_number(),
@@ -77,19 +78,10 @@ where
             .ibc_store
             .client_processed_times
             .get(StoreHeight::Pending, &client_update_time_path)
-            .ok_or(ClientError::ProcessedTimeNotFound {
+            .ok_or(ClientError::UpdateMetaDataNotFound {
                 client_id: client_id.clone(),
                 height: *height,
             })?;
-        Ok(processed_timestamp)
-    }
-
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> Result<Height, ContextError> {
         let client_update_height_path = ClientUpdateHeightPath::new(
             client_id.clone(),
             height.revision_number(),
@@ -99,11 +91,12 @@ where
             .ibc_store
             .client_processed_heights
             .get(StoreHeight::Pending, &client_update_height_path)
-            .ok_or(ClientError::ProcessedHeightNotFound {
+            .ok_or(ClientError::UpdateMetaDataNotFound {
                 client_id: client_id.clone(),
                 height: *height,
             })?;
-        Ok(processed_height)
+
+        Ok((processed_timestamp, processed_height))
     }
 }
 
@@ -148,14 +141,15 @@ where
         Ok(())
     }
 
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified time as the time at which
-    /// this update (or header) was processed.
-    fn store_update_time(
+    /// Called upon successful client update. Implementations are expected to
+    /// use this to record the time and height at which this update (or header)
+    /// was processed.
+    fn store_update_meta(
         &mut self,
         client_id: ClientId,
         height: Height,
-        timestamp: Timestamp,
+        host_timestamp: Timestamp,
+        host_height: Height,
     ) -> Result<(), ContextError> {
         let client_update_time_path = ClientUpdateTimePath::new(
             client_id.clone(),
@@ -164,22 +158,10 @@ where
         );
         self.ibc_store
             .client_processed_times
-            .set(client_update_time_path, timestamp)
+            .set(client_update_time_path, host_timestamp)
             .map_err(|_| ClientError::Other {
                 description: "store update error".into(),
             })?;
-        Ok(())
-    }
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified height as the height at
-    /// at which this update (or header) was processed.
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-        host_height: Height,
-    ) -> Result<(), ContextError> {
         let client_update_height_path = ClientUpdateHeightPath::new(
             client_id.clone(),
             height.revision_number(),
@@ -194,8 +176,9 @@ where
         Ok(())
     }
 
-    /// Delete the update time associated with the client at the specified height.
-    fn delete_update_time(
+    /// Delete the update metadata associated with the client at the specified
+    /// height.
+    fn delete_update_meta(
         &mut self,
         client_id: ClientId,
         height: Height,
@@ -208,15 +191,6 @@ where
         self.ibc_store
             .client_processed_times
             .delete(client_update_time_path);
-        Ok(())
-    }
-
-    /// Delete the update height associated with the client at the specified height.
-    fn delete_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-    ) -> Result<(), ContextError> {
         let client_update_height_path = ClientUpdateHeightPath::new(
             client_id.clone(),
             height.revision_number(),
