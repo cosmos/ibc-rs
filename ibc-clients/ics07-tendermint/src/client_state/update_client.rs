@@ -10,7 +10,7 @@ use tendermint_light_client_verifier::Verifier;
 
 use super::ClientState;
 use crate::consensus_state::ConsensusState as TmConsensusState;
-use crate::context::{CommonContext, ValidationContext as TmValidationContext};
+use crate::context::{CommonContext, TmVerifier, ValidationContext as TmValidationContext};
 
 impl ClientState {
     pub fn verify_header<ClientValidationContext>(
@@ -85,8 +85,7 @@ impl ClientState {
             })?;
 
             // main header verification, delegated to the tendermint-light-client crate.
-            self.0
-                .verifier
+            self.verifier()
                 .verify_update_header(untrusted_state, trusted_state, &options, now)
                 .into_result()?;
         }

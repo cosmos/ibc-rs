@@ -9,6 +9,7 @@ use tendermint_light_client_verifier::Verifier;
 
 use super::{ClientState as TmClientState, TmValidationContext};
 use crate::consensus_state::ConsensusState as TmConsensusState;
+use crate::context::TmVerifier;
 
 impl TmClientState {
     // verify_misbehaviour determines whether or not two conflicting headers at
@@ -107,8 +108,7 @@ impl TmClientState {
             description: "host timestamp must not be zero".to_string(),
         })?;
 
-        self.0
-            .verifier
+        self.verifier()
             .verify_misbehaviour_header(untrusted_state, trusted_state, &options, current_timestamp)
             .into_result()?;
 

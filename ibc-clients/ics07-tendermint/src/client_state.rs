@@ -34,10 +34,12 @@ use ibc_core_host::ExecutionContext;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
+use tendermint_light_client_verifier::ProdVerifier;
 
 use super::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::{
-    CommonContext, ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
+    CommonContext, ExecutionContext as TmExecutionContext, TmVerifier,
+    ValidationContext as TmValidationContext,
 };
 
 mod misbehaviour;
@@ -499,6 +501,14 @@ where
         )?;
 
         Ok(latest_height)
+    }
+}
+
+impl TmVerifier for ClientState {
+    type Verifier = ProdVerifier;
+
+    fn verifier(&self) -> Self::Verifier {
+        ProdVerifier::default()
     }
 }
 

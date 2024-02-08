@@ -7,7 +7,6 @@ use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
-use tendermint_light_client_verifier::ProdVerifier;
 
 use crate::consensus_state::ConsensusState as TmConsensusState;
 
@@ -64,4 +63,8 @@ impl<T> ExecutionContext for T where T: CommonContext + ClientExecutionContext {
 /// Tendermint client verification behaviour.
 ///
 /// Defaults to utilizing the `ProdVerifier` provided by the Tendermint light client.
-pub trait Verifier {}
+pub trait TmVerifier {
+    type Verifier: tendermint_light_client_verifier::Verifier;
+
+    fn verifier(&self) -> Self::Verifier;
+}
