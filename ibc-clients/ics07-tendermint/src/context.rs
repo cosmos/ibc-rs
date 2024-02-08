@@ -7,6 +7,7 @@ use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
+use tendermint_light_client_verifier::ProdVerifier;
 
 use crate::consensus_state::ConsensusState as TmConsensusState;
 
