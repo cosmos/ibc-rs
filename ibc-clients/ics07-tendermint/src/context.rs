@@ -58,3 +58,9 @@ pub trait ValidationContext: CommonContext {
 pub trait ExecutionContext: CommonContext + ClientExecutionContext {}
 
 impl<T> ExecutionContext for T where T: CommonContext + ClientExecutionContext {}
+
+/// Specifies the Verifier interface that hosts must adhere to when customizing
+/// Tendermint client verification behaviour.
+///
+/// Defaults to utilizing the `ProdVerifier` provided by the Tendermint light client.
+pub trait Verifier {}

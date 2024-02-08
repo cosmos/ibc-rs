@@ -48,6 +48,9 @@ pub struct ClientState {
     pub allow_update: AllowUpdate,
     pub frozen_height: Option<Height>,
     #[cfg_attr(feature = "serde", serde(skip))]
+    // This verifier field is not part of the ClientState proto type
+    // This field should be entirely removed from ClientState
+    // Replace this verifier with a Verifier trait in the ics07-context crate
     pub verifier: ProdVerifier,
 }
 
