@@ -226,14 +226,7 @@ where
     ) -> Result<(), ClientError> {
         match client_message.type_url.as_str() {
             MOCK_HEADER_TYPE_URL => {
-                let header = MockHeader::try_from(client_message)?;
-
-                if self.latest_height() >= header.height() {
-                    return Err(ClientError::LowHeaderHeight {
-                        header_height: header.height(),
-                        latest_height: self.latest_height(),
-                    });
-                }
+                let _header = MockHeader::try_from(client_message)?;
             }
             MOCK_MISBEHAVIOUR_TYPE_URL => {
                 let _misbehaviour = Misbehaviour::try_from(client_message)?;
