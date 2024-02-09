@@ -16,7 +16,7 @@ description  = """
 
 [dependencies]
 # external dependencies
-base64          = { version = "0.21", default-features = false, features = ["alloc"] }
+base64          = { workspace = true , features = ["alloc"] }
 displaydoc      = { workspace = true }
 serde           = { workspace = true , optional = true }
 cosmwasm-schema = { version = "1.4.1", default-features = false, optional = true }
