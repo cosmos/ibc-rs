@@ -160,23 +160,18 @@ fn test_update_client_with_prev_header() {
         latest_height,
     );
 
-    let msg_2 = build_msg_from_header(
-        chain_id_b.clone(),
-        client_id.clone(),
-        height_2,
-        latest_height,
-    );
+    let msg_2 = build_msg_from_header(chain_id_b, client_id.clone(), height_2, latest_height);
 
     // First, submit a header with `height_2` to set the client's latest
     // height to `height_2`.
     let _ = validate(&ctx, &router, msg_2.clone());
-    let _ = execute(&mut ctx, &mut router, msg_2.clone());
+    let _ = execute(&mut ctx, &mut router, msg_2);
 
     // Then, submit a header with `height_1` to see if the client's latest
     // height remains `height_2` and the consensus state is stored at the
     // correct path (`height_1`).
     let _ = validate(&ctx, &router, msg_1.clone());
-    let _ = execute(&mut ctx, &mut router, msg_1.clone());
+    let _ = execute(&mut ctx, &mut router, msg_1);
 
     let client_state = ctx.client_state(&client_id).unwrap();
     assert_eq!(client_state.latest_height(), height_2);
