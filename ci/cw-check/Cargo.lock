@@ -245,7 +245,7 @@ dependencies = [
  "cosmwasm-std",
  "ibc-apps",
  "ibc-core",
- "serde-json-wasm 1.0.0",
+ "serde-json-wasm 1.0.1",
  "thiserror",
 ]
 
@@ -573,7 +573,7 @@ version = "0.50.0"
 dependencies = [
  "ibc-app-transfer-types",
  "ibc-core",
- "serde-json-wasm 1.0.0",
+ "serde-json-wasm 1.0.1",
 ]
 
 [[package]]
@@ -1296,9 +1296,9 @@ dependencies = [
 
 [[package]]
 name = "serde-json-wasm"
-version = "1.0.0"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83c37d03f3b0f6b5f77c11af1e7c772de1c9af83e50bef7bb6069601900ba67b"
+checksum = "f05da0d153dd4595bdffd5099dc0e9ce425b205ee648eb93437ff7302af8c9a5"
 dependencies = [
  "serde",
 ]

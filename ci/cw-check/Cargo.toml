@@ -11,7 +11,7 @@ ibc-apps = { path = "../../ibc-apps", default_features = false, features = ["ser
 ibc-core = { path = "../../ibc-core", features = ["serde", "parity-scale-codec", "schema"] }
 cosmwasm-std = { version = "^1.5.0", default-features = false }
 cosmwasm-schema = { version = "^1.5.0", default-features = false }
-serde_json =  { package = "serde-json-wasm", version = "^1.0.0", default-features = false }
+serde_json =  { package = "serde-json-wasm", version = "^1.0.1", default-features = false }
 thiserror = { version = "^1.0", default-features = false }
 
 [profile.release]
