@@ -383,8 +383,8 @@ where
             ctx.store_consensus_state(
                 ClientConsensusStatePath::new(
                     client_id.clone(),
-                    new_client_state.latest_height.revision_number(),
-                    new_client_state.latest_height.revision_height(),
+                    header_height.revision_number(),
+                    header_height.revision_height(),
                 ),
                 TmConsensusState::from(new_consensus_state).into(),
             )?;

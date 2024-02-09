@@ -223,17 +223,6 @@ fn routing_module_and_keepers() {
             state_check: None,
         },
         Test {
-            name: "Client update fails due to stale header".to_string(),
-            msg: MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
-                client_id: client_id.clone(),
-                client_message: MockHeader::new(update_client_height).into(),
-                signer: default_signer.clone(),
-            }))
-            .into(),
-            want_pass: false,
-            state_check: None,
-        },
-        Test {
             name: "Connection open init succeeds".to_string(),
             msg: MsgEnvelope::Connection(ConnectionMsg::OpenInit(
                 dummy_msg_conn_open_init_with_client_id(msg_conn_init, client_id.clone()),
