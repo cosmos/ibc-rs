@@ -93,7 +93,7 @@ ibc-client-wasm-types       = { version = "0.50.0", path = "./ibc-clients/ics08-
 ibc-app-transfer-types      = { version = "0.50.0", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 ibc-app-nft-transfer-types  = { version = "0.50.0", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
 
-ibc-proto = { version = "0.41.0", default-features = false }
+ibc-proto = { version = "0.42.0", default-features = false }
 
 # cosmos dependencies
 tendermint                       = { version = "0.34.0", default-features = false }
