@@ -317,7 +317,7 @@ impl ClientUpdateHeightPath {
 ///
 /// The key is formatted like so:
 /// `iterateConsensusStates{BigEndianRevisionBytes}{BigEndianHeightBytes}`
-/// to ensures that the lexicographic order of iteration keys match the
+/// to ensure that the lexicographic order of iteration keys match the
 /// height order of the consensus states.
 ///
 /// See `ibc-go`
@@ -376,7 +376,7 @@ impl ConnectionPath {
         ConnectionPath(connection_id.clone())
     }
 
-    /// Returns the connection store prefix under which all the connection are
+    /// Returns the connection store prefix under which all the connections are
     /// stored: "connections".
     pub fn prefix() -> String {
         CONNECTION_PREFIX.to_string()
