@@ -315,47 +315,20 @@ impl ClientUpdateHeightPath {
 /// incorporated to facilitate cross-compatibility with `ibc-go` when developing
 /// CosmWasm-driven light clients with `ibc-rs`.
 ///
+/// The key is formatted like so:
+/// `iterateConsensusStates{BigEndianRevisionBytes}{BigEndianHeightBytes}`
+/// to ensures that the lexicographic order of iteration keys match the
+/// height order of the consensus states.
+///
 /// See `ibc-go`
 /// [documentation](https://github.com/cosmos/ibc-go/blob/016a6095b577ecb9323edad508cff19d017636a1/modules/light-clients/07-tendermint/store.go#L19-L34)
 /// for more details.
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub struct IterateConsensusStates {
-    pub revision_number: u64,
-    pub revision_height: u64,
-}
-
-impl IterateConsensusStates {
-    pub fn new(revision_number: u64, revision_height: u64) -> Self {
-        Self {
-            revision_number,
-            revision_height,
-        }
-    }
-
-    /// The key is formatted like so:
-    /// `iterateConsensusStates{BigEndianRevisionBytes}{BigEndianHeightBytes}`
-    /// to ensures that the lexicographic order of iteration keys match the
-    /// height order of the consensus states.
-    pub fn key(&self) -> Vec<u8> {
-        let mut path = Vec::new();
-        path.extend_from_slice(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes());
-        path.extend(&self.revision_number.to_be_bytes());
-        path.extend(&self.revision_height.to_be_bytes());
-        path
-    }
+pub fn iteration_key(revision_number: u64, revision_height: u64) -> Vec<u8> {
+    let mut path = Vec::new();
+    path.extend_from_slice(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes());
+    path.extend(revision_number.to_be_bytes());
+    path.extend(revision_height.to_be_bytes());
+    path
 }
 
 #[cfg_attr(
