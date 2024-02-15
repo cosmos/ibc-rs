@@ -146,7 +146,7 @@ where
     let proof = ibc_ctx
         .get_proof(
             current_height,
-            &Path::ClientState(ClientStatePath::new(connection_end.client_id())),
+            &Path::ClientState(ClientStatePath::new(connection_end.client_id().clone())),
         )
         .ok_or(QueryError::ProofNotFound {
             description: format!(

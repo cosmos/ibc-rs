@@ -89,7 +89,7 @@ where
     let proof: Vec<u8> = ibc_ctx
         .get_proof(
             current_height,
-            &Path::ClientConnection(ClientConnectionPath::new(&client_id)),
+            &Path::ClientConnection(ClientConnectionPath::new(client_id.clone())),
         )
         .ok_or(QueryError::ProofNotFound {
             description: format!("Proof not found for client connection path: {client_id:?}"),
@@ -122,7 +122,7 @@ where
     let proof = ibc_ctx
         .get_proof(
             current_height,
-            &Path::ClientState(ClientStatePath::new(connection_end.client_id())),
+            &Path::ClientState(ClientStatePath::new(connection_end.client_id().clone())),
         )
         .ok_or(QueryError::ProofNotFound {
             description: format!(

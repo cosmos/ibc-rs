@@ -11,13 +11,36 @@ use ibc_primitives::prelude::*;
 
 use crate::identifiers::{ChannelId, ClientId, ConnectionId, PortId, Sequence};
 
+pub const NEXT_CLIENT_SEQUENCE: &str = "nextClientSequence";
+pub const NEXT_CONNECTION_SEQUENCE: &str = "nextConnectionSequence";
+pub const NEXT_CHANNEL_SEQUENCE: &str = "nextChannelSequence";
+
+pub const CLIENT_PREFIX: &str = "clients";
+pub const CLIENT_STATE: &str = "clientState";
+pub const CONSENSUS_STATE_PREFIX: &str = "consensusStates";
+pub const CONNECTION_PREFIX: &str = "connections";
+pub const CHANNEL_PREFIX: &str = "channels";
+pub const CHANNEL_END_PREFIX: &str = "channelEnds";
+pub const PORT_PREFIX: &str = "ports";
+pub const SEQUENCE_PREFIX: &str = "sequences";
+pub const NEXT_SEQ_SEND_PREFIX: &str = "nextSequenceSend";
+pub const NEXT_SEQ_RECV_PREFIX: &str = "nextSequenceRecv";
+pub const NEXT_SEQ_ACK_PREFIX: &str = "nextSequenceAck";
+pub const PACKET_COMMITMENT_PREFIX: &str = "commitments";
+pub const PACKET_ACK_PREFIX: &str = "acks";
+pub const PACKET_RECEIPT_PREFIX: &str = "receipts";
+
+pub const ITERATE_CONSENSUS_STATE_PREFIX: &str = "iterateConsensusStates";
+pub const PROCESSED_TIME: &str = "processedTime";
+pub const PROCESSED_HEIGHT: &str = "processedHeight";
+
 /// ABCI client upgrade keys
 /// - The key identifying the upgraded IBC state within the upgrade sub-store
-const UPGRADED_IBC_STATE: &str = "upgradedIBCState";
-///- The key identifying the upgraded client state
-const UPGRADED_CLIENT_STATE: &str = "upgradedClient";
+pub const UPGRADED_IBC_STATE: &str = "upgradedIBCState";
+/// - The key identifying the upgraded client state
+pub const UPGRADED_CLIENT_STATE: &str = "upgradedClient";
 /// - The key identifying the upgraded consensus state
-const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
+pub const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 
 /// The Path enum abstracts out the different sub-paths.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Display)]
@@ -56,7 +79,7 @@ pub enum Path {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "nextClientSequence")]
+#[display(fmt = "{NEXT_CLIENT_SEQUENCE}")]
 pub struct NextClientSequencePath;
 
 #[cfg_attr(
@@ -73,7 +96,7 @@ pub struct NextClientSequencePath;
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "nextConnectionSequence")]
+#[display(fmt = "{NEXT_CONNECTION_SEQUENCE}")]
 pub struct NextConnectionSequencePath;
 
 #[cfg_attr(
@@ -90,7 +113,7 @@ pub struct NextConnectionSequencePath;
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "nextChannelSequence")]
+#[display(fmt = "{NEXT_CHANNEL_SEQUENCE}")]
 pub struct NextChannelSequencePath;
 
 #[cfg_attr(
@@ -106,13 +129,25 @@ pub struct NextChannelSequencePath;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{_0}/clientState")]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display, From)]
+#[display(fmt = "{CLIENT_PREFIX}/{_0}/{CLIENT_STATE}")]
 pub struct ClientStatePath(pub ClientId);
 
 impl ClientStatePath {
-    pub fn new(client_id: &ClientId) -> ClientStatePath {
-        ClientStatePath(client_id.clone())
+    pub fn new(client_id: ClientId) -> ClientStatePath {
+        ClientStatePath(client_id)
+    }
+
+    /// Returns the client store prefix under which all the client states are
+    /// stored: "clients".
+    pub fn prefix() -> String {
+        CLIENT_PREFIX.to_string()
+    }
+
+    /// Returns the final part (leaf) of the path under which an individual
+    /// client state is stored: "clientState".
+    pub fn leaf() -> String {
+        CLIENT_STATE.to_string()
     }
 }
 
@@ -130,14 +165,23 @@ impl ClientStatePath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{client_id}/consensusStates/{revision_number}-{revision_height}")]
+#[display(
+    fmt = "{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}/{revision_number}-{revision_height}"
+)]
 pub struct ClientConsensusStatePath {
     pub client_id: ClientId,
     pub revision_number: u64,
     pub revision_height: u64,
 }
 
+// Returns the full consensus state path of specific client in the format:
+// "clients/{client_id}/consensusStates" as a string.
+pub fn full_consensus_state_path(client_id: &ClientId) -> String {
+    format!("{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}")
+}
+
 impl ClientConsensusStatePath {
+    /// Constructs a new `ClientConsensusStatePath`.
     pub fn new(
         client_id: ClientId,
         revision_number: u64,
@@ -149,38 +193,21 @@ impl ClientConsensusStatePath {
             revision_height,
         }
     }
-}
 
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(
-    fmt = "clients/{client_id}/consensusStates/{revision_number}-{revision_height}/processedTime"
-)]
-pub struct ClientUpdateTimePath {
-    pub client_id: ClientId,
-    pub revision_number: u64,
-    pub revision_height: u64,
-}
+    /// Returns the path representing the parent group under which all consensus
+    /// states are stored: "clients/{client_id}/consensusStates".
+    pub fn parent(&self) -> String {
+        full_consensus_state_path(&self.client_id)
+    }
 
-impl ClientUpdateTimePath {
-    pub fn new(client_id: ClientId, revision_number: u64, revision_height: u64) -> Self {
-        Self {
-            client_id,
-            revision_number,
-            revision_height,
-        }
+    /// Returns the final part (leaf) of the path under which an individual
+    /// consensus state is stored:
+    /// "consensusStates/{revision_number}-{revision_height}".
+    pub fn leaf(&self) -> String {
+        format!(
+            "{CONSENSUS_STATE_PREFIX}/{}-{}",
+            self.revision_number, self.revision_height
+        )
     }
 }
 
@@ -199,7 +226,57 @@ impl ClientUpdateTimePath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(
-    fmt = "clients/{client_id}/consensusStates/{revision_number}-{revision_height}/processedHeight"
+    fmt = "{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}/{revision_number}-{revision_height}/{PROCESSED_TIME}"
+)]
+pub struct ClientUpdateTimePath {
+    pub client_id: ClientId,
+    pub revision_number: u64,
+    pub revision_height: u64,
+}
+
+impl ClientUpdateTimePath {
+    /// Constructs a new `ClientUpdateTimePath`.
+    pub fn new(client_id: ClientId, revision_number: u64, revision_height: u64) -> Self {
+        Self {
+            client_id,
+            revision_number,
+            revision_height,
+        }
+    }
+
+    /// Returns the path representing the parent group under which all the
+    /// processed times are stored: "clients/{client_id}/consensusStates".
+    pub fn parent(&self) -> String {
+        full_consensus_state_path(&self.client_id)
+    }
+
+    /// Returns the final part (leaf) of the path under which an individual
+    /// processed time is stored:
+    /// "consensusStates/{revision_number}-{revision_height}/processedTime".
+    pub fn leaf(&self) -> String {
+        format!(
+            "{CONSENSUS_STATE_PREFIX}/{}-{}/{PROCESSED_TIME}",
+            self.revision_number, self.revision_height
+        )
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
+    fmt = "{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}/{revision_number}-{revision_height}/{PROCESSED_HEIGHT}"
 )]
 pub struct ClientUpdateHeightPath {
     pub client_id: ClientId,
@@ -215,8 +292,32 @@ impl ClientUpdateHeightPath {
             revision_height,
         }
     }
+
+    /// Returns the path representing the parent group under which all the
+    /// processed heights are stored: "clients/{client_id}/consensusStates".
+    pub fn parent(&self) -> String {
+        full_consensus_state_path(&self.client_id)
+    }
+
+    /// Returns the final part (leaf) of the path under which an individual
+    /// processed height is stored:
+    /// "consensusStates/{revision_number}-{revision_height}/processedHeight".
+    pub fn leaf(&self) -> String {
+        format!(
+            "{CONSENSUS_STATE_PREFIX}/{}-{}/{PROCESSED_HEIGHT}",
+            self.revision_number, self.revision_height
+        )
+    }
 }
 
+/// This iteration key is namely used by the `ibc-go` implementation as an
+/// efficient approach for iterating over consensus states. This is specifically
+/// incorporated to facilitate cross-compatibility with `ibc-go` when developing
+/// CosmWasm-driven light clients with `ibc-rs`.
+///
+/// See `ibc-go`
+/// [documentation](https://github.com/cosmos/ibc-go/blob/016a6095b577ecb9323edad508cff19d017636a1/modules/light-clients/07-tendermint/store.go#L19-L34)
+/// for more details.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -230,13 +331,30 @@ impl ClientUpdateHeightPath {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "clients/{_0}/connections")]
-pub struct ClientConnectionPath(pub ClientId);
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct IterateConsensusStates {
+    pub revision_number: u64,
+    pub revision_height: u64,
+}
 
-impl ClientConnectionPath {
-    pub fn new(client_id: &ClientId) -> ClientConnectionPath {
-        ClientConnectionPath(client_id.clone())
+impl IterateConsensusStates {
+    pub fn new(revision_number: u64, revision_height: u64) -> Self {
+        Self {
+            revision_number,
+            revision_height,
+        }
+    }
+
+    /// The key is formatted like so:
+    /// `iterateConsensusStates{BigEndianRevisionBytes}{BigEndianHeightBytes}`
+    /// to ensures that the lexicographic order of iteration keys match the
+    /// height order of the consensus states.
+    pub fn key(&self) -> Vec<u8> {
+        let mut path = Vec::new();
+        path.extend_from_slice(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes());
+        path.extend(&self.revision_number.to_be_bytes());
+        path.extend(&self.revision_height.to_be_bytes());
+        path
     }
 }
 
@@ -254,13 +372,42 @@ impl ClientConnectionPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "connections/{_0}")]
+#[display(fmt = "{CLIENT_PREFIX}/{_0}/{CONNECTION_PREFIX}")]
+pub struct ClientConnectionPath(pub ClientId);
+
+impl ClientConnectionPath {
+    pub fn new(client_id: ClientId) -> ClientConnectionPath {
+        ClientConnectionPath(client_id)
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "{CONNECTION_PREFIX}/{_0}")]
 pub struct ConnectionPath(pub ConnectionId);
 
 impl ConnectionPath {
     pub fn new(connection_id: &ConnectionId) -> ConnectionPath {
         ConnectionPath(connection_id.clone())
     }
+
+    /// Returns the connection store prefix under which all the connection are
+    /// stored: "connections".
+    pub fn prefix() -> String {
+        CONNECTION_PREFIX.to_string()
+    }
 }
 
 #[cfg_attr(
@@ -277,7 +424,7 @@ impl ConnectionPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "ports/{_0}")]
+#[display(fmt = "{PORT_PREFIX}/{_0}")]
 pub struct PortPath(pub PortId);
 
 #[cfg_attr(
@@ -294,12 +441,46 @@ pub struct PortPath(pub PortId);
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "channelEnds/ports/{_0}/channels/{_1}")]
+#[display(fmt = "{CHANNEL_END_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct ChannelEndPath(pub PortId, pub ChannelId);
 
 impl ChannelEndPath {
     pub fn new(port_id: &PortId, channel_id: &ChannelId) -> ChannelEndPath {
         ChannelEndPath(port_id.clone(), channel_id.clone())
+    }
+
+    /// Returns the channel end store prefix under which all the channel ends
+    /// are stored: "channelEnds".
+    pub fn prefix() -> String {
+        CHANNEL_END_PREFIX.to_string()
+    }
+
+    /// Returns the parent group path under which all the sequences of a channel are
+    /// stored with the format:
+    /// "{prefix}/ports/{port_id}/channels/{channel_id}/sequences"
+    fn full_sequences_path(&self, prefix: &str) -> String {
+        format!(
+            "{prefix}/{PORT_PREFIX}/{}/{CHANNEL_PREFIX}/{}/{SEQUENCE_PREFIX}",
+            self.0, self.1,
+        )
+    }
+
+    /// Returns the parent group path under which all the commitment packets of
+    /// a channel are stored.
+    pub fn commitments_path(&self) -> String {
+        self.full_sequences_path(PACKET_COMMITMENT_PREFIX)
+    }
+
+    /// Returns the parent group path under which all the ack packets of a
+    /// channel are stored.
+    pub fn acks_path(&self) -> String {
+        self.full_sequences_path(PACKET_ACK_PREFIX)
+    }
+
+    /// Returns the parent group path under which all the receipt packets of a
+    /// channel are stored.
+    pub fn receipts_path(&self) -> String {
+        self.full_sequences_path(PACKET_RECEIPT_PREFIX)
     }
 }
 
@@ -317,7 +498,7 @@ impl ChannelEndPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "nextSequenceSend/ports/{_0}/channels/{_1}")]
+#[display(fmt = "{NEXT_SEQ_SEND_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct SeqSendPath(pub PortId, pub ChannelId);
 
 impl SeqSendPath {
@@ -340,7 +521,7 @@ impl SeqSendPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "nextSequenceRecv/ports/{_0}/channels/{_1}")]
+#[display(fmt = "{NEXT_SEQ_RECV_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct SeqRecvPath(pub PortId, pub ChannelId);
 
 impl SeqRecvPath {
@@ -363,7 +544,7 @@ impl SeqRecvPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "nextSequenceAck/ports/{_0}/channels/{_1}")]
+#[display(fmt = "{NEXT_SEQ_ACK_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct SeqAckPath(pub PortId, pub ChannelId);
 
 impl SeqAckPath {
@@ -386,7 +567,9 @@ impl SeqAckPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "commitments/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
+#[display(
+    fmt = "{PACKET_COMMITMENT_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
+)]
 pub struct CommitmentPath {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -401,36 +584,11 @@ impl CommitmentPath {
             sequence,
         }
     }
-}
 
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "acks/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
-pub struct AckPath {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
-    pub sequence: Sequence,
-}
-
-impl AckPath {
-    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> AckPath {
-        AckPath {
-            port_id: port_id.clone(),
-            channel_id: channel_id.clone(),
-            sequence,
-        }
+    /// Returns the commitment store prefix under which all the packet
+    /// commitments are stored: "commitments"
+    pub fn prefix() -> String {
+        PACKET_COMMITMENT_PREFIX.to_string()
     }
 }
 
@@ -448,7 +606,48 @@ impl AckPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "receipts/ports/{port_id}/channels/{channel_id}/sequences/{sequence}")]
+#[display(
+    fmt = "{PACKET_ACK_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
+)]
+pub struct AckPath {
+    pub port_id: PortId,
+    pub channel_id: ChannelId,
+    pub sequence: Sequence,
+}
+
+impl AckPath {
+    pub fn new(port_id: &PortId, channel_id: &ChannelId, sequence: Sequence) -> AckPath {
+        AckPath {
+            port_id: port_id.clone(),
+            channel_id: channel_id.clone(),
+            sequence,
+        }
+    }
+
+    /// Returns the ack store prefix under which all the packet acks are stored:
+    /// "acks"
+    pub fn prefix() -> String {
+        PACKET_ACK_PREFIX.to_string()
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
+    fmt = "{PACKET_RECEIPT_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
+)]
 pub struct ReceiptPath {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -462,6 +661,12 @@ impl ReceiptPath {
             channel_id: channel_id.clone(),
             sequence,
         }
+    }
+
+    /// Returns the receipt store prefix under which all the packet receipts are
+    /// stored: "receipts"
+    pub fn prefix() -> String {
+        PACKET_RECEIPT_PREFIX.to_string()
     }
 }
 
@@ -558,9 +763,9 @@ fn parse_next_sequence(components: &[&str]) -> Option<Path> {
     }
 
     match *components.first()? {
-        "nextClientSequence" => Some(NextClientSequencePath.into()),
-        "nextConnectionSequence" => Some(NextConnectionSequencePath.into()),
-        "nextChannelSequence" => Some(NextChannelSequencePath.into()),
+        NEXT_CLIENT_SEQUENCE => Some(NextClientSequencePath.into()),
+        NEXT_CONNECTION_SEQUENCE => Some(NextConnectionSequencePath.into()),
+        NEXT_CHANNEL_SEQUENCE => Some(NextChannelSequencePath.into()),
         _ => None,
     }
 }
@@ -571,7 +776,7 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
         None => return None,
     };
 
-    if first != "clients" {
+    if first != CLIENT_PREFIX {
         return None;
     }
 
@@ -582,13 +787,13 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
 
     if components.len() == 3 {
         match components[2] {
-            "clientState" => Some(ClientStatePath(client_id).into()),
-            "connections" => Some(ClientConnectionPath(client_id).into()),
+            CLIENT_STATE => Some(ClientStatePath(client_id).into()),
+            CONNECTION_PREFIX => Some(ClientConnectionPath(client_id).into()),
             _ => None,
         }
     } else if components.len() == 4 || components.len() == 5 {
         match components[2] {
-            "consensusStates" => {}
+            CONSENSUS_STATE_PREFIX => {}
             _ => return None,
         }
 
@@ -621,7 +826,7 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
                 .into(),
             ),
             5 => match components[4] {
-                "processedTime" => Some(
+                PROCESSED_TIME => Some(
                     ClientUpdateTimePath {
                         client_id,
                         revision_number,
@@ -629,7 +834,7 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
                     }
                     .into(),
                 ),
-                "processedHeight" => Some(
+                PROCESSED_HEIGHT => Some(
                     ClientUpdateHeightPath {
                         client_id,
                         revision_number,
@@ -656,7 +861,7 @@ fn parse_connections(components: &[&str]) -> Option<Path> {
         None => return None,
     };
 
-    if first != "connections" {
+    if first != CONNECTION_PREFIX {
         return None;
     }
 
@@ -683,7 +888,7 @@ fn parse_ports(components: &[&str]) -> Option<Path> {
         None => return None,
     };
 
-    if first != "ports" {
+    if first != PORT_PREFIX {
         return None;
     }
 
@@ -710,7 +915,7 @@ fn parse_channels(components: &[&str]) -> Option<SubPath> {
         None => return None,
     };
 
-    if first != "channels" {
+    if first != CHANNEL_PREFIX {
         return None;
     }
 
@@ -737,7 +942,7 @@ fn parse_sequences(components: &[&str]) -> Option<SubPath> {
         None => return None,
     };
 
-    if first != "sequences" {
+    if first != SEQUENCE_PREFIX {
         return None;
     }
 
@@ -762,7 +967,7 @@ fn parse_channel_ends(components: &[&str]) -> Option<Path> {
         None => return None,
     };
 
-    if first != "channelEnds" {
+    if first != CHANNEL_END_PREFIX {
         return None;
     }
 
@@ -810,9 +1015,9 @@ fn parse_seqs(components: &[&str]) -> Option<Path> {
     };
 
     match first {
-        "nextSequenceSend" => Some(SeqSendPath(port_id, channel_id).into()),
-        "nextSequenceRecv" => Some(SeqRecvPath(port_id, channel_id).into()),
-        "nextSequenceAck" => Some(SeqAckPath(port_id, channel_id).into()),
+        NEXT_SEQ_SEND_PREFIX => Some(SeqSendPath(port_id, channel_id).into()),
+        NEXT_SEQ_RECV_PREFIX => Some(SeqRecvPath(port_id, channel_id).into()),
+        NEXT_SEQ_ACK_PREFIX => Some(SeqAckPath(port_id, channel_id).into()),
         _ => None,
     }
 }
@@ -827,7 +1032,7 @@ fn parse_commitments(components: &[&str]) -> Option<Path> {
         None => return None,
     };
 
-    if first != "commitments" {
+    if first != PACKET_COMMITMENT_PREFIX {
         return None;
     }
 
@@ -873,7 +1078,7 @@ fn parse_acks(components: &[&str]) -> Option<Path> {
         None => return None,
     };
 
-    if first != "acks" {
+    if first != PACKET_ACK_PREFIX {
         return None;
     }
 
@@ -919,7 +1124,7 @@ fn parse_receipts(components: &[&str]) -> Option<Path> {
         None => return None,
     };
 
-    if first != "receipts" {
+    if first != PACKET_RECEIPT_PREFIX {
         return None;
     }
 
@@ -995,13 +1200,13 @@ mod tests {
     use super::*;
 
     #[rstest::rstest]
-    #[case("nextClientSequence", Path::NextClientSequence(NextClientSequencePath))]
+    #[case(NEXT_CLIENT_SEQUENCE, Path::NextClientSequence(NextClientSequencePath))]
     #[case(
-        "nextConnectionSequence",
+        NEXT_CONNECTION_SEQUENCE,
         Path::NextConnectionSequence(NextConnectionSequencePath)
     )]
     #[case(
-        "nextChannelSequence",
+        NEXT_CHANNEL_SEQUENCE,
         Path::NextChannelSequence(NextChannelSequencePath)
     )]
     #[case(

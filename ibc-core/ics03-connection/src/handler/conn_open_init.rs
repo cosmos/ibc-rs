@@ -74,7 +74,7 @@ where
 
     ctx_a.increase_connection_counter()?;
     ctx_a.store_connection_to_client(
-        &ClientConnectionPath::new(&msg.client_id_on_a),
+        &ClientConnectionPath::new(msg.client_id_on_a),
         conn_id_on_a.clone(),
     )?;
     ctx_a.store_connection(&ConnectionPath::new(&conn_id_on_a), conn_end_on_a)?;
