@@ -255,6 +255,31 @@ where
         }
     }
 
+    /// Namely the following cases are covered:
+    ///
+    /// 1 - fork:
+    /// Assumes at least one consensus state before the fork point exists. Let
+    /// existing consensus states on chain B be: [Sn,.., Sf, Sf-1, S0] with
+    /// `Sf-1` being the most recent state before fork. Chain A is queried for a
+    /// header `Hf'` at `Sf.height` and if it is different than the `Hf` in the
+    /// event for the client update (the one that has generated `Sf` on chain),
+    /// then the two headers are included in the evidence and submitted. Note
+    /// that in this case the headers are different but have the same height.
+    ///
+    /// 2 - BFT time violation for unavailable header (a.k.a. Future Lunatic
+    /// Attack or FLA):
+    /// Some header with a height that is higher than the latest height on A has
+    /// been accepted and a consensus state was created on B. Note that this
+    /// implies that the timestamp of this header must be within the
+    /// `clock_drift` of the client. Assume the client on B has been updated
+    /// with `h2`(not present on/ produced by chain A) and it has a timestamp of
+    /// `t2` that is at most `clock_drift` in the future. Then the latest header
+    /// from A is fetched, let it be `h1`, with a timestamp of `t1`. If `t1 >=
+    /// t2` then evidence of misbehavior is submitted to A.
+    ///
+    /// 3 - BFT time violation for existing headers:
+    /// Ensure that consensus state times are monotonically increasing with
+    /// height.
     fn check_for_misbehaviour(
         &self,
         ctx: &V,
