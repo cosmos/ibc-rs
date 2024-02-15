@@ -44,7 +44,7 @@ where
     let proof = ibc_ctx
         .get_proof(
             current_height,
-            &Path::ClientState(ClientStatePath::new(&client_id)),
+            &Path::ClientState(ClientStatePath::new(client_id.clone())),
         )
         .ok_or(QueryError::ProofNotFound {
             description: format!("Proof not found for client state path: {client_id:?}"),
