@@ -279,11 +279,6 @@ impl ChannelEnd {
         Ok(())
     }
 
-    /// Helper function to compare the order of this end with another order.
-    pub fn order_matches(&self, other: &Order) -> bool {
-        self.ordering.eq(other)
-    }
-
     pub fn connection_hops_matches(&self, other: &Vec<ConnectionId>) -> bool {
         self.connection_hops.eq(other)
     }
