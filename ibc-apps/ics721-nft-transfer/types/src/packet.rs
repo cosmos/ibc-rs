@@ -1,7 +1,5 @@
 //! Contains the `PacketData` type that defines the structure of NFT transfers' packet bytes
 
-use core::convert::TryFrom;
-
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use ibc_core::primitives::prelude::*;

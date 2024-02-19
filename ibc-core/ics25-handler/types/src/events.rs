@@ -1,7 +1,5 @@
 //! Defines events emitted during handling of IBC messages
 
-use core::convert::{TryFrom, TryInto};
-
 use displaydoc::Display;
 use ibc_core_channel_types::{error as channel_error, events as ChannelEvents};
 use ibc_core_client_types::error as client_error;

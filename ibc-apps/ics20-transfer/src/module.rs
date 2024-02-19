@@ -321,9 +321,6 @@ pub fn on_timeout_packet_execute(
 
 #[cfg(test)]
 mod test {
-    use ibc_app_transfer_types::ack_success_b64;
-    use ibc_app_transfer_types::error::TokenTransferError;
-
     use super::*;
 
     #[test]

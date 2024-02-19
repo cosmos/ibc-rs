@@ -71,7 +71,6 @@ pub fn dummy_proof() -> Vec<u8> {
 mod tests {
     use ibc::core::channel::types::channel::Order;
     use ibc::core::channel::types::events::SendPacket;
-    use ibc::core::channel::types::packet::Packet;
     use ibc::core::handler::types::events::IbcEvent;
     use ibc::core::host::types::identifiers::ConnectionId;
 

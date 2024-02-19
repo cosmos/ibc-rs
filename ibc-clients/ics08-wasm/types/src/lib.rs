@@ -24,7 +24,6 @@ pub mod serializer;
 use core::str::FromStr;
 
 use ibc_core_host_types::identifiers::ClientType;
-use ibc_primitives::prelude::Vec;
 pub type Bytes = Vec<u8>;
 
 /// Re-exports ICS-08 Wasm light client proto types from `ibc-proto` crate.
