@@ -279,6 +279,15 @@ impl ChannelEnd {
         Ok(())
     }
 
+    /// Helper function to compare the order of this end with another order.
+    #[deprecated(
+        since = "0.50.1",
+        note = "Use `Eq` or `match` directly on the `Order` enum instead"
+    )]
+    pub fn order_matches(&self, other: &Order) -> bool {
+        self.ordering.eq(other)
+    }
+
     pub fn connection_hops_matches(&self, other: &Vec<ConnectionId>) -> bool {
         self.connection_hops.eq(other)
     }
