@@ -534,7 +534,6 @@ mod tests {
     use ibc_client_tendermint_types::{
         AllowUpdate, ClientState as ClientStateType, TrustThreshold,
     };
-    use ibc_core_client::types::Height;
     use ibc_core_commitment_types::specs::ProofSpecs;
     use ibc_core_host::types::identifiers::ChainId;
 

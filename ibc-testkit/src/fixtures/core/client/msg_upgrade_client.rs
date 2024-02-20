@@ -39,9 +39,6 @@ pub fn dummy_raw_msg_upgrade_client() -> RawMsgUpgradeClient {
 
 #[cfg(test)]
 mod tests {
-
-    use ibc::core::client::types::msgs::MsgUpgradeClient;
-
     use super::*;
 
     #[test]

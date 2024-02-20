@@ -1,4 +1,3 @@
-use alloc::collections::BTreeMap;
 use alloc::sync::Arc;
 
 use ibc::apps::transfer::types::MODULE_ID_STR;

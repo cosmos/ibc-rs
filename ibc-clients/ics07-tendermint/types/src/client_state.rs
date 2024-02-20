@@ -1,7 +1,6 @@
 //! Contains the implementation of the Tendermint `ClientState` domain type.
 
 use core::cmp::max;
-use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
 use core::time::Duration;
 
@@ -422,8 +421,6 @@ pub(crate) mod serde_tests {
 
 #[cfg(test)]
 mod tests {
-    use core::time::Duration;
-
     use ibc_core_commitment_types::proto::ics23::ProofSpec as Ics23ProofSpec;
 
     use super::*;

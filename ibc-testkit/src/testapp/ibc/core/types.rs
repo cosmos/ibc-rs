@@ -1,6 +1,5 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-use alloc::collections::btree_map::BTreeMap;
 use alloc::sync::Arc;
 use core::cmp::min;
 use core::fmt::Debug;
@@ -1153,7 +1152,7 @@ mod tests {
             (module_id, result)
         };
 
-        let _results = vec![
+        let _results = [
             on_recv_packet_result("foomodule"),
             on_recv_packet_result("barmodule"),
         ];
