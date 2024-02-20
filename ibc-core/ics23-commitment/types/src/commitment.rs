@@ -1,6 +1,5 @@
 //! Defines core commitment types
 
-use core::convert::TryFrom;
 use core::fmt;
 
 use ibc_primitives::prelude::*;

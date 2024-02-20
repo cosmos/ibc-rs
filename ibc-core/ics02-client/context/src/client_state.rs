@@ -1,7 +1,5 @@
 //! Defines `ClientState`, the core type to be implemented by light clients
 
-use core::marker::{Send, Sync};
-
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::{Height, Status};
 use ibc_core_commitment_types::commitment::{

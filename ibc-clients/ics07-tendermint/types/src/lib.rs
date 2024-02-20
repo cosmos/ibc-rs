@@ -17,8 +17,6 @@ use core::str::FromStr;
 
 use ibc_core_host_types::identifiers::ClientType;
 
-extern crate alloc;
-
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 

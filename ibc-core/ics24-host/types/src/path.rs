@@ -1168,8 +1168,6 @@ fn parse_upgrades(components: &[&str]) -> Option<Path> {
 
 #[cfg(test)]
 mod tests {
-    use core::str::FromStr;
-
     use super::*;
 
     #[rstest::rstest]
