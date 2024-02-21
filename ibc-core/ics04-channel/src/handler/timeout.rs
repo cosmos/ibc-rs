@@ -249,7 +249,12 @@ where
                     Path::Receipt(receipt_path_on_b),
                 )
             }
-            Order::None => Ok(()),
+            Order::None => {
+                return Err(ContextError::ChannelError(ChannelError::InvalidOrderType {
+                    expected: "Channel ordering cannot be None".to_string(),
+                    actual: chan_end_on_a.ordering.to_string(),
+                }))
+            }
         };
         next_seq_recv_verification_result
             .map_err(|e| ChannelError::PacketVerificationFailed {

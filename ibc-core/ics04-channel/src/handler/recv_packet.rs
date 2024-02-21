@@ -261,7 +261,10 @@ where
             validate_write_acknowledgement(ctx_b, msg)?;
         }
         Order::None => {
-            // Do nothing
+            return Err(ContextError::ChannelError(ChannelError::InvalidOrderType {
+                expected: "Channel ordering cannot be None".to_string(),
+                actual: chan_end_on_b.ordering.to_string(),
+            }))
         }
     }
 
