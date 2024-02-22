@@ -109,6 +109,81 @@ fn test_update_client_ok(fixture: Fixture) {
     );
 }
 
+#[rstest]
+// Tests successful submission of a header with a height below the latest
+// client's height and ensures that `ConsensusState` is stored at the correct
+// path (header height).
+fn test_update_client_with_prev_header() {
+    let client_id = ClientId::default();
+    let chain_id_b = ChainId::new("mockgaiaA-0").unwrap();
+    let latest_height = Height::new(0, 42).unwrap();
+    let height_1 = Height::new(0, 43).unwrap();
+    let height_2 = Height::new(0, 44).unwrap();
+
+    let mut ctx = MockContext::default().with_client_config(
+        MockClientConfig::builder()
+            .client_chain_id(chain_id_b.clone())
+            .client_type(tm_client_type())
+            .client_id(client_id.clone())
+            .latest_height(latest_height)
+            .build(),
+    );
+    let mut router = MockRouter::new_with_transfer();
+
+    fn build_msg_from_header(
+        chain_id: ChainId,
+        client_id: ClientId,
+        target_height: Height,
+        trusted_height: Height,
+    ) -> MsgEnvelope {
+        let mut tm_block = HostBlock::generate_tm_block(
+            chain_id,
+            target_height.revision_height(),
+            Timestamp::now(),
+        );
+
+        tm_block.trusted_height = trusted_height;
+
+        let msg = MsgUpdateClient {
+            client_id,
+            client_message: TmHeader::from(tm_block).into(),
+            signer: dummy_account_id(),
+        };
+
+        MsgEnvelope::from(ClientMsg::from(msg))
+    }
+
+    let msg_1 = build_msg_from_header(
+        chain_id_b.clone(),
+        client_id.clone(),
+        height_1,
+        latest_height,
+    );
+
+    let msg_2 = build_msg_from_header(chain_id_b, client_id.clone(), height_2, latest_height);
+
+    // First, submit a header with `height_2` to set the client's latest
+    // height to `height_2`.
+    let _ = validate(&ctx, &router, msg_2.clone());
+    let _ = execute(&mut ctx, &mut router, msg_2);
+
+    // Then, submit a header with `height_1` to see if the client's latest
+    // height remains `height_2` and the consensus state is stored at the
+    // correct path (`height_1`).
+    let _ = validate(&ctx, &router, msg_1.clone());
+    let _ = execute(&mut ctx, &mut router, msg_1);
+
+    let client_state = ctx.client_state(&client_id).unwrap();
+    assert_eq!(client_state.latest_height(), height_2);
+
+    let cons_state_path = ClientConsensusStatePath::new(
+        client_id,
+        height_1.revision_number(),
+        height_1.revision_height(),
+    );
+    assert!(ctx.consensus_state(&cons_state_path).is_ok());
+}
+
 /// Tests that the Tendermint client consensus state pruning logic
 /// functions correctly.
 ///

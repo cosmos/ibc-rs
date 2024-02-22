@@ -1,5 +1,3 @@
-use alloc::string::ToString;
-
 use ibc_core_client::context::ClientExecutionContext;
 use ibc_core_client::types::Height;
 use ibc_core_handler_types::error::ContextError;

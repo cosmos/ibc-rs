@@ -257,6 +257,31 @@ where
         }
     }
 
+    /// Namely the following cases are covered:
+    ///
+    /// 1 - fork:
+    /// Assumes at least one consensus state before the fork point exists. Let
+    /// existing consensus states on chain B be: [Sn,.., Sf, Sf-1, S0] with
+    /// `Sf-1` being the most recent state before fork. Chain A is queried for a
+    /// header `Hf'` at `Sf.height` and if it is different than the `Hf` in the
+    /// event for the client update (the one that has generated `Sf` on chain),
+    /// then the two headers are included in the evidence and submitted. Note
+    /// that in this case the headers are different but have the same height.
+    ///
+    /// 2 - BFT time violation for unavailable header (a.k.a. Future Lunatic
+    /// Attack or FLA):
+    /// Some header with a height that is higher than the latest height on A has
+    /// been accepted and a consensus state was created on B. Note that this
+    /// implies that the timestamp of this header must be within the
+    /// `clock_drift` of the client. Assume the client on B has been updated
+    /// with `h2`(not present on/ produced by chain A) and it has a timestamp of
+    /// `t2` that is at most `clock_drift` in the future. Then the latest header
+    /// from A is fetched, let it be `h1`, with a timestamp of `t1`. If `t1 >=
+    /// t2` then evidence of misbehavior is submitted to A.
+    ///
+    /// 3 - BFT time violation for existing headers:
+    /// Ensure that consensus state times are monotonically increasing with
+    /// height.
     fn check_for_misbehaviour(
         &self,
         ctx: &V,
@@ -330,7 +355,7 @@ where
 
         let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
-        ctx.store_client_state(ClientStatePath::new(client_id), self.clone().into())?;
+        ctx.store_client_state(ClientStatePath::new(client_id.clone()), self.clone().into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(
                 client_id.clone(),
@@ -385,13 +410,13 @@ where
             ctx.store_consensus_state(
                 ClientConsensusStatePath::new(
                     client_id.clone(),
-                    new_client_state.latest_height.revision_number(),
-                    new_client_state.latest_height.revision_height(),
+                    header_height.revision_number(),
+                    header_height.revision_height(),
                 ),
                 TmConsensusState::from(new_consensus_state).into(),
             )?;
             ctx.store_client_state(
-                ClientStatePath::new(client_id),
+                ClientStatePath::new(client_id.clone()),
                 ClientState::from(new_client_state).into(),
             )?;
             ctx.store_update_meta(
@@ -421,7 +446,7 @@ where
         let wrapped_frozen_client_state = ClientState::from(frozen_client_state);
 
         ctx.store_client_state(
-            ClientStatePath::new(client_id),
+            ClientStatePath::new(client_id.clone()),
             wrapped_frozen_client_state.into(),
         )?;
 
@@ -482,7 +507,7 @@ where
         let host_height = CommonContext::host_height(ctx)?;
 
         ctx.store_client_state(
-            ClientStatePath::new(client_id),
+            ClientStatePath::new(client_id.clone()),
             ClientState::from(new_client_state).into(),
         )?;
         ctx.store_consensus_state(
@@ -519,7 +544,6 @@ mod tests {
     use ibc_client_tendermint_types::{
         AllowUpdate, ClientState as ClientStateType, TrustThreshold,
     };
-    use ibc_core_client::types::Height;
     use ibc_core_commitment_types::specs::ProofSpecs;
     use ibc_core_host::types::identifiers::ChainId;
 

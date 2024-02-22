@@ -1,7 +1,5 @@
 //! Defines the trait to be implemented by all concrete consensus state types
 
-use core::marker::{Send, Sync};
-
 use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;

@@ -280,6 +280,10 @@ impl ChannelEnd {
     }
 
     /// Helper function to compare the order of this end with another order.
+    #[deprecated(
+        since = "0.50.1",
+        note = "Use `Eq` or `match` directly on the `Order` enum instead"
+    )]
     pub fn order_matches(&self, other: &Order) -> bool {
         self.ordering.eq(other)
     }
@@ -313,7 +317,7 @@ impl ChannelEnd {
 
 /// Checks if the `connection_hops` has a length of `expected`.
 pub(crate) fn verify_connection_hops_length(
-    connection_hops: &Vec<ConnectionId>,
+    connection_hops: &[ConnectionId],
     expected: u64,
 ) -> Result<(), ChannelError> {
     if connection_hops.len() as u64 != expected {
