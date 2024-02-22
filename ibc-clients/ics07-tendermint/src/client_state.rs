@@ -36,6 +36,10 @@ use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
 use tendermint_light_client_verifier::ProdVerifier;
 
+use self::misbehaviour::{check_for_misbehaviour_misbehavior, verify_misbehaviour};
+use self::update_client::{
+    check_for_misbehaviour_update_client, prune_oldest_consensus_state, verify_header,
+};
 use super::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::{
     CommonContext, ExecutionContext as TmExecutionContext, TmVerifier,
@@ -367,11 +371,11 @@ where
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
             let header = TmHeader::try_from(client_message)?;
-            client_state.verify_header(ctx, client_id, header)
+            verify_header(client_state, ctx, client_id, header)
         }
         TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
             let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-            client_state.verify_misbehaviour(ctx, client_id, misbehaviour)
+            verify_misbehaviour(client_state, ctx, client_id, misbehaviour)
         }
         _ => Err(ClientError::InvalidUpdateClientMessage),
     }
@@ -423,11 +427,11 @@ where
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
             let header = TmHeader::try_from(client_message)?;
-            client_state.check_for_misbehaviour_update_client(ctx, client_id, header)
+            check_for_misbehaviour_update_client(client_state, ctx, client_id, header)
         }
         TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
             let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-            client_state.check_for_misbehaviour_misbehavior(&misbehaviour)
+            check_for_misbehaviour_misbehavior(&misbehaviour)
         }
         _ => Err(ClientError::InvalidUpdateClientMessage),
     }
@@ -598,7 +602,7 @@ where
     let header = TmHeader::try_from(header)?;
     let header_height = header.height();
 
-    client_state.prune_oldest_consensus_state(ctx, client_id)?;
+    prune_oldest_consensus_state(client_state, ctx, client_id)?;
 
     let maybe_existing_consensus_state = {
         let path_at_header_height = ClientConsensusStatePath::new(
