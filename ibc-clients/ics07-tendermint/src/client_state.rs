@@ -11,8 +11,12 @@
 use ibc_client_tendermint_types::error::Error;
 use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
 use ibc_client_tendermint_types::{
-    ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
-    Misbehaviour as TmMisbehaviour, TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
+    client_type as tm_client_type, ClientState as ClientStateType,
+    ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
+    TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
+};
+use ibc_core_client::context::client_state::{
+    ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::context::{ClientExecutionContext, ClientValidationContext};
@@ -22,7 +26,7 @@ use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use ibc_core_commitment_types::merkle::{apply_prefix, MerkleProof};
-use ibc_core_host::types::identifiers::ClientId;
+use ibc_core_host::types::identifiers::{ClientId, ClientType};
 use ibc_core_host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
@@ -90,6 +94,63 @@ impl TryFrom<Any> for ClientState {
 impl From<ClientState> for Any {
     fn from(client_state: ClientState) -> Self {
         client_state.0.into()
+    }
+}
+
+impl ClientStateCommon for ClientState {
+    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
+        verify_consensus_state(consensus_state)
+    }
+
+    fn client_type(&self) -> ClientType {
+        tm_client_type()
+    }
+
+    fn latest_height(&self) -> Height {
+        self.0.latest_height
+    }
+
+    fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
+        validate_proof_height(self, proof_height)
+    }
+
+    fn verify_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+        proof_upgrade_client: CommitmentProofBytes,
+        proof_upgrade_consensus_state: CommitmentProofBytes,
+        root: &CommitmentRoot,
+    ) -> Result<(), ClientError> {
+        verify_upgrade_client(
+            self,
+            upgraded_client_state,
+            upgraded_consensus_state,
+            proof_upgrade_client,
+            proof_upgrade_consensus_state,
+            root,
+        )
+    }
+
+    fn verify_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: Path,
+        value: Vec<u8>,
+    ) -> Result<(), ClientError> {
+        verify_membership(self, prefix, proof, root, path, value)
+    }
+
+    fn verify_non_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: Path,
+    ) -> Result<(), ClientError> {
+        verify_non_membership(self, prefix, proof, root, path)
     }
 }
 
@@ -258,6 +319,35 @@ pub fn verify_non_membership(
         .map_err(ClientError::Ics23Verification)
 }
 
+impl<V> ClientStateValidation<V> for ClientState
+where
+    V: ClientValidationContext + TmValidationContext,
+    V::AnyConsensusState: TryInto<TmConsensusState>,
+    ClientError: From<<V::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
+{
+    fn verify_client_message(
+        &self,
+        ctx: &V,
+        client_id: &ClientId,
+        client_message: Any,
+    ) -> Result<(), ClientError> {
+        verify_client_message(self, ctx, client_id, client_message)
+    }
+
+    fn check_for_misbehaviour(
+        &self,
+        ctx: &V,
+        client_id: &ClientId,
+        client_message: Any,
+    ) -> Result<bool, ClientError> {
+        check_for_misbehaviour(self, ctx, client_id, client_message)
+    }
+
+    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
+        client_state_status(self, ctx, client_id)
+    }
+}
+
 /// Verify the client message as part of the client state validation process.
 ///
 /// Note that this function is typically implemented as part of the
@@ -394,6 +484,56 @@ where
     Ok(Status::Active)
 }
 
+impl<E> ClientStateExecution<E> for ClientState
+where
+    E: TmExecutionContext + ExecutionContext,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
+    <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
+{
+    fn initialise(
+        &self,
+        ctx: &mut E,
+        client_id: &ClientId,
+        consensus_state: Any,
+    ) -> Result<(), ClientError> {
+        initialise_client_state(self, ctx, client_id, consensus_state)
+    }
+
+    fn update_state(
+        &self,
+        ctx: &mut E,
+        client_id: &ClientId,
+        header: Any,
+    ) -> Result<Vec<Height>, ClientError> {
+        update_client_state(self, ctx, client_id, header)
+    }
+
+    fn update_state_on_misbehaviour(
+        &self,
+        ctx: &mut E,
+        client_id: &ClientId,
+        client_message: Any,
+    ) -> Result<(), ClientError> {
+        update_client_state_on_misbehaviour(self, ctx, client_id, client_message)
+    }
+
+    fn update_state_on_upgrade(
+        &self,
+        ctx: &mut E,
+        client_id: &ClientId,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+    ) -> Result<Height, ClientError> {
+        update_client_state_on_upgrade(
+            self,
+            ctx,
+            client_id,
+            upgraded_client_state,
+            upgraded_consensus_state,
+        )
+    }
+}
+
 /// Seed the host store with initial client and consensus states.
 ///
 /// Note that this function is typically implemented as part of the
@@ -515,6 +655,7 @@ pub fn update_client_state_on_misbehaviour<E>(
     client_state: &ClientState,
     ctx: &mut E,
     client_id: &ClientId,
+    _client_message: Any,
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext + ExecutionContext,
