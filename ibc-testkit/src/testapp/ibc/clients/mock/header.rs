@@ -74,6 +74,12 @@ impl MockHeader {
             timestamp: Timestamp::none(),
         }
     }
+    pub fn new_with_timestamp(height: Height, timestamp: Timestamp) -> Self {
+        Self {
+            height,
+            timestamp
+        }
+    }
 
     pub fn with_current_timestamp(self) -> Self {
         Self {

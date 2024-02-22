@@ -1,5 +1,6 @@
 use core::str::FromStr;
 use core::time::Duration;
+use std::time::{SystemTime, UNIX_EPOCH};
 
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::error::{Error as ClientError, Error};
@@ -24,11 +25,14 @@ pub fn dummy_tm_client_state_from_raw(frozen_height: RawHeight) -> Result<TmClie
 /// Returns a dummy tendermint `ClientState` from a `TmHeader`, for testing purposes only!
 pub fn dummy_tm_client_state_from_header(tm_header: TmHeader) -> TmClientState {
     let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).expect("Never fails");
+
+    let now = SystemTime::now();
+    let duration_since_epoch = now.duration_since(UNIX_EPOCH).expect("Time went backwards");
     let client_state = ClientStateType::new(
         chain_id.clone(),
         Default::default(),
-        Duration::from_secs(64000),
-        Duration::from_secs(128000),
+        Duration::from_secs(duration_since_epoch.as_secs() - 1),
+        Duration::from_secs(duration_since_epoch.as_secs()),
         Duration::from_millis(3000),
         Height::new(chain_id.revision_number(), u64::from(tm_header.height)).expect("Never fails"),
         Default::default(),

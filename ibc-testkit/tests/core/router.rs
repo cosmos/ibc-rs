@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use ibc::apps::transfer::handler::send_transfer;
 use ibc::apps::transfer::types::error::TokenTransferError;
 use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
@@ -15,8 +16,8 @@ use ibc::core::entrypoint::dispatch;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::ConnectionId;
-use ibc::core::host::types::path::CommitmentPath;
+use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
+use ibc::core::host::types::path::{ClientConsensusStatePath, CommitmentPath};
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
@@ -41,6 +42,7 @@ use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::MockContext;
 use test_log::test;
+use ibc::core::client::context::ClientExecutionContext;
 
 #[test]
 /// These tests exercise two main paths: (1) the ability of the ICS26 routing module to dispatch
@@ -88,12 +90,21 @@ fn routing_module_and_keepers() {
 
     // We reuse this same context across all tests. Nothing in particular needs parametrizing.
     let mut ctx = MockContext::default();
+    let client_id = ClientId::from_str("9999-mock-0").unwrap(); // Adjust as necessary
 
     let mut router = MockRouter::new_with_transfer();
 
+    let mock_header = MockHeader::new(start_client_height).with_current_timestamp();
+    // Create a mock consensus state
+    let consensus_state = MockConsensusState::new(mock_header).into();
+    // Construct the path for storing the consensus state
+    let consensus_state_path = ClientConsensusStatePath::new(client_id, start_client_height.revision_number(), start_client_height.revision_height());
+    // Store the consensus state in the MockContext
+    ctx.store_consensus_state(consensus_state_path, consensus_state).expect("Failed to store consensus state");
+
     let create_client_msg = MsgCreateClient::new(
-        MockClientState::new(MockHeader::new(start_client_height).with_current_timestamp()).into(),
-        MockConsensusState::new(MockHeader::new(start_client_height).with_current_timestamp())
+        MockClientState::new(mock_header).into(),
+        MockConsensusState::new(mock_header)
             .into(),
         default_signer.clone(),
     );

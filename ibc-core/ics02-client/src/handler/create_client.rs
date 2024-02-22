@@ -32,12 +32,11 @@ where
 
     let status = client_state.status(ctx.get_client_validation_context(), &client_id)?;
 
-    if status.is_frozen() {
-        return Err(ClientError::ClientFrozen {
-            description: "the client is frozen".to_string(),
-        }
-        .into());
-    };
+    if !status.is_active() {
+        return Err(ClientError::ClientNotActive {
+            status,
+        }.into());
+    }
 
     client_state.verify_consensus_state(consensus_state)?;
 
