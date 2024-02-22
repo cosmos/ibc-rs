@@ -101,6 +101,7 @@ impl From<ClientState> for Any {
 /// in order to make the ClientState APIs more flexible.
 pub fn verify_consensus_state(consensus_state: Any) -> Result<(), ClientError> {
     let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
+
     if tm_consensus_state.root().is_empty() {
         return Err(ClientError::Other {
             description: "empty commitment root".into(),
