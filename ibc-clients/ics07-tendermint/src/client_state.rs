@@ -515,7 +515,6 @@ pub fn update_client_state_on_misbehaviour<E>(
     client_state: &ClientState,
     ctx: &mut E,
     client_id: &ClientId,
-    _client_message: Any,
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext + ExecutionContext,
