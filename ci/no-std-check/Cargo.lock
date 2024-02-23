@@ -1618,7 +1618,7 @@ dependencies = [
 [[package]]
 name = "ibc-proto"
 version = "0.41.0"
-source = "git+https://github.com/cosmos/ibc-proto-rs.git?rev=d1daaab#d1daaab67e41b3519a86febf7f62ba2ad24120ce"
+source = "git+https://github.com/cosmos/ibc-proto-rs.git?rev=1b1d7a9#1b1d7a94c012d2e23527c438acb2599833f0153f"
 dependencies = [
  "base64 0.21.7",
  "borsh",
