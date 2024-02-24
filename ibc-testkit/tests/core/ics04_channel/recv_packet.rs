@@ -49,7 +49,7 @@ fn fixture() -> Fixture {
 
     let chan_end_on_b = ChannelEnd::new(
         State::Open,
-        Order::default(),
+        Order::Unordered,
         Counterparty::new(packet.port_id_on_a, Some(packet.chan_id_on_a)),
         vec![ConnectionId::default()],
         Version::new("ics20-1".to_string()),

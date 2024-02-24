@@ -435,10 +435,9 @@ impl From<Counterparty> for RawCounterparty {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Order {
     None = 0isize,
-    #[default]
     Unordered = 1isize,
     Ordered = 2isize,
 }

@@ -38,7 +38,7 @@ fn test_chan_close_init_validate() {
 
     let chan_end = ChannelEnd::new(
         ChannelState::Open,
-        Order::default(),
+        Order::Unordered,
         Counterparty::new(
             msg_chan_close_init.port_id_on_a.clone(),
             Some(msg_chan_close_init.chan_id_on_a.clone()),
@@ -98,7 +98,7 @@ fn test_chan_close_init_execute() {
 
     let chan_end = ChannelEnd::new(
         ChannelState::Open,
-        Order::default(),
+        Order::Unordered,
         Counterparty::new(
             msg_chan_close_init.port_id_on_a.clone(),
             Some(msg_chan_close_init.chan_id_on_a.clone()),

@@ -30,7 +30,7 @@ fn send_packet_processing() {
 
     let chan_end_on_a = ChannelEnd::new(
         State::Open,
-        Order::default(),
+        Order::Unordered,
         Counterparty::new(PortId::transfer(), Some(ChannelId::default())),
         vec![ConnectionId::default()],
         Version::new("ics20-1".to_string()),

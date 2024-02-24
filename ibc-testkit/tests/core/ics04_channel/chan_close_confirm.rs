@@ -42,7 +42,7 @@ fn test_chan_close_confirm_validate() {
 
     let chan_end = ChannelEnd::new(
         ChannelState::Open,
-        Order::default(),
+        Order::Unordered,
         Counterparty::new(
             msg_chan_close_confirm.port_id_on_b.clone(),
             Some(msg_chan_close_confirm.chan_id_on_b.clone()),
@@ -101,7 +101,7 @@ fn test_chan_close_confirm_execute() {
 
     let chan_end = ChannelEnd::new(
         ChannelState::Open,
-        Order::default(),
+        Order::Unordered,
         Counterparty::new(
             msg_chan_close_confirm.port_id_on_b.clone(),
             Some(msg_chan_close_confirm.chan_id_on_b.clone()),
