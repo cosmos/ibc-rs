@@ -1,6 +1,5 @@
 //! Contains the `PacketData` type that defines the structure of token transfers' packet bytes
 
-use core::convert::TryFrom;
 use core::str::FromStr;
 
 use ibc_core::primitives::prelude::*;

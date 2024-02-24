@@ -224,40 +224,49 @@ where
             .map_err(PacketError::Channel)?;
     }
 
-    if chan_end_on_b.order_matches(&Order::Ordered) {
-        let seq_recv_path_on_b =
-            SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
-        let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
-        if msg.packet.seq_on_a > next_seq_recv {
-            return Err(PacketError::InvalidPacketSequence {
-                given_sequence: msg.packet.seq_on_a,
-                next_sequence: next_seq_recv,
+    match chan_end_on_b.ordering {
+        Order::Ordered => {
+            let seq_recv_path_on_b =
+                SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+            let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
+            if msg.packet.seq_on_a > next_seq_recv {
+                return Err(PacketError::InvalidPacketSequence {
+                    given_sequence: msg.packet.seq_on_a,
+                    next_sequence: next_seq_recv,
+                }
+                .into());
             }
-            .into());
-        }
 
-        if msg.packet.seq_on_a == next_seq_recv {
+            if msg.packet.seq_on_a == next_seq_recv {
+                // Case where the recvPacket is successful and an
+                // acknowledgement will be written (not a no-op)
+                validate_write_acknowledgement(ctx_b, msg)?;
+            }
+        }
+        Order::Unordered => {
+            let receipt_path_on_b = ReceiptPath::new(
+                &msg.packet.port_id_on_a,
+                &msg.packet.chan_id_on_a,
+                msg.packet.seq_on_a,
+            );
+            let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
+            match packet_rec {
+                Ok(_receipt) => {}
+                Err(ContextError::PacketError(PacketError::PacketReceiptNotFound { sequence }))
+                    if sequence == msg.packet.seq_on_a => {}
+                Err(e) => return Err(e),
+            }
             // Case where the recvPacket is successful and an
             // acknowledgement will be written (not a no-op)
             validate_write_acknowledgement(ctx_b, msg)?;
         }
-    } else {
-        let receipt_path_on_b = ReceiptPath::new(
-            &msg.packet.port_id_on_a,
-            &msg.packet.chan_id_on_a,
-            msg.packet.seq_on_a,
-        );
-        let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
-        match packet_rec {
-            Ok(_receipt) => {}
-            Err(ContextError::PacketError(PacketError::PacketReceiptNotFound { sequence }))
-                if sequence == msg.packet.seq_on_a => {}
-            Err(e) => return Err(e),
+        Order::None => {
+            return Err(ContextError::ChannelError(ChannelError::InvalidOrderType {
+                expected: "Channel ordering cannot be None".to_string(),
+                actual: chan_end_on_b.ordering.to_string(),
+            }))
         }
-        // Case where the recvPacket is successful and an
-        // acknowledgement will be written (not a no-op)
-        validate_write_acknowledgement(ctx_b, msg)?;
-    };
+    }
 
     Ok(())
 }
