@@ -1,5 +1,3 @@
-use alloc::collections::BTreeMap;
-use alloc::vec::Vec;
 use core::fmt::Debug;
 
 use basecoin_store::context::{ProvableStore, Store};
@@ -17,7 +15,7 @@ use ibc::core::host::types::path::{
 };
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
-use ibc::primitives::prelude::{format, *};
+use ibc::primitives::prelude::*;
 
 use crate::testapp::ibc::clients::mock::client_state::MockClientContext;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
