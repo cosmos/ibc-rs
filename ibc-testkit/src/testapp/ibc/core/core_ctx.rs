@@ -441,7 +441,7 @@ where
         &self,
         client_id: &ClientId,
     ) -> Result<Vec<ConnectionId>, ContextError> {
-        let client_connection_path = ClientConnectionPath::new(client_id);
+        let client_connection_path = ClientConnectionPath::new(client_id.clone());
 
         Ok(self
             .ibc_store

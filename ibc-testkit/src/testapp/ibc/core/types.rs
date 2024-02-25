@@ -508,7 +508,7 @@ where
     }
 
     pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
-        let client_state_path = ClientStatePath::new(client_id);
+        let client_state_path = ClientStatePath::new(client_id.clone());
         self.store_client_state(client_state_path, client_state)
             .expect("error writing to store");
         self
