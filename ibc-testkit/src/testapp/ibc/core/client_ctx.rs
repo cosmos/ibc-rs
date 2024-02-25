@@ -279,7 +279,7 @@ where
         let found_path = keys.into_iter().find_map(|path| {
             if let Ok(Path::ClientConsensusState(path)) = path.try_into() {
                 if height
-                    > &Height::new(path.revision_number, path.revision_height).expect("no error")
+                    < &Height::new(path.revision_number, path.revision_height).expect("no error")
                 {
                     return Some(path);
                 }
