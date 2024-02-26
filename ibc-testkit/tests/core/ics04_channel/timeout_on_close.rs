@@ -115,7 +115,7 @@ fn timeout_on_close_success_no_packet_commitment(fixture: Fixture) {
         ..
     } = fixture;
     let context = context
-        .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)
+        .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_a)
         .with_connection(ConnectionId::default(), conn_end_on_a);
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
@@ -140,7 +140,7 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
         ..
     } = fixture;
     let mut context = context
-        .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)
+        .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_a)
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),

@@ -54,7 +54,7 @@ fn fixture() -> Fixture {
     let chan_end_on_b = ChannelEnd::new(
         State::TryOpen,
         Order::Unordered,
-        Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
+        Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::new(0))),
         vec![conn_id_on_b.clone()],
         Version::default(),
     )
@@ -94,11 +94,7 @@ fn chan_open_confirm_validate_happy_path(fixture: Fixture) {
                 .build(),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
-        .with_channel(
-            msg.port_id_on_b.clone(),
-            ChannelId::default(),
-            chan_end_on_b,
-        );
+        .with_channel(msg.port_id_on_b.clone(), ChannelId::new(0), chan_end_on_b);
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
@@ -129,11 +125,7 @@ fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
                 .build(),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
-        .with_channel(
-            msg.port_id_on_b.clone(),
-            ChannelId::default(),
-            chan_end_on_b,
-        );
+        .with_channel(msg.port_id_on_b.clone(), ChannelId::new(0), chan_end_on_b);
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
@@ -200,7 +192,7 @@ fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
     let wrong_chan_end = ChannelEnd::new(
         State::Init,
         Order::Unordered,
-        Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
+        Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::new(0))),
         vec![conn_id_on_b.clone()],
         Version::default(),
     )
@@ -213,11 +205,7 @@ fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
                 .build(),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
-        .with_channel(
-            msg.port_id_on_b.clone(),
-            ChannelId::default(),
-            wrong_chan_end,
-        );
+        .with_channel(msg.port_id_on_b.clone(), ChannelId::new(0), wrong_chan_end);
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 

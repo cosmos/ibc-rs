@@ -139,7 +139,7 @@ fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
     let ctx = ctx
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::new(0),
             chan_end_on_a_unordered,
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
@@ -193,7 +193,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::new(0),
             chan_end_on_a_unordered,
         )
         .with_packet_commitment(
@@ -235,7 +235,7 @@ fn timeout_success_no_packet_commitment(fixture: Fixture) {
     let ctx = ctx
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::new(0),
             chan_end_on_a_unordered,
         )
         .with_connection(ConnectionId::default(), conn_end_on_a);
@@ -274,7 +274,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::new(0),
             chan_end_on_a_unordered,
         )
         .with_packet_commitment(
@@ -322,11 +322,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
                 .build(),
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
-        .with_channel(
-            PortId::transfer(),
-            ChannelId::default(),
-            chan_end_on_a_ordered,
-        )
+        .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_a_ordered)
         .with_packet_commitment(
             packet.port_id_on_a,
             packet.chan_id_on_a,
@@ -363,7 +359,7 @@ fn timeout_unordered_chan_execute(fixture: Fixture) {
     let mut ctx = ctx
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::new(0),
             chan_end_on_a_unordered,
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
@@ -403,11 +399,7 @@ fn timeout_ordered_chan_execute(fixture: Fixture) {
         ..
     } = fixture;
     let mut ctx = ctx
-        .with_channel(
-            PortId::transfer(),
-            ChannelId::default(),
-            chan_end_on_a_ordered,
-        )
+        .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_a_ordered)
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),

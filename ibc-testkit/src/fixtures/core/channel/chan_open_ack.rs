@@ -10,8 +10,8 @@ use crate::fixtures::core::signer::dummy_bech32_account;
 pub fn dummy_raw_msg_chan_open_ack(proof_height: u64) -> RawMsgChannelOpenAck {
     RawMsgChannelOpenAck {
         port_id: PortId::transfer().to_string(),
-        channel_id: ChannelId::default().to_string(),
-        counterparty_channel_id: ChannelId::default().to_string(),
+        channel_id: ChannelId::new(0).to_string(),
+        counterparty_channel_id: ChannelId::new(0).to_string(),
         counterparty_version: "".to_string(),
         proof_try: dummy_proof(),
         proof_height: Some(Height {

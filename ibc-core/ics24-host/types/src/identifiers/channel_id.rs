@@ -80,12 +80,6 @@ impl AsRef<str> for ChannelId {
     }
 }
 
-impl Default for ChannelId {
-    fn default() -> Self {
-        Self::new(0)
-    }
-}
-
 /// Equality check against string literal (satisfies &ChannelId == &str).
 /// ```
 /// use core::str::FromStr;
