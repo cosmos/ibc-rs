@@ -84,12 +84,6 @@ impl TimeoutHeight {
     }
 }
 
-impl Default for TimeoutHeight {
-    fn default() -> Self {
-        Self::Never
-    }
-}
-
 impl TryFrom<RawHeight> for TimeoutHeight {
     type Error = ClientError;
 
