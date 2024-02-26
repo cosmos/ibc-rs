@@ -1,5 +1,6 @@
 //! Provides IBC module callbacks implementation for the ICS-721 transfer.
 
+use ibc_app_nft_transfer_types::Memo;
 use ibc_core::channel::types::acknowledgement::{Acknowledgement, AcknowledgementStatus};
 use ibc_core::channel::types::channel::{Counterparty, Order};
 use ibc_core::channel::types::packet::Packet;
@@ -194,7 +195,7 @@ pub fn on_recv_packet_execute(
         receiver: data.receiver,
         class: data.class_id,
         tokens: data.token_ids,
-        memo: data.memo.unwrap_or_default(),
+        memo: data.memo.unwrap_or(Memo::from("".to_string())),
         success: ack.is_successful(),
     };
     extras.events.push(recv_event.into());
@@ -259,7 +260,7 @@ pub fn on_acknowledgement_packet_execute(
         receiver: data.receiver,
         class: data.class_id,
         tokens: data.token_ids,
-        memo: data.memo.unwrap_or_default(),
+        memo: data.memo.unwrap_or(Memo::from("".to_string())),
         acknowledgement: acknowledgement.clone(),
     };
 
@@ -307,7 +308,7 @@ pub fn on_timeout_packet_execute(
         refund_receiver: data.sender,
         refund_class: data.class_id,
         refund_tokens: data.token_ids,
-        memo: data.memo.unwrap_or_default(),
+        memo: data.memo.unwrap_or(Memo::from("".to_string())),
     };
 
     let extras = ModuleExtras {

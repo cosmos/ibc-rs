@@ -1,3 +1,4 @@
+use ibc_app_nft_transfer_types::Memo;
 use ibc_core::channel::context::{SendPacketExecutionContext, SendPacketValidationContext};
 use ibc_core::channel::handler::{send_packet_execute, send_packet_validate};
 use ibc_core::channel::types::packet::Packet;
@@ -81,14 +82,20 @@ where
                 &msg.chan_id_on_a,
                 class_id,
                 token_id,
-                &packet_data.memo.clone().unwrap_or_default(),
+                &packet_data
+                    .memo
+                    .clone()
+                    .unwrap_or(Memo::from("".to_string())),
             )?;
         } else {
             transfer_ctx.burn_nft_validate(
                 &sender,
                 class_id,
                 token_id,
-                &packet_data.memo.clone().unwrap_or_default(),
+                &packet_data
+                    .memo
+                    .clone()
+                    .unwrap_or(Memo::from("".to_string())),
             )?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
@@ -184,14 +191,20 @@ where
                 &msg.chan_id_on_a,
                 class_id,
                 token_id,
-                &packet_data.memo.clone().unwrap_or_default(),
+                &packet_data
+                    .memo
+                    .clone()
+                    .unwrap_or(Memo::from("".to_string())),
             )?;
         } else {
             transfer_ctx.burn_nft_execute(
                 &sender,
                 class_id,
                 token_id,
-                &packet_data.memo.clone().unwrap_or_default(),
+                &packet_data
+                    .memo
+                    .clone()
+                    .unwrap_or(Memo::from("".to_string())),
             )?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
@@ -242,7 +255,7 @@ where
             receiver: packet_data.receiver,
             class: packet_data.class_id,
             tokens: packet_data.token_ids,
-            memo: packet_data.memo.unwrap_or_default(),
+            memo: packet_data.memo.unwrap_or(Memo::from("".to_string())),
         };
         send_packet_ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into())?;
 
