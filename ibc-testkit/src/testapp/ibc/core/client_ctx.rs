@@ -313,32 +313,30 @@ where
             .unwrap(); // safety - path must be valid since ClientId and height are valid Identifiers
 
         let keys = self.ibc_store.store.get_keys(&path);
-        let pos = keys.iter().position(|path| {
-            if let Ok(Path::ClientConsensusState(path)) = path.clone().try_into() {
-                height
-                    >= &Height::new(path.revision_number, path.revision_height).expect("no error")
-            } else {
-                false
+        let found_path = keys.into_iter().rev().find_map(|path| {
+            if let Ok(Path::ClientConsensusState(path)) = path.try_into() {
+                if height
+                    > &Height::new(path.revision_number, path.revision_height).expect("no error")
+                {
+                    return Some(path);
+                }
             }
+            None
         });
 
-        if let Some(pos) = pos {
-            if pos > 0 {
-                let prev_path = match keys[pos - 1].clone().try_into() {
-                    Ok(Path::ClientConsensusState(p)) => p,
-                    _ => unreachable!(), // safety - path retrieved from store
-                };
-                let consensus_state = self
-                    .ibc_store
-                    .consensus_state_store
-                    .get(StoreHeight::Pending, &prev_path)
-                    .ok_or(ClientError::ConsensusStateNotFound {
-                        client_id: client_id.clone(),
-                        height: *height,
-                    })?;
-                return Ok(Some(consensus_state));
-            }
+        if let Some(path) = found_path {
+            let consensus_state = self
+                .ibc_store
+                .consensus_state_store
+                .get(StoreHeight::Pending, &path)
+                .ok_or(ClientError::ConsensusStateNotFound {
+                    client_id: client_id.clone(),
+                    height: *height,
+                })?;
+
+            Ok(Some(consensus_state))
+        } else {
+            Ok(None)
         }
-        Ok(None)
     }
 }
