@@ -11,7 +11,7 @@ use typed_builder::TypedBuilder;
 #[derive(TypedBuilder, Debug)]
 #[builder(build_method(into = Packet))]
 pub struct PacketConfig {
-    #[builder(default)]
+    #[builder(default = Sequence::from(0))]
     pub seq_on_a: Sequence,
     #[builder(default = PortId::transfer())]
     pub port_id_on_a: PortId,

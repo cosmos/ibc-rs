@@ -1238,7 +1238,7 @@ mod tests {
         Path::Commitment(CommitmentPath {
             port_id: PortId::transfer(),
             channel_id: ChannelId::new(0),
-            sequence: Sequence::default(),
+            sequence: Sequence::from(0),
         })
     )]
     #[case(
@@ -1246,7 +1246,7 @@ mod tests {
         Path::Ack(AckPath {
             port_id: PortId::transfer(),
             channel_id: ChannelId::new(0),
-            sequence: Sequence::default(),
+            sequence: Sequence::from(0),
         })
     )]
     #[case(
@@ -1254,7 +1254,7 @@ mod tests {
         Path::Receipt(ReceiptPath {
             port_id: PortId::transfer(),
             channel_id: ChannelId::new(0),
-            sequence: Sequence::default(),
+            sequence: Sequence::from(0),
         })
     )]
     #[case(
@@ -1371,7 +1371,7 @@ mod tests {
 
         assert_eq!(
             parse_sequences(&components),
-            Some(SubPath::Sequences(Sequence::default()))
+            Some(SubPath::Sequences(Sequence::from(0)))
         );
     }
 
@@ -1435,7 +1435,7 @@ mod tests {
             Some(Path::Commitment(CommitmentPath {
                 port_id: PortId::transfer(),
                 channel_id: ChannelId::new(0),
-                sequence: Sequence::default(),
+                sequence: Sequence::from(0),
             })),
         );
     }
@@ -1450,7 +1450,7 @@ mod tests {
             Some(Path::Ack(AckPath {
                 port_id: PortId::transfer(),
                 channel_id: ChannelId::new(0),
-                sequence: Sequence::default(),
+                sequence: Sequence::from(0),
             })),
         );
     }
@@ -1465,7 +1465,7 @@ mod tests {
             Some(Path::Receipt(ReceiptPath {
                 port_id: PortId::transfer(),
                 channel_id: ChannelId::new(0),
-                sequence: Sequence::default(),
+                sequence: Sequence::from(0),
             })),
         );
     }
