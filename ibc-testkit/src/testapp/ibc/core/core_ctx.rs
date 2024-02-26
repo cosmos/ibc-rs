@@ -276,7 +276,7 @@ where
 
     /// Returns the maximum expected time per block
     fn max_expected_time_per_block(&self) -> Duration {
-        Duration::from_secs(8)
+        self.block_time
     }
 
     fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
