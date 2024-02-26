@@ -74,13 +74,6 @@ impl FromStr for Version {
     }
 }
 
-/// The default version is empty (unspecified).
-impl Default for Version {
-    fn default() -> Self {
-        Version::empty()
-    }
-}
-
 impl Display for Version {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "{}", self.0)
