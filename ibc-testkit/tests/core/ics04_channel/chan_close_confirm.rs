@@ -48,7 +48,7 @@ fn test_chan_close_confirm_validate() {
             Some(msg_chan_close_confirm.chan_id_on_b.clone()),
         ),
         vec![conn_id.clone()],
-        Version::default(),
+        Version::empty(),
     )
     .unwrap();
 
@@ -107,7 +107,7 @@ fn test_chan_close_confirm_execute() {
             Some(msg_chan_close_confirm.chan_id_on_b.clone()),
         ),
         vec![conn_id.clone()],
-        Version::default(),
+        Version::empty(),
     )
     .unwrap();
 

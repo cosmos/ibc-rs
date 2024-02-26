@@ -56,7 +56,7 @@ fn fixture() -> Fixture {
         Order::Unordered,
         Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::new(0))),
         vec![conn_id_on_b.clone()],
-        Version::default(),
+        Version::empty(),
     )
     .unwrap();
 
@@ -194,7 +194,7 @@ fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
         Order::Unordered,
         Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::new(0))),
         vec![conn_id_on_b.clone()],
-        Version::default(),
+        Version::empty(),
     )
     .unwrap();
     let context = context
