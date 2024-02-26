@@ -24,7 +24,7 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 /// of timestamp.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(PartialEq, Eq, Copy, Clone, Debug, Default, PartialOrd, Ord, Hash)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash)]
 pub struct Timestamp {
     // Note: The schema representation is the timestamp in nanoseconds (as we do with borsh).
     #[cfg_attr(feature = "schema", schemars(with = "u64"))]
@@ -170,7 +170,7 @@ impl Timestamp {
     /// let ti = Timestamp::from_nanoseconds(min).unwrap();
     /// let uti = ti.nanoseconds();
     /// assert_eq!(uti, min);
-    /// let tz = Timestamp::default();
+    /// let tz = Timestamp::none();
     /// let utz = tz.nanoseconds();
     /// assert_eq!(utz, 0);
     /// ```
