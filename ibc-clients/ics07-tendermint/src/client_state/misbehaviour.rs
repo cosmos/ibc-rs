@@ -1,5 +1,7 @@
 use ibc_client_tendermint_types::error::{Error, IntoResult};
-use ibc_client_tendermint_types::{Header as TmHeader, Misbehaviour as TmMisbehaviour};
+use ibc_client_tendermint_types::{
+    ClientState as ClientStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
+};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::ClientConsensusStatePath;
@@ -7,17 +9,18 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 use tendermint_light_client_verifier::Verifier;
 
-use super::{ClientState as TmClientState, TmValidationContext};
+use super::TmValidationContext;
 use crate::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::TmVerifier;
 
 // verify_misbehaviour determines whether or not two conflicting headers at
 // the same height would have convinced the light client.
 pub fn verify_misbehaviour<ClientValidationContext>(
-    client_state: &TmClientState,
+    client_state: &ClientStateType,
     ctx: &ClientValidationContext,
     client_id: &ClientId,
-    misbehaviour: TmMisbehaviour,
+    misbehaviour: &TmMisbehaviour,
+    verifier: &impl TmVerifier,
 ) -> Result<(), ClientError>
 where
     ClientValidationContext: TmValidationContext,
@@ -63,20 +66,23 @@ where
         header_1,
         &trusted_consensus_state_1,
         current_timestamp,
+        verifier,
     )?;
     verify_misbehaviour_header(
         client_state,
         header_2,
         &trusted_consensus_state_2,
         current_timestamp,
+        verifier,
     )
 }
 
 pub fn verify_misbehaviour_header(
-    client_state: &TmClientState,
+    client_state: &ClientStateType,
     header: &TmHeader,
     trusted_consensus_state: &TmConsensusState,
     current_timestamp: Timestamp,
+    verifier: &impl TmVerifier,
 ) -> Result<(), ClientError> {
     // ensure correctness of the trusted next validator set provided by the relayer
     header.check_trusted_next_validator_set(trusted_consensus_state.inner())?;
@@ -90,10 +96,10 @@ pub fn verify_misbehaviour_header(
                 time2: current_timestamp,
             })?;
 
-        if duration_since_consensus_state >= client_state.0.trusting_period {
+        if duration_since_consensus_state >= client_state.trusting_period {
             return Err(Error::ConsensusStateTimestampGteTrustingPeriod {
                 duration_since_consensus_state,
-                trusting_period: client_state.0.trusting_period,
+                trusting_period: client_state.trusting_period,
             }
             .into());
         }
@@ -102,24 +108,24 @@ pub fn verify_misbehaviour_header(
     // main header verification, delegated to the tendermint-light-client crate.
     let untrusted_state = header.as_untrusted_block_state();
 
-    let chain_id = client_state
-        .0
-        .chain_id
-        .to_string()
-        .try_into()
-        .map_err(|e| ClientError::Other {
-            description: format!("failed to parse chain id: {}", e),
-        })?;
+    let chain_id =
+        client_state
+            .chain_id
+            .to_string()
+            .try_into()
+            .map_err(|e| ClientError::Other {
+                description: format!("failed to parse chain id: {}", e),
+            })?;
 
     let trusted_state =
         header.as_trusted_block_state(trusted_consensus_state.inner(), &chain_id)?;
 
-    let options = client_state.0.as_light_client_options()?;
+    let options = client_state.as_light_client_options()?;
     let current_timestamp = current_timestamp.into_tm_time().ok_or(ClientError::Other {
         description: "host timestamp must not be zero".to_string(),
     })?;
 
-    client_state
+    verifier
         .verifier()
         .verify_misbehaviour_header(untrusted_state, trusted_state, &options, current_timestamp)
         .into_result()?;

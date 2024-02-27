@@ -42,7 +42,7 @@ use self::update_client::{
 };
 use super::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::{
-    CommonContext, ExecutionContext as TmExecutionContext, TmVerifier,
+    CommonContext, DefaultVerifier, ExecutionContext as TmExecutionContext, TmVerifier,
     ValidationContext as TmValidationContext,
 };
 
@@ -115,7 +115,7 @@ impl ClientStateCommon for ClientState {
     }
 
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
-        validate_proof_height(self, proof_height)
+        validate_proof_height(self.inner(), proof_height)
     }
 
     fn verify_upgrade_client(
@@ -127,7 +127,7 @@ impl ClientStateCommon for ClientState {
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
         verify_upgrade_client(
-            self,
+            self.inner(),
             upgraded_client_state,
             upgraded_consensus_state,
             proof_upgrade_client,
@@ -144,7 +144,7 @@ impl ClientStateCommon for ClientState {
         path: Path,
         value: Vec<u8>,
     ) -> Result<(), ClientError> {
-        verify_membership(self, prefix, proof, root, path, value)
+        verify_membership(self.inner(), prefix, proof, root, path, value)
     }
 
     fn verify_non_membership(
@@ -154,7 +154,7 @@ impl ClientStateCommon for ClientState {
         root: &CommitmentRoot,
         path: Path,
     ) -> Result<(), ClientError> {
-        verify_non_membership(self, prefix, proof, root, path)
+        verify_non_membership(self.inner(), prefix, proof, root, path)
     }
 }
 
@@ -183,10 +183,10 @@ pub fn verify_consensus_state(consensus_state: Any) -> Result<(), ClientError> {
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn validate_proof_height(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     proof_height: Height,
 ) -> Result<(), ClientError> {
-    let latest_height = client_state.0.latest_height;
+    let latest_height = client_state.latest_height;
 
     if latest_height < proof_height {
         return Err(ClientError::InvalidProofHeight {
@@ -210,7 +210,7 @@ pub fn validate_proof_height(
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn verify_upgrade_client(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     upgraded_client_state: Any,
     upgraded_consensus_state: Any,
     proof_upgrade_client: CommitmentProofBytes,
@@ -223,20 +223,21 @@ pub fn verify_upgrade_client(
     // Make sure that the consensus type is of Tendermint type `ConsensusState`
     TmConsensusState::try_from(upgraded_consensus_state.clone())?;
 
-    let latest_height = client_state.0.latest_height;
+    let latest_height = client_state.latest_height;
+    let upgraded_tm_client_state_height = upgraded_tm_client_state.latest_height();
 
     // Make sure the latest height of the current client is not greater then
     // the upgrade height This condition checks both the revision number and
     // the height
-    if latest_height >= upgraded_tm_client_state.0.latest_height {
+    if latest_height >= upgraded_tm_client_state_height {
         Err(UpgradeClientError::LowUpgradeHeight {
             upgraded_height: latest_height,
-            client_height: upgraded_tm_client_state.0.latest_height,
+            client_height: upgraded_tm_client_state_height,
         })?
     }
 
     // Check to see if the upgrade path is set
-    let mut upgrade_path = client_state.0.upgrade_path.clone();
+    let mut upgrade_path = client_state.upgrade_path.clone();
 
     if upgrade_path.pop().is_none() {
         return Err(ClientError::ClientSpecific {
@@ -278,7 +279,7 @@ pub fn verify_upgrade_client(
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn verify_membership(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     prefix: &CommitmentPrefix,
     proof: &CommitmentProofBytes,
     root: &CommitmentRoot,
@@ -290,7 +291,7 @@ pub fn verify_membership(
 
     merkle_proof
         .verify_membership(
-            &client_state.0.proof_specs,
+            &client_state.proof_specs,
             root.clone().into(),
             merkle_path,
             value,
@@ -305,7 +306,7 @@ pub fn verify_membership(
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn verify_non_membership(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     prefix: &CommitmentPrefix,
     proof: &CommitmentProofBytes,
     root: &CommitmentRoot,
@@ -315,11 +316,7 @@ pub fn verify_non_membership(
     let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
     merkle_proof
-        .verify_non_membership(
-            &client_state.0.proof_specs,
-            root.clone().into(),
-            merkle_path,
-        )
+        .verify_non_membership(&client_state.proof_specs, root.clone().into(), merkle_path)
         .map_err(ClientError::Ics23Verification)
 }
 
@@ -329,13 +326,23 @@ where
     V::AnyConsensusState: TryInto<TmConsensusState>,
     ClientError: From<<V::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
 {
+    /// The default verification logic exposed by ibc-rs simply delegates to a
+    /// standalone `verify_client_message` function. This is to make it as simple
+    /// as possible for those who merely need the `DefaultVerifier` behaviour, as
+    /// well as those who require custom verification logic.
     fn verify_client_message(
         &self,
         ctx: &V,
         client_id: &ClientId,
         client_message: Any,
     ) -> Result<(), ClientError> {
-        verify_client_message(self, ctx, client_id, client_message)
+        verify_client_message(
+            self.inner(),
+            ctx,
+            client_id,
+            client_message,
+            &DefaultVerifier,
+        )
     }
 
     fn check_for_misbehaviour(
@@ -344,11 +351,11 @@ where
         client_id: &ClientId,
         client_message: Any,
     ) -> Result<bool, ClientError> {
-        check_for_misbehaviour(self, ctx, client_id, client_message)
+        check_for_misbehaviour(self.inner(), ctx, client_id, client_message)
     }
 
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
-        client_state_status(self, ctx, client_id)
+        client_state_status(self.inner(), ctx, client_id)
     }
 }
 
@@ -356,12 +363,17 @@ where
 ///
 /// Note that this function is typically implemented as part of the
 /// [`ClientStateValidation`] trait, but has been made a standalone function
-/// in order to make the ClientState APIs more flexible.
+/// in order to make the ClientState APIs more flexible. It mostly adheres to
+/// the same signature as the `ClientStateValidation::verify_client_message`
+/// function, except for an additional `verifier` parameter that allows users
+/// who require custom verification logic to easily pass in their own verifier
+/// implementation.
 pub fn verify_client_message<V>(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     ctx: &V,
     client_id: &ClientId,
     client_message: Any,
+    verifier: &impl TmVerifier,
 ) -> Result<(), ClientError>
 where
     V: ClientValidationContext + TmValidationContext,
@@ -371,11 +383,11 @@ where
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
             let header = TmHeader::try_from(client_message)?;
-            verify_header(client_state, ctx, client_id, header)
+            verify_header(client_state, ctx, client_id, &header, verifier)
         }
         TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
             let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-            verify_misbehaviour(client_state, ctx, client_id, misbehaviour)
+            verify_misbehaviour(client_state, ctx, client_id, &misbehaviour, verifier)
         }
         _ => Err(ClientError::InvalidUpdateClientMessage),
     }
@@ -414,7 +426,7 @@ where
 /// Ensure that consensus state times are monotonically increasing with
 /// height.
 pub fn check_for_misbehaviour<V>(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     ctx: &V,
     client_id: &ClientId,
     client_message: Any,
@@ -443,7 +455,7 @@ where
 /// [`ClientStateValidation`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn client_state_status<V>(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     ctx: &V,
     client_id: &ClientId,
 ) -> Result<Status, ClientError>
@@ -452,8 +464,6 @@ where
     V::AnyConsensusState: TryInto<TmConsensusState>,
     ClientError: From<<V::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
 {
-    let client_state = &client_state.0;
-
     if client_state.is_frozen() {
         return Ok(Status::Frozen);
     }
@@ -477,6 +487,7 @@ where
     // consensus state is in the future, then we don't consider the client
     // to be expired.
     let now = ctx.host_timestamp()?;
+
     if let Some(elapsed_since_latest_consensus_state) =
         now.duration_since(&latest_consensus_state.timestamp().into())
     {
@@ -500,7 +511,7 @@ where
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError> {
-        initialise_client_state(self, ctx, client_id, consensus_state)
+        initialise_client_state(self.inner(), ctx, client_id, consensus_state)
     }
 
     fn update_state(
@@ -509,7 +520,7 @@ where
         client_id: &ClientId,
         header: Any,
     ) -> Result<Vec<Height>, ClientError> {
-        update_client_state(self, ctx, client_id, header)
+        update_client_state(self.inner(), ctx, client_id, header)
     }
 
     fn update_state_on_misbehaviour(
@@ -518,7 +529,7 @@ where
         client_id: &ClientId,
         client_message: Any,
     ) -> Result<(), ClientError> {
-        update_client_state_on_misbehaviour(self, ctx, client_id, client_message)
+        update_client_state_on_misbehaviour(self.inner(), ctx, client_id, client_message)
     }
 
     fn update_state_on_upgrade(
@@ -529,7 +540,7 @@ where
         upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError> {
         update_client_state_on_upgrade(
-            self,
+            self.inner(),
             ctx,
             client_id,
             upgraded_client_state,
@@ -544,7 +555,7 @@ where
 /// [`ClientStateExecution`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn initialise_client_state<E>(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     ctx: &mut E,
     client_id: &ClientId,
     consensus_state: Any,
@@ -566,15 +577,15 @@ where
     ctx.store_consensus_state(
         ClientConsensusStatePath::new(
             client_id.clone(),
-            client_state.0.latest_height.revision_number(),
-            client_state.0.latest_height.revision_height(),
+            client_state.latest_height.revision_number(),
+            client_state.latest_height.revision_height(),
         ),
         tm_consensus_state.into(),
     )?;
 
     ctx.store_update_meta(
         client_id.clone(),
-        client_state.0.latest_height,
+        client_state.latest_height,
         host_timestamp,
         host_height,
     )?;
@@ -589,7 +600,7 @@ where
 /// [`ClientStateExecution`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn update_client_state<E>(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     ctx: &mut E,
     client_id: &ClientId,
     header: Any,
@@ -624,7 +635,7 @@ where
         let host_height = CommonContext::host_height(ctx)?;
 
         let new_consensus_state = ConsensusStateType::from(header.clone());
-        let new_client_state = client_state.0.clone().with_header(header)?;
+        let new_client_state = client_state.clone().with_header(header)?;
 
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(
@@ -656,7 +667,7 @@ where
 /// [`ClientStateExecution`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn update_client_state_on_misbehaviour<E>(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     ctx: &mut E,
     client_id: &ClientId,
     _client_message: Any,
@@ -666,8 +677,6 @@ where
     <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
-    let client_state = &client_state.0;
-
     // NOTE: frozen height is  set to `Height {revision_height: 0,
     // revision_number: 1}` and it is the same for all misbehaviour. This
     // aligns with the
@@ -691,7 +700,7 @@ where
 /// [`ClientStateExecution`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn update_client_state_on_upgrade<E>(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     ctx: &mut E,
     client_id: &ClientId,
     upgraded_client_state: Any,
@@ -702,7 +711,6 @@ where
     <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
     <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
 {
-    let client_state = &client_state.0;
     let mut upgraded_tm_client_state = ClientState::try_from(upgraded_client_state)?;
     let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
 
@@ -861,7 +869,7 @@ mod tests {
                 Some(setup) => (setup)(ClientState(client_state)),
                 _ => ClientState(client_state),
             };
-            let res = validate_proof_height(&client_state, test.height);
+            let res = validate_proof_height(client_state.inner(), test.height);
 
             assert_eq!(
                 test.want_pass,
