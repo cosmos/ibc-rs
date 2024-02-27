@@ -4,7 +4,8 @@ use derive_more::{From, TryInto};
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
 use ibc::clients::tendermint::types::{
-    TENDERMINT_CLIENT_STATE_TYPE_URL, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
+    ClientState as ClientStateType, TENDERMINT_CLIENT_STATE_TYPE_URL,
+    TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
 use ibc::core::client::types::error::ClientError;
 use ibc::core::primitives::prelude::*;
@@ -51,6 +52,12 @@ impl From<AnyClientState> for Any {
             AnyClientState::Tendermint(cs) => cs.into(),
             AnyClientState::Mock(cs) => cs.into(),
         }
+    }
+}
+
+impl From<ClientStateType> for AnyClientState {
+    fn from(client_state: ClientStateType) -> Self {
+        AnyClientState::Tendermint(client_state.into())
     }
 }
 

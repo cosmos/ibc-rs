@@ -502,8 +502,8 @@ where
 impl<E> ClientStateExecution<E> for ClientState
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
+    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
 {
     fn initialise(
         &self,
@@ -511,7 +511,7 @@ where
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError> {
-        initialise_client_state(self, ctx, client_id, consensus_state)
+        initialise_client_state(self.inner(), ctx, client_id, consensus_state)
     }
 
     fn update_state(
@@ -555,15 +555,15 @@ where
 /// [`ClientStateExecution`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn initialise_client_state<E>(
-    client_state: &ClientState,
+    client_state: &ClientStateType,
     ctx: &mut E,
     client_id: &ClientId,
     consensus_state: Any,
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
+    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
 {
     let host_timestamp = CommonContext::host_timestamp(ctx)?;
     let host_height = CommonContext::host_height(ctx)?;
@@ -577,15 +577,15 @@ where
     ctx.store_consensus_state(
         ClientConsensusStatePath::new(
             client_id.clone(),
-            client_state.0.latest_height.revision_number(),
-            client_state.0.latest_height.revision_height(),
+            client_state.latest_height.revision_number(),
+            client_state.latest_height.revision_height(),
         ),
         tm_consensus_state.into(),
     )?;
 
     ctx.store_update_meta(
         client_id.clone(),
-        client_state.0.latest_height,
+        client_state.latest_height,
         host_timestamp,
         host_height,
     )?;
@@ -607,8 +607,8 @@ pub fn update_client_state<E>(
 ) -> Result<Vec<Height>, ClientError>
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
+    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
 {
     let header = TmHeader::try_from(header)?;
     let header_height = header.height();
@@ -647,7 +647,7 @@ where
         )?;
         ctx.store_client_state(
             ClientStatePath::new(client_id.clone()),
-            ClientState::from(new_client_state).into(),
+            new_client_state.into(),
         )?;
         ctx.store_update_meta(
             client_id.clone(),
@@ -674,8 +674,8 @@ pub fn update_client_state_on_misbehaviour<E>(
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
+    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
 {
     // NOTE: frozen height is  set to `Height {revision_height: 0,
     // revision_number: 1}` and it is the same for all misbehaviour. This
@@ -684,11 +684,9 @@ where
     // implementation.
     let frozen_client_state = client_state.clone().with_frozen_height(Height::min(0));
 
-    let wrapped_frozen_client_state = ClientState::from(frozen_client_state);
-
     ctx.store_client_state(
         ClientStatePath::new(client_id.clone()),
-        wrapped_frozen_client_state.into(),
+        frozen_client_state.into(),
     )?;
 
     Ok(())
@@ -708,8 +706,8 @@ pub fn update_client_state_on_upgrade<E>(
 ) -> Result<Height, ClientError>
 where
     E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientState>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<TmConsensusState>,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
+    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
 {
     let mut upgraded_tm_client_state = ClientState::try_from(upgraded_client_state)?;
     let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
@@ -758,7 +756,7 @@ where
 
     ctx.store_client_state(
         ClientStatePath::new(client_id.clone()),
-        ClientState::from(new_client_state).into(),
+        new_client_state.into(),
     )?;
     ctx.store_consensus_state(
         ClientConsensusStatePath::new(
