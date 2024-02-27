@@ -511,7 +511,7 @@ where
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError> {
-        initialise_client_state(self.inner(), ctx, client_id, consensus_state)
+        initialise_client_state(self, ctx, client_id, consensus_state)
     }
 
     fn update_state(
@@ -555,7 +555,7 @@ where
 /// [`ClientStateExecution`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
 pub fn initialise_client_state<E>(
-    client_state: &ClientStateType,
+    client_state: &ClientState,
     ctx: &mut E,
     client_id: &ClientId,
     consensus_state: Any,
@@ -577,15 +577,15 @@ where
     ctx.store_consensus_state(
         ClientConsensusStatePath::new(
             client_id.clone(),
-            client_state.latest_height.revision_number(),
-            client_state.latest_height.revision_height(),
+            client_state.0.latest_height.revision_number(),
+            client_state.0.latest_height.revision_height(),
         ),
         tm_consensus_state.into(),
     )?;
 
     ctx.store_update_meta(
         client_id.clone(),
-        client_state.latest_height,
+        client_state.0.latest_height,
         host_timestamp,
         host_height,
     )?;
