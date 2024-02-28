@@ -48,7 +48,7 @@ jobs:
       - uses: actions/checkout@v2
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2024-02-24
           target: wasm32-unknown-unknown
           override: true
       - run: |
