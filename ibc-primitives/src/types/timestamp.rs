@@ -7,7 +7,6 @@ use core::ops::{Add, Sub};
 use core::str::FromStr;
 use core::time::Duration;
 
-use displaydoc::Display;
 use tendermint::Time;
 use time::OffsetDateTime;
 
