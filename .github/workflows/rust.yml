@@ -61,7 +61,7 @@ jobs:
         uses: taiki-e/install-action@cargo-hack
       - uses: Swatinem/rust-cache@v2
       - name: Run cargo hack
-        run: make check-features
+        run: cargo hack check --workspace --feature-powerset --exclude-features default
 
   nightly_fmt:
     runs-on: ubuntu-latest
