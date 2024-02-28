@@ -31,7 +31,7 @@ ibc-core-handler-types    = { workspace = true }
 ibc-primitives            = { workspace = true }
 
 # cosmos dependencies
-tendermint = { workspace = true }
+cometbft = { workspace = true }
 
 [features]
 default = ["std"]
@@ -43,7 +43,7 @@ std = [
     "ibc-core-host-types/std",
     "ibc-core-handler-types/std",
     "ibc-primitives/std",
-    "tendermint/std",
+    "cometbft/std",
 ]
 serde = [
     "ibc-core-client-types/serde",

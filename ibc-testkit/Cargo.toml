@@ -33,8 +33,8 @@ ibc       = { workspace = true, features = ["std"] }
 ibc-proto = { workspace = true }
 
 # cosmos dependencies
-tendermint         = { workspace = true }
-tendermint-testgen = { workspace = true }
+cometbft         = { workspace = true }
+cometbft-testgen = { workspace = true }
 
 [dev-dependencies]
 env_logger         = "0.11.0"
@@ -51,7 +51,7 @@ std = [
     "serde_json/std",
     "ibc/std",
     "ibc-proto/std",
-    "tendermint/std",
+    "cometbft/std",
 ]
 serde = [
     "dep:serde",
