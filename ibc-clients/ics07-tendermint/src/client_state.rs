@@ -568,7 +568,7 @@ where
     let host_timestamp = CommonContext::host_timestamp(ctx)?;
     let host_height = CommonContext::host_height(ctx)?;
 
-    let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
+    let tm_consensus_state = ConsensusStateType::try_from(consensus_state)?;
 
     ctx.store_client_state(
         ClientStatePath::new(client_id.clone()),
@@ -643,7 +643,7 @@ where
                 header_height.revision_number(),
                 header_height.revision_height(),
             ),
-            TmConsensusState::from(new_consensus_state).into(),
+            new_consensus_state.into(),
         )?;
         ctx.store_client_state(
             ClientStatePath::new(client_id.clone()),
@@ -764,7 +764,7 @@ where
             latest_height.revision_number(),
             latest_height.revision_height(),
         ),
-        TmConsensusState::from(new_consensus_state).into(),
+        new_consensus_state.into(),
     )?;
     ctx.store_update_meta(
         client_id.clone(),
