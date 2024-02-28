@@ -180,10 +180,10 @@ impl ClientState {
             });
         }
 
-        // Disallow empty proof-specs
-        if self.proof_specs.is_empty() {
-            return Err(Error::Validation {
-                reason: "ClientState proof-specs cannot be empty".to_string(),
+        // Disallow empty proof-specs and empty depth range in proof-specs
+        if let Err(e) = self.proof_specs.validate() {
+            return Err(Error::Validation { 
+                reason: format!("ClientState {}", e),
             });
         }
 

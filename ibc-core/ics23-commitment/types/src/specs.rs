@@ -23,6 +23,20 @@ impl ProofSpecs {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
+
+    pub fn validate(&self) -> Result<(), String> {
+        if self.0.is_empty() {
+            return Err("proof-specs cannot be empty".to_string());
+        }
+        for proof_spec in &self.0 {
+            if proof_spec.0.min_depth > proof_spec.0.max_depth {
+                return Err(
+                    format!("depth range in proof-specs cannot be empty: ({}, {})", proof_spec.0.min_depth, proof_spec.0.max_depth)
+                );
+            }
+        }
+        Ok(())
+    }
 }
 
 impl Default for ProofSpecs {
