@@ -7,8 +7,8 @@ use core::ops::{Add, Sub};
 use core::str::FromStr;
 use core::time::Duration;
 
+use cometbft::Time;
 use displaydoc::Display;
-use tendermint::Time;
 use time::OffsetDateTime;
 
 use crate::prelude::*;
@@ -120,7 +120,7 @@ impl Timestamp {
                     ParseTimestampError::DataOutOfRange(e.to_string())
                 })?
                 .try_into()
-                .map_err(|e: tendermint::error::Error| {
+                .map_err(|e: cometbft::error::Error| {
                     ParseTimestampError::DataOutOfRange(e.to_string())
                 })?;
             Ok(Timestamp { time: Some(ts) })

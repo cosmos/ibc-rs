@@ -27,6 +27,8 @@ pub struct MsgChannelCloseConfirm {
     pub proof_chan_end_on_a: CommitmentProofBytes,
     pub proof_height_on_a: Height,
     pub signer: Signer,
+    // FIXME: model with a domain type
+    pub counterparty_upgrade_sequence: u64,
 }
 
 impl Protobuf<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {}
@@ -47,6 +49,7 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(ChannelError::MissingHeight)?,
             signer: raw_msg.signer.into(),
+            counterparty_upgrade_sequence: raw_msg.counterparty_upgrade_sequence,
         })
     }
 }
@@ -59,6 +62,7 @@ impl From<MsgChannelCloseConfirm> for RawMsgChannelCloseConfirm {
             proof_init: domain_msg.proof_chan_end_on_a.clone().into(),
             proof_height: Some(domain_msg.proof_height_on_a.into()),
             signer: domain_msg.signer.to_string(),
+            counterparty_upgrade_sequence: domain_msg.counterparty_upgrade_sequence,
         }
     }
 }

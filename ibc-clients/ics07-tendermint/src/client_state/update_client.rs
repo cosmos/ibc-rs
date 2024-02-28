@@ -1,3 +1,5 @@
+use cometbft_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
+use cometbft_light_client_verifier::Verifier;
 use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::{ConsensusState as ConsensusStateType, Header as TmHeader};
 use ibc_core_client::context::ClientExecutionContext;
@@ -5,8 +7,6 @@ use ibc_core_client::types::error::ClientError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
-use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
-use tendermint_light_client_verifier::Verifier;
 
 use super::ClientState;
 use crate::consensus_state::ConsensusState as TmConsensusState;

@@ -1,5 +1,5 @@
+use cometbft::abci;
 use ibc_primitives::prelude::*;
-use tendermint::abci;
 
 /// The event type emitted by IBC applications
 #[cfg_attr(

@@ -1,5 +1,6 @@
 //! Defines events emitted during handling of IBC messages
 
+use cometbft::abci;
 use displaydoc::Display;
 use ibc_core_channel_types::{error as channel_error, events as ChannelEvents};
 use ibc_core_client_types::error as client_error;
@@ -9,7 +10,6 @@ use ibc_core_host_types::error::IdentifierError;
 use ibc_core_router_types::event::ModuleEvent;
 use ibc_primitives::prelude::*;
 use ibc_primitives::ParseTimestampError;
-use tendermint::abci;
 
 /// All error variants related to IBC events
 #[derive(Debug, Display)]

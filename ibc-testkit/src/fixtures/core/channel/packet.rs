@@ -69,6 +69,7 @@ pub fn dummy_proof() -> Vec<u8> {
 
 #[cfg(test)]
 mod tests {
+    use cometbft::abci;
     use ibc::core::channel::types::channel::Order;
     use ibc::core::channel::types::events::SendPacket;
     use ibc::core::handler::types::events::IbcEvent;
@@ -269,6 +270,6 @@ mod tests {
             Order::Unordered,
             ConnectionId::default(),
         ));
-        let _ = tendermint::abci::Event::try_from(ibc_event);
+        let _ = abci::Event::try_from(ibc_event);
     }
 }

@@ -1,8 +1,8 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the connection module.
 
+use cometbft::abci;
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
 use ibc_primitives::prelude::*;
-use tendermint::abci;
 
 /// Connection event types
 const CONNECTION_OPEN_INIT_EVENT: &str = "connection_open_init";
@@ -307,8 +307,8 @@ mod tests {
 
     use core::str::FromStr;
 
+    use cometbft::abci::Event as AbciEvent;
     use ibc_core_host_types::identifiers::ClientType;
-    use tendermint::abci::Event as AbciEvent;
 
     use super::*;
 

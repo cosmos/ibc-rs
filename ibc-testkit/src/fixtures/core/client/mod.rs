@@ -14,13 +14,13 @@ pub use msg_upgrade_client::*;
 mod tests {
     use core::str::FromStr;
 
+    use cometbft::abci::Event as AbciEvent;
     use ibc::core::client::types::events::*;
     use ibc::core::client::types::Height;
     use ibc::core::host::types::identifiers::*;
     use ibc::primitives::prelude::*;
     use ibc::primitives::ToVec;
     use ibc_proto::google::protobuf::Any;
-    use tendermint::abci::Event as AbciEvent;
 
     use crate::fixtures::clients::mock::dummy_new_mock_header;
 

@@ -1,9 +1,9 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the client module.
+use cometbft::abci;
 use derive_more::From;
 use ibc_core_host_types::identifiers::{ClientId, ClientType};
 use ibc_primitives::prelude::*;
 use subtle_encoding::hex;
-use tendermint::abci;
 
 use crate::height::Height;
 

@@ -1,8 +1,8 @@
 //! Definitions of events emitted when an upgrade client is proposed or executed.
 
+use cometbft::abci;
 use derive_more::From;
 use ibc_primitives::prelude::*;
-use tendermint::abci;
 
 const UPGRADE_CHAIN_EVENT: &str = "upgrade_chain";
 const UPGRADE_CLIENT_PROPOSAL_EVENT: &str = "upgrade_client_proposal";

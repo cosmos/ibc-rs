@@ -1,5 +1,6 @@
 use core::time::Duration;
 
+use cometbft::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use ibc_client_tendermint::client_state::ClientState;
 use ibc_core_client_context::client_state::ClientStateCommon;
 use ibc_core_client_types::error::ClientError;
@@ -10,7 +11,6 @@ use ibc_core_handler_types::error::ContextError;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
-use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 
 /// Provides an implementation of `ValidationContext::validate_self_client` for
 /// Tendermint-based hosts.

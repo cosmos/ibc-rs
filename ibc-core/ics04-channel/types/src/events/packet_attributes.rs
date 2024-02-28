@@ -3,12 +3,12 @@
 //!
 use core::str;
 
+use cometbft::abci;
 use derive_more::From;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 use subtle_encoding::hex;
-use tendermint::abci;
 
 use crate::acknowledgement::Acknowledgement;
 use crate::channel::Order;

@@ -1,6 +1,7 @@
 use core::str::FromStr;
 use core::time::Duration;
 
+use cometbft::block::Header as TmHeader;
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::error::{Error as ClientError, Error};
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
@@ -14,7 +15,6 @@ use ibc::core::client::types::Height;
 use ibc::core::commitment_types::specs::ProofSpecs;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
-use tendermint::block::Header as TmHeader;
 
 /// Returns a dummy tendermint `ClientState` by given `frozen_height`, for testing purposes only!
 pub fn dummy_tm_client_state_from_raw(frozen_height: RawHeight) -> Result<TmClientState, Error> {
@@ -105,8 +105,8 @@ impl TryFrom<ClientStateConfig> for TmClientState {
 }
 
 #[cfg(feature = "serde")]
-pub fn dummy_tendermint_header() -> tendermint::block::Header {
-    use tendermint::block::signed_header::SignedHeader;
+pub fn dummy_tendermint_header() -> TmHeader {
+    use cometbft::block::signed_header::SignedHeader;
 
     serde_json::from_str::<SignedHeader>(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -132,10 +132,10 @@ pub fn dummy_tendermint_header() -> tendermint::block::Header {
 //   i.e. `trusted_validator_set` = `validator_set`
 #[cfg(feature = "serde")]
 pub fn dummy_ics07_header() -> Header {
+    use cometbft::block::signed_header::SignedHeader;
+    use cometbft::validator::{Info as ValidatorInfo, Set as ValidatorSet};
+    use cometbft::PublicKey;
     use subtle_encoding::hex;
-    use tendermint::block::signed_header::SignedHeader;
-    use tendermint::validator::{Info as ValidatorInfo, Set as ValidatorSet};
-    use tendermint::PublicKey;
 
     // Build a SignedHeader from a JSON file.
     let shdr = serde_json::from_str::<SignedHeader>(include_str!(concat!(

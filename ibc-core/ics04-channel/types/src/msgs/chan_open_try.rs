@@ -103,6 +103,7 @@ impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
             Counterparty::new(domain_msg.port_id_on_a, Some(domain_msg.chan_id_on_a)),
             domain_msg.connection_hops_on_b,
             Version::empty(), // Excessive field to satisfy the type conversion
+            0,
         );
         #[allow(deprecated)]
         RawMsgChannelOpenTry {

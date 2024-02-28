@@ -1,6 +1,7 @@
 use core::str::FromStr;
 use core::time::Duration;
 
+use cometbft_testgen::Validator as TestgenValidator;
 use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
 use ibc::clients::tendermint::types::{
@@ -34,7 +35,6 @@ use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
 use rstest::*;
-use tendermint_testgen::Validator as TestgenValidator;
 
 struct Fixture {
     ctx: MockContext,
