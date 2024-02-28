@@ -6,6 +6,7 @@ use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 
+use cometbft_testgen::Validator as TestgenValidator;
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::TENDERMINT_CLIENT_TYPE;
 use ibc::core::channel::types::channel::ChannelEnd;
@@ -24,7 +25,6 @@ use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::core::router::router::Router;
 use parking_lot::Mutex;
-use tendermint_testgen::Validator as TestgenValidator;
 use typed_builder::TypedBuilder;
 
 use super::client_ctx::{MockClientRecord, PortChannelIdMap};

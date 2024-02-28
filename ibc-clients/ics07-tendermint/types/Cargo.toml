@@ -31,9 +31,9 @@ ibc-primitives            = { workspace = true }
 ibc-proto                 = { workspace = true }
 
 # cosmos dependencies
-tendermint                       = { workspace = true }
-tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
-tendermint-proto                 = { workspace = true }
+cometbft                       = { workspace = true }
+cometbft-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
+cometbft-proto                 = { workspace = true }
 
 # parity dependencies
 parity-scale-codec = { workspace = true, optional = true }
@@ -41,7 +41,7 @@ scale-info         = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json     = { workspace = true }
-tendermint-rpc = { workspace = true }
+cometbft-rpc = { workspace = true }
 
 [features]
 default = ["std"]
@@ -54,7 +54,7 @@ std = [
     "ibc-core-host-types/std",
     "ibc-primitives/std",
     "ibc-proto/std",
-    "tendermint/std",
+    "cometbft/std",
 ]
 serde = [
     "dep:serde",

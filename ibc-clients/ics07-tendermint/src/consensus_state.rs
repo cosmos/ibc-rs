@@ -6,6 +6,7 @@
 //! implementations that serve to pass through traits implemented on the wrapped
 //! `ConsensusState` type.
 
+use cometbft::{block, Hash, Time};
 use ibc_client_tendermint_types::error::Error;
 use ibc_client_tendermint_types::proto::v1::ConsensusState as RawTmConsensusState;
 use ibc_client_tendermint_types::ConsensusState as ConsensusStateType;
@@ -15,7 +16,6 @@ use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::Timestamp;
-use tendermint::{Hash, Time};
 
 /// Newtype wrapper around the `ConsensusState` type imported from the
 /// `ibc-client-tendermint-types` crate. This wrapper exists so that we can
@@ -77,8 +77,8 @@ impl From<ConsensusState> for Any {
     }
 }
 
-impl From<tendermint::block::Header> for ConsensusState {
-    fn from(header: tendermint::block::Header) -> Self {
+impl From<block::Header> for ConsensusState {
+    fn from(header: block::Header) -> Self {
         Self(ConsensusStateType::from(header))
     }
 }

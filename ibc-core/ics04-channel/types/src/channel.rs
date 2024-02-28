@@ -58,6 +58,7 @@ impl TryFrom<RawIdentifiedChannel> for IdentifiedChannelEnd {
             counterparty: value.counterparty,
             connection_hops: value.connection_hops,
             version: value.version,
+            upgrade_sequence: value.upgrade_sequence,
         };
 
         Ok(IdentifiedChannelEnd {
@@ -83,6 +84,7 @@ impl From<IdentifiedChannelEnd> for RawIdentifiedChannel {
             version: value.channel_end.version.to_string(),
             port_id: value.port_id.to_string(),
             channel_id: value.channel_id.to_string(),
+            upgrade_sequence: value.channel_end.upgrade_sequence,
         }
     }
 }
@@ -108,6 +110,8 @@ pub struct ChannelEnd {
     pub remote: Counterparty,
     pub connection_hops: Vec<ConnectionId>,
     pub version: Version,
+    // FIXME: model with a domain type
+    pub upgrade_sequence: u64,
 }
 
 impl Display for ChannelEnd {
@@ -161,6 +165,7 @@ impl From<ChannelEnd> for RawChannel {
                 .map(|v| v.as_str().to_string())
                 .collect(),
             version: value.version.to_string(),
+            upgrade_sequence: value.upgrade_sequence,
         }
     }
 }
@@ -177,6 +182,7 @@ impl ChannelEnd {
         remote: Counterparty,
         connection_hops: Vec<ConnectionId>,
         version: Version,
+        upgrade_sequence: u64,
     ) -> Self {
         Self {
             state,
@@ -184,6 +190,7 @@ impl ChannelEnd {
             remote,
             connection_hops,
             version,
+            upgrade_sequence,
         }
     }
 
@@ -196,7 +203,7 @@ impl ChannelEnd {
         version: Version,
     ) -> Result<Self, ChannelError> {
         let channel_end =
-            Self::new_without_validation(state, ordering, remote, connection_hops, version);
+            Self::new_without_validation(state, ordering, remote, connection_hops, version, 0);
         channel_end.validate_basic()?;
         Ok(channel_end)
     }

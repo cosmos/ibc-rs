@@ -31,7 +31,7 @@ time        = { version = ">=0.3.0, <0.3.35", default-features = false }
 ibc-proto = { workspace = true }
 
 # cosmos dependencies
-tendermint = { workspace = true }
+cometbft = { workspace = true }
 
 # parity dependencies
 parity-scale-codec  = { workspace = true, optional = true }
@@ -44,7 +44,7 @@ std = [
     "prost/std",
     "serde/std",
     "ibc-proto/std",
-    "tendermint/std",
+    "cometbft/std",
     "time/std",
 ]
 serde = [

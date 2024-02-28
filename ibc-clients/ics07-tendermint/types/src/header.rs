@@ -3,6 +3,10 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
+use cometbft::block::signed_header::SignedHeader;
+use cometbft::chain::Id as TmChainId;
+use cometbft::validator::Set as ValidatorSet;
+use cometbft_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_core_host_types::identifiers::ChainId;
@@ -12,10 +16,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::Protobuf;
 use pretty::{PrettySignedHeader, PrettyValidatorSet};
-use tendermint::block::signed_header::SignedHeader;
-use tendermint::chain::Id as TmChainId;
-use tendermint::validator::Set as ValidatorSet;
-use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
 use crate::consensus_state::ConsensusState as TmConsensusState;
 use crate::error::Error;

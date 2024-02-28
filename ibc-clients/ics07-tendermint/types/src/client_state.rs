@@ -4,6 +4,10 @@ use core::cmp::max;
 use core::str::FromStr;
 use core::time::Duration;
 
+use cometbft::chain::id::MAX_LENGTH as MaxChainIdLen;
+use cometbft::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
+use cometbft_light_client_verifier::options::Options;
+use cometbft_light_client_verifier::ProdVerifier;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::proto::v1::Height as RawHeight;
 use ibc_core_client_types::Height;
@@ -14,10 +18,6 @@ use ibc_primitives::ZERO_DURATION;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ClientState as RawTmClientState;
 use ibc_proto::Protobuf;
-use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
-use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
-use tendermint_light_client_verifier::options::Options;
-use tendermint_light_client_verifier::ProdVerifier;
 
 use crate::error::Error;
 use crate::header::Header as TmHeader;
@@ -377,9 +377,9 @@ impl From<ClientState> for Any {
 
 #[cfg(all(test, feature = "serde"))]
 pub(crate) mod serde_tests {
+    use cometbft_rpc::endpoint::abci_query::AbciQuery;
     use serde::de::DeserializeOwned;
     use serde::Serialize;
-    use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
     pub fn test_serialization_roundtrip<T>(json_data: &str)
     where

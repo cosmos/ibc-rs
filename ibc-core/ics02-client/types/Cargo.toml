@@ -33,7 +33,7 @@ ibc-primitives            = { workspace = true }
 ibc-proto                 = { workspace = true }
 
 # cosmos dependencies
-tendermint = { workspace = true }
+cometbft = { workspace = true }
 
 # parity dependencies
 parity-scale-codec  = { workspace = true, optional = true }
@@ -49,7 +49,7 @@ std = [
     "ibc-core-host-types/std",
     "ibc-primitives/std",
     "ibc-proto/std",
-    "tendermint/std",
+    "cometbft/std",
 ]
 serde = [
     "ibc-core-host-types/serde",

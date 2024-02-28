@@ -29,8 +29,8 @@ ibc-core-handler-types           = { workspace = true }
 ibc-primitives                   = { workspace = true }
 
 # cosmos dependencies
-tendermint                       = { workspace = true }
-tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
+cometbft                       = { workspace = true }
+cometbft-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
 
 [features]
 default = ["std"]

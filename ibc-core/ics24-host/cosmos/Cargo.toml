@@ -39,7 +39,7 @@ ibc-primitives            = { workspace = true }
 ibc-proto                 = { workspace = true }
 
 # cosmos dependencies
-tendermint = { workspace = true }
+cometbft = { workspace = true }
 
 # parity dependencies
 parity-scale-codec = { workspace = true, optional = true }

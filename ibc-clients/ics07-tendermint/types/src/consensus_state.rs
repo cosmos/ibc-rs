@@ -1,15 +1,16 @@
 //! Defines Tendermint's `ConsensusState` type
 
+use cometbft::block;
+use cometbft::hash::Algorithm;
+use cometbft::time::Time;
+use cometbft::Hash;
+use cometbft_proto::google::protobuf as tpb;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
 use ibc_proto::Protobuf;
-use tendermint::hash::Algorithm;
-use tendermint::time::Time;
-use tendermint::Hash;
-use tendermint_proto::google::protobuf as tpb;
 
 use crate::error::Error;
 use crate::header::Header;
@@ -132,8 +133,8 @@ impl From<ConsensusState> for Any {
     }
 }
 
-impl From<tendermint::block::Header> for ConsensusState {
-    fn from(header: tendermint::block::Header) -> Self {
+impl From<block::Header> for ConsensusState {
+    fn from(header: block::Header) -> Self {
         Self {
             root: CommitmentRoot::from_bytes(header.app_hash.as_ref()),
             timestamp: header.time,
@@ -150,7 +151,7 @@ impl From<Header> for ConsensusState {
 
 #[cfg(all(test, feature = "serde"))]
 mod tests {
-    use tendermint_rpc::endpoint::abci_query::AbciQuery;
+    use cometbft_rpc::endpoint::abci_query::AbciQuery;
 
     use crate::serde_tests::test_serialization_roundtrip;
 

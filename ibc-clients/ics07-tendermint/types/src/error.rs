@@ -2,16 +2,16 @@
 
 use core::time::Duration;
 
+use cometbft::{Error as TendermintError, Hash};
+use cometbft_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
+use cometbft_light_client_verifier::operations::VotingPowerTally;
+use cometbft_light_client_verifier::Verdict;
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use tendermint::{Error as TendermintError, Hash};
-use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
-use tendermint_light_client_verifier::operations::VotingPowerTally;
-use tendermint_light_client_verifier::Verdict;
 
 /// The main error type
 #[derive(Debug, Display)]

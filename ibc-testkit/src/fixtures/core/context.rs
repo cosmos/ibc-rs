@@ -3,12 +3,12 @@ use core::cmp::min;
 use core::ops::{Add, Sub};
 use core::time::Duration;
 
+use cometbft_testgen::Validator as TestgenValidator;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use parking_lot::Mutex;
-use tendermint_testgen::Validator as TestgenValidator;
 use typed_builder::TypedBuilder;
 
 use crate::hosts::block::{HostBlock, HostType};

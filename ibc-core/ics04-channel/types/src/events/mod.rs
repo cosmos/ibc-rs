@@ -3,10 +3,10 @@
 mod channel_attributes;
 mod packet_attributes;
 
+use cometbft::abci;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
-use tendermint::abci;
 
 use self::channel_attributes::{
     ChannelIdAttribute, ConnectionIdAttribute, CounterpartyChannelIdAttribute,
@@ -1118,7 +1118,7 @@ impl TryFrom<TimeoutPacket> for abci::Event {
 
 #[cfg(test)]
 mod tests {
-    use tendermint::abci::Event as AbciEvent;
+    use cometbft::abci::Event as AbciEvent;
 
     use super::*;
 

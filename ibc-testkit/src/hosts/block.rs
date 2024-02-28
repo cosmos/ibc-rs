@@ -2,6 +2,13 @@
 
 use core::str::FromStr;
 
+use cometbft::block::Header as TmHeader;
+use cometbft::validator::Set as ValidatorSet;
+use cometbft_testgen::light_block::TmLightBlock;
+use cometbft_testgen::{
+    Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
+    Validator as TestgenValidator,
+};
 use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
 use ibc::clients::tendermint::types::proto::v1::Header as RawHeader;
 use ibc::clients::tendermint::types::{Header, TENDERMINT_HEADER_TYPE_URL};
@@ -12,13 +19,6 @@ use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
 use ibc::primitives::ToVec;
-use tendermint::block::Header as TmHeader;
-use tendermint::validator::Set as ValidatorSet;
-use tendermint_testgen::light_block::TmLightBlock;
-use tendermint_testgen::{
-    Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
-    Validator as TestgenValidator,
-};
 
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
