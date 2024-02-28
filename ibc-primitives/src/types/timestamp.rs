@@ -1,6 +1,6 @@
 //! Defines the representation of timestamps used in IBC.
 
-use core::fmt::{Display, Error as FmtError, Formatter};
+use core::fmt::{self, Display, Error as FmtError, Formatter};
 use core::hash::Hash;
 use core::num::ParseIntError;
 use core::ops::{Add, Sub};
@@ -227,10 +227,21 @@ impl Display for Timestamp {
     }
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug)]
 pub enum TimestampOverflowError {
     /// Timestamp overflow when modifying with duration
     TimestampOverflow,
+}
+
+#[cfg(not(feature = "use-substrate"))]
+impl Display for TimestampOverflowError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::TimestampOverflow => {
+                write!(f, "Timestamp overflow when modifying duration")
+            }
+        }
+    }
 }
 
 #[cfg(feature = "std")]
@@ -266,12 +277,26 @@ impl Sub<Duration> for Timestamp {
     }
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug)]
 pub enum ParseTimestampError {
     /// parsing u64 integer from string error: `{0}`
     ParseInt(ParseIntError),
     /// Out of Range: `{0}`
     DataOutOfRange(String),
+}
+
+#[cfg(not(feature = "use-substrate"))]
+impl Display for ParseTimestampError {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::ParseInt(e) => {
+                write!(f, "parsing u64 integer from string error: {e}")
+            }
+            Self::DataOutOfRange(e) => {
+                write!(f, "Out of Range: {e}")
+            }
+        }
+    }
 }
 
 #[cfg(feature = "std")]
