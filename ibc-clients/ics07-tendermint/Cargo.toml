@@ -18,7 +18,8 @@ all-features = true
 
 [dependencies]
 # external dependencies
-serde = { workspace = true, optional = true }
+derive_more = { workspace = true }
+serde       = { workspace = true, optional = true }
 
 # ibc dependencies
 ibc-client-tendermint-types      = { workspace = true }

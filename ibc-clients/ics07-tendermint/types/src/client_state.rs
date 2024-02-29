@@ -17,7 +17,6 @@ use ibc_proto::Protobuf;
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
-use tendermint_light_client_verifier::ProdVerifier;
 
 use crate::error::Error;
 use crate::header::Header as TmHeader;
@@ -46,8 +45,6 @@ pub struct ClientState {
     pub upgrade_path: Vec<String>,
     pub allow_update: AllowUpdate,
     pub frozen_height: Option<Height>,
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub verifier: ProdVerifier,
 }
 
 impl ClientState {
@@ -75,7 +72,6 @@ impl ClientState {
             upgrade_path,
             allow_update,
             frozen_height,
-            verifier: ProdVerifier::default(),
         }
     }
 
