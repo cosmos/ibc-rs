@@ -419,9 +419,7 @@ pub(crate) mod serde_tests {
 
 #[cfg(test)]
 mod tests {
-    use ibc_core_commitment_types::proto::ics23::{
-        HashOp, InnerSpec, LeafOp, LengthOp, ProofSpec as Ics23ProofSpec,
-    };
+    use ibc_core_commitment_types::proto::ics23::ProofSpec as Ics23ProofSpec;
 
     use super::*;
 
@@ -462,25 +460,9 @@ mod tests {
             want_pass: bool,
         }
 
-        let leaf = LeafOp {
-            hash: HashOp::Sha256.into(),
-            prehash_key: 0,
-            prehash_value: HashOp::Sha256.into(),
-            length: LengthOp::VarProto.into(),
-            prefix: vec![0_u8],
-        };
-        let inner = InnerSpec {
-            child_order: vec![0, 1],
-            min_prefix_length: 1,
-            max_prefix_length: 1,
-            child_size: 32,
-            empty_child: vec![],
-            hash: HashOp::Sha256.into(),
-        };
-
         let empty_depth_range_proof_specs: Vec<Ics23ProofSpec> = vec![Ics23ProofSpec {
-            leaf_spec: Some(leaf),
-            inner_spec: Some(inner),
+            leaf_spec: None,
+            inner_spec: None,
             min_depth: 2,
             max_depth: 1,
             prehash_key_before_comparison: false,
