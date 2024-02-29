@@ -75,11 +75,6 @@ pub enum ClientError {
     InvalidPacketTimestamp(ibc_primitives::ParseTimestampError),
     /// mismatch between client and arguments types
     ClientArgsTypeMismatch { client_type: ClientType },
-    /// received header height (`{header_height}`) is lower than (or equal to) client latest height (`{latest_height}`)
-    LowHeaderHeight {
-        header_height: Height,
-        latest_height: Height,
-    },
     /// timestamp is invalid or missing, timestamp=`{time1}`,  now=`{time2}`
     InvalidConsensusStateTimestamp { time1: Timestamp, time2: Timestamp },
     /// the local consensus state could not be retrieved for height `{height}`

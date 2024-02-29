@@ -241,14 +241,7 @@ where
     ) -> Result<(), ClientError> {
         match client_message.type_url.as_str() {
             MOCK_HEADER_TYPE_URL => {
-                let header = MockHeader::try_from(client_message)?;
-
-                if self.latest_height() >= header.height() {
-                    return Err(ClientError::LowHeaderHeight {
-                        header_height: header.height(),
-                        latest_height: self.latest_height(),
-                    });
-                }
+                let _header = MockHeader::try_from(client_message)?;
             }
             MOCK_MISBEHAVIOUR_TYPE_URL => {
                 let _misbehaviour = Misbehaviour::try_from(client_message)?;
@@ -331,7 +324,7 @@ where
     ) -> Result<(), ClientError> {
         let mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
 
-        ctx.store_client_state(ClientStatePath::new(client_id), (*self).into())?;
+        ctx.store_client_state(ClientStatePath::new(client_id.clone()), (*self).into())?;
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(
                 client_id.clone(),
@@ -364,7 +357,10 @@ where
             ),
             new_consensus_state.into(),
         )?;
-        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
+        ctx.store_client_state(
+            ClientStatePath::new(client_id.clone()),
+            new_client_state.into(),
+        )?;
         ctx.store_update_meta(
             client_id.clone(),
             header_height,
@@ -383,7 +379,10 @@ where
     ) -> Result<(), ClientError> {
         let frozen_client_state = self.with_frozen_height(Height::min(0));
 
-        ctx.store_client_state(ClientStatePath::new(client_id), frozen_client_state.into())?;
+        ctx.store_client_state(
+            ClientStatePath::new(client_id.clone()),
+            frozen_client_state.into(),
+        )?;
 
         Ok(())
     }
@@ -408,7 +407,10 @@ where
             ),
             new_consensus_state.into(),
         )?;
-        ctx.store_client_state(ClientStatePath::new(client_id), new_client_state.into())?;
+        ctx.store_client_state(
+            ClientStatePath::new(client_id.clone()),
+            new_client_state.into(),
+        )?;
 
         let host_timestamp = ctx.host_timestamp()?;
         let host_height = ctx.host_height()?;

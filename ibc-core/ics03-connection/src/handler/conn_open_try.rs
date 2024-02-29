@@ -95,7 +95,7 @@ where
                 prefix_on_a,
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                Path::ClientState(ClientStatePath::new(client_id_on_a)),
+                Path::ClientState(ClientStatePath::new(client_id_on_a.clone())),
                 msg.client_state_of_b_on_a.to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
@@ -162,7 +162,7 @@ where
 
     ctx_b.increase_connection_counter()?;
     ctx_b.store_connection_to_client(
-        &ClientConnectionPath::new(&msg.client_id_on_b),
+        &ClientConnectionPath::new(msg.client_id_on_b),
         vars.conn_id_on_b.clone(),
     )?;
     ctx_b.store_connection(&ConnectionPath::new(&vars.conn_id_on_b), vars.conn_end_on_b)?;

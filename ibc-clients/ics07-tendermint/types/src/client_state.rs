@@ -1,7 +1,6 @@
 //! Contains the implementation of the Tendermint `ClientState` domain type.
 
 use core::cmp::max;
-use core::convert::{TryFrom, TryInto};
 use core::str::FromStr;
 use core::time::Duration;
 
@@ -18,7 +17,6 @@ use ibc_proto::Protobuf;
 use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
-use tendermint_light_client_verifier::ProdVerifier;
 
 use crate::error::Error;
 use crate::header::Header as TmHeader;
@@ -47,8 +45,6 @@ pub struct ClientState {
     pub upgrade_path: Vec<String>,
     pub allow_update: AllowUpdate,
     pub frozen_height: Option<Height>,
-    #[cfg_attr(feature = "serde", serde(skip))]
-    pub verifier: ProdVerifier,
 }
 
 impl ClientState {
@@ -76,7 +72,6 @@ impl ClientState {
             upgrade_path,
             allow_update,
             frozen_height,
-            verifier: ProdVerifier::default(),
         }
     }
 
@@ -422,8 +417,6 @@ pub(crate) mod serde_tests {
 
 #[cfg(test)]
 mod tests {
-    use core::time::Duration;
-
     use ibc_core_commitment_types::proto::ics23::ProofSpec as Ics23ProofSpec;
 
     use super::*;

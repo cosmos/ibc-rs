@@ -1,12 +1,12 @@
-NIGHTLY_VERSION=nightly
+NIGHTLY_VERSION=nightly-2024-02-24
 
 .DEFAULT_GOAL := help
 
-.PHONY: all setup build-substrate check-panic-conflict check-cargo-build-std check-wasm check-substrate help
+.PHONY: all setup build-substrate check-no-std check-cargo-build-std check-wasm check-substrate help
 
 all: ## Run the setup and all checks
 	$(MAKE) build-substrate
-	$(MAKE) check-panic-conflict
+	$(MAKE) check-no-std
 	$(MAKE) check-cargo-build-std
 	$(MAKE) check-wasm
 	$(MAKE) check-substrate
@@ -21,7 +21,7 @@ build-substrate: ## Build with Substrate support
 		--no-default-features \
 		--features use-substrate,substrate-std
 
-check-panic-conflict: ## Check for `no_std` compliance by installing a panic handler, and any other crate importing `std` will cause a conflict. Runs on default target.
+check-no-std: ## Check for `no_std` compliance by installing a panic handler, and any other crate importing `std` will cause a conflict. Runs on default target.
 	cargo build \
 		--no-default-features \
 		--features panic-handler

@@ -2,7 +2,6 @@
 //! represented as a fraction with valid values in the
 //! range `[0, 1)`.
 
-use core::convert::TryFrom;
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use ibc_core_client_types::error::ClientError;
