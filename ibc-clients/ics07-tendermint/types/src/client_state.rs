@@ -582,7 +582,7 @@ mod tests {
                         max_depth: 1,
                         prehash_key_before_comparison: false,
                     }].into(),
-                    ..default_params.clone()
+                    ..default_params
                 },
                 want_pass: false,
             },
