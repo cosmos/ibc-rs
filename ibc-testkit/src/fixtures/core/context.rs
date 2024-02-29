@@ -2,6 +2,7 @@ use alloc::fmt::Debug;
 use core::cmp::min;
 use core::ops::{Add, Sub};
 use core::time::Duration;
+use tendermint::Time;
 
 use basecoin_store::context::ProvableStore;
 use ibc::core::client::types::Height;
@@ -13,6 +14,14 @@ use typed_builder::TypedBuilder;
 
 use crate::hosts::block::{HostBlock, HostType};
 use crate::testapp::ibc::core::types::{MockGenericContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
+
+/// Returns a `Timestamp` representation of beginning of year 2023.
+pub fn year_2023() -> Timestamp {
+    // Sun Jan 01 2023 00:00:00 GMT+0000
+    Time::from_unix_timestamp(1_672_531_200, 0)
+        .expect("should be a valid time")
+        .into()
+}
 
 /// Configuration of the `MockContext` type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
@@ -37,7 +46,7 @@ pub struct MockContextConfig {
     #[builder(default = Height::new(0, 5).expect("Never fails"))]
     latest_height: Height,
 
-    #[builder(default = Timestamp::now())]
+    #[builder(default = year_2023())]
     latest_timestamp: Timestamp,
 }
 
