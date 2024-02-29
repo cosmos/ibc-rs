@@ -2,7 +2,6 @@ use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::{
     ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
 };
-use ibc_core_client::context::ClientExecutionContext;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::ClientConsensusStatePath;
@@ -11,17 +10,17 @@ use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockS
 use tendermint_light_client_verifier::Verifier;
 
 use crate::consensus_state::ConsensusState as TmConsensusState;
-use crate::context::{CommonContext, TmVerifier, ValidationContext as TmValidationContext};
+use crate::context::{TmVerifier, ValidationContext as TmValidationContext};
 
-pub fn verify_header<ClientValidationContext>(
+pub fn verify_header<V>(
     client_state: &ClientStateType,
-    ctx: &ClientValidationContext,
+    ctx: &V,
     client_id: &ClientId,
     header: &TmHeader,
     verifier: &impl TmVerifier,
 ) -> Result<(), ClientError>
 where
-    ClientValidationContext: TmValidationContext,
+    V: TmValidationContext,
 {
     // Checks that the header fields are valid.
     header.validate_basic()?;
@@ -99,14 +98,14 @@ where
 
 /// Checks for misbehaviour upon receiving a new consensus state as part
 /// of a client update.
-pub fn check_for_misbehaviour_update_client<ClientValidationContext>(
+pub fn check_for_misbehaviour_update_client<V>(
     client_state: &ClientStateType,
-    ctx: &ClientValidationContext,
+    ctx: &V,
     client_id: &ClientId,
     header: TmHeader,
 ) -> Result<bool, ClientError>
 where
-    ClientValidationContext: TmValidationContext,
+    V: TmValidationContext,
 {
     let maybe_existing_consensus_state = {
         let path_at_header_height = ClientConsensusStatePath::new(
@@ -120,11 +119,12 @@ where
 
     match maybe_existing_consensus_state {
         Some(existing_consensus_state) => {
-            let existing_consensus_state: TmConsensusState = existing_consensus_state
-                .try_into()
-                .map_err(|err| ClientError::Other {
-                    description: err.to_string(),
-                })?;
+            let existing_consensus_state =
+                existing_consensus_state
+                    .try_into()
+                    .map_err(|err| ClientError::Other {
+                        description: err.to_string(),
+                    })?;
 
             let header_consensus_state =
                 TmConsensusState::from(ConsensusStateType::from(header.clone()));
@@ -163,10 +163,9 @@ where
                 if let Some(next_cs) = maybe_next_cs {
                     // New (untrusted) header timestamp cannot occur *after* next
                     // consensus state's height
-                    let next_cs: TmConsensusState =
-                        next_cs.try_into().map_err(|err| ClientError::Other {
-                            description: err.to_string(),
-                        })?;
+                    let next_cs = next_cs.try_into().map_err(|err| ClientError::Other {
+                        description: err.to_string(),
+                    })?;
 
                     if header.signed_header.header().time >= next_cs.timestamp() {
                         return Ok(true);
@@ -177,60 +176,4 @@ where
             Ok(false)
         }
     }
-}
-
-/// Removes consensus states from the client store whose timestamps
-/// are less than or equal to the host timestamp. This ensures that
-/// the client store does not amass a buildup of stale consensus states.
-pub fn prune_oldest_consensus_state<E>(
-    client_state: &ClientStateType,
-    ctx: &mut E,
-    client_id: &ClientId,
-) -> Result<(), ClientError>
-where
-    E: ClientExecutionContext + CommonContext,
-{
-    let mut heights = ctx.consensus_state_heights(client_id)?;
-
-    heights.sort();
-
-    for height in heights {
-        let client_consensus_state_path = ClientConsensusStatePath::new(
-            client_id.clone(),
-            height.revision_number(),
-            height.revision_height(),
-        );
-        let consensus_state = CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
-        let tm_consensus_state: TmConsensusState =
-            consensus_state
-                .try_into()
-                .map_err(|err| ClientError::Other {
-                    description: err.to_string(),
-                })?;
-
-        let host_timestamp =
-            ctx.host_timestamp()?
-                .into_tm_time()
-                .ok_or_else(|| ClientError::Other {
-                    description: String::from("host timestamp is not a valid TM timestamp"),
-                })?;
-
-        let tm_consensus_state_timestamp = tm_consensus_state.timestamp();
-        let tm_consensus_state_expiry = (tm_consensus_state_timestamp
-            + client_state.trusting_period)
-            .map_err(|_| ClientError::Other {
-                description: String::from(
-                    "Timestamp overflow error occurred while attempting to parse TmConsensusState",
-                ),
-            })?;
-
-        if tm_consensus_state_expiry > host_timestamp {
-            break;
-        }
-
-        ctx.delete_consensus_state(client_consensus_state_path)?;
-        ctx.delete_update_meta(client_id.clone(), height)?;
-    }
-
-    Ok(())
 }

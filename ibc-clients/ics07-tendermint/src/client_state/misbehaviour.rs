@@ -1,6 +1,7 @@
 use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::{
-    ClientState as ClientStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
+    ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
+    Misbehaviour as TmMisbehaviour,
 };
 use ibc_core_client::types::error::ClientError;
 use ibc_core_host::types::identifiers::ClientId;
@@ -10,20 +11,19 @@ use ibc_primitives::Timestamp;
 use tendermint_light_client_verifier::Verifier;
 
 use super::TmValidationContext;
-use crate::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::TmVerifier;
 
-// verify_misbehaviour determines whether or not two conflicting headers at
-// the same height would have convinced the light client.
-pub fn verify_misbehaviour<ClientValidationContext>(
+/// Determines whether or not two conflicting headers at the same height would
+/// have convinced the light client.
+pub fn verify_misbehaviour<V>(
     client_state: &ClientStateType,
-    ctx: &ClientValidationContext,
+    ctx: &V,
     client_id: &ClientId,
     misbehaviour: &TmMisbehaviour,
     verifier: &impl TmVerifier,
 ) -> Result<(), ClientError>
 where
-    ClientValidationContext: TmValidationContext,
+    V: TmValidationContext,
 {
     misbehaviour.validate_basic()?;
 
@@ -64,14 +64,14 @@ where
     verify_misbehaviour_header(
         client_state,
         header_1,
-        &trusted_consensus_state_1,
+        trusted_consensus_state_1.inner(),
         current_timestamp,
         verifier,
     )?;
     verify_misbehaviour_header(
         client_state,
         header_2,
-        &trusted_consensus_state_2,
+        trusted_consensus_state_2.inner(),
         current_timestamp,
         verifier,
     )
@@ -80,12 +80,12 @@ where
 pub fn verify_misbehaviour_header(
     client_state: &ClientStateType,
     header: &TmHeader,
-    trusted_consensus_state: &TmConsensusState,
+    trusted_consensus_state: &ConsensusStateType,
     current_timestamp: Timestamp,
     verifier: &impl TmVerifier,
 ) -> Result<(), ClientError> {
     // ensure correctness of the trusted next validator set provided by the relayer
-    header.check_trusted_next_validator_set(trusted_consensus_state.inner())?;
+    header.check_trusted_next_validator_set(trusted_consensus_state)?;
 
     // ensure trusted consensus state is within trusting period
     {
@@ -117,8 +117,7 @@ pub fn verify_misbehaviour_header(
                 description: format!("failed to parse chain id: {}", e),
             })?;
 
-    let trusted_state =
-        header.as_trusted_block_state(trusted_consensus_state.inner(), &chain_id)?;
+    let trusted_state = header.as_trusted_block_state(trusted_consensus_state, &chain_id)?;
 
     let options = client_state.as_light_client_options()?;
     let current_timestamp = current_timestamp.into_tm_time().ok_or(ClientError::Other {
