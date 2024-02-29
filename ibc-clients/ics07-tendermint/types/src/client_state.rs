@@ -180,11 +180,9 @@ impl ClientState {
             });
         }
 
-        // Disallow empty proof-specs and empty depth range in proof-specs
+        // Sanity checks on client proof specs
         if let Err(e) = self.proof_specs.validate() {
-            return Err(Error::Validation { 
-                reason: format!("ClientState {}", e),
-            });
+            return Err(Error::InvalidProofSpec(e));
         }
 
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty

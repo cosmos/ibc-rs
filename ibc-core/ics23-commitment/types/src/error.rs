@@ -13,6 +13,10 @@ pub enum CommitmentError {
     EmptyMerkleRoot,
     /// empty verified value
     EmptyVerifiedValue,
+    /// empty proof specs
+    EmptyProofSpecs,
+    /// empty depth range: [{0}, {1}]
+    EmptyDepthRange(i32, i32),
     /// mismatch between the number of proofs with that of specs
     NumberOfSpecsMismatch,
     /// mismatch between the number of proofs with that of keys

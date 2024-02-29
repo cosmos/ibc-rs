@@ -2,6 +2,8 @@
 
 use ibc_primitives::prelude::*;
 use ibc_proto::ics23::{InnerSpec as RawInnerSpec, LeafOp as RawLeafOp, ProofSpec as RawProofSpec};
+
+use crate::error::CommitmentError;
 /// An array of proof specifications.
 ///
 /// This type encapsulates different types of proof specifications, mostly predefined, e.g., for
@@ -24,15 +26,16 @@ impl ProofSpecs {
         self.0.is_empty()
     }
 
-    pub fn validate(&self) -> Result<(), String> {
+    pub fn validate(&self) -> Result<(), CommitmentError> {
         if self.0.is_empty() {
-            return Err("proof-specs cannot be empty".to_string());
+            return Err(CommitmentError::EmptyProofSpecs);
         }
         for proof_spec in &self.0 {
             if proof_spec.0.min_depth > proof_spec.0.max_depth {
-                return Err(
-                    format!("depth range in proof-specs cannot be empty: ({}, {})", proof_spec.0.min_depth, proof_spec.0.max_depth)
-                );
+                return Err(CommitmentError::EmptyDepthRange(
+                    proof_spec.0.min_depth,
+                    proof_spec.0.max_depth,
+                ));
             }
         }
         Ok(())
