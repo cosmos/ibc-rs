@@ -647,6 +647,109 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
 }
 
 #[rstest]
+fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
+    let client_id = tm_client_type().build_client_id(0);
+    let client_height = Height::new(1, 20).unwrap();
+    let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
+
+    let ctx_b_val_history = vec![
+        // First two validator sets are default at client creation
+        //
+        // validator set of height-20
+        vec![
+            TestgenValidator::new("1").voting_power(50),
+            TestgenValidator::new("2").voting_power(50),
+        ],
+        // validator set of height-21
+        // next validator set of height-20
+        vec![
+            TestgenValidator::new("1").voting_power(34),
+            TestgenValidator::new("2").voting_power(66),
+        ],
+        // validator set of height-22
+        // next validator set of height-21
+        vec![
+            TestgenValidator::new("4").voting_power(90),
+            TestgenValidator::new("2").voting_power(10),
+        ],
+        // next validator set of height-22
+        vec![
+            TestgenValidator::new("1").voting_power(20),
+            TestgenValidator::new("2").voting_power(80),
+        ],
+    ];
+
+    let mut block_params = BlockParams::from_validator_history(ctx_b_val_history);
+
+    if let Some(block_param) = block_params.last_mut() {
+        // forged validator set of height-22
+        block_param.next_validators = vec![TestgenValidator::new("1").voting_power(100)];
+    }
+
+    let update_height = client_height.add(block_params.len() as u64 - 1);
+
+    assert_eq!(update_height.revision_height(), 22);
+
+    let ctx_b = MockContextConfig::builder()
+        .host_id(chain_id_b.clone())
+        .latest_height(update_height)
+        .max_history_size(block_params.len() as u64)
+        .validator_set_history(block_params)
+        .build::<MockContext<TendermintHost>>();
+
+    let mut ctx_a = MockContextConfig::builder()
+        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .latest_height(Height::new(1, 1).unwrap())
+        .build::<MockContext<MockHost>>()
+        .with_light_client(
+            client_id.clone(),
+            // remote light client initialized with client_height
+            ctx_b.generate_light_client(vec![client_height], &Default::default()),
+        );
+
+    let mut router_a = MockRouter::new_with_transfer();
+
+    let signer = dummy_account_id();
+
+    let mut block = ctx_b
+        .host_block(&update_height)
+        .unwrap()
+        .clone()
+        .into_header();
+    block.set_trusted_height(client_height);
+
+    let trusted_next_validator_set = ctx_b
+        .host_block(&client_height)
+        .expect("no error")
+        .inner()
+        .next_validators
+        .clone();
+
+    block.set_trusted_next_validators_set(trusted_next_validator_set);
+
+    let latest_header_height = block.height();
+    let msg = MsgUpdateClient {
+        client_id,
+        client_message: block.into(),
+        signer,
+    };
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+
+    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    assert!(res.is_ok());
+
+    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    assert!(res.is_ok(), "result: {res:?}");
+
+    let client_state = ctx_a.client_state(&msg.client_id).unwrap();
+    assert!(client_state
+        .status(&ctx_a, &msg.client_id)
+        .unwrap()
+        .is_active());
+    assert_eq!(client_state.latest_height(), latest_header_height);
+}
+
+#[rstest]
 fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     let client_id = tm_client_type().build_client_id(0);
     let client_height = Height::new(1, 20).unwrap();
