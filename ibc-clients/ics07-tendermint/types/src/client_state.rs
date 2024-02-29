@@ -460,14 +460,6 @@ mod tests {
             want_pass: bool,
         }
 
-        let empty_depth_range_proof_specs: Vec<Ics23ProofSpec> = vec![Ics23ProofSpec {
-            leaf_spec: None,
-            inner_spec: None,
-            min_depth: 2,
-            max_depth: 1,
-            prehash_key_before_comparison: false,
-        }];
-
         let tests: Vec<Test> = vec![
             Test {
                 name: "Valid parameters".to_string(),
@@ -575,7 +567,7 @@ mod tests {
             Test {
                 name: "Invalid (empty) proof specs".to_string(),
                 params: ClientStateParams {
-                    proof_specs: ProofSpecs::from(Vec::<Ics23ProofSpec>::new()),
+                    proof_specs: Vec::<Ics23ProofSpec>::new().into(),
                     ..default_params.clone()
                 },
                 want_pass: false,
@@ -583,7 +575,13 @@ mod tests {
             Test {
                 name: "Invalid (empty) proof specs depth range".to_string(),
                 params: ClientStateParams {
-                    proof_specs: ProofSpecs::from(empty_depth_range_proof_specs),
+                    proof_specs: vec![Ics23ProofSpec {
+                        leaf_spec: None,
+                        inner_spec: None,
+                        min_depth: 2,
+                        max_depth: 1,
+                        prehash_key_before_comparison: false,
+                    }].into(),
                     ..default_params.clone()
                 },
                 want_pass: false,
