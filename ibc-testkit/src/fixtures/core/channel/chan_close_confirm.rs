@@ -10,7 +10,7 @@ use crate::fixtures::core::signer::dummy_bech32_account;
 pub fn dummy_raw_msg_chan_close_confirm(proof_height: u64) -> RawMsgChannelCloseConfirm {
     RawMsgChannelCloseConfirm {
         port_id: PortId::transfer().to_string(),
-        channel_id: ChannelId::new(0).to_string(),
+        channel_id: ChannelId::zero().to_string(),
         proof_init: dummy_proof(),
         proof_height: Some(Height {
             revision_number: 0,

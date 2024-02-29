@@ -1132,7 +1132,7 @@ mod tests {
         }
 
         let port_id = PortId::transfer();
-        let channel_id = ChannelId::new(0);
+        let channel_id = ChannelId::zero();
         let connection_id = ConnectionId::new(0);
         let counterparty_port_id = PortId::transfer();
         let counterparty_channel_id = ChannelId::new(1);

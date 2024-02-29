@@ -8,7 +8,7 @@ use crate::fixtures::core::signer::dummy_bech32_account;
 pub fn dummy_raw_msg_chan_close_init() -> RawMsgChannelCloseInit {
     RawMsgChannelCloseInit {
         port_id: PortId::transfer().to_string(),
-        channel_id: ChannelId::new(0).to_string(),
+        channel_id: ChannelId::zero().to_string(),
         signer: dummy_bech32_account(),
     }
 }

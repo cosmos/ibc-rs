@@ -15,11 +15,11 @@ pub struct PacketConfig {
     pub seq_on_a: Sequence,
     #[builder(default = PortId::transfer())]
     pub port_id_on_a: PortId,
-    #[builder(default = ChannelId::new(0))]
+    #[builder(default = ChannelId::zero())]
     pub chan_id_on_a: ChannelId,
     #[builder(default = PortId::transfer())]
     pub port_id_on_b: PortId,
-    #[builder(default = ChannelId::new(0))]
+    #[builder(default = ChannelId::zero())]
     pub chan_id_on_b: ChannelId,
     #[builder(default)]
     pub data: Vec<u8>,
@@ -49,9 +49,9 @@ pub fn dummy_raw_packet(timeout_height: u64, timeout_timestamp: u64) -> RawPacke
     RawPacket {
         sequence: 1,
         source_port: PortId::transfer().to_string(),
-        source_channel: ChannelId::new(0).to_string(),
+        source_channel: ChannelId::zero().to_string(),
         destination_port: PortId::transfer().to_string(),
-        destination_channel: ChannelId::new(0).to_string(),
+        destination_channel: ChannelId::zero().to_string(),
         data: vec![0],
         timeout_height: Some(RawHeight {
             revision_number: 0,

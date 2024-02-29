@@ -31,7 +31,7 @@ fn send_packet_processing() {
     let chan_end_on_a = ChannelEnd::new(
         State::Open,
         Order::Unordered,
-        Counterparty::new(PortId::transfer(), Some(ChannelId::new(0))),
+        Counterparty::new(PortId::transfer(), Some(ChannelId::zero())),
         vec![ConnectionId::default()],
         Version::new("ics20-1".to_string()),
     )
@@ -98,8 +98,8 @@ fn send_packet_processing() {
                         .build(),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
-                .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_a.clone())
-                .with_send_sequence(PortId::transfer(), ChannelId::new(0), 1.into()),
+                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet,
             want_pass: true,
         },
@@ -113,8 +113,8 @@ fn send_packet_processing() {
                         .build(),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
-                .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_a.clone())
-                .with_send_sequence(PortId::transfer(), ChannelId::new(0), 1.into()),
+                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_timeout_equal_client_height,
             want_pass: true,
         },
@@ -128,8 +128,8 @@ fn send_packet_processing() {
                         .build(),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
-                .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_a.clone())
-                .with_send_sequence(PortId::transfer(), ChannelId::new(0), 1.into()),
+                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_timeout_one_before_client_height,
             want_pass: false,
         },
@@ -142,8 +142,8 @@ fn send_packet_processing() {
                         .build(),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a)
-                .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_a)
-                .with_send_sequence(PortId::transfer(), ChannelId::new(0), 1.into()),
+                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
+                .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_with_timestamp_old,
             want_pass: false,
         },

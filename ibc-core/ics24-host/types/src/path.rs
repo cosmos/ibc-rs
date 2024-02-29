@@ -1219,25 +1219,25 @@ mod tests {
     #[case("ports/transfer", Path::Ports(PortPath(PortId::transfer())))]
     #[case(
         "channelEnds/ports/transfer/channels/channel-0",
-        Path::ChannelEnd(ChannelEndPath(PortId::transfer(), ChannelId::new(0)))
+        Path::ChannelEnd(ChannelEndPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "nextSequenceSend/ports/transfer/channels/channel-0",
-        Path::SeqSend(SeqSendPath(PortId::transfer(), ChannelId::new(0)))
+        Path::SeqSend(SeqSendPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "nextSequenceRecv/ports/transfer/channels/channel-0",
-        Path::SeqRecv(SeqRecvPath(PortId::transfer(), ChannelId::new(0)))
+        Path::SeqRecv(SeqRecvPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "nextSequenceAck/ports/transfer/channels/channel-0",
-        Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::new(0)))
+        Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "commitments/ports/transfer/channels/channel-0/sequences/0",
         Path::Commitment(CommitmentPath {
             port_id: PortId::transfer(),
-            channel_id: ChannelId::new(0),
+            channel_id: ChannelId::zero(),
             sequence: Sequence::from(0),
         })
     )]
@@ -1245,7 +1245,7 @@ mod tests {
         "acks/ports/transfer/channels/channel-0/sequences/0",
         Path::Ack(AckPath {
             port_id: PortId::transfer(),
-            channel_id: ChannelId::new(0),
+            channel_id: ChannelId::zero(),
             sequence: Sequence::from(0),
         })
     )]
@@ -1253,7 +1253,7 @@ mod tests {
         "receipts/ports/transfer/channels/channel-0/sequences/0",
         Path::Receipt(ReceiptPath {
             port_id: PortId::transfer(),
-            channel_id: ChannelId::new(0),
+            channel_id: ChannelId::zero(),
             sequence: Sequence::from(0),
         })
     )]
@@ -1360,7 +1360,7 @@ mod tests {
 
         assert_eq!(
             parse_channels(&components),
-            Some(SubPath::Channels(ChannelId::new(0))),
+            Some(SubPath::Channels(ChannelId::zero())),
         );
     }
 
@@ -1384,7 +1384,7 @@ mod tests {
             parse_channel_ends(&components),
             Some(Path::ChannelEnd(ChannelEndPath(
                 PortId::transfer(),
-                ChannelId::new(0)
+                ChannelId::zero()
             ))),
         );
     }
@@ -1398,7 +1398,7 @@ mod tests {
             parse_seqs(&components),
             Some(Path::SeqSend(SeqSendPath(
                 PortId::transfer(),
-                ChannelId::new(0)
+                ChannelId::zero()
             ))),
         );
 
@@ -1409,7 +1409,7 @@ mod tests {
             parse_seqs(&components),
             Some(Path::SeqRecv(SeqRecvPath(
                 PortId::transfer(),
-                ChannelId::new(0)
+                ChannelId::zero()
             ))),
         );
 
@@ -1420,7 +1420,7 @@ mod tests {
             parse_seqs(&components),
             Some(Path::SeqAck(SeqAckPath(
                 PortId::transfer(),
-                ChannelId::new(0)
+                ChannelId::zero()
             ))),
         );
     }
@@ -1434,7 +1434,7 @@ mod tests {
             parse_commitments(&components),
             Some(Path::Commitment(CommitmentPath {
                 port_id: PortId::transfer(),
-                channel_id: ChannelId::new(0),
+                channel_id: ChannelId::zero(),
                 sequence: Sequence::from(0),
             })),
         );
@@ -1449,7 +1449,7 @@ mod tests {
             parse_acks(&components),
             Some(Path::Ack(AckPath {
                 port_id: PortId::transfer(),
-                channel_id: ChannelId::new(0),
+                channel_id: ChannelId::zero(),
                 sequence: Sequence::from(0),
             })),
         );
@@ -1464,7 +1464,7 @@ mod tests {
             parse_receipts(&components),
             Some(Path::Receipt(ReceiptPath {
                 port_id: PortId::transfer(),
-                channel_id: ChannelId::new(0),
+                channel_id: ChannelId::zero(),
                 sequence: Sequence::from(0),
             })),
         );

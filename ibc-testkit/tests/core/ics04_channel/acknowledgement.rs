@@ -128,7 +128,7 @@ fn ack_success_no_packet_commitment(fixture: Fixture) {
         )
         .with_channel(
             PortId::transfer(),
-            ChannelId::new(0),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
         .with_connection(ConnectionId::default(), conn_end_on_a);
@@ -163,7 +163,7 @@ fn ack_success_happy_path(fixture: Fixture) {
         )
         .with_channel(
             PortId::transfer(),
-            ChannelId::new(0),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
@@ -206,7 +206,7 @@ fn ack_unordered_chan_execute(fixture: Fixture) {
     let mut ctx = ctx
         .with_channel(
             PortId::transfer(),
-            ChannelId::new(0),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
@@ -245,7 +245,7 @@ fn ack_ordered_chan_execute(fixture: Fixture) {
         ..
     } = fixture;
     let mut ctx = ctx
-        .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_a_ordered)
+        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a_ordered)
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),

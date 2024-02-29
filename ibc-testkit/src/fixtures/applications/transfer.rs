@@ -17,7 +17,7 @@ use crate::fixtures::core::signer::dummy_account_id;
 pub struct MsgTransferConfig {
     #[builder(default = PortId::transfer())]
     pub port_id_on_a: PortId,
-    #[builder(default = ChannelId::new(0))]
+    #[builder(default = ChannelId::zero())]
     pub chan_id_on_a: ChannelId,
     pub packet_data: PacketData,
     #[builder(default = TimeoutHeight::Never)]
@@ -47,7 +47,7 @@ pub fn extract_transfer_packet(msg: &MsgTransfer, sequence: Sequence) -> Packet 
         port_id_on_a: msg.port_id_on_a.clone(),
         chan_id_on_a: msg.chan_id_on_a.clone(),
         port_id_on_b: PortId::transfer(),
-        chan_id_on_b: ChannelId::new(0),
+        chan_id_on_b: ChannelId::zero(),
         data,
         timeout_height_on_b: msg.timeout_height_on_b,
         timeout_timestamp_on_b: msg.timeout_timestamp_on_b,

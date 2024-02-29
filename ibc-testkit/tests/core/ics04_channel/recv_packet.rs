@@ -174,9 +174,9 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
     let packet_old = Packet {
         seq_on_a: 1.into(),
         port_id_on_a: PortId::transfer(),
-        chan_id_on_a: ChannelId::new(0),
+        chan_id_on_a: ChannelId::zero(),
         port_id_on_b: PortId::transfer(),
-        chan_id_on_b: ChannelId::new(0),
+        chan_id_on_b: ChannelId::zero(),
         data: Vec::new(),
         timeout_height_on_b: client_height.into(),
         timeout_timestamp_on_b: Timestamp::from_nanoseconds(1).unwrap(),
@@ -198,8 +198,8 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
                 .build(),
         )
         .with_connection(ConnectionId::default(), conn_end_on_b)
-        .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_b)
-        .with_send_sequence(PortId::transfer(), ChannelId::new(0), 1.into())
+        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b)
+        .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into())
         .with_height(host_height);
 
     let res = validate(&context, &router, msg_envelope);
@@ -228,7 +228,7 @@ fn recv_packet_execute_happy_path(fixture: Fixture) {
                 .build(),
         )
         .with_connection(ConnectionId::default(), conn_end_on_b)
-        .with_channel(PortId::transfer(), ChannelId::new(0), chan_end_on_b);
+        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b);
 
     let msg_env = MsgEnvelope::from(PacketMsg::from(msg));
 

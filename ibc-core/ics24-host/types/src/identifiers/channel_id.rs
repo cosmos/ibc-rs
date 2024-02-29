@@ -57,6 +57,10 @@ impl ChannelId {
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
+
+    pub fn zero() -> Self {
+        Self::new(0)
+    }
 }
 
 /// This implementation provides a `to_string` method.
