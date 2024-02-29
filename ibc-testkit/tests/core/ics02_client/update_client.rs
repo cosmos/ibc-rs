@@ -457,6 +457,8 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     assert_eq!(client_state.latest_height(), latest_header_height);
 }
 
+// TODO(rano): refactor the validator change tests to use a single test function
+
 #[rstest]
 fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail() {
     let client_id = tm_client_type().build_client_id(0);
