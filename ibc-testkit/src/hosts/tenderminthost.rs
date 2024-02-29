@@ -69,8 +69,8 @@ impl From<TendermintHeader> for Header {
 
 #[derive(Debug)]
 pub struct BlockParams {
-    validators: Vec<TestgenValidator>,
-    next_validators: Vec<TestgenValidator>,
+    pub validators: Vec<TestgenValidator>,
+    pub next_validators: Vec<TestgenValidator>,
 }
 
 impl Default for BlockParams {
