@@ -15,13 +15,15 @@ use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, Por
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_acknowledgement;
+use ibc_testkit::fixtures::core::context::MockContextConfig;
+use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::MockContext;
 use rstest::*;
 use test_log::test;
 
 struct Fixture {
-    ctx: MockContext,
+    ctx: MockContext<MockHost>,
     router: MockRouter,
     client_height: Height,
     msg: MsgAcknowledgement,
@@ -34,10 +36,12 @@ struct Fixture {
 #[fixture]
 fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
-    let ctx = MockContext::default().with_client_config(
-        MockClientConfig::builder()
+    let ctx = MockContext::<MockHost>::default().with_light_client(
+        ClientId::default(),
+        MockContextConfig::builder()
             .latest_height(client_height)
-            .build(),
+            .build::<MockContext<MockHost>>()
+            .generate_light_client(vec![], &()),
     );
 
     let router = MockRouter::new_with_transfer();
@@ -121,10 +125,12 @@ fn ack_success_no_packet_commitment(fixture: Fixture) {
         ..
     } = fixture;
     let ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
+        .with_light_client(
+            ClientId::default(),
+            MockContextConfig::builder()
                 .latest_height(client_height)
-                .build(),
+                .build::<MockContext<MockHost>>()
+                .generate_light_client(vec![], &()),
         )
         .with_channel(
             PortId::transfer(),
@@ -155,11 +161,13 @@ fn ack_success_happy_path(fixture: Fixture) {
         client_height,
         ..
     } = fixture;
-    let mut ctx: MockContext = ctx
-        .with_client_config(
-            MockClientConfig::builder()
+    let mut ctx = ctx
+        .with_light_client(
+            ClientId::default(),
+            MockContextConfig::builder()
                 .latest_height(client_height)
-                .build(),
+                .build::<MockContext<MockHost>>()
+                .generate_light_client(vec![], &()),
         )
         .with_channel(
             PortId::transfer(),

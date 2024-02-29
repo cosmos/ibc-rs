@@ -8,16 +8,17 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
-use ibc::core::primitives::downcast;
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
 use ibc_testkit::fixtures::core::client::dummy_msg_upgrade_client;
+use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
+use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::MockContext;
 
 enum Ctx {
     Default,
@@ -33,12 +34,13 @@ enum Msg {
 fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgUpgradeClient> {
     let client_id = mock_client_type().build_client_id(0);
 
-    let ctx_default = MockContext::default();
-    let ctx_with_client = MockContext::default().with_client_config(
-        MockClientConfig::builder()
-            .client_id(client_id.clone())
+    let ctx_default = MockContext::<MockHost>::default();
+    let ctx_with_client = MockContext::<MockHost>::default().with_light_client(
+        client_id.clone(),
+        MockContextConfig::builder()
             .latest_height(Height::new(0, 42).unwrap())
-            .build(),
+            .build::<MockContext<MockHost>>()
+            .generate_light_client(vec![], &()),
     );
     let ctx = match ctx_variant {
         Ctx::Default => ctx_default,
@@ -102,8 +104,10 @@ fn upgrade_client_execute(fxt: &mut Fixture<MsgUpgradeClient>, expect: Expect) {
                 ibc_events[0],
                 IbcEvent::Message(MessageEvent::Client)
             ));
-            let upgrade_client_event =
-                downcast!(&ibc_events[1] => IbcEvent::UpgradeClient).unwrap();
+
+            let IbcEvent::UpgradeClient(upgrade_client_event) = &ibc_events[1] else {
+                panic!("UpgradeClient event is expected")
+            };
             let plan_height = Height::new(1, 26).unwrap();
 
             assert_eq!(upgrade_client_event.client_id(), &fxt.msg.client_id);

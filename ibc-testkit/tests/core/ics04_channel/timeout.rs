@@ -15,12 +15,14 @@ use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, Por
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
+use ibc_testkit::fixtures::core::context::MockContextConfig;
+use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::MockContext;
 use rstest::*;
 
 struct Fixture {
-    ctx: MockContext,
+    ctx: MockContext<MockHost>,
     pub router: MockRouter,
     client_height: Height,
     msg: MsgTimeout,
@@ -33,10 +35,12 @@ struct Fixture {
 #[fixture]
 fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
-    let ctx = MockContext::default().with_client_config(
-        MockClientConfig::builder()
+    let ctx = MockContext::<MockHost>::default().with_light_client(
+        ClientId::default(),
+        MockContextConfig::builder()
             .latest_height(client_height)
-            .build(),
+            .build::<MockContext<MockHost>>()
+            .generate_light_client(vec![], &()),
     );
 
     let client_height = Height::new(0, 2).unwrap();
@@ -109,10 +113,12 @@ fn timeout_fail_no_channel(fixture: Fixture) {
         client_height,
         ..
     } = fixture;
-    let ctx = ctx.with_client_config(
-        MockClientConfig::builder()
+    let ctx = ctx.with_light_client(
+        ClientId::default(),
+        MockContextConfig::builder()
             .latest_height(client_height)
-            .build(),
+            .build::<MockContext<MockHost>>()
+            .generate_light_client(vec![], &()),
     );
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
     let res = validate(&ctx, &router, msg_envelope);
@@ -186,10 +192,12 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
     let packet = msg.packet.clone();
 
     let mut ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
+        .with_light_client(
+            ClientId::default(),
+            MockContextConfig::builder()
                 .latest_height(client_height)
-                .build(),
+                .build::<MockContext<MockHost>>()
+                .generate_light_client(vec![], &()),
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_channel(
@@ -267,10 +275,12 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
     let packet = msg.packet.clone();
 
     let mut ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
+        .with_light_client(
+            ClientId::default(),
+            MockContextConfig::builder()
                 .latest_height(client_height)
-                .build(),
+                .build::<MockContext<MockHost>>()
+                .generate_light_client(vec![], &()),
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_channel(
@@ -317,10 +327,12 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
     let packet = msg.packet.clone();
 
     let mut ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
+        .with_light_client(
+            ClientId::default(),
+            MockContextConfig::builder()
                 .latest_height(client_height)
-                .build(),
+                .build::<MockContext<MockHost>>()
+                .generate_light_client(vec![], &()),
         )
         .with_connection(ConnectionId::default(), conn_end_on_a)
         .with_channel(

@@ -14,14 +14,16 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::fixtures::core::context::MockContextConfig;
+use ibc_testkit::hosts::mockhost::MockHost;
+use ibc_testkit::testapp::ibc::core::types::MockContext;
 use test_log::test;
 
 #[test]
 fn send_packet_processing() {
     struct Test {
         name: String,
-        ctx: MockContext,
+        ctx: MockContext<MockHost>,
         packet: Packet,
         want_pass: bool,
     }
@@ -82,17 +84,19 @@ fn send_packet_processing() {
     let tests: Vec<Test> = vec![
         Test {
             name: "Processing fails because no channel exists in the context".to_string(),
-            ctx: MockContext::default(),
+            ctx: MockContext::<MockHost>::default(),
             packet: packet.clone(),
             want_pass: false,
         },
         Test {
             name: "Good parameters".to_string(),
-            ctx: MockContext::default()
-                .with_client_config(
-                    MockClientConfig::builder()
+            ctx: MockContext::<MockHost>::default()
+                .with_light_client(
+                    ClientId::default(),
+                    MockContextConfig::builder()
                         .latest_height(client_height)
-                        .build(),
+                        .build::<MockContext<MockHost>>()
+                        .generate_light_client(vec![], &()),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
@@ -106,11 +110,13 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height same as destination chain height".to_string(),
-            ctx: MockContext::default()
-                .with_client_config(
-                    MockClientConfig::builder()
+            ctx: MockContext::<MockHost>::default()
+                .with_light_client(
+                    ClientId::default(),
+                    MockContextConfig::builder()
                         .latest_height(client_height)
-                        .build(),
+                        .build::<MockContext<MockHost>>()
+                        .generate_light_client(vec![], &()),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
@@ -124,11 +130,13 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height one more than destination chain height".to_string(),
-            ctx: MockContext::default()
-                .with_client_config(
-                    MockClientConfig::builder()
+            ctx: MockContext::<MockHost>::default()
+                .with_light_client(
+                    ClientId::default(),
+                    MockContextConfig::builder()
                         .latest_height(client_height)
-                        .build(),
+                        .build::<MockContext<MockHost>>()
+                        .generate_light_client(vec![], &()),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
@@ -142,11 +150,13 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout due to timestamp".to_string(),
-            ctx: MockContext::default()
-                .with_client_config(
-                    MockClientConfig::builder()
+            ctx: MockContext::<MockHost>::default()
+                .with_light_client(
+                    ClientId::default(),
+                    MockContextConfig::builder()
                         .latest_height(client_height)
-                        .build(),
+                        .build::<MockContext<MockHost>>()
+                        .generate_light_client(vec![], &()),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a)
                 .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)

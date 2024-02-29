@@ -11,9 +11,11 @@ use ibc_testkit::fixtures::core::connection::{
     dummy_msg_conn_open_init, msg_conn_open_init_with_counterparty_conn_id,
     msg_conn_open_with_version,
 };
+use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
+use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::MockContext;
 use test_log::test;
 
 enum Ctx {
@@ -39,13 +41,14 @@ fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConn
         Msg::WithCounterpartyConnId => msg_conn_open_init_with_counterparty_conn_id(msg_default, 2),
     };
 
-    let ctx_default = MockContext::default();
+    let ctx_default = MockContext::<MockHost>::default();
     let ctx = match ctx_variant {
-        Ctx::WithClient => ctx_default.with_client_config(
-            MockClientConfig::builder()
-                .client_id(msg.client_id_on_a.clone())
+        Ctx::WithClient => ctx_default.with_light_client(
+            msg.client_id_on_a.clone(),
+            MockContextConfig::builder()
                 .latest_height(Height::new(0, 10).unwrap())
-                .build(),
+                .build::<MockContext<MockHost>>()
+                .generate_light_client(vec![], &()),
         ),
         _ => ctx_default,
     };

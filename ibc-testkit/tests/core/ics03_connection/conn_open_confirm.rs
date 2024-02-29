@@ -12,9 +12,11 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::fixtures::core::connection::dummy_conn_open_confirm;
+use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
+use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::MockContext;
 use test_log::test;
 
 enum Ctx {
@@ -32,7 +34,7 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
         CommitmentPrefix::try_from(b"ibc".to_vec()).unwrap(),
     );
 
-    let ctx_default = MockContext::default();
+    let ctx_default = MockContext::<MockHost>::default();
 
     let incorrect_conn_end_state = ConnectionEnd::new(
         State::Init,
@@ -49,19 +51,21 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
     let ctx = match ctx {
         Ctx::Default => ctx_default,
         Ctx::IncorrectConnection => ctx_default
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_id(client_id.clone())
+            .with_light_client(
+                client_id.clone(),
+                MockContextConfig::builder()
                     .latest_height(Height::new(0, 10).unwrap())
-                    .build(),
+                    .build::<MockContext<MockHost>>()
+                    .generate_light_client(vec![], &()),
             )
             .with_connection(msg.conn_id_on_b.clone(), incorrect_conn_end_state),
         Ctx::CorrectConnection => ctx_default
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_id(client_id.clone())
+            .with_light_client(
+                client_id.clone(),
+                MockContextConfig::builder()
                     .latest_height(Height::new(0, 10).unwrap())
-                    .build(),
+                    .build::<MockContext<MockHost>>()
+                    .generate_light_client(vec![], &()),
             )
             .with_connection(msg.conn_id_on_b.clone(), correct_conn_end),
     };

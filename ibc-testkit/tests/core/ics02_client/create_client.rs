@@ -13,6 +13,7 @@ use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
+use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
 };
@@ -24,7 +25,7 @@ use test_log::test;
 
 #[test]
 fn test_create_client_ok() {
-    let mut ctx = MockContext::default();
+    let mut ctx = MockContext::<MockHost>::default();
     let mut router = MockRouter::new_with_transfer();
     let signer = dummy_account_id();
     let height = Height::new(0, 42).unwrap();
@@ -57,7 +58,7 @@ fn test_create_client_ok() {
 fn test_tm_create_client_ok() {
     let signer = dummy_account_id();
 
-    let mut ctx = MockContext::default();
+    let mut ctx = MockContext::<MockHost>::default();
 
     let mut router = MockRouter::new_with_transfer();
 
@@ -93,7 +94,7 @@ fn test_tm_create_client_ok() {
 fn test_invalid_frozen_tm_client_creation() {
     let signer = dummy_account_id();
 
-    let ctx = MockContext::default();
+    let ctx = MockContext::<MockHost>::default();
 
     let router = MockRouter::new_with_transfer();
 
