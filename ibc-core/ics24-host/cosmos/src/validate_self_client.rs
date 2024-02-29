@@ -50,25 +50,26 @@ pub trait ValidateSelfClientContext {
             ));
         }
 
+        let latest_height = tm_client_state.latest_height();
         let self_revision_number = self_chain_id.revision_number();
-        if self_revision_number != tm_client_state.latest_height().revision_number() {
+        if self_revision_number != latest_height.revision_number() {
             return Err(ContextError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     reason: format!(
                         "client is not in the same revision as the chain. expected: {}, got: {}",
                         self_revision_number,
-                        tm_client_state.latest_height().revision_number()
+                        latest_height.revision_number()
                     ),
                 },
             ));
         }
 
-        if tm_client_state.latest_height() >= self.host_current_height() {
+        if latest_height >= self.host_current_height() {
             return Err(ContextError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     reason: format!(
                         "client has latest height {} greater than or equal to chain height {}",
-                        tm_client_state.latest_height(),
+                        latest_height,
                         self.host_current_height()
                     ),
                 },
