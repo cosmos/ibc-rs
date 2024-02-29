@@ -17,6 +17,7 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::prelude::*;
 
+use crate::hosts::TestHost;
 use crate::testapp::ibc::clients::mock::client_state::MockClientContext;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::MockGenericContext;
@@ -34,9 +35,10 @@ pub struct MockClientRecord {
     pub consensus_states: BTreeMap<Height, AnyConsensusState>,
 }
 
-impl<S> MockClientContext for MockGenericContext<S>
+impl<S, H> MockClientContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     type ConversionError = &'static str;
     type AnyConsensusState = AnyConsensusState;
@@ -56,9 +58,10 @@ where
         ValidationContext::consensus_state(self, client_cons_state_path)
     }
 }
-impl<S> ClientValidationContext for MockGenericContext<S>
+impl<S, H> ClientValidationContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     /// Returns the time and height when the client state for the given
     /// [`ClientId`] was updated with a header for the given [`Height`]
@@ -98,9 +101,10 @@ where
     }
 }
 
-impl<S> ClientExecutionContext for MockGenericContext<S>
+impl<S, H> ClientExecutionContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     type V = Self;
 
@@ -211,9 +215,10 @@ where
     }
 }
 
-impl<S> TmCommonContext for MockGenericContext<S>
+impl<S, H> TmCommonContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     type ConversionError = &'static str;
     type AnyConsensusState = AnyConsensusState;
@@ -262,9 +267,10 @@ where
     }
 }
 
-impl<S> TmValidationContext for MockGenericContext<S>
+impl<S, H> TmValidationContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     fn next_consensus_state(
         &self,

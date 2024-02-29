@@ -9,10 +9,9 @@ use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
-use tendermint_testgen::Validator as TestgenValidator;
 use typed_builder::TypedBuilder;
 
-use crate::hosts::block::{HostBlock, HostType};
+use crate::hosts::TestHost;
 use crate::testapp::ibc::core::types::{MockGenericContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 
 /// Returns a `Timestamp` representation of beginning of year 2023.
@@ -26,10 +25,10 @@ pub fn year_2023() -> Timestamp {
 /// Configuration of the `MockContext` type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
 #[builder(build_method(into))]
-pub struct MockContextConfig {
-    #[builder(default = HostType::Mock)]
-    host_type: HostType,
-
+pub struct MockContextConfig<H>
+where
+    H: TestHost,
+{
     #[builder(default = ChainId::new("mockgaia-0").expect("Never fails"))]
     host_id: ChainId,
 
@@ -41,7 +40,7 @@ pub struct MockContextConfig {
     max_history_size: u64,
 
     #[builder(default, setter(strip_option))]
-    validator_set_history: Option<Vec<Vec<TestgenValidator>>>,
+    validator_set_history: Option<Vec<H::BlockParams>>,
 
     #[builder(default = Height::new(0, 5).expect("Never fails"))]
     latest_height: Height,
@@ -50,11 +49,12 @@ pub struct MockContextConfig {
     latest_timestamp: Timestamp,
 }
 
-impl<S> From<MockContextConfig> for MockGenericContext<S>
+impl<S, H> From<MockContextConfig<H>> for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug + Default,
+    H: TestHost,
 {
-    fn from(params: MockContextConfig) -> Self {
+    fn from(params: MockContextConfig<H>) -> Self {
         assert_ne!(
             params.max_history_size, 0,
             "The chain must have a non-zero max_history_size"
@@ -83,15 +83,15 @@ where
             .add(params.block_time)
             .expect("Never fails");
 
+        let host_chain_type = H::new(params.host_id);
+
         let history = if let Some(validator_set_history) = params.validator_set_history {
             (0..n)
                 .rev()
                 .map(|i| {
                     // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
                     // where N = now(), BT = block_time
-                    HostBlock::generate_block_with_validators(
-                        params.host_id.clone(),
-                        params.host_type,
+                    host_chain_type.generate_block(
                         params
                             .latest_height
                             .sub(i)
@@ -101,7 +101,6 @@ where
                             .sub(params.block_time * ((i + 1) as u32))
                             .expect("Never fails"),
                         &validator_set_history[(n - i) as usize - 1],
-                        &validator_set_history[(n - i) as usize],
                     )
                 })
                 .collect()
@@ -111,9 +110,7 @@ where
                 .map(|i| {
                     // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
                     // where N = now(), BT = block_time
-                    HostBlock::generate_block(
-                        params.host_id.clone(),
-                        params.host_type,
+                    host_chain_type.generate_block(
                         params
                             .latest_height
                             .sub(i)
@@ -122,14 +119,14 @@ where
                         next_block_timestamp
                             .sub(params.block_time * ((i + 1) as u32))
                             .expect("Never fails"),
+                        &H::BlockParams::default(),
                     )
                 })
                 .collect()
         };
 
         MockGenericContext {
-            host_chain_type: params.host_type,
-            host_chain_id: params.host_id.clone(),
+            host_chain_type,
             max_history_size: params.max_history_size,
             history,
             block_time: params.block_time,
