@@ -1,5 +1,3 @@
-use alloc::string::ToString;
-
 use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
 use ibc::apps::transfer::types::packet::PacketData;
 use ibc::apps::transfer::types::{Memo, PrefixedCoin};
@@ -63,7 +61,7 @@ pub struct PacketDataConfig {
     pub sender: Signer,
     #[builder(default = dummy_account_id())]
     pub receiver: Signer,
-    #[builder(default = Memo::from("".to_string()))]
+    #[builder(default = Memo::from(""))]
     pub memo: Memo,
 }
 

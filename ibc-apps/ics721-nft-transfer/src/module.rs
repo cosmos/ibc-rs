@@ -195,7 +195,7 @@ pub fn on_recv_packet_execute(
         receiver: data.receiver,
         class: data.class_id,
         tokens: data.token_ids,
-        memo: data.memo.unwrap_or(Memo::from("".to_string())),
+        memo: data.memo.unwrap_or(Memo::from("")),
         success: ack.is_successful(),
     };
     extras.events.push(recv_event.into());
@@ -260,7 +260,7 @@ pub fn on_acknowledgement_packet_execute(
         receiver: data.receiver,
         class: data.class_id,
         tokens: data.token_ids,
-        memo: data.memo.unwrap_or(Memo::from("".to_string())),
+        memo: data.memo.unwrap_or(Memo::from("")),
         acknowledgement: acknowledgement.clone(),
     };
 
@@ -308,7 +308,7 @@ pub fn on_timeout_packet_execute(
         refund_receiver: data.sender,
         refund_class: data.class_id,
         refund_tokens: data.token_ids,
-        memo: data.memo.unwrap_or(Memo::from("".to_string())),
+        memo: data.memo.unwrap_or(Memo::from("")),
     };
 
     let extras = ModuleExtras {
