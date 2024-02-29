@@ -63,7 +63,7 @@ impl<T> ExecutionContext for T where T: CommonContext + ClientExecutionContext {
 ///
 /// For users who require custom verification logic, i.e., in situations when
 /// the Tendermint `ProdVerifier` doesn't provide the desired outcome, users
-/// should define a custom verifier struct as a unit struct and them implement
+/// should define a custom verifier struct as a unit struct and then implement
 /// `TmVerifier` for it. Note that the custom verifier does need to also
 /// implement the `tendermint_light_client_verifier::Verifier` trait.
 ///
