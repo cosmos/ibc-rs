@@ -122,6 +122,12 @@ impl From<IdentifierError> for Error {
     }
 }
 
+impl From<CommitmentError> for Error {
+    fn from(e: CommitmentError) -> Self {
+        Self::InvalidProofSpec(e)
+    }
+}
+
 pub trait IntoResult<T, E> {
     fn into_result(self) -> Result<T, E>;
 }

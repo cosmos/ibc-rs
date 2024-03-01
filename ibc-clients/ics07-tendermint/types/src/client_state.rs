@@ -177,9 +177,7 @@ impl ClientState {
         }
 
         // Sanity checks on client proof specs
-        if let Err(e) = self.proof_specs.validate() {
-            return Err(Error::InvalidProofSpec(e));
-        }
+        self.proof_specs.validate()?;
 
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty
         for (idx, key) in self.upgrade_path.iter().enumerate() {
