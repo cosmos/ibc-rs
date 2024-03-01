@@ -27,7 +27,7 @@ impl ProofSpecs {
     }
 
     pub fn validate(&self) -> Result<(), CommitmentError> {
-        if self.0.is_empty() {
+        if self.is_empty() {
             return Err(CommitmentError::EmptyProofSpecs);
         }
         for proof_spec in &self.0 {
