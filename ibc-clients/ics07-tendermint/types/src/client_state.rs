@@ -176,12 +176,8 @@ impl ClientState {
             });
         }
 
-        // Disallow empty proof-specs
-        if self.proof_specs.is_empty() {
-            return Err(Error::Validation {
-                reason: "ClientState proof-specs cannot be empty".to_string(),
-            });
-        }
+        // Sanity checks on client proof specs
+        self.proof_specs.validate()?;
 
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty
         for (idx, key) in self.upgrade_path.iter().enumerate() {
@@ -565,7 +561,21 @@ mod tests {
             Test {
                 name: "Invalid (empty) proof specs".to_string(),
                 params: ClientStateParams {
-                    proof_specs: ProofSpecs::from(Vec::<Ics23ProofSpec>::new()),
+                    proof_specs: Vec::<Ics23ProofSpec>::new().into(),
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid (empty) proof specs depth range".to_string(),
+                params: ClientStateParams {
+                    proof_specs: vec![Ics23ProofSpec {
+                        leaf_spec: None,
+                        inner_spec: None,
+                        min_depth: 2,
+                        max_depth: 1,
+                        prehash_key_before_comparison: false,
+                    }].into(),
                     ..default_params
                 },
                 want_pass: false,
