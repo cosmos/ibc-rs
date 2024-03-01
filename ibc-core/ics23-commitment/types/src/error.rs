@@ -15,8 +15,8 @@ pub enum CommitmentError {
     EmptyVerifiedValue,
     /// empty proof specs
     EmptyProofSpecs,
-    /// empty depth range: [{0}, {1}]
-    EmptyDepthRange(i32, i32),
+    /// invalid depth range: [{0}, {1}]
+    InvalidDepthRange(i32, i32),
     /// mismatch between the number of proofs with that of specs
     NumberOfSpecsMismatch,
     /// mismatch between the number of proofs with that of keys

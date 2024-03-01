@@ -31,8 +31,11 @@ impl ProofSpecs {
             return Err(CommitmentError::EmptyProofSpecs);
         }
         for proof_spec in &self.0 {
-            if proof_spec.0.min_depth > proof_spec.0.max_depth {
-                return Err(CommitmentError::EmptyDepthRange(
+            if proof_spec.0.max_depth < proof_spec.0.min_depth
+                || proof_spec.0.min_depth < 0
+                || proof_spec.0.max_depth < 0
+            {
+                return Err(CommitmentError::InvalidDepthRange(
                     proof_spec.0.min_depth,
                     proof_spec.0.max_depth,
                 ));
