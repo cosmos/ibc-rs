@@ -67,7 +67,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
         Ctx::New => ctx_new,
         Ctx::NewWithConnection => ctx_new
             .with_light_client(
-                client_id,
+                &client_id,
                 MockContextConfig::builder()
                     .latest_height(proof_height)
                     .build::<MockContext<MockHost>>()
@@ -76,7 +76,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
             .with_connection(conn_id, default_conn_end),
         Ctx::DefaultWithConnection => ctx_default
             .with_light_client(
-                client_id,
+                &client_id,
                 MockContextConfig::builder()
                     .latest_height(proof_height)
                     .build::<MockContext<MockHost>>()
@@ -85,7 +85,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
             .with_connection(conn_id, default_conn_end),
         Ctx::NewWithConnectionEndOpen => ctx_new
             .with_light_client(
-                client_id,
+                &client_id,
                 MockContextConfig::builder()
                     .latest_height(proof_height)
                     .build::<MockContext<MockHost>>()

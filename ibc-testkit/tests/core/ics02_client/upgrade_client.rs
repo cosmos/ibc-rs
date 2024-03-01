@@ -36,7 +36,7 @@ fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<Msg
 
     let ctx_default = MockContext::<MockHost>::default();
     let ctx_with_client = MockContext::<MockHost>::default().with_light_client(
-        client_id.clone(),
+        &client_id,
         MockContextConfig::builder()
             .latest_height(Height::new(0, 42).unwrap())
             .build::<MockContext<MockHost>>()

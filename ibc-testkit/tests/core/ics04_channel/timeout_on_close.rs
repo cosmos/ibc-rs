@@ -33,7 +33,7 @@ pub struct Fixture {
 fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
     let context = MockContext::<MockHost>::default().with_light_client(
-        ClientId::default(),
+        &ClientId::default(),
         MockContextConfig::builder()
             .latest_height(client_height)
             .build::<MockContext<MockHost>>()

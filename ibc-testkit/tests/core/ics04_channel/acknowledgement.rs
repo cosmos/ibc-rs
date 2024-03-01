@@ -37,7 +37,7 @@ struct Fixture {
 fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
     let ctx = MockContext::<MockHost>::default().with_light_client(
-        ClientId::default(),
+        &ClientId::default(),
         MockContextConfig::builder()
             .latest_height(client_height)
             .build::<MockContext<MockHost>>()
@@ -126,7 +126,7 @@ fn ack_success_no_packet_commitment(fixture: Fixture) {
     } = fixture;
     let ctx = ctx
         .with_light_client(
-            ClientId::default(),
+            &ClientId::default(),
             MockContextConfig::builder()
                 .latest_height(client_height)
                 .build::<MockContext<MockHost>>()
@@ -163,7 +163,7 @@ fn ack_success_happy_path(fixture: Fixture) {
     } = fixture;
     let mut ctx = ctx
         .with_light_client(
-            ClientId::default(),
+            &ClientId::default(),
             MockContextConfig::builder()
                 .latest_height(client_height)
                 .build::<MockContext<MockHost>>()

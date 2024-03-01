@@ -93,7 +93,7 @@ fn chan_open_ack_happy_path(fixture: Fixture) {
 
     let context = context
         .with_light_client(
-            client_id_on_a,
+            &client_id_on_a,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()
@@ -129,7 +129,7 @@ fn chan_open_ack_execute_happy_path(fixture: Fixture) {
 
     let mut context = context
         .with_light_client(
-            client_id_on_a,
+            &client_id_on_a,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()
@@ -172,7 +172,7 @@ fn chan_open_ack_fail_no_connection(fixture: Fixture) {
 
     let context = context
         .with_light_client(
-            client_id_on_a,
+            &client_id_on_a,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()
@@ -208,7 +208,7 @@ fn chan_open_ack_fail_no_channel(fixture: Fixture) {
     } = fixture;
     let context = context
         .with_light_client(
-            client_id_on_a,
+            &client_id_on_a,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()
@@ -249,7 +249,7 @@ fn chan_open_ack_fail_channel_wrong_state(fixture: Fixture) {
     .unwrap();
     let context = context
         .with_light_client(
-            client_id_on_a,
+            &client_id_on_a,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()

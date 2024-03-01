@@ -92,7 +92,7 @@ fn send_packet_processing() {
             name: "Good parameters".to_string(),
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
-                    ClientId::default(),
+                    &ClientId::default(),
                     MockContextConfig::builder()
                         .latest_height(client_height)
                         .build::<MockContext<MockHost>>()
@@ -112,7 +112,7 @@ fn send_packet_processing() {
             name: "Packet timeout height same as destination chain height".to_string(),
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
-                    ClientId::default(),
+                    &ClientId::default(),
                     MockContextConfig::builder()
                         .latest_height(client_height)
                         .build::<MockContext<MockHost>>()
@@ -132,7 +132,7 @@ fn send_packet_processing() {
             name: "Packet timeout height one more than destination chain height".to_string(),
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
-                    ClientId::default(),
+                    &ClientId::default(),
                     MockContextConfig::builder()
                         .latest_height(client_height)
                         .build::<MockContext<MockHost>>()
@@ -152,7 +152,7 @@ fn send_packet_processing() {
             name: "Packet timeout due to timestamp".to_string(),
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
-                    ClientId::default(),
+                    &ClientId::default(),
                     MockContextConfig::builder()
                         .latest_height(client_height)
                         .build::<MockContext<MockHost>>()

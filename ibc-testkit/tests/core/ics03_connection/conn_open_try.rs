@@ -58,7 +58,7 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
     let ctx = match ctx_variant {
         Ctx::Default => MockContext::<MockHost>::default(),
         Ctx::WithClient => ctx_new.with_light_client(
-            msg.client_id_on_b.clone(),
+            &msg.client_id_on_b,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, client_cons_state_height).unwrap())
                 .build::<MockContext<MockHost>>()

@@ -52,7 +52,7 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
         Ctx::Default => ctx_default,
         Ctx::IncorrectConnection => ctx_default
             .with_light_client(
-                client_id.clone(),
+                &client_id,
                 MockContextConfig::builder()
                     .latest_height(Height::new(0, 10).unwrap())
                     .build::<MockContext<MockHost>>()
@@ -61,7 +61,7 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
             .with_connection(msg.conn_id_on_b.clone(), incorrect_conn_end_state),
         Ctx::CorrectConnection => ctx_default
             .with_light_client(
-                client_id.clone(),
+                &client_id,
                 MockContextConfig::builder()
                     .latest_height(Height::new(0, 10).unwrap())
                     .build::<MockContext<MockHost>>()

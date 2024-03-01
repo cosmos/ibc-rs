@@ -49,7 +49,7 @@ fn fixture() -> Fixture {
     let client_id = ClientId::default();
 
     let ctx = MockContext::<MockHost>::default().with_light_client(
-        client_id.clone(),
+        &client_id,
         MockContextConfig::builder()
             .latest_height(Height::new(0, 42).unwrap())
             .build::<MockContext<MockHost>>()
@@ -125,7 +125,7 @@ fn test_update_client_with_prev_header() {
     let height_2 = Height::new(0, 44).unwrap();
 
     let mut ctx = MockContext::<MockHost>::default().with_light_client(
-        client_id.clone(),
+        &client_id,
         MockContextConfig::builder()
             .host_id(chain_id_b.clone())
             .latest_height(latest_height)
@@ -217,7 +217,7 @@ fn test_consensus_state_pruning() {
         .max_history_size(u64::MAX)
         .build::<MockContext<TendermintHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             MockContextConfig::builder()
                 .host_id(chain_id.clone())
                 .latest_height(client_height)
@@ -324,7 +324,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             ctx_b.generate_light_client(vec![client_height], &Default::default()),
         );
 
@@ -410,7 +410,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             // remote light client initialized with client_height
             ctx_b.generate_light_client(vec![client_height], &Default::default()),
         );
@@ -509,7 +509,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             // remote light client initialized with client_height
             ctx_b.generate_light_client(vec![client_height], &Default::default()),
         );
@@ -611,7 +611,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             // remote light client initialized with client_height
             ctx_b.generate_light_client(vec![client_height], &Default::default()),
         );
@@ -704,7 +704,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             // remote light client initialized with client_height
             ctx_b.generate_light_client(vec![client_height], &Default::default()),
         );
@@ -768,7 +768,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             ctx_b.generate_light_client(
                 vec![client_height.sub(1).expect("no error"), client_height],
                 &Default::default(),
@@ -829,7 +829,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
         .latest_height(start_height)
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             ctx_b.generate_light_client(vec![start_height], &Default::default()),
         );
 
@@ -947,7 +947,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
         .latest_height(chain_start_height)
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             ctx_b.generate_light_client(vec![], &Default::default()),
         );
 
@@ -1066,7 +1066,7 @@ fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
     let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient").unwrap());
 
     let ctx = MockContext::<MockHost>::default().with_light_client(
-        client_id.clone(),
+        &client_id,
         MockContextConfig::builder()
             .latest_height(Height::new(0, 42).unwrap())
             .build::<MockContext<MockHost>>()
@@ -1085,7 +1085,7 @@ fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
     let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient").unwrap());
 
     let ctx = MockContext::<MockHost>::default().with_light_client(
-        client_id.clone(),
+        &client_id,
         MockContextConfig::builder()
             .latest_height(Height::new(0, 42).unwrap())
             .build::<MockContext<MockHost>>()
@@ -1116,7 +1116,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             ctx_b.generate_light_client(vec![client_height], &Default::default()),
         );
 
@@ -1170,7 +1170,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             MockContextConfig::builder()
                 .host_id(chain_id_b.clone())
                 .latest_height(client_height)
@@ -1244,7 +1244,7 @@ fn test_expired_client() {
         .latest_timestamp(timestamp)
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             MockContextConfig::builder()
                 .host_id(chain_id_b)
                 .latest_height(client_height)
@@ -1286,7 +1286,7 @@ fn test_client_update_max_clock_drift() {
         .latest_timestamp(timestamp)
         .build::<MockContext<MockHost>>()
         .with_light_client(
-            client_id.clone(),
+            &client_id,
             MockContextConfig::builder()
                 .host_id(chain_id_b.clone())
                 .latest_height(client_height)

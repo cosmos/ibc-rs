@@ -86,7 +86,7 @@ fn chan_open_try_validate_happy_path(fixture: Fixture) {
 
     let ctx = ctx
         .with_light_client(
-            client_id_on_b.clone(),
+            &client_id_on_b,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()
@@ -114,7 +114,7 @@ fn chan_open_try_execute_happy_path(fixture: Fixture) {
 
     let mut ctx = ctx
         .with_light_client(
-            client_id_on_b.clone(),
+            &client_id_on_b,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()

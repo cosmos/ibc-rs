@@ -49,7 +49,7 @@ fn fixture() -> Fixture {
 
     let ctx = default_ctx
         .with_light_client(
-            client_id_on_a.clone(),
+            &client_id_on_a,
             MockContextConfig::builder()
                 .latest_height(client_height)
                 .build::<MockContext<MockHost>>()

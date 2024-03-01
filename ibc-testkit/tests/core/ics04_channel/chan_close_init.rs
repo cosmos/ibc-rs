@@ -56,7 +56,7 @@ fn test_chan_close_init_validate() {
 
         default_context
             .with_light_client(
-                client_id.clone(),
+                &client_id,
                 MockContextConfig::builder()
                     .latest_height(client_consensus_state_height)
                     .build::<MockContext<MockHost>>()
@@ -117,7 +117,7 @@ fn test_chan_close_init_execute() {
 
         default_context
             .with_light_client(
-                client_id.clone(),
+                &client_id,
                 MockContextConfig::builder()
                     .latest_height(client_consensus_state_height)
                     .build::<MockContext<MockHost>>()

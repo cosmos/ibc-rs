@@ -145,12 +145,12 @@ mod tests {
             .build::<MockContext<TendermintHost>>();
 
         ctx_a = ctx_a.with_light_client(
-            client_on_a_for_b.clone(),
+            &client_on_a_for_b,
             ctx_b.generate_light_client(vec![client_on_a_for_b_height], &Default::default()),
         );
 
         ctx_b = ctx_b.with_light_client(
-            client_on_b_for_a.clone(),
+            &client_on_b_for_a,
             ctx_a.generate_light_client(vec![client_on_b_for_a_height], &()),
         );
 

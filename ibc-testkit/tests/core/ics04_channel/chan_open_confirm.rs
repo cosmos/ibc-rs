@@ -90,7 +90,7 @@ fn chan_open_confirm_validate_happy_path(fixture: Fixture) {
 
     let context = context
         .with_light_client(
-            client_id_on_b.clone(),
+            &client_id_on_b,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()
@@ -126,7 +126,7 @@ fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
 
     let mut context = context
         .with_light_client(
-            client_id_on_b.clone(),
+            &client_id_on_b,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()
@@ -171,7 +171,7 @@ fn chan_open_confirm_fail_no_channel(fixture: Fixture) {
     } = fixture;
     let context = context
         .with_light_client(
-            client_id_on_b.clone(),
+            &client_id_on_b,
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()
@@ -212,7 +212,7 @@ fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
     .unwrap();
     let context = context
         .with_light_client(
-            client_id_on_b.clone(),
+            &client_id_on_b.clone(),
             MockContextConfig::builder()
                 .latest_height(Height::new(0, proof_height).unwrap())
                 .build::<MockContext<MockHost>>()

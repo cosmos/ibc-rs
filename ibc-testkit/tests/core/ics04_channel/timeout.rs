@@ -36,7 +36,7 @@ struct Fixture {
 fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
     let ctx = MockContext::<MockHost>::default().with_light_client(
-        ClientId::default(),
+        &ClientId::default(),
         MockContextConfig::builder()
             .latest_height(client_height)
             .build::<MockContext<MockHost>>()
@@ -114,7 +114,7 @@ fn timeout_fail_no_channel(fixture: Fixture) {
         ..
     } = fixture;
     let ctx = ctx.with_light_client(
-        ClientId::default(),
+        &ClientId::default(),
         MockContextConfig::builder()
             .latest_height(client_height)
             .build::<MockContext<MockHost>>()
@@ -193,7 +193,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
 
     let mut ctx = ctx
         .with_light_client(
-            ClientId::default(),
+            &ClientId::default(),
             MockContextConfig::builder()
                 .latest_height(client_height)
                 .build::<MockContext<MockHost>>()
@@ -276,7 +276,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
 
     let mut ctx = ctx
         .with_light_client(
-            ClientId::default(),
+            &ClientId::default(),
             MockContextConfig::builder()
                 .latest_height(client_height)
                 .build::<MockContext<MockHost>>()
@@ -328,7 +328,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
 
     let mut ctx = ctx
         .with_light_client(
-            ClientId::default(),
+            &ClientId::default(),
             MockContextConfig::builder()
                 .latest_height(client_height)
                 .build::<MockContext<MockHost>>()
