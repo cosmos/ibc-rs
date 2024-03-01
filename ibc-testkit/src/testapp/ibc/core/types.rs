@@ -205,6 +205,12 @@ where
     }
 }
 
+pub struct LightClientState<H: TestHost> {
+    pub client_state: H::ClientState,
+    pub consensus_states:
+        BTreeMap<Height, <<H::Block as TestBlock>::Header as TestHeader>::ConsensusState>,
+}
+
 /// Implementation of internal interface for use in testing. The methods in this interface should
 /// _not_ be accessible to any Ics handler.
 impl<S, H> MockGenericContext<S, H>
@@ -240,23 +246,17 @@ where
         self
     }
 
-    // TODO(rano): remove this
-    #[allow(clippy::type_complexity)]
     pub fn generate_light_client(
         &self,
-        mut cs_heights: Vec<Height>,
+        mut consensus_heights: Vec<Height>,
         client_params: &H::LightClientParams,
-    ) -> (
-        H::ClientState,
-        BTreeMap<Height, <<H::Block as TestBlock>::Header as TestHeader>::ConsensusState>,
-    ) {
-        let mut client_height = self.latest_height();
-
-        if let Some(&height) = cs_heights.last() {
-            client_height = height;
+    ) -> LightClientState<H> {
+        let client_height = if let Some(&height) = consensus_heights.last() {
+            height
         } else {
-            cs_heights = vec![self.latest_height()];
-        }
+            consensus_heights.push(self.latest_height());
+            self.latest_height()
+        };
 
         let client_state = self.host_chain_type.generate_client_state(
             self.host_block(&client_height)
@@ -264,7 +264,7 @@ where
             client_params,
         );
 
-        let cs_states = cs_heights
+        let consensus_states = consensus_heights
             .into_iter()
             .map(|height| {
                 (
@@ -278,22 +278,24 @@ where
             })
             .collect();
 
-        (client_state, cs_states)
+        LightClientState {
+            client_state,
+            consensus_states,
+        }
     }
 
-    pub fn with_light_client<ClientState, ConsensusState>(
+    pub fn with_light_client<H2>(
         mut self,
-        client_id: ClientId,
-        (client_state, consensus_states): (ClientState, BTreeMap<Height, ConsensusState>),
+        client_id: &ClientId,
+        light_client: LightClientState<H2>,
     ) -> Self
     where
-        ClientState: Into<AnyClientState>,
-        ConsensusState: Into<AnyConsensusState>,
+        H2: TestHost,
     {
-        self = self.with_client_state(&client_id, client_state.into());
+        self = self.with_client_state(client_id, light_client.client_state.into());
 
-        for (height, consensus_state) in consensus_states {
-            self = self.with_consensus_state(&client_id, height, consensus_state.into());
+        for (height, consensus_state) in light_client.consensus_states {
+            self = self.with_consensus_state(client_id, height, consensus_state.into());
         }
 
         self
