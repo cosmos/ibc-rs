@@ -50,6 +50,8 @@ pub enum ClientError {
     MissingRawConsensusState,
     /// invalid client id in the update client message: `{0}`
     InvalidMsgUpdateClientId(IdentifierError),
+    /// invalid client id in recover client message: `{0}`
+    InvalidMsgRecoverClientId(IdentifierError),
     /// invalid client identifier error: `{0}`
     InvalidClientIdentifier(IdentifierError),
     /// invalid raw header error: `{reason}`

@@ -9,11 +9,13 @@ use ibc_proto::google::protobuf::Any;
 
 mod create_client;
 mod misbehaviour;
+mod recover_client;
 mod update_client;
 mod upgrade_client;
 
 pub use create_client::*;
 pub use misbehaviour::*;
+pub use recover_client::*;
 pub use update_client::*;
 pub use upgrade_client::*;
 
