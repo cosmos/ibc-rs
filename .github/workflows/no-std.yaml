@@ -39,7 +39,7 @@ jobs:
           override: true
       - run: |
           cd ci/no-std-check
-          make check-no-std
+          make check-panic-conflict
 
   check-substrate:
     name: Check no_std substrate support
