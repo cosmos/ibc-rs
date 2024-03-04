@@ -20,6 +20,8 @@ pub enum ClientError {
     ClientFrozen { description: String },
     /// client is not active. Status=`{status}`
     ClientNotActive { status: Status },
+    /// client is active when it should not be. Status=`{status}`
+    ClientNotInactive { status: Status },
     /// client state not found: `{client_id}`
     ClientStateNotFound { client_id: ClientId },
     /// client state already exists: `{client_id}`
