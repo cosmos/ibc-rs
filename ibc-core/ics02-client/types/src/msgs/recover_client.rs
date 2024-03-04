@@ -3,7 +3,6 @@
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
-use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgRecoverClient as RawMsgRecoverClient;
 use ibc_proto::Protobuf;
 

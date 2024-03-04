@@ -48,6 +48,14 @@ impl Status {
             status => Err(ClientError::ClientNotActive { status }),
         }
     }
+
+    /// Checks whether the client is either frozen or expired; returns `Err` if not.
+    pub fn verify_is_inactive(self) -> Result<(), ClientError> {
+        match self {
+            Self::Frozen | Self::Expired => Ok(()),
+            status => Err(ClientError::ClientNotInactive { status }),
+        }
+    }
 }
 
 impl Display for Status {
