@@ -1,7 +1,6 @@
 //! Defines the client error type
 
 use displaydoc::Display;
-// use ibc::core::ContextError;
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_host_types::identifiers::{ClientId, ClientType};
@@ -26,6 +25,11 @@ pub enum ClientError {
     ClientStateNotFound { client_id: ClientId },
     /// client state already exists: `{client_id}`
     ClientStateAlreadyExists { client_id: ClientId },
+    /// Substitute client height `{substitute_height}` must be greater than subject client height `{subject_height}` during client recovery
+    ClientRecoveryHeightMismatch {
+        subject_height: Height,
+        substitute_height: Height,
+    },
     /// consensus state not found at: `{client_id}` at height `{height}`
     ConsensusStateNotFound { client_id: ClientId, height: Height },
     /// Processed time or height for the client `{client_id}` at height `{height}` not found

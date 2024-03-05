@@ -3,6 +3,7 @@
 use ibc_core_client_context::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
+use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::msgs::MsgRecoverClient;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::{ExecutionContext, ValidationContext};
@@ -24,6 +25,17 @@ where
     let subject_client_state = ctx.client_state(&subject_client_id)?;
     let substitute_client_state = ctx.client_state(&substitute_client_id)?;
 
+    let subject_height = subject_client_state.latest_height();
+    let substitute_height = substitute_client_state.latest_height();
+
+    if subject_height >= substitute_height {
+        return Err(ClientError::ClientRecoveryHeightMismatch {
+            subject_height,
+            substitute_height,
+        }
+        .into());
+    }
+
     substitute_client_state
         .status(ctx.get_client_validation_context(), &substitute_client_id)?
         .verify_is_active()?;
@@ -32,6 +44,8 @@ where
     subject_client_state
         .status(ctx.get_client_validation_context(), &subject_client_id)?
         .verify_is_inactive()?;
+
+    // Check that the subject client state's latest height < substitute client state's latest height
 
     Ok(())
 }
