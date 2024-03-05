@@ -293,20 +293,19 @@ where
             None
         });
 
-        if let Some(path) = found_path {
-            let consensus_state = self
-                .ibc_store
-                .consensus_state_store
-                .get(StoreHeight::Pending, &path)
-                .ok_or(ClientError::ConsensusStateNotFound {
-                    client_id: client_id.clone(),
-                    height: *height,
-                })?;
+        let consensus_state = found_path
+            .map(|path| {
+                self.ibc_store
+                    .consensus_state_store
+                    .get(StoreHeight::Pending, &path)
+                    .ok_or_else(|| ClientError::ConsensusStateNotFound {
+                        client_id: client_id.clone(),
+                        height: *height,
+                    })
+            })
+            .transpose()?;
 
-            Ok(Some(consensus_state))
-        } else {
-            Ok(None)
-        }
+        Ok(consensus_state)
     }
 
     fn prev_consensus_state(
@@ -330,19 +329,18 @@ where
             None
         });
 
-        if let Some(path) = found_path {
-            let consensus_state = self
-                .ibc_store
-                .consensus_state_store
-                .get(StoreHeight::Pending, &path)
-                .ok_or(ClientError::ConsensusStateNotFound {
-                    client_id: client_id.clone(),
-                    height: *height,
-                })?;
+        let consensus_state = found_path
+            .map(|path| {
+                self.ibc_store
+                    .consensus_state_store
+                    .get(StoreHeight::Pending, &path)
+                    .ok_or_else(|| ClientError::ConsensusStateNotFound {
+                        client_id: client_id.clone(),
+                        height: *height,
+                    })
+            })
+            .transpose()?;
 
-            Ok(Some(consensus_state))
-        } else {
-            Ok(None)
-        }
+        Ok(consensus_state)
     }
 }
