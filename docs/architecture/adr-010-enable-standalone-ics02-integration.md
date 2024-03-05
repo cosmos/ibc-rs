@@ -260,13 +260,30 @@ pub trait ExecutionContext: ValidationContext + ClientExecutionContext {}
 
 ### Remarks
 
-- We will maintain the `client_counter` and `increase_client_counter` methods
+- We will move away from the `decode_client_state()` method. Since per our design,
+  users must utilize a `ClientState` type that implements both `TryFrom<Any>`
+  and `Into<Any>`, therefore, we can offer a trait named `ClientStateDecoder`
+  encompassing a `decode_from_any()` method as follows, making it readily
+  available for users seeking to decode a client state from `Any` type:
+
+    ```rust
+    pub trait ClientStateDecoder: TryFrom<Any, Error = ClientError> {
+        fn decode_from_any(client_state: Any) -> Result<Self, ClientError> {
+            Self::try_from(client_state)
+        }
+    }
+
+    impl<T> ClientStateDecoder for T where T: TryFrom<Any, Error = ClientError> {}
+
+    ```
+
+- We will maintain the `client_counter()` and `increase_client_counter()` methods
   within the main context traits. This stems from the fact that light clients do
   not rely on the relative positions in their processes. Additionally, these
   counters are globally tracked, and only IBC handlers invoke these methods for
   setting or retrieving client identifiers.
 - The `host_consensus_state()` renamed to the `self_consensus_state()` for
-  consistency with the `validate_self_client` method and the `ibc-go` naming
+  consistency with the `validate_self_client()` method and the `ibc-go` naming
   convention.
 
 ## Consequences
