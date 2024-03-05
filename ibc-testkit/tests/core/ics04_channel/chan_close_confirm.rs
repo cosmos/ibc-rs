@@ -13,11 +13,10 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_close_confirm;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
-use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 
 #[test]
 fn test_chan_close_confirm_validate() {
@@ -57,10 +56,7 @@ fn test_chan_close_confirm_validate() {
     let context = default_context
         .with_light_client(
             &client_id,
-            MockContextConfig::builder()
-                .latest_height(client_consensus_state_height)
-                .build::<MockContext<MockHost>>()
-                .generate_light_client(vec![], &()),
+            LightClientState::<MockHost>::with_latest_height(client_consensus_state_height),
         )
         .with_connection(conn_id, conn_end)
         .with_channel(
@@ -117,10 +113,7 @@ fn test_chan_close_confirm_execute() {
     let mut context = default_context
         .with_light_client(
             &client_id,
-            MockContextConfig::builder()
-                .latest_height(client_consensus_state_height)
-                .build::<MockContext<MockHost>>()
-                .generate_light_client(vec![], &()),
+            LightClientState::<MockHost>::with_latest_height(client_consensus_state_height),
         )
         .with_connection(conn_id, conn_end)
         .with_channel(

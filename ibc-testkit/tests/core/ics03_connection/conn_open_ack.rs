@@ -18,7 +18,7 @@ use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use test_log::test;
 
 enum Ctx {
@@ -68,28 +68,19 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
         Ctx::NewWithConnection => ctx_new
             .with_light_client(
                 &client_id,
-                MockContextConfig::builder()
-                    .latest_height(proof_height)
-                    .build::<MockContext<MockHost>>()
-                    .generate_light_client(vec![], &()),
+                LightClientState::<MockHost>::with_latest_height(proof_height),
             )
             .with_connection(conn_id, default_conn_end),
         Ctx::DefaultWithConnection => ctx_default
             .with_light_client(
                 &client_id,
-                MockContextConfig::builder()
-                    .latest_height(proof_height)
-                    .build::<MockContext<MockHost>>()
-                    .generate_light_client(vec![], &()),
+                LightClientState::<MockHost>::with_latest_height(proof_height),
             )
             .with_connection(conn_id, default_conn_end),
         Ctx::NewWithConnectionEndOpen => ctx_new
             .with_light_client(
                 &client_id,
-                MockContextConfig::builder()
-                    .latest_height(proof_height)
-                    .build::<MockContext<MockHost>>()
-                    .generate_light_client(vec![], &()),
+                LightClientState::<MockHost>::with_latest_height(proof_height),
             )
             .with_connection(conn_id, conn_end_open),
     };

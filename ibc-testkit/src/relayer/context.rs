@@ -69,7 +69,7 @@ mod tests {
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::testapp::ibc::core::types::MockContext;
+    use crate::testapp::ibc::core::types::{LightClientBuilder, MockContext};
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
@@ -146,12 +146,18 @@ mod tests {
 
         ctx_a = ctx_a.with_light_client(
             &client_on_a_for_b,
-            ctx_b.generate_light_client(vec![client_on_a_for_b_height], &Default::default()),
+            LightClientBuilder::init()
+                .context(&ctx_b)
+                .consensus_heights([client_on_a_for_b_height])
+                .build(),
         );
 
         ctx_b = ctx_b.with_light_client(
             &client_on_b_for_a,
-            ctx_a.generate_light_client(vec![client_on_b_for_a_height], &()),
+            LightClientBuilder::init()
+                .context(&ctx_a)
+                .consensus_heights([client_on_b_for_a_height])
+                .build(),
         );
 
         // dummy; not actually used in client updates

@@ -14,9 +14,8 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
-use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::hosts::mockhost::MockHost;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use test_log::test;
 
 #[test]
@@ -93,10 +92,7 @@ fn send_packet_processing() {
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
                     &ClientId::default(),
-                    MockContextConfig::builder()
-                        .latest_height(client_height)
-                        .build::<MockContext<MockHost>>()
-                        .generate_light_client(vec![], &()),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
@@ -113,10 +109,7 @@ fn send_packet_processing() {
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
                     &ClientId::default(),
-                    MockContextConfig::builder()
-                        .latest_height(client_height)
-                        .build::<MockContext<MockHost>>()
-                        .generate_light_client(vec![], &()),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
@@ -133,10 +126,7 @@ fn send_packet_processing() {
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
                     &ClientId::default(),
-                    MockContextConfig::builder()
-                        .latest_height(client_height)
-                        .build::<MockContext<MockHost>>()
-                        .generate_light_client(vec![], &()),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a.clone())
                 .with_channel(
@@ -153,10 +143,7 @@ fn send_packet_processing() {
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
                     &ClientId::default(),
-                    MockContextConfig::builder()
-                        .latest_height(client_height)
-                        .build::<MockContext<MockHost>>()
-                        .generate_light_client(vec![], &()),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::default(), conn_end_on_a)
                 .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)

@@ -10,10 +10,9 @@ use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_init;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_init;
-use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use rstest::*;
 use test_log::test;
 
@@ -50,10 +49,7 @@ fn fixture() -> Fixture {
     let ctx = default_ctx
         .with_light_client(
             &client_id_on_a,
-            MockContextConfig::builder()
-                .latest_height(client_height)
-                .build::<MockContext<MockHost>>()
-                .generate_light_client(vec![], &()),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::default(), conn_end_on_a);
 

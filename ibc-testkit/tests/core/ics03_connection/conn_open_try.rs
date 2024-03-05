@@ -11,7 +11,7 @@ use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use test_log::test;
 
 enum Ctx {
@@ -59,10 +59,9 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
         Ctx::Default => MockContext::<MockHost>::default(),
         Ctx::WithClient => ctx_new.with_light_client(
             &msg.client_id_on_b,
-            MockContextConfig::builder()
-                .latest_height(Height::new(0, client_cons_state_height).unwrap())
-                .build::<MockContext<MockHost>>()
-                .generate_light_client(vec![], &()),
+            LightClientState::<MockHost>::with_latest_height(
+                Height::new(0, client_cons_state_height).unwrap(),
+            ),
         ),
     };
     Fixture { ctx, msg }

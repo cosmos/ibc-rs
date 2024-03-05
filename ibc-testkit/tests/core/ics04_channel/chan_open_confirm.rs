@@ -13,11 +13,10 @@ use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId};
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_confirm;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
-use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::hosts::mockhost::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use rstest::*;
 use test_log::test;
 
@@ -91,10 +90,7 @@ fn chan_open_confirm_validate_happy_path(fixture: Fixture) {
     let context = context
         .with_light_client(
             &client_id_on_b,
-            MockContextConfig::builder()
-                .latest_height(Height::new(0, proof_height).unwrap())
-                .build::<MockContext<MockHost>>()
-                .generate_light_client(vec![], &()),
+            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
         .with_channel(
@@ -127,10 +123,7 @@ fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
     let mut context = context
         .with_light_client(
             &client_id_on_b,
-            MockContextConfig::builder()
-                .latest_height(Height::new(0, proof_height).unwrap())
-                .build::<MockContext<MockHost>>()
-                .generate_light_client(vec![], &()),
+            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
         .with_channel(
@@ -172,10 +165,7 @@ fn chan_open_confirm_fail_no_channel(fixture: Fixture) {
     let context = context
         .with_light_client(
             &client_id_on_b,
-            MockContextConfig::builder()
-                .latest_height(Height::new(0, proof_height).unwrap())
-                .build::<MockContext<MockHost>>()
-                .generate_light_client(vec![], &()),
+            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
 
@@ -213,10 +203,7 @@ fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
     let context = context
         .with_light_client(
             &client_id_on_b.clone(),
-            MockContextConfig::builder()
-                .latest_height(Height::new(0, proof_height).unwrap())
-                .build::<MockContext<MockHost>>()
-                .generate_light_client(vec![], &()),
+            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
         .with_channel(
