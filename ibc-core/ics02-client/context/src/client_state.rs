@@ -118,6 +118,16 @@ where
 
     /// Returns the status of the client. Only Active clients are allowed to process packets.
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError>;
+
+    /// Verifies whether the calling (subject) client state matches the substitute
+    /// client state for the purposes of client recovery.
+    ///
+    /// Returns `Ok` if the subject and substitute client states match, `Err` otherwise.
+    fn check_substitute(
+        &self,
+        ctx: &V,
+        substitute_client_state: impl ClientStateValidation<V>,
+    ) -> Result<(), ClientError>;
 }
 
 /// `ClientState` methods which require access to the client's
