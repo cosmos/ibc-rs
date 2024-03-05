@@ -237,7 +237,7 @@ where
 #[builder(builder_method(name = init), build_method(into))]
 pub struct LightClientBuilder<'a, H: TestHost> {
     context: &'a MockContext<H>,
-    #[builder(default)]
+    #[builder(default, setter(into))]
     consensus_heights: Vec<Height>,
     #[builder(default)]
     params: H::LightClientParams,
@@ -331,13 +331,13 @@ where
         }
     }
 
-    pub fn with_light_client<H2>(
+    pub fn with_light_client<RH>(
         mut self,
         client_id: &ClientId,
-        light_client: LightClientState<H2>,
+        light_client: LightClientState<RH>,
     ) -> Self
     where
-        H2: TestHost,
+        RH: TestHost,
     {
         self = self.with_client_state(client_id, light_client.client_state.into());
 
