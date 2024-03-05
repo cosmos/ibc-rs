@@ -30,6 +30,8 @@ pub enum ClientError {
         subject_height: Height,
         substitute_height: Height,
     },
+    /// Subject and substitute client states must match in order for client to be recovered
+    ClientRecoveryStateMismatch,
     /// consensus state not found at: `{client_id}` at height `{height}`
     ConsensusStateNotFound { client_id: ClientId, height: Height },
     /// Processed time or height for the client `{client_id}` at height `{height}` not found
