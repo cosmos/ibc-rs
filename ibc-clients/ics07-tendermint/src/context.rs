@@ -42,7 +42,7 @@ pub trait ValidationContext:
 /// Client's context required during execution.
 ///
 /// This trait is automatically implemented for all types that implement
-/// [`CommonContext`] and [`ClientExecutionContext`]
+/// [`ValidationContext`] and [`ClientExecutionContext`]
 pub trait ExecutionContext: ValidationContext + ClientExecutionContext {}
 
 impl<T> ExecutionContext for T where T: ValidationContext + ClientExecutionContext {}
