@@ -105,7 +105,7 @@ The primary `ValidationContext` and `ExecutionContext` traits will be
 restructured as follows, only having sufficient access to respective client
 contexts, without caring about the client-specific types or methods. It is
 noteworthy that, to better illustrate the desired outcome from the current
-state, the code snippets below are in a `diff` format.
+state, the code snippets below are in the `diff` format.
 
 ```diff
 pub trait ValidationContext {
@@ -117,6 +117,7 @@ pub trait ValidationContext {
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
 
+     /// This method will be removed and instead, the `ClientStateDecoder` trait will be introduced.
 -    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError>;
 
 -    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
