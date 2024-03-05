@@ -211,6 +211,53 @@ pub struct LightClientState<H: TestHost> {
         BTreeMap<Height, <<H::Block as TestBlock>::Header as TestHeader>::ConsensusState>,
 }
 
+impl<H> Default for LightClientState<H>
+where
+    H: TestHost,
+{
+    fn default() -> Self {
+        let context = MockContext::<H>::default();
+        LightClientBuilder::init().context(&context).build()
+    }
+}
+
+impl<H> LightClientState<H>
+where
+    H: TestHost,
+{
+    pub fn with_latest_height(height: Height) -> Self {
+        let context = MockContextConfig::builder()
+            .latest_height(height)
+            .build::<MockContext<_>>();
+        LightClientBuilder::init().context(&context).build()
+    }
+}
+
+#[derive(TypedBuilder)]
+#[builder(builder_method(name = init), build_method(into))]
+pub struct LightClientBuilder<'a, H: TestHost> {
+    context: &'a MockContext<H>,
+    #[builder(default)]
+    consensus_heights: Vec<Height>,
+    #[builder(default)]
+    params: H::LightClientParams,
+}
+
+impl<'a, H> From<LightClientBuilder<'a, H>> for LightClientState<H>
+where
+    H: TestHost,
+{
+    fn from(builder: LightClientBuilder<'a, H>) -> Self {
+        let LightClientBuilder {
+            context,
+            consensus_heights,
+            params,
+        } = builder;
+
+        context.generate_light_client(consensus_heights, &params)
+    }
+}
+
 /// Implementation of internal interface for use in testing. The methods in this interface should
 /// _not_ be accessible to any Ics handler.
 impl<S, H> MockGenericContext<S, H>
