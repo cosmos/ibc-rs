@@ -127,23 +127,11 @@ impl From<MockClientState> for Any {
 }
 
 pub trait MockClientContext {
-    type ConversionError: ToString;
-    type AnyConsensusState: TryInto<MockConsensusState, Error = Self::ConversionError>;
-
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
-
-    /// Retrieve the consensus state for the given client ID at the specified
-    /// height.
-    ///
-    /// Returns an error if no such state exists.
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError>;
 }
 
 impl ClientStateCommon for MockClientState {
@@ -215,8 +203,7 @@ impl ClientStateCommon for MockClientState {
 impl<V> ClientStateValidation<V> for MockClientState
 where
     V: ClientValidationContext + MockClientContext,
-    V::AnyConsensusState: TryInto<MockConsensusState>,
-    ClientError: From<<V::AnyConsensusState as TryInto<MockConsensusState>>::Error>,
+    V::ConsensusStateRef: TryInto<MockConsensusState>,
 {
     fn verify_client_message(
         &self,
@@ -277,7 +264,11 @@ where
                     Err(_) => return Ok(Status::Expired),
                 };
 
-            any_latest_consensus_state.try_into()?
+            any_latest_consensus_state
+                .try_into()
+                .map_err(|_| ClientError::Other {
+                    description: "invalid latest consensus state".to_string(),
+                })?
         };
 
         let now = ctx.host_timestamp()?;
@@ -298,8 +289,9 @@ where
 impl<E> ClientStateExecution<E> for MockClientState
 where
     E: ClientExecutionContext + MockClientContext,
-    <E as ClientExecutionContext>::AnyClientState: From<MockClientState>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<MockConsensusState>,
+    <E as ClientExecutionContext>::ClientStateMut: From<MockClientState>,
+    <E as ClientValidationContext>::ConsensusStateRef: From<MockConsensusState>,
+    <E as ClientValidationContext>::ConsensusStateRef: TryInto<MockConsensusState>,
 {
     fn initialise(
         &self,

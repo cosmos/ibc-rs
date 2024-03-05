@@ -4,6 +4,7 @@ use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, State};
 use ibc_core_channel_types::events::OpenInit;
 use ibc_core_channel_types::msgs::MsgChannelOpenInit;
 use ibc_core_client::context::client_state::ClientStateValidation;
+use ibc_core_client::context::ClientValidationContext;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ChannelId;
@@ -120,7 +121,8 @@ where
     // Note: Not needed check if the connection end is OPEN. Optimistic channel handshake is allowed.
 
     let client_id_on_a = conn_end_on_a.client_id();
-    let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+    let client_val_ctx_a = ctx_a.get_client_validation_context();
+    let client_state_of_b_on_a = client_val_ctx_a.client_state(client_id_on_a)?;
 
     client_state_of_b_on_a
         .status(ctx_a.get_client_validation_context(), client_id_on_a)?

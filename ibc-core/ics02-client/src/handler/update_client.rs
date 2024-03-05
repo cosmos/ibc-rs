@@ -3,6 +3,7 @@
 use ibc_core_client_context::client_state::{
     ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
+use ibc_core_client_context::{ClientExecutionContext, ClientValidationContext};
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::{ClientMisbehaviour, UpdateClient};
 use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;
@@ -21,20 +22,18 @@ where
 
     let client_id = msg.client_id().clone();
 
+    let client_val_ctx = ctx.get_client_validation_context();
+
     // Read client state from the host chain store. The client should already exist.
-    let client_state = ctx.client_state(&client_id)?;
+    let client_state = client_val_ctx.client_state(&client_id)?;
 
     client_state
-        .status(ctx.get_client_validation_context(), &client_id)?
+        .status(client_val_ctx, &client_id)?
         .verify_is_active()?;
 
     let client_message = msg.client_message();
 
-    client_state.verify_client_message(
-        ctx.get_client_validation_context(),
-        &client_id,
-        client_message,
-    )?;
+    client_state.verify_client_message(client_val_ctx, &client_id, client_message)?;
 
     Ok(())
 }
@@ -49,20 +48,16 @@ where
         MsgUpdateOrMisbehaviour::Misbehaviour(_) => UpdateKind::SubmitMisbehaviour,
     };
     let client_message = msg.client_message();
-    let client_state = ctx.client_state(&client_id)?;
 
-    let found_misbehaviour = client_state.check_for_misbehaviour(
-        ctx.get_client_validation_context(),
-        &client_id,
-        client_message.clone(),
-    )?;
+    let client_exec_ctx = ctx.get_client_execution_context();
+
+    let client_state = client_exec_ctx.client_state_mut(&client_id)?;
+
+    let found_misbehaviour =
+        client_state.check_for_misbehaviour(client_exec_ctx, &client_id, client_message.clone())?;
 
     if found_misbehaviour {
-        client_state.update_state_on_misbehaviour(
-            ctx.get_client_execution_context(),
-            &client_id,
-            client_message,
-        )?;
+        client_state.update_state_on_misbehaviour(client_exec_ctx, &client_id, client_message)?;
 
         let event = IbcEvent::ClientMisbehaviour(ClientMisbehaviour::new(
             client_id,
@@ -80,11 +75,8 @@ where
 
         let header = client_message;
 
-        let consensus_heights = client_state.update_state(
-            ctx.get_client_execution_context(),
-            &client_id,
-            header.clone(),
-        )?;
+        let consensus_heights =
+            client_state.update_state(client_exec_ctx, &client_id, header.clone())?;
 
         {
             let event = {

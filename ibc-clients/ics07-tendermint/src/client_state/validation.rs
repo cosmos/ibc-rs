@@ -3,7 +3,6 @@ use ibc_client_tendermint_types::{
     TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
 use ibc_core_client::context::client_state::ClientStateValidation;
-use ibc_core_client::context::ClientValidationContext;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Status;
 use ibc_core_host::types::identifiers::ClientId;
@@ -20,9 +19,7 @@ use crate::context::{DefaultVerifier, TmVerifier, ValidationContext as TmValidat
 
 impl<V> ClientStateValidation<V> for ClientState
 where
-    V: ClientValidationContext + TmValidationContext,
-    V::AnyConsensusState: TryInto<TmConsensusState>,
-    ClientError: From<<V::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
+    V: TmValidationContext,
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
     /// standalone `verify_client_message` function. This is to make it as simple
@@ -74,7 +71,7 @@ pub fn verify_client_message<V>(
     verifier: &impl TmVerifier,
 ) -> Result<(), ClientError>
 where
-    V: ClientValidationContext + TmValidationContext,
+    V: TmValidationContext,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
@@ -128,7 +125,7 @@ pub fn check_for_misbehaviour<V>(
     client_message: Any,
 ) -> Result<bool, ClientError>
 where
-    V: ClientValidationContext + TmValidationContext,
+    V: TmValidationContext,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
@@ -154,7 +151,7 @@ pub fn status<V>(
     client_id: &ClientId,
 ) -> Result<Status, ClientError>
 where
-    V: ClientValidationContext + TmValidationContext,
+    V: TmValidationContext,
 {
     if client_state.is_frozen() {
         return Ok(Status::Frozen);

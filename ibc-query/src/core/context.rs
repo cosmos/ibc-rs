@@ -7,7 +7,7 @@ use ibc::core::connection::types::IdentifiedConnectionEnd;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc::core::host::types::path::{ChannelEndPath, Path};
-use ibc::core::host::ValidationContext;
+use ibc::core::host::{ClientStateRef, ConsensusStateRef, ValidationContext};
 use ibc::core::primitives::prelude::*;
 
 /// Context to be implemented by the host to provide proofs in query responses
@@ -22,15 +22,13 @@ pub trait QueryContext: ProvableContext + ValidationContext {
     // Client queries
 
     /// Returns the list of all clients.
-    fn client_states(
-        &self,
-    ) -> Result<Vec<(ClientId, <Self as ValidationContext>::AnyClientState)>, ContextError>;
+    fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, ContextError>;
 
     /// Returns the list of all consensus states for the given client.
     fn consensus_states(
         &self,
         client_id: &ClientId,
-    ) -> Result<Vec<(Height, <Self as ValidationContext>::AnyConsensusState)>, ContextError>;
+    ) -> Result<Vec<(Height, ConsensusStateRef<Self>)>, ContextError>;
 
     /// Returns the list of all heights at which consensus states for the given client are.
     fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;

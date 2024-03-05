@@ -4,6 +4,7 @@ use ibc_core_channel_types::error::{ChannelError, PacketError};
 use ibc_core_channel_types::msgs::MsgTimeoutOnClose;
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
+use ibc_core_client::context::ClientValidationContext;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::types::path::{
@@ -65,7 +66,8 @@ where
     // Verify proofs
     {
         let client_id_on_a = conn_end_on_a.client_id();
-        let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+        let client_val_ctx_a = ctx_a.get_client_validation_context();
+        let client_state_of_b_on_a = client_val_ctx_a.client_state(client_id_on_a)?;
 
         client_state_of_b_on_a
             .status(ctx_a.get_client_validation_context(), client_id_on_a)?
@@ -78,7 +80,8 @@ where
             msg.proof_height_on_b.revision_number(),
             msg.proof_height_on_b.revision_height(),
         );
-        let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
+        let consensus_state_of_b_on_a =
+            client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
         let chan_id_on_b = chan_end_on_a

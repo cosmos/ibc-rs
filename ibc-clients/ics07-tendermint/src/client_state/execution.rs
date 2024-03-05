@@ -2,24 +2,25 @@ use ibc_client_tendermint_types::{
     ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
 };
 use ibc_core_client::context::client_state::ClientStateExecution;
-use ibc_core_client::context::ClientExecutionContext;
+use ibc_core_client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
-use ibc_core_host::ExecutionContext;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
 use super::ClientState;
 use crate::consensus_state::ConsensusState as TmConsensusState;
-use crate::context::{CommonContext, ExecutionContext as TmExecutionContext};
+use crate::context::{
+    ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
+};
 
 impl<E> ClientStateExecution<E> for ClientState
 where
-    E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
+    E: TmExecutionContext,
+    <E as ClientValidationContext>::ClientStateRef: From<ClientStateType>,
+    <E as ClientValidationContext>::ConsensusStateRef: From<ConsensusStateType>,
 {
     fn initialise(
         &self,
@@ -77,12 +78,12 @@ pub fn initialise<E>(
     consensus_state: Any,
 ) -> Result<(), ClientError>
 where
-    E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
+    E: TmExecutionContext,
+    <E as ClientValidationContext>::ClientStateRef: From<ClientStateType>,
+    <E as ClientValidationContext>::ConsensusStateRef: From<ConsensusStateType>,
 {
-    let host_timestamp = CommonContext::host_timestamp(ctx)?;
-    let host_height = CommonContext::host_height(ctx)?;
+    let host_timestamp = TmValidationContext::host_timestamp(ctx)?;
+    let host_height = TmValidationContext::host_height(ctx)?;
 
     let tm_consensus_state = ConsensusStateType::try_from(consensus_state)?;
 
@@ -122,9 +123,9 @@ pub fn update_state<E>(
     header: Any,
 ) -> Result<Vec<Height>, ClientError>
 where
-    E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
+    E: TmExecutionContext,
+    <E as ClientValidationContext>::ClientStateRef: From<ClientStateType>,
+    <E as ClientValidationContext>::ConsensusStateRef: From<ConsensusStateType>,
 {
     let header = TmHeader::try_from(header)?;
     let header_height = header.height();
@@ -138,7 +139,7 @@ where
             header_height.revision_height(),
         );
 
-        CommonContext::consensus_state(ctx, &path_at_header_height).ok()
+        ctx.consensus_state(&path_at_header_height).ok()
     };
 
     if maybe_existing_consensus_state.is_some() {
@@ -147,8 +148,8 @@ where
         //
         // Do nothing.
     } else {
-        let host_timestamp = CommonContext::host_timestamp(ctx)?;
-        let host_height = CommonContext::host_height(ctx)?;
+        let host_timestamp = TmValidationContext::host_timestamp(ctx)?;
+        let host_height = TmValidationContext::host_height(ctx)?;
 
         let new_consensus_state = ConsensusStateType::from(header.clone());
         let new_client_state = client_state.clone().with_header(header)?;
@@ -189,9 +190,8 @@ pub fn update_on_misbehaviour<E>(
     _client_message: Any,
 ) -> Result<(), ClientError>
 where
-    E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
+    E: TmExecutionContext,
+    <E as ClientValidationContext>::ClientStateRef: From<ClientStateType>,
 {
     // NOTE: frozen height is  set to `Height {revision_height: 0,
     // revision_number: 1}` and it is the same for all misbehaviour. This
@@ -221,9 +221,9 @@ pub fn update_on_upgrade<E>(
     upgraded_consensus_state: Any,
 ) -> Result<Height, ClientError>
 where
-    E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
+    E: TmExecutionContext,
+    <E as ClientValidationContext>::ClientStateRef: From<ClientStateType>,
+    <E as ClientValidationContext>::ConsensusStateRef: From<ConsensusStateType>,
 {
     let mut upgraded_tm_client_state = ClientState::try_from(upgraded_client_state)?;
     let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
@@ -267,8 +267,8 @@ where
     );
 
     let latest_height = new_client_state.latest_height;
-    let host_timestamp = CommonContext::host_timestamp(ctx)?;
-    let host_height = CommonContext::host_height(ctx)?;
+    let host_timestamp = TmValidationContext::host_timestamp(ctx)?;
+    let host_height = TmValidationContext::host_height(ctx)?;
 
     ctx.store_client_state(
         ClientStatePath::new(client_id.clone()),
@@ -301,7 +301,7 @@ pub fn prune_oldest_consensus_state<E>(
     client_id: &ClientId,
 ) -> Result<(), ClientError>
 where
-    E: ClientExecutionContext + CommonContext,
+    E: ClientExecutionContext + TmValidationContext,
 {
     let mut heights = ctx.consensus_state_heights(client_id)?;
 
@@ -313,7 +313,7 @@ where
             height.revision_number(),
             height.revision_height(),
         );
-        let consensus_state = CommonContext::consensus_state(ctx, &client_consensus_state_path)?;
+        let consensus_state = ctx.consensus_state(&client_consensus_state_path)?;
         let tm_consensus_state = consensus_state
             .try_into()
             .map_err(|err| ClientError::Other {

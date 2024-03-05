@@ -2,6 +2,7 @@
 
 use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
+use ibc_core_client::context::ClientValidationContext;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenAck;
 use ibc_core_connection_types::msgs::MsgConnectionOpenAck;
@@ -44,7 +45,9 @@ where
         .into());
     }
 
-    ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
+    let client_val_ctx_a = ctx_a.get_client_validation_context();
+
+    client_val_ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
 
     msg.version
         .verify_is_supported(vars.conn_end_on_a.versions())?;
@@ -53,10 +56,10 @@ where
 
     // Proof verification.
     {
-        let client_state_of_b_on_a = ctx_a.client_state(vars.client_id_on_a())?;
+        let client_state_of_b_on_a = client_val_ctx_a.client_state(vars.client_id_on_a())?;
 
         client_state_of_b_on_a
-            .status(ctx_a.get_client_validation_context(), vars.client_id_on_a())?
+            .status(client_val_ctx_a, vars.client_id_on_a())?
             .verify_is_active()?;
         client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
 
@@ -66,7 +69,8 @@ where
             msg.proofs_height_on_b.revision_height(),
         );
 
-        let consensus_state_of_b_on_a = ctx_a.consensus_state(&client_cons_state_path_on_a)?;
+        let consensus_state_of_b_on_a =
+            client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
 
         let prefix_on_a = ctx_a.commitment_prefix();
         let prefix_on_b = vars.conn_end_on_a.counterparty().prefix();
@@ -109,7 +113,7 @@ where
             })?;
 
         let expected_consensus_state_of_a_on_b =
-            ctx_a.host_consensus_state(&msg.consensus_height_of_a_on_b)?;
+            client_val_ctx_a.self_consensus_state(&msg.consensus_height_of_a_on_b)?;
 
         let client_cons_state_path_on_b = ClientConsensusStatePath::new(
             vars.client_id_on_b().clone(),
