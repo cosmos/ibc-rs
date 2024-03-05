@@ -103,20 +103,44 @@ independent integration of light client implementations.
 
 The primary `ValidationContext` and `ExecutionContext` traits will be
 restructured as follows, only having sufficient access to respective client
-contexts, without caring about the client-specific types or methods:
+contexts, without caring about the client-specific types or methods. It is
+noteworthy that, to better illustrate the desired outcome from the current
+state, the code snippets below are in a `diff` format.
 
-```rust
+```diff
 pub trait ValidationContext {
     type V: ClientValidationContext;
+-    type E: ClientExecutionContext;
+-    type AnyConsensusState: ConsensusState;
+-    type AnyClientState: ClientState<Self::V, Self::E>;
 
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
+
+-    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError>;
+
+-    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
+
+-    fn consensus_state(
+-        &self,
+-        client_cons_state_path: &ClientConsensusStatePath,
+-    ) -> Result<Self::AnyConsensusState, ContextError>;
+
+-    fn host_consensus_state(
+-        &self,
+-        height: &Height,
+-    ) -> Result<Self::AnyConsensusState, ContextError>;
+
+-    fn validate_self_client(
+-        &self,
+-        client_state_of_host_on_counterparty: Any,
+-    ) -> Result<(), ContextError>;
 
     ... // other methods
 }
 
 pub trait ExecutionContext: ValidationContext {
-    type E: ClientExecutionContext;
++    type E: ClientExecutionContext;
 
     /// Retrieve the context that implements all clients' `ExecutionContext`.
     fn get_client_execution_context(&mut self) -> &mut Self::E;
@@ -129,27 +153,27 @@ In the ICS-02 level, the `ClientValidationContext` and `ClientExecutionContext`
 traits will be restructured as follows, containing all the client relevant
 methods and types:
 
-```rust
+```diff
 pub trait ClientValidationContext: Sized {
-    type ClientStateRef: ClientStateValidation<Self>;
-    type ConsensusStateRef: ConsensusState;
++    type ClientStateRef: ClientStateValidation<Self>;
++    type ConsensusStateRef: ConsensusState;
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError>;
++    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError>;
 
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::ConsensusStateRef, ContextError>;
++    fn consensus_state(
++        &self,
++        client_cons_state_path: &ClientConsensusStatePath,
++    ) -> Result<Self::ConsensusStateRef, ContextError>;
 
-    fn self_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Self::ConsensusStateRef, ContextError>;
++    fn self_consensus_state(
++        &self,
++        height: &Height,
++    ) -> Result<Self::ConsensusStateRef, ContextError>;
 
-    fn validate_self_client(
-        &self,
-        client_state_of_host_on_counterparty: Any,
-    ) -> Result<(), ContextError>;
++    fn validate_self_client(
++        &self,
++        client_state_of_host_on_counterparty: Any,
++    ) -> Result<(), ContextError>;
 
     fn client_update_meta(
         &self,
@@ -159,13 +183,16 @@ pub trait ClientValidationContext: Sized {
 }
 
 pub trait ClientExecutionContext:
-    ClientValidationContext<ClientStateRef = Self::ClientStateMut>
++    ClientValidationContext<ClientStateRef = Self::ClientStateMut>
 {
-    type ClientStateMut: ClientStateExecution<Self>;
+-    type V: ClientValidationContext;
+-    type AnyClientState: ClientState<Self::V, Self>;
+-    type AnyConsensusState: ConsensusState;
++    type ClientStateMut: ClientStateExecution<Self>;
 
-    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, ContextError> {
-        self.client_state(client_id)
-    }
++    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, ContextError> {
++        self.client_state(client_id)
++    }
 
     fn store_client_state(
         &mut self,
@@ -222,45 +249,50 @@ eliminating the requirement for implementing a redundant consensus_state()
 method. For the sake of simplification, we can remove the CommonContext trait
 and consolidate everything under the TmValidationContext as follows:
 
-```rust
+```diff
+- pub trait CommonContext {
+-    // methods will be moved to the below `ValidationContext`
+- }
+
 // Client's context required during validation
 pub trait ValidationContext:
-    ClientValidationContext<ConsensusStateRef = Self::AnyConsensusState>
++    ClientValidationContext<ConsensusStateRef = Self::AnyConsensusState>
 {
-    type ConversionError: ToString;
-    type AnyConsensusState: TryInto<TmConsensusState, Error = Self::ConversionError>;
++    type ConversionError: ToString;
++    type AnyConsensusState: TryInto<TmConsensusState, Error = Self::ConversionError>;
 
-    /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
++    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
-    /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, ContextError>;
++    fn host_height(&self) -> Result<Height, ContextError>;
 
-    /// Returns all the heights at which a consensus state is stored
-    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
+-    fn consensus_state(
+-        &self,
+-        client_cons_state_path: &ClientConsensusStatePath,
+-    ) -> Result<Self::AnyConsensusState, ContextError>;
 
-    /// Search for the lowest consensus state higher than `height`.
++    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
+
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 
-    /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 }
 
-pub trait ExecutionContext: ValidationContext + ClientExecutionContext {}
+-impl<T> ExecutionContext for T where T: CommonContext + ClientExecutionContext {}
++impl<T> ExecutionContext for T where T: ValidationContext + ClientExecutionContext {}
 
 ```
 
 ### Remarks
 
-- We will move away from the `decode_client_state()` method. Since per our design,
+- We move away from the `decode_client_state()` method. Since per our design,
   users must utilize a `ClientState` type that implements both `TryFrom<Any>`
   and `Into<Any>`, therefore, we can offer a trait named `ClientStateDecoder`
   encompassing a `decode_from_any()` method as follows, making it readily
