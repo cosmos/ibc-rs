@@ -111,8 +111,8 @@ state, the code snippets below are in the `diff` format.
 ```diff
 pub trait ValidationContext {
     type V: ClientValidationContext;
-+    type SelfClientState: ClientStateValidation<Self::V>;
-+    type SelfConsensusState: ConsensusState;
++    type HostClientState: ClientStateValidation<Self::V>;
++    type HostConsensusState: ConsensusState;
 -    type E: ClientExecutionContext;
 -    type AnyConsensusState: ConsensusState;
 -    type AnyClientState: ClientState<Self::V, Self::E>;
@@ -134,12 +134,12 @@ pub trait ValidationContext {
         &self,
         height: &Height,
 -    ) -> Result<Self::AnyConsensusState, ContextError>;
-+    ) -> Result<Self::SelfConsensusState, ContextError>;
++    ) -> Result<Self::HostConsensusState, ContextError>;
 
     fn validate_self_client(
         &self,
 -        client_state_of_host_on_counterparty: Any,
-+        client_state_of_host_on_counterparty: Self::SelfClientState,
++        client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError>;
 
     ... // other methods
@@ -164,12 +164,12 @@ datagrams against the client and consensus states of the host.
 
 In this ADR, these methods will continue to be housed under the main context
 traits. However, we will explicitly define the accepted types for these methods
-as `SelfClientState` and `SelfConsensusState`. This refinement aims for more
+as `HostClientState` and `HostConsensusState`. This refinement aims for more
 clarity and will optimize the decoding process, removing an unnecessary layer of
 decoding during information retrieval. Previously, the decoding process for
 these methods involved obtaining `AnyClientState` and `AnyConsensusState` types
-before decoding them into the concrete `SelfClientState` and
-`SelfConsensusState` types.
+before decoding them into the concrete `HostClientState` and
+`HostConsensusState` types.
 
 Following the aforementioned points, in the ICS-02 level, the
 `ClientValidationContext` and `ClientExecutionContext` traits will be
