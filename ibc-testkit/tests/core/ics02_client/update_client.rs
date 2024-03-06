@@ -139,7 +139,7 @@ fn test_update_client_with_prev_header() {
         target_height: Height,
         trusted_height: Height,
     ) -> MsgEnvelope {
-        let mut tm_block = TendermintHost::new(chain_id)
+        let mut tm_block = TendermintHost::with_chain_id(chain_id)
             .generate_block(
                 target_height.revision_height(),
                 Timestamp::now(),
@@ -407,7 +407,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
         .host_id(chain_id_b.clone())
         .latest_height(update_height)
         .max_history_size(block_params.len() as u64)
-        .validator_set_history(block_params)
+        .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx_a = MockContextConfig::builder()
@@ -509,7 +509,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
         .host_id(chain_id_b.clone())
         .latest_height(update_height)
         .max_history_size(block_params.len() as u64)
-        .validator_set_history(block_params)
+        .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
@@ -614,7 +614,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .host_id(chain_id_b.clone())
         .latest_height(update_height)
         .max_history_size(block_params.len() as u64)
-        .validator_set_history(block_params)
+        .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
@@ -710,7 +710,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
         .host_id(chain_id_b.clone())
         .latest_height(update_height)
         .max_history_size(block_params.len() as u64)
-        .validator_set_history(block_params)
+        .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx_a = MockContextConfig::builder()
@@ -1149,7 +1149,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
 
     // Generate an equivocal header for chain-B at `misbehaviour_height`
     let header2 = {
-        let mut tm_block = TendermintHost::new(chain_id_b)
+        let mut tm_block = TendermintHost::with_chain_id(chain_id_b)
             .generate_block(
                 misbehaviour_height.revision_height(),
                 Timestamp::now(),
@@ -1200,7 +1200,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
 
     // Generate `header1` for chain-B
     let header1 = {
-        let mut tm_block = TendermintHost::new(chain_id_b.clone())
+        let mut tm_block = TendermintHost::with_chain_id(chain_id_b.clone())
             .generate_block(
                 misbehaviour_height.revision_height(),
                 Timestamp::now(),
@@ -1216,7 +1216,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let header2 = {
         let timestamp =
             Timestamp::from_nanoseconds(Timestamp::now().nanoseconds() + 1_000_000_000).unwrap();
-        let mut tm_block = TendermintHost::new(chain_id_b)
+        let mut tm_block = TendermintHost::with_chain_id(chain_id_b)
             .generate_block(
                 misbehaviour_height.revision_height(),
                 timestamp,

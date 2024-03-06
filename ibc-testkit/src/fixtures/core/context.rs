@@ -40,7 +40,7 @@ where
     max_history_size: u64,
 
     #[builder(default, setter(strip_option))]
-    validator_set_history: Option<Vec<H::BlockParams>>,
+    block_params_history: Option<Vec<H::BlockParams>>,
 
     #[builder(default = Height::new(0, 5).expect("Never fails"))]
     latest_height: Height,
@@ -83,15 +83,15 @@ where
             .add(params.block_time)
             .expect("Never fails");
 
-        let host_chain_type = H::new(params.host_id);
+        let host = H::with_chain_id(params.host_id);
 
-        let history = if let Some(validator_set_history) = params.validator_set_history {
+        let history = if let Some(validator_set_history) = params.block_params_history {
             (0..n)
                 .rev()
                 .map(|i| {
                     // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
                     // where N = now(), BT = block_time
-                    host_chain_type.generate_block(
+                    host.generate_block(
                         params
                             .latest_height
                             .sub(i)
@@ -110,7 +110,7 @@ where
                 .map(|i| {
                     // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
                     // where N = now(), BT = block_time
-                    host_chain_type.generate_block(
+                    host.generate_block(
                         params
                             .latest_height
                             .sub(i)
@@ -126,7 +126,7 @@ where
         };
 
         MockGenericContext {
-            host_chain_type,
+            host,
             max_history_size: params.max_history_size,
             history,
             block_time: params.block_time,

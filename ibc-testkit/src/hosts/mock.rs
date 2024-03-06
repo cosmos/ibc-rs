@@ -16,7 +16,7 @@ impl TestHost for Host {
     type LightClientParams = ();
     type ClientState = MockClientState;
 
-    fn new(chain_id: ChainId) -> Self {
+    fn with_chain_id(chain_id: ChainId) -> Self {
         Self(chain_id)
     }
 
@@ -44,6 +44,7 @@ impl TestHost for Host {
         MockClientState::new(*latest_block)
     }
 }
+
 impl TestBlock for MockHeader {
     type Header = MockHeader;
 

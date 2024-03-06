@@ -158,7 +158,7 @@ where
     H: TestHost,
 {
     /// The type of host chain underlying this mock context.
-    pub host_chain_type: H,
+    pub host: H,
 
     /// Maximum size for the history of the host chain. Any block older than this is pruned.
     pub max_history_size: u64,
@@ -266,7 +266,7 @@ where
     H: TestHost,
 {
     pub fn chain_revision_number(&self) -> u64 {
-        self.host_chain_type.chain_id().revision_number()
+        self.host.chain_id().revision_number()
     }
 
     pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
@@ -305,7 +305,7 @@ where
             self.latest_height()
         };
 
-        let client_state = self.host_chain_type.generate_client_state(
+        let client_state = self.host.generate_client_state(
             self.host_block(&client_height)
                 .expect("latest block exists"),
             client_params,
@@ -461,7 +461,7 @@ where
     pub fn advance_host_chain_height(&mut self) {
         let latest_block = self.history.last().expect("history cannot be empty");
 
-        let new_block = self.host_chain_type.generate_block(
+        let new_block = self.host.generate_block(
             latest_block.height().increment().revision_height(),
             latest_block
                 .timestamp()

@@ -105,7 +105,7 @@ impl TestHost for Host {
     type LightClientParams = MockClientConfig;
     type ClientState = ClientState;
 
-    fn new(chain_id: ChainId) -> Self {
+    fn with_chain_id(chain_id: ChainId) -> Self {
         Self(chain_id)
     }
 
@@ -198,16 +198,11 @@ impl From<TendermintHeader> for ConsensusState {
 
 impl From<TendermintBlock> for TendermintHeader {
     fn from(block: TendermintBlock) -> Self {
-        // let trusted_height = block.height().decrement().unwrap_or(block.height());
-        // let trusted_next_validators = block.0.validators.clone();
-
-        // from old impl
-
-        let trusted_height = Height::new(block.height().revision_number(), 1).expect("Never fails");
-        let trusted_next_validators = block.0.next_validators.clone();
+        let trusted_height = block.height();
+        let trusted_next_validators = block.0.validators.clone();
         let light_block = block.0;
 
-        // trust the previous block by default
+        // by default trust the current height and validators
         Self {
             trusted_height,
             trusted_next_validators,
