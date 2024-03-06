@@ -47,7 +47,7 @@ pub trait ValidationContext {
     fn client_counter(&self) -> Result<u64, ContextError>;
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
-    fn self_consensus_state(
+    fn host_consensus_state(
         &self,
         height: &Height,
     ) -> Result<Self::SelfConsensusState, ContextError>;

@@ -51,7 +51,7 @@ impl ValidationContext for MockContext {
         Ok(self.ibc_store.lock().client_ids_counter)
     }
 
-    fn self_consensus_state(&self, height: &Height) -> Result<MockConsensusState, ContextError> {
+    fn host_consensus_state(&self, height: &Height) -> Result<MockConsensusState, ContextError> {
         let cs: AnyConsensusState = match self.host_block(height) {
             Some(block_ref) => Ok(block_ref.clone().into()),
             None => Err(ClientError::MissingLocalConsensusState { height: *height }),

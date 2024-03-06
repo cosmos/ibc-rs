@@ -112,7 +112,7 @@ where
             })?;
 
         let expected_consensus_state_of_b_on_a =
-            ctx_b.self_consensus_state(&msg.consensus_height_of_b_on_a)?;
+            ctx_b.host_consensus_state(&msg.consensus_height_of_b_on_a)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
             client_id_on_a.clone(),
