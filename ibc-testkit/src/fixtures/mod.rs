@@ -6,7 +6,7 @@ use alloc::fmt::Debug;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::primitives::prelude::*;
 
-use crate::hosts::mockhost::MockHost;
+use crate::hosts::MockHost;
 use crate::testapp::ibc::core::types::MockContext;
 pub enum Expect {
     Success,

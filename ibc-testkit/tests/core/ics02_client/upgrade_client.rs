@@ -13,7 +13,7 @@ use ibc_testkit::fixtures::clients::tendermint::{
 };
 use ibc_testkit::fixtures::core::client::dummy_msg_upgrade_client;
 use ibc_testkit::fixtures::{Expect, Fixture};
-use ibc_testkit::hosts::mockhost::MockHost;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;

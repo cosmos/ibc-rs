@@ -13,7 +13,7 @@ use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
-use ibc_testkit::hosts::mockhost::MockHost;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
 };

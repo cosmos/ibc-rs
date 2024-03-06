@@ -10,7 +10,7 @@ use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_init;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_init;
-use ibc_testkit::hosts::mockhost::MockHost;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use rstest::*;

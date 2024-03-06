@@ -62,9 +62,7 @@ mod tests {
 
     use super::RelayerContext;
     use crate::fixtures::core::context::MockContextConfig;
-    use crate::hosts::mockhost::MockHost;
-    use crate::hosts::tenderminthost::TendermintHost;
-    use crate::hosts::{TestBlock, TestHeader};
+    use crate::hosts::{MockHost, TendermintHost, TestBlock, TestHeader};
     use crate::relayer::context::ClientId;
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;

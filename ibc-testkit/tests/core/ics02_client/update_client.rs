@@ -24,9 +24,8 @@ use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
-use ibc_testkit::hosts::mockhost::MockHost;
-use ibc_testkit::hosts::tenderminthost::{BlockParams, TendermintHost};
-use ibc_testkit::hosts::{TestBlock, TestHeader, TestHost};
+use ibc_testkit::hosts::tendermint::BlockParams;
+use ibc_testkit::hosts::{MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
 };

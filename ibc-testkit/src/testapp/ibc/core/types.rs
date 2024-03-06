@@ -586,8 +586,7 @@ mod tests {
     use super::*;
     use crate::fixtures::core::channel::PacketConfig;
     use crate::fixtures::core::signer::dummy_bech32_account;
-    use crate::hosts::mockhost::MockHost;
-    use crate::hosts::tenderminthost::TendermintHost;
+    use crate::hosts::{MockHost, TendermintHost};
     use crate::testapp::ibc::core::router::MockRouter;
 
     #[test]

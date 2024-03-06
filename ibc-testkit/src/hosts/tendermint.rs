@@ -23,7 +23,7 @@ use crate::fixtures::clients::tendermint::ClientStateConfig;
 use crate::testapp::ibc::core::types::MockClientConfig;
 
 #[derive(Debug)]
-pub struct TendermintHost(ChainId);
+pub struct Host(ChainId);
 
 #[derive(Debug, Clone)]
 pub struct TendermintBlock(TmLightBlock);
@@ -99,7 +99,7 @@ impl BlockParams {
     }
 }
 
-impl TestHost for TendermintHost {
+impl TestHost for Host {
     type Block = TendermintBlock;
     type BlockParams = BlockParams;
     type LightClientParams = MockClientConfig;

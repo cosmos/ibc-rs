@@ -37,7 +37,7 @@ use ibc_testkit::fixtures::core::connection::{
 };
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
-use ibc_testkit::hosts::mockhost::MockHost;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
 use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;

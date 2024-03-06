@@ -8,8 +8,11 @@ use ibc::primitives::proto::Any;
 
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 
-pub mod mockhost;
-pub mod tenderminthost;
+pub mod mock;
+pub mod tendermint;
+
+pub use mock::Host as MockHost;
+pub use tendermint::Host as TendermintHost;
 
 pub trait TestHost: Debug {
     // produced block on chain

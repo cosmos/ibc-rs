@@ -12,7 +12,7 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_try;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
-use ibc_testkit::hosts::mockhost::MockHost;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};

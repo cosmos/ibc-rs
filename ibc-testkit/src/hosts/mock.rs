@@ -8,9 +8,9 @@ use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 
 #[derive(Debug)]
-pub struct MockHost(ChainId);
+pub struct Host(ChainId);
 
-impl TestHost for MockHost {
+impl TestHost for Host {
     type Block = MockHeader;
     type BlockParams = ();
     type LightClientParams = ();

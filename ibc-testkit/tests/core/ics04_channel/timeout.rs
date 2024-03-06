@@ -15,7 +15,7 @@ use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, Por
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
-use ibc_testkit::hosts::mockhost::MockHost;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use rstest::*;
