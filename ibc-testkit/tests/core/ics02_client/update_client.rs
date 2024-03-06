@@ -702,7 +702,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
 
     if let Some(block_param) = block_params.last_mut() {
         // forged validator set of height-22
-        block_param.next_validators = vec![TestgenValidator::new("1").voting_power(100)];
+        block_param.validators = vec![TestgenValidator::new("1").voting_power(100)];
     }
 
     let update_height = client_height.add(block_params.len() as u64 - 1);
@@ -800,7 +800,7 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
 
     if let Some(block_param) = block_params.last_mut() {
         // forged validator set of height-22
-        block_param.next_validators = vec![TestgenValidator::new("1").voting_power(100)];
+        block_param.validators = vec![TestgenValidator::new("1").voting_power(100)];
     }
 
     let update_height = client_height.add(block_params.len() as u64 - 1);
