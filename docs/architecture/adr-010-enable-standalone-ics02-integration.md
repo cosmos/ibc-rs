@@ -117,7 +117,7 @@ pub trait ValidationContext {
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
 
-     /// This method will be removed and instead, the `ClientStateDecoder` trait will be introduced.
+     // This method will be removed and replaced by a `ClientStateDecoder` trait that will encapsulate the ability to decode a client state from an `Any`
 -    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError>;
 
 -    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
@@ -228,7 +228,7 @@ pub trait ClientExecutionContext:
 }
 ```
 
-The introduction of the `ClientStateMut` associated type additional to the
+The introduction of the `ClientStateMut` associated type in addition to the
 `ClientStateRef` became necessary to tackle the limitation that the
 `ClientState` retrieved from the regular `client_state()` method provides access
 only to validation methods. However, in `execute` handlers, there are scenarios
@@ -247,8 +247,8 @@ must introduce a `ClientStateMut` type the same as `ClientStateRef`.
 
 With the mentioned classification, we can now streamline ICS-07 specific APIs,
 eliminating the requirement for implementing a redundant consensus_state()
-method. For the sake of simplification, we can remove the CommonContext trait
-and consolidate everything under the TmValidationContext as follows:
+method. For the sake of simplification, we can remove the `CommonContext` trait
+and consolidate everything under the `TmValidationContext` as follows:
 
 ```diff
 - pub trait CommonContext {
@@ -315,7 +315,7 @@ pub trait ValidationContext:
   not rely on the relative positions in their processes. Additionally, these
   counters are globally tracked, and only IBC handlers invoke these methods for
   setting or retrieving client identifiers.
-- The `host_consensus_state()` renamed to the `self_consensus_state()` for
+- The `host_consensus_state()` will be renamed to `self_consensus_state()` in order to maintain
   consistency with the `validate_self_client()` method and the `ibc-go` naming
   convention.
 
