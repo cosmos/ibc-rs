@@ -2,7 +2,6 @@ use ibc_core_client_types::Height;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_core_host_types::path::{ClientConsensusStatePath, ClientStatePath};
-use ibc_primitives::proto::Any;
 use ibc_primitives::Timestamp;
 
 use crate::client_state::{ClientStateExecution, ClientStateValidation};
@@ -31,25 +30,6 @@ pub trait ClientValidationContext: Sized {
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Self::ConsensusStateRef, ContextError>;
-
-    /// Returns the `ConsensusState` of the host (local) chain at a specific height.
-    fn self_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Self::ConsensusStateRef, ContextError>;
-
-    /// Validates the `ClientState` of the client (a client referring to host) stored on the counterparty chain against the host's internal state.
-    ///
-    /// For more information on the specific requirements for validating the
-    /// client state of a host chain, please refer to the [ICS24 host
-    /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation)
-    ///
-    /// Additionally, implementations specific to individual chains can be found
-    /// in the `ibc-core-hostkit` crate.
-    fn validate_self_client(
-        &self,
-        client_state_of_host_on_counterparty: Any,
-    ) -> Result<(), ContextError>;
 
     fn client_update_meta(
         &self,

@@ -13,7 +13,7 @@ use ibc_primitives::proto::Any;
 /// Convenient trait to decode a client state from an `Any` type and obtain a
 /// handle to the local instance of `ClientState`.
 pub trait ClientStateDecoder: TryFrom<Any, Error = ClientError> {
-    fn decode_from_any(client_state: Any) -> Result<Self, ClientError> {
+    fn from_any(client_state: Any) -> Result<Self, ClientError> {
         Self::try_from(client_state)
     }
 }

@@ -1,6 +1,8 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
 
-use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
+use ibc_core_client::context::client_state::{
+    ClientStateCommon, ClientStateDecoder, ClientStateValidation,
+};
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::context::ClientValidationContext;
 use ibc_core_connection_types::error::ConnectionError;
@@ -11,7 +13,7 @@ use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path};
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ExecutionContext, SelfClientState, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
 use ibc_primitives::ToVec;
@@ -47,7 +49,10 @@ where
 
     let client_val_ctx_a = ctx_a.get_client_validation_context();
 
-    client_val_ctx_a.validate_self_client(msg.client_state_of_a_on_b.clone())?;
+    let client_state_of_a_on_b =
+        SelfClientState::<Ctx>::from_any(msg.client_state_of_a_on_b.clone())?;
+
+    ctx_a.validate_self_client(client_state_of_a_on_b)?;
 
     msg.version
         .verify_is_supported(vars.conn_end_on_a.versions())?;
@@ -113,7 +118,7 @@ where
             })?;
 
         let expected_consensus_state_of_a_on_b =
-            client_val_ctx_a.self_consensus_state(&msg.consensus_height_of_a_on_b)?;
+            ctx_a.self_consensus_state(&msg.consensus_height_of_a_on_b)?;
 
         let client_cons_state_path_on_b = ClientConsensusStatePath::new(
             vars.client_id_on_b().clone(),

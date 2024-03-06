@@ -3,6 +3,8 @@ use core::time::Duration;
 use ibc_core_channel_types::channel::ChannelEnd;
 use ibc_core_channel_types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc_core_channel_types::packet::Receipt;
+use ibc_core_client_context::client_state::ClientStateValidation;
+use ibc_core_client_context::consensus_state::ConsensusState;
 use ibc_core_client_context::{ClientExecutionContext, ClientValidationContext};
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentPrefix;
@@ -27,6 +29,8 @@ use crate::utils::calculate_block_delay;
 /// Trait used for the top-level `validate` entrypoint in the `ibc-core` crate.
 pub trait ValidationContext {
     type V: ClientValidationContext;
+    type SelfClientState: ClientStateValidation<Self::V>;
+    type SelfConsensusState: ConsensusState;
 
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
@@ -41,6 +45,26 @@ pub trait ValidationContext {
     /// thus far. The value of this counter should increase only via method
     /// `ExecutionContext::increase_client_counter`.
     fn client_counter(&self) -> Result<u64, ContextError>;
+
+    /// Returns the `ConsensusState` of the host (local) chain at a specific height.
+    fn self_consensus_state(
+        &self,
+        height: &Height,
+    ) -> Result<Self::SelfConsensusState, ContextError>;
+
+    /// Validates the `ClientState` of the host chain stored on the counterparty
+    /// chain against the host's internal state.
+    ///
+    /// For more information on the specific requirements for validating the
+    /// client state of a host chain, please refer to the [ICS24 host
+    /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation)
+    ///
+    /// Additionally, implementations specific to individual chains can be found
+    /// in the `ibc-core/ics24-host` module.
+    fn validate_self_client(
+        &self,
+        client_state_of_host_on_counterparty: Self::SelfClientState,
+    ) -> Result<(), ContextError>;
 
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
@@ -220,6 +244,14 @@ pub trait ExecutionContext: ValidationContext {
     /// Log the given message.
     fn log_message(&mut self, message: String) -> Result<(), ContextError>;
 }
+
+/// The convenient type alias for accessing the `SelfClientState` type in the
+/// context.
+pub type SelfClientState<Ctx> = <Ctx as ValidationContext>::SelfClientState;
+
+/// The convenient type alias for accessing the `SelfConsensusState` type in the
+/// context.
+pub type SelfConsensusState<Ctx> = <Ctx as ValidationContext>::SelfConsensusState;
 
 /// The convenient type alias for accessing the `ClientStateRef` type in the
 /// context.

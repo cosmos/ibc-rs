@@ -1,6 +1,6 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenTry`.;
-use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
 use ibc_core_client::context::consensus_state::ConsensusState;
+use ibc_core_client::context::prelude::*;
 use ibc_core_client::context::ClientValidationContext;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenTry;
@@ -12,7 +12,7 @@ use ibc_core_host::types::identifiers::{ClientId, ConnectionId};
 use ibc_core_host::types::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ExecutionContext, SelfClientState, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
 use ibc_primitives::ToVec;
@@ -37,7 +37,10 @@ where
 
     let client_val_ctx_b = ctx_b.get_client_validation_context();
 
-    client_val_ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
+    let client_state_of_b_on_a =
+        SelfClientState::<Ctx>::from_any(msg.client_state_of_b_on_a.clone())?;
+
+    ctx_b.validate_self_client(client_state_of_b_on_a)?;
 
     let host_height = ctx_b.host_height().map_err(|_| ConnectionError::Other {
         description: "failed to get host height".to_string(),
@@ -109,7 +112,7 @@ where
             })?;
 
         let expected_consensus_state_of_b_on_a =
-            client_val_ctx_b.self_consensus_state(&msg.consensus_height_of_b_on_a)?;
+            ctx_b.self_consensus_state(&msg.consensus_height_of_b_on_a)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
             client_id_on_a.clone(),
