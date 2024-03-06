@@ -19,3 +19,4 @@ pub mod fixtures;
 pub mod hosts;
 pub mod relayer;
 pub mod testapp;
+pub mod utils;
