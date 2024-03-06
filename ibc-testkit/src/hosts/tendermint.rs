@@ -25,80 +25,6 @@ use crate::testapp::ibc::core::types::MockClientConfig;
 #[derive(Debug)]
 pub struct Host(ChainId);
 
-#[derive(Debug, Clone)]
-pub struct TendermintBlock(TmLightBlock);
-
-impl TendermintBlock {
-    pub fn inner(&self) -> &TmLightBlock {
-        &self.0
-    }
-}
-
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub struct TendermintHeader {
-    pub trusted_height: Height,
-    pub trusted_next_validators: ValidatorSet,
-    pub light_block: TmLightBlock,
-}
-
-impl TendermintHeader {
-    pub fn set_trusted_height(&mut self, trusted_height: Height) {
-        self.trusted_height = trusted_height
-    }
-
-    pub fn set_trusted_next_validators_set(&mut self, trusted_next_validators: ValidatorSet) {
-        self.trusted_next_validators = trusted_next_validators
-    }
-
-    pub fn header(&self) -> &TmHeader {
-        &self.light_block.signed_header.header
-    }
-}
-
-impl From<TendermintHeader> for Header {
-    fn from(header: TendermintHeader) -> Self {
-        Self {
-            signed_header: header.light_block.signed_header,
-            validator_set: header.light_block.validators,
-            trusted_height: header.trusted_height,
-            trusted_next_validator_set: header.trusted_next_validators,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct BlockParams {
-    pub validators: Vec<TestgenValidator>,
-    pub next_validators: Vec<TestgenValidator>,
-}
-
-impl Default for BlockParams {
-    fn default() -> Self {
-        let validators = vec![
-            TestgenValidator::new("1").voting_power(50),
-            TestgenValidator::new("2").voting_power(50),
-        ];
-
-        Self {
-            validators: validators.clone(),
-            next_validators: validators,
-        }
-    }
-}
-
-impl BlockParams {
-    pub fn from_validator_history(validator_history: Vec<Vec<TestgenValidator>>) -> Vec<Self> {
-        validator_history
-            .windows(2)
-            .map(|vals| Self {
-                validators: vals[0].clone(),
-                next_validators: vals[1].clone(),
-            })
-            .collect()
-    }
-}
-
 impl TestHost for Host {
     type Block = TendermintBlock;
     type BlockParams = BlockParams;
@@ -155,6 +81,15 @@ impl TestHost for Host {
     }
 }
 
+#[derive(Debug, Clone)]
+pub struct TendermintBlock(TmLightBlock);
+
+impl TendermintBlock {
+    pub fn inner(&self) -> &TmLightBlock {
+        &self.0
+    }
+}
+
 impl TestBlock for TendermintBlock {
     type Header = TendermintHeader;
     fn height(&self) -> Height {
@@ -172,58 +107,112 @@ impl TestBlock for TendermintBlock {
     }
 }
 
+#[derive(Debug)]
+pub struct BlockParams {
+    pub validators: Vec<TestgenValidator>,
+    pub next_validators: Vec<TestgenValidator>,
+}
+
+impl BlockParams {
+    pub fn from_validator_history(validator_history: Vec<Vec<TestgenValidator>>) -> Vec<Self> {
+        validator_history
+            .windows(2)
+            .map(|vals| Self {
+                validators: vals[0].clone(),
+                next_validators: vals[1].clone(),
+            })
+            .collect()
+    }
+}
+
+impl Default for BlockParams {
+    fn default() -> Self {
+        let validators = vec![
+            TestgenValidator::new("1").voting_power(50),
+            TestgenValidator::new("2").voting_power(50),
+        ];
+
+        Self {
+            validators: validators.clone(),
+            next_validators: validators,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct TendermintHeader(Header);
+
+impl TendermintHeader {
+    pub fn set_trusted_height(&mut self, trusted_height: Height) {
+        self.0.trusted_height = trusted_height
+    }
+
+    pub fn set_trusted_next_validators_set(&mut self, trusted_next_validator_set: ValidatorSet) {
+        self.0.trusted_next_validator_set = trusted_next_validator_set
+    }
+
+    pub fn header(&self) -> &TmHeader {
+        &self.0.signed_header.header
+    }
+}
+
 impl TestHeader for TendermintHeader {
     type ConsensusState = ConsensusState;
 
     fn height(&self) -> Height {
         Height::new(
-            ChainId::from_str(self.light_block.signed_header.header.chain_id.as_str())
+            ChainId::from_str(self.0.signed_header.header.chain_id.as_str())
                 .expect("Never fails")
                 .revision_number(),
-            self.light_block.signed_header.header.height.value(),
+            self.0.signed_header.header.height.value(),
         )
         .expect("Never fails")
     }
 
     fn timestamp(&self) -> Timestamp {
-        self.light_block.signed_header.header.time.into()
+        self.0.signed_header.header.time.into()
+    }
+}
+
+impl From<TendermintHeader> for Header {
+    fn from(header: TendermintHeader) -> Self {
+        header.0
     }
 }
 
 impl From<TendermintHeader> for ConsensusState {
     fn from(header: TendermintHeader) -> Self {
-        ConsensusState::from(header.light_block.signed_header.header)
+        ConsensusState::from(header.0.signed_header.header)
     }
 }
 
 impl From<TendermintBlock> for TendermintHeader {
     fn from(block: TendermintBlock) -> Self {
         let trusted_height = block.height();
-        let trusted_next_validators = block.0.validators.clone();
-        let light_block = block.0;
+
+        let TmLightBlock {
+            signed_header,
+            validators: validator_set,
+            ..
+        } = block.0;
+
+        let trusted_next_validator_set = validator_set.clone();
 
         // by default trust the current height and validators
-        Self {
+        Self(Header {
+            signed_header,
+            validator_set,
             trusted_height,
-            trusted_next_validators,
-            light_block,
-        }
+            trusted_next_validator_set,
+        })
     }
 }
 
 impl From<TendermintHeader> for Any {
     fn from(value: TendermintHeader) -> Self {
-        let value = RawHeader {
-            signed_header: Some(value.light_block.signed_header.into()),
-            validator_set: Some(value.light_block.validators.into()),
-            trusted_height: Some(value.trusted_height.into()),
-            trusted_validators: Some(value.trusted_next_validators.into()),
-        }
-        .to_vec();
-
         Self {
             type_url: TENDERMINT_HEADER_TYPE_URL.to_string(),
-            value,
+            value: RawHeader::from(value.0).to_vec(),
         }
     }
 }
