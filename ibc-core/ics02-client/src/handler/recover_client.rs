@@ -54,9 +54,31 @@ where
     Ok(())
 }
 
+/// Executes the steps needed to recover the subject client, namely:
+///  - setting the subject's status from either `frozen` or `expired` to `active`
+///  - copying the substitute client's consensus state as the subject's consensus state
+///  - setting the subject client's processed height and processed time values to match the substitute client's
+///  - setting the subject client's latest height, trusting period, and chain ID values to match the substitute client's
 pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgRecoverClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
 {
+    let subject_client_id = msg.subject_client_id.clone();
+    let substitute_client_id = msg.substitute_client_id.clone();
+
+    let subject_client_state = ctx.client_state(&subject_client_id)?;
+    let substitute_client_state = ctx.client_state(&substitute_client_id)?;
+
+    // where and how is a client's `Status` set?
+    // how to fetch the substitute client's consensus state?
+    // is using `ClientState::initialise` a viable way of overwriting the subject client's state?
+    // does `ClientState::update_state`'s function signature lend itself to overwriting the client state values that we need to overwrite as part of client recovery?
+
+    subject_client_state.initialise(
+        ctx.get_client_execution_context(),
+        &substitute_client_id,
+        substitute_consensus_state,
+    )?;
+
     Ok(())
 }
