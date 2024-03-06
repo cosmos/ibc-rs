@@ -162,16 +162,16 @@ operating on the host chain**. Therefore, the `host_consensus_state()` and
 specific, play a crucial role in the connection handshake validating receiving
 datagrams against the client and consensus states of the host.
 
-In this ADR, these methods will continue to be housed under the main
-context traits. However, we will explicitly define the accepted types for these
-methods as `SelfClientState` and `SelfConsensusState`. This refinement aims for
-more clarity and will optimize the decoding process, removing an unnecessary
-layer of decoding during information retrieval. Previously, the decoding process
-for these methods involved obtaining `AnyClientState` and `AnyConsensusState`
-types before decoding them into the concrete `SelfClientState` and
+In this ADR, these methods will continue to be housed under the main context
+traits. However, we will explicitly define the accepted types for these methods
+as `SelfClientState` and `SelfConsensusState`. This refinement aims for more
+clarity and will optimize the decoding process, removing an unnecessary layer of
+decoding during information retrieval. Previously, the decoding process for
+these methods involved obtaining `AnyClientState` and `AnyConsensusState` types
+before decoding them into the concrete `SelfClientState` and
 `SelfConsensusState` types.
 
-Following the aforementioned explanations, in the ICS-02 level, the
+Following the aforementioned points, in the ICS-02 level, the
 `ClientValidationContext` and `ClientExecutionContext` traits will be
 restructured as follows, containing all the client relevant methods and types:
 
@@ -321,11 +321,11 @@ pub trait ValidationContext:
 
     ```
 
-- We will maintain the `client_counter()` and `increase_client_counter()` methods
-  within the main context traits. This stems from the fact that light clients do
-  not rely on the relative positions in their processes. Additionally, these
-  counters are globally tracked, and only IBC handlers invoke these methods for
-  setting or retrieving client identifiers.
+- We will maintain the `client_counter()` and `increase_client_counter()`
+  methods within the main context traits. This stems from the fact that light
+  clients do not rely on the relative positions in their processes.
+  Additionally, these counters are globally tracked, and only IBC handlers
+  invoke these methods for setting or retrieving client identifiers.
 
 ## Consequences
 
