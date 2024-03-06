@@ -122,6 +122,14 @@ where
     /// Verifies whether the calling (subject) client state matches the substitute
     /// client state for the purposes of client recovery.
     ///
+    /// Note that this validation function does not need to perform *all* of the
+    /// validation steps necessary to confirm client recovery. Some checks, such
+    /// as checking that the subject client state's latest height < the substitute
+    /// client's latest height, as well as checking that the subject client is
+    /// inactive and that the substitute client is active, are performed by the
+    /// `validate` function in the `recover_client` module at the ics02-client
+    /// level.
+    ///
     /// Returns `Ok` if the subject and substitute client states match, `Err` otherwise.
     fn check_substitute(
         &self,
