@@ -101,15 +101,18 @@ independent integration of light client implementations.
   <img src="./assets/adr010.png" alt="Main components" width="800" height="600">
 </div>
 
-The primary `ValidationContext` and `ExecutionContext` traits at the ICS-24 host level will be
-restructured as follows, only having sufficient access to respective client
-contexts, without caring about the client-specific types or methods. It is
+The primary `ValidationContext` and `ExecutionContext` traits at the ICS-24 host
+level will be restructured as follows, only having sufficient access to
+respective ICS-02 client contexts, without caring about the types or methods
+associated with client or consensus states of counterparty chains. It is
 noteworthy that, to better illustrate the desired outcome from the current
 state, the code snippets below are in the `diff` format.
 
 ```diff
 pub trait ValidationContext {
     type V: ClientValidationContext;
++    type SelfClientState: ClientStateValidation<Self::V>;
++    type SelfConsensusState: ConsensusState;
 -    type E: ClientExecutionContext;
 -    type AnyConsensusState: ConsensusState;
 -    type AnyClientState: ClientState<Self::V, Self::E>;
@@ -127,15 +130,17 @@ pub trait ValidationContext {
 -        client_cons_state_path: &ClientConsensusStatePath,
 -    ) -> Result<Self::AnyConsensusState, ContextError>;
 
--    fn host_consensus_state(
--        &self,
--        height: &Height,
+    fn host_consensus_state(
+        &self,
+        height: &Height,
 -    ) -> Result<Self::AnyConsensusState, ContextError>;
++    ) -> Result<Self::SelfConsensusState, ContextError>;
 
--    fn validate_self_client(
--        &self,
+    fn validate_self_client(
+        &self,
 -        client_state_of_host_on_counterparty: Any,
--    ) -> Result<(), ContextError>;
++        client_state_of_host_on_counterparty: Self::SelfClientState,
+    ) -> Result<(), ContextError>;
 
     ... // other methods
 }
@@ -150,9 +155,25 @@ pub trait ExecutionContext: ValidationContext {
 }
 ```
 
-In the ICS-02 level, the `ClientValidationContext` and `ClientExecutionContext`
-traits will be restructured as follows, containing all the client relevant
-methods and types:
+We should also highlight that ICS-02 houses various types, APIs and
+implementations essential for enabling **light clients of counterparty chains
+operating on the host chain**. Therefore, the `host_consensus_state()` and
+`validate_self_client()` methods, though initially appearing to be ICS-02
+specific, play a crucial role in the connection handshake validating receiving
+datagrams against the client and consensus states of the host.
+
+In this ADR, these methods will continue to be housed under the main
+context traits. However, we will explicitly define the accepted types for these
+methods as `SelfClientState` and `SelfConsensusState`. This refinement aims for
+more clarity and will optimize the decoding process, removing an unnecessary
+layer of decoding during information retrieval. Previously, the decoding process
+for these methods involved obtaining `AnyClientState` and `AnyConsensusState`
+types before decoding them into the concrete `SelfClientState` and
+`SelfConsensusState` types.
+
+Following the aforementioned explanations, in the ICS-02 level, the
+`ClientValidationContext` and `ClientExecutionContext` traits will be
+restructured as follows, containing all the client relevant methods and types:
 
 ```diff
 pub trait ClientValidationContext: Sized {
@@ -165,16 +186,6 @@ pub trait ClientValidationContext: Sized {
 +        &self,
 +        client_cons_state_path: &ClientConsensusStatePath,
 +    ) -> Result<Self::ConsensusStateRef, ContextError>;
-
-+    fn self_consensus_state(
-+        &self,
-+        height: &Height,
-+    ) -> Result<Self::ConsensusStateRef, ContextError>;
-
-+    fn validate_self_client(
-+        &self,
-+        client_state_of_host_on_counterparty: Any,
-+    ) -> Result<(), ContextError>;
 
     fn client_update_meta(
         &self,
@@ -296,12 +307,12 @@ pub trait ValidationContext:
 - We move away from the `decode_client_state()` method. Since per our design,
   users must utilize a `ClientState` type that implements both `TryFrom<Any>`
   and `Into<Any>`, therefore, we can offer a trait named `ClientStateDecoder`
-  encompassing a `decode_from_any()` method as follows, making it readily
+  encompassing a `from_any()` method as follows, making it readily
   available for users seeking to decode a client state from `Any` type:
 
     ```rust
     pub trait ClientStateDecoder: TryFrom<Any, Error = ClientError> {
-        fn decode_from_any(client_state: Any) -> Result<Self, ClientError> {
+        fn from_any(client_state: Any) -> Result<Self, ClientError> {
             Self::try_from(client_state)
         }
     }
@@ -315,9 +326,6 @@ pub trait ValidationContext:
   not rely on the relative positions in their processes. Additionally, these
   counters are globally tracked, and only IBC handlers invoke these methods for
   setting or retrieving client identifiers.
-- The `host_consensus_state()` will be renamed to `self_consensus_state()` in order to maintain
-  consistency with the `validate_self_client()` method and the `ibc-go` naming
-  convention.
 
 ## Consequences
 
