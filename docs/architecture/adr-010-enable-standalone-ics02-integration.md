@@ -101,7 +101,7 @@ independent integration of light client implementations.
   <img src="./assets/adr010.png" alt="Main components" width="800" height="600">
 </div>
 
-The primary `ValidationContext` and `ExecutionContext` traits will be
+The primary `ValidationContext` and `ExecutionContext` traits at the ICS-24 host level will be
 restructured as follows, only having sufficient access to respective client
 contexts, without caring about the client-specific types or methods. It is
 noteworthy that, to better illustrate the desired outcome from the current
@@ -246,7 +246,7 @@ other for execution. Therefore, contexts implementing `ClientExecutionContext`
 must introduce a `ClientStateMut` type the same as `ClientStateRef`.
 
 With the mentioned classification, we can now streamline ICS-07 specific APIs,
-eliminating the requirement for implementing a redundant consensus_state()
+eliminating the requirement for implementing a redundant `consensus_state()`
 method. For the sake of simplification, we can remove the `CommonContext` trait
 and consolidate everything under the `TmValidationContext` as follows:
 
