@@ -1,7 +1,5 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenTry`.;
-use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::context::prelude::*;
-use ibc_core_client::context::ClientValidationContext;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenTry;
 use ibc_core_connection_types::msgs::MsgConnectionOpenTry;

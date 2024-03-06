@@ -1,8 +1,6 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenConfirm`.
 
-use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
-use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::context::ClientValidationContext;
+use ibc_core_client::context::prelude::*;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenConfirm;
 use ibc_core_connection_types::msgs::MsgConnectionOpenConfirm;

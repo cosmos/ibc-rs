@@ -1,9 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
-use ibc_core_client_context::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation,
-};
-use ibc_core_client_context::{ClientExecutionContext, ClientValidationContext};
+use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::{ClientMisbehaviour, UpdateClient};
 use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;

@@ -1,10 +1,6 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
 
-use ibc_core_client::context::client_state::{
-    ClientStateCommon, ClientStateDecoder, ClientStateValidation,
-};
-use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::context::ClientValidationContext;
+use ibc_core_client::context::prelude::*;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenAck;
 use ibc_core_connection_types::msgs::MsgConnectionOpenAck;
