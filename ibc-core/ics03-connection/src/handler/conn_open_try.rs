@@ -10,7 +10,7 @@ use ibc_core_host::types::identifiers::{ClientId, ConnectionId};
 use ibc_core_host::types::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
-use ibc_core_host::{ExecutionContext, SelfClientState, ValidationContext};
+use ibc_core_host::{ExecutionContext, HostClientState, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
 use ibc_primitives::ToVec;
@@ -36,7 +36,7 @@ where
     let client_val_ctx_b = ctx_b.get_client_validation_context();
 
     let client_state_of_b_on_a =
-        SelfClientState::<Ctx>::from_any(msg.client_state_of_b_on_a.clone())?;
+        HostClientState::<Ctx>::from_any(msg.client_state_of_b_on_a.clone())?;
 
     ctx_b.validate_self_client(client_state_of_b_on_a)?;
 

@@ -30,8 +30,8 @@ use crate::testapp::ibc::clients::AnyConsensusState;
 
 impl ValidationContext for MockContext {
     type V = Self;
-    type SelfClientState = MockClientState;
-    type SelfConsensusState = MockConsensusState;
+    type HostClientState = MockClientState;
+    type HostConsensusState = MockConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
         Ok(self.latest_height())
@@ -69,7 +69,7 @@ impl ValidationContext for MockContext {
 
     fn validate_self_client(
         &self,
-        client_state_of_host_on_counterparty: Self::SelfClientState,
+        client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
         if client_state_of_host_on_counterparty.is_frozen() {
             return Err(ClientError::ClientFrozen {

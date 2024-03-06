@@ -27,8 +27,10 @@ use crate::utils::calculate_block_delay;
 /// Trait used for the top-level `validate` entrypoint in the `ibc-core` crate.
 pub trait ValidationContext {
     type V: ClientValidationContext;
-    type SelfClientState: ClientStateValidation<Self::V>;
-    type SelfConsensusState: ConsensusState;
+    /// The client state type for the host chain.
+    type HostClientState: ClientStateValidation<Self::V>;
+    /// The consensus state type for the host chain.
+    type HostConsensusState: ConsensusState;
 
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
@@ -48,7 +50,7 @@ pub trait ValidationContext {
     fn host_consensus_state(
         &self,
         height: &Height,
-    ) -> Result<Self::SelfConsensusState, ContextError>;
+    ) -> Result<Self::HostConsensusState, ContextError>;
 
     /// Validates the `ClientState` of the host chain stored on the counterparty
     /// chain against the host's internal state.
@@ -61,7 +63,7 @@ pub trait ValidationContext {
     /// in the `ibc-core/ics24-host` module.
     fn validate_self_client(
         &self,
-        client_state_of_host_on_counterparty: Self::SelfClientState,
+        client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError>;
 
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
@@ -245,11 +247,11 @@ pub trait ExecutionContext: ValidationContext {
 
 /// The convenient type alias for accessing the `SelfClientState` type in the
 /// context.
-pub type SelfClientState<Ctx> = <Ctx as ValidationContext>::SelfClientState;
+pub type HostClientState<Ctx> = <Ctx as ValidationContext>::HostClientState;
 
 /// The convenient type alias for accessing the `SelfConsensusState` type in the
 /// context.
-pub type SelfConsensusState<Ctx> = <Ctx as ValidationContext>::SelfConsensusState;
+pub type HostConsensusState<Ctx> = <Ctx as ValidationContext>::HostConsensusState;
 
 /// The convenient type alias for accessing the `ClientStateRef` type in the
 /// context.
