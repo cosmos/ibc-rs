@@ -372,25 +372,25 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     let ctx_b_val_history = vec![
-        // First two validator sets are default at client creation
-        //
         // validator set of height-20
         vec![
             TestgenValidator::new("1").voting_power(50),
             TestgenValidator::new("2").voting_power(50),
         ],
+        // next validator set of height-20
         // validator set of height-21
         vec![
             TestgenValidator::new("1").voting_power(34),
             TestgenValidator::new("2").voting_power(66),
         ],
+        // next validator set of height-21
         // validator set of height-22
         // overlap maintains 1/3 power in older set
         vec![
             TestgenValidator::new("1").voting_power(1),
             TestgenValidator::new("4").voting_power(99),
         ],
-        // validator set of height-23
+        // next validator set of height-22
         vec![
             TestgenValidator::new("1").voting_power(20),
             TestgenValidator::new("2").voting_power(80),
@@ -432,7 +432,6 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
         .unwrap()
         .clone()
         .into_header();
-    block.set_trusted_height(client_height);
 
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
@@ -441,6 +440,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
         .next_validators
         .clone();
 
+    block.set_trusted_height(client_height);
     block.set_trusted_next_validators_set(trusted_next_validator_set);
 
     let latest_header_height = block.height();
@@ -474,25 +474,24 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     let ctx_b_val_history = vec![
-        // First two validator sets are default at client creation
-        //
         // validator set of height-20
         vec![
             TestgenValidator::new("1").voting_power(50),
             TestgenValidator::new("2").voting_power(50),
         ],
-        // incorrect next validator set for height-20
+        // next validator set of height-20
         // validator set of height-21
         vec![
             TestgenValidator::new("1").voting_power(45),
             TestgenValidator::new("2").voting_power(55),
         ],
+        // next validator set of height-21
         // validator set of height-22
         vec![
             TestgenValidator::new("1").voting_power(30),
             TestgenValidator::new("2").voting_power(70),
         ],
-        // validator set of height-23
+        // next validator set of height-22
         vec![
             TestgenValidator::new("1").voting_power(20),
             TestgenValidator::new("2").voting_power(80),
@@ -529,13 +528,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
 
     let signer = dummy_account_id();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
-    block.set_trusted_height(client_height);
-
+    // next validator set from height-20
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
         .expect("no error")
@@ -543,6 +536,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
         .next_validators
         .clone();
 
+    // next validator set from height-21
     let mistrusted_next_validator_set = ctx_b
         .host_block(&client_height.increment())
         .expect("no error")
@@ -550,11 +544,21 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
         .next_validators
         .clone();
 
+    // ensure the next validator sets are different
     assert_ne!(
         mistrusted_next_validator_set.hash(),
         trusted_next_validator_set.hash()
     );
 
+    let mut block = ctx_b
+        .host_block(&update_height)
+        .unwrap()
+        .clone()
+        .into_header();
+
+    // set the trusted height to height-20
+    block.set_trusted_height(client_height);
+    // set the trusted next validator set from height-21, which is different than height-20
     block.set_trusted_next_validators_set(mistrusted_next_validator_set);
 
     let msg = MsgUpdateClient {
@@ -577,21 +581,20 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     let ctx_b_val_history = vec![
-        // First two validator sets are default at client creation
-        //
         // validator set of height-20
         vec![
             TestgenValidator::new("1").voting_power(50),
             TestgenValidator::new("2").voting_power(50),
         ],
+        // next validator set of height-20
         // validator set of height-21
         vec![
             TestgenValidator::new("1").voting_power(90),
             TestgenValidator::new("2").voting_power(10),
         ],
+        // next validator set of height-21
         // validator set of height-22
-        // 2/3 validator power has changed
-        // TODO(rano): inspect more about corner case of the change
+        // overlap doesn't maintain 1/3 power in older set
         vec![
             // TestgenValidator::new("1").voting_power(0),
             TestgenValidator::new("4").voting_power(90),
@@ -634,13 +637,6 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
 
     let signer = dummy_account_id();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
-    block.set_trusted_height(client_height);
-
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
         .expect("no error")
@@ -648,6 +644,13 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .next_validators
         .clone();
 
+    let mut block = ctx_b
+        .host_block(&update_height)
+        .unwrap()
+        .clone()
+        .into_header();
+
+    block.set_trusted_height(client_height);
     block.set_trusted_next_validators_set(trusted_next_validator_set);
 
     let msg = MsgUpdateClient {
@@ -735,7 +738,6 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
         .unwrap()
         .clone()
         .into_header();
-    block.set_trusted_height(client_height);
 
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
@@ -744,6 +746,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
         .next_validators
         .clone();
 
+    block.set_trusted_height(client_height);
     block.set_trusted_next_validators_set(trusted_next_validator_set);
 
     let latest_header_height = block.height();
