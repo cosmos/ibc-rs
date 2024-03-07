@@ -192,6 +192,8 @@ where
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError>;
+
+    fn update_on_recovery() -> Result<(), ClientError>;
 }
 
 use crate::context::{ClientExecutionContext, ClientValidationContext};

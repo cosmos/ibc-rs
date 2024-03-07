@@ -6,6 +6,7 @@ use ibc_core_client_context::client_state::{
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::msgs::MsgRecoverClient;
 use ibc_core_handler_types::error::ContextError;
+use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 
 /// Performs the validation steps associated with the client recovery process. This
@@ -35,6 +36,16 @@ where
         }
         .into());
     }
+
+    // also check that the subject and substitute consensus state and consensus state metadata
+    // values are all present in the store
+    //
+    // how does ibc-go's governance proposal work in general?
+    // ibc-go does not perform the following two checks; perhaps these checks are being done in the
+    // governance module and ibc-go is trusting that these checks were performed
+    // need to validate these assumptions
+    // check that the commitment root is not empty on the substitute consensus state
+    // check that the timestamp of the substitute consensus state > timestamp of the subject consensus state
 
     substitute_client_state
         .status(ctx.get_client_validation_context(), &substitute_client_id)?
@@ -70,9 +81,20 @@ where
     let substitute_client_state = ctx.client_state(&substitute_client_id)?;
 
     // where and how is a client's `Status` set?
+    //    `Status` is set at the ics07 level
     // how to fetch the substitute client's consensus state?
+    //    also need consensus metadata, i.e. processed height and processed time
     // is using `ClientState::initialise` a viable way of overwriting the subject client's state?
     // does `ClientState::update_state`'s function signature lend itself to overwriting the client state values that we need to overwrite as part of client recovery?
+    // how are race conditions between incrementing client counters avoided?
+
+    let substitute_height = substitute_client_state.latest_height();
+    let substitute_consensus_state_path = ClientConsensusStatePath::new(
+        substitute_client_id,
+        substitute_height.revision_number(),
+        substitute_height.revision_height(),
+    );
+    let substitute_consensus_state = ctx.consensus_state(&substitute_consensus_state_path)?;
 
     subject_client_state.initialise(
         ctx.get_client_execution_context(),
