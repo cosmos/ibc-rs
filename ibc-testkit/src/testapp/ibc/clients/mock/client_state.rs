@@ -123,6 +123,16 @@ impl From<MockClientState> for Any {
     }
 }
 
+pub trait ConsensusStateConverter:
+    TryInto<MockConsensusState, Error = ClientError> + From<MockConsensusState>
+{
+}
+
+impl<C> ConsensusStateConverter for C where
+    C: TryInto<MockConsensusState, Error = ClientError> + From<MockConsensusState>
+{
+}
+
 pub trait MockClientContext {
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
@@ -200,7 +210,7 @@ impl ClientStateCommon for MockClientState {
 impl<V> ClientStateValidation<V> for MockClientState
 where
     V: ClientValidationContext + MockClientContext,
-    V::ConsensusStateRef: TryInto<MockConsensusState>,
+    V::AnyConsensusState: ConsensusStateConverter,
 {
     fn verify_client_message(
         &self,
@@ -248,24 +258,17 @@ where
             return Ok(Status::Frozen);
         }
 
-        let latest_consensus_state: MockConsensusState = {
-            let any_latest_consensus_state =
-                match ctx.consensus_state(&ClientConsensusStatePath::new(
-                    client_id.clone(),
-                    self.latest_height().revision_number(),
-                    self.latest_height().revision_height(),
-                )) {
-                    Ok(cs) => cs,
-                    // if the client state does not have an associated consensus state for its latest height
-                    // then it must be expired
-                    Err(_) => return Ok(Status::Expired),
-                };
-
-            any_latest_consensus_state
-                .try_into()
-                .map_err(|_| ClientError::Other {
-                    description: "invalid latest consensus state".to_string(),
-                })?
+        let latest_consensus_state = {
+            match ctx.consensus_state(&ClientConsensusStatePath::new(
+                client_id.clone(),
+                self.latest_height().revision_number(),
+                self.latest_height().revision_height(),
+            )) {
+                Ok(cs) => cs.try_into()?,
+                // if the client state does not have an associated consensus state for its latest height
+                // then it must be expired
+                Err(_) => return Ok(Status::Expired),
+            }
         };
 
         let now = ctx.host_timestamp()?;
@@ -286,8 +289,8 @@ where
 impl<E> ClientStateExecution<E> for MockClientState
 where
     E: ClientExecutionContext + MockClientContext,
-    E::ClientStateRef: ClientStateExecution<E> + From<MockClientState>,
-    E::ConsensusStateRef: From<MockConsensusState> + TryInto<MockConsensusState>,
+    E::AnyClientState: ClientStateExecution<E> + From<MockClientState>,
+    E::AnyConsensusState: ConsensusStateConverter,
 {
     fn initialise(
         &self,

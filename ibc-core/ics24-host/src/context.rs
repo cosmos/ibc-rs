@@ -248,22 +248,22 @@ where
     fn log_message(&mut self, message: String) -> Result<(), ContextError>;
 }
 
-/// Convenient type alias for `ClientStateRef`, providing access to client
+/// Convenient type alias for `AnyClientState`, providing access to client
 /// validation methods within the context.
 pub type ClientStateRef<Ctx> =
-    <<Ctx as ValidationContext>::V as ClientValidationContext>::ClientStateRef;
+    <<Ctx as ValidationContext>::V as ClientValidationContext>::AnyClientState;
 
-/// Convenient type alias for `ClientStateRef`, providing access to client
+/// Convenient type alias for `AnyClientState`, providing access to client
 /// execution methods within the context.
 pub type ClientStateMut<Ctx> =
-    <<Ctx as ExecutionContext>::E as ClientValidationContext>::ClientStateRef;
+    <<Ctx as ExecutionContext>::E as ClientValidationContext>::AnyClientState;
 
-/// Convenient type alias for `ConsensusStateRef`, providing access to client
+/// Convenient type alias for `AnyConsensusState`, providing access to client
 /// validation methods within the context.
 pub type ConsensusStateRef<Ctx> =
-    <<Ctx as ValidationContext>::V as ClientValidationContext>::ConsensusStateRef;
+    <<Ctx as ValidationContext>::V as ClientValidationContext>::AnyConsensusState;
 
-/// Convenient type alias for `ConsensusStateRef`, providing access to client
+/// Convenient type alias for `AnyConsensusState`, providing access to client
 /// execution methods within the context.
 pub type ConsensusStateMut<Ctx> =
-    <<Ctx as ExecutionContext>::E as ClientValidationContext>::ConsensusStateRef;
+    <<Ctx as ExecutionContext>::E as ClientValidationContext>::AnyConsensusState;

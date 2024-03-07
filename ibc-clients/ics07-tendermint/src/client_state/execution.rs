@@ -10,16 +10,16 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
 use super::ClientState;
-use crate::consensus_state::ConsensusState as TmConsensusState;
 use crate::context::{
-    ExecutionContext as TmExecutionContext, ValidationContext as TmValidationContext,
+    ConsensusStateConverter, ExecutionContext as TmExecutionContext,
+    ValidationContext as TmValidationContext,
 };
 
 impl<E> ClientStateExecution<E> for ClientState
 where
     E: TmExecutionContext,
-    E::ClientStateRef: ClientStateExecution<E> + From<ClientStateType>,
-    E::ConsensusStateRef: From<ConsensusStateType>,
+    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
+    E::AnyConsensusState: ConsensusStateConverter,
 {
     fn initialise(
         &self,
@@ -78,8 +78,8 @@ pub fn initialise<E>(
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext,
-    E::ClientStateRef: ClientStateExecution<E> + From<ClientStateType>,
-    E::ConsensusStateRef: From<ConsensusStateType>,
+    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
+    E::AnyConsensusState: ConsensusStateConverter,
 {
     let host_timestamp = TmValidationContext::host_timestamp(ctx)?;
     let host_height = TmValidationContext::host_height(ctx)?;
@@ -123,8 +123,8 @@ pub fn update_state<E>(
 ) -> Result<Vec<Height>, ClientError>
 where
     E: TmExecutionContext,
-    E::ClientStateRef: ClientStateExecution<E> + From<ClientStateType>,
-    E::ConsensusStateRef: From<ConsensusStateType>,
+    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
+    E::AnyConsensusState: ConsensusStateConverter,
 {
     let header = TmHeader::try_from(header)?;
     let header_height = header.height();
@@ -190,7 +190,8 @@ pub fn update_on_misbehaviour<E>(
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext,
-    E::ClientStateRef: ClientStateExecution<E> + From<ClientStateType>,
+    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
+    E::AnyConsensusState: ConsensusStateConverter,
 {
     // NOTE: frozen height is  set to `Height {revision_height: 0,
     // revision_number: 1}` and it is the same for all misbehaviour. This
@@ -221,11 +222,11 @@ pub fn update_on_upgrade<E>(
 ) -> Result<Height, ClientError>
 where
     E: TmExecutionContext,
-    E::ClientStateRef: ClientStateExecution<E> + From<ClientStateType>,
-    E::ConsensusStateRef: From<ConsensusStateType>,
+    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
+    E::AnyConsensusState: ConsensusStateConverter,
 {
     let mut upgraded_tm_client_state = ClientState::try_from(upgraded_client_state)?;
-    let upgraded_tm_cons_state = TmConsensusState::try_from(upgraded_consensus_state)?;
+    let upgraded_tm_cons_state = ConsensusStateType::try_from(upgraded_consensus_state)?;
 
     upgraded_tm_client_state.0.zero_custom_fields();
 
@@ -262,7 +263,7 @@ where
     let new_consensus_state = ConsensusStateType::new(
         sentinel_root.into(),
         upgraded_tm_cons_state.timestamp(),
-        upgraded_tm_cons_state.next_validators_hash(),
+        upgraded_tm_cons_state.next_validators_hash,
     );
 
     let latest_height = new_client_state.latest_height;
@@ -301,7 +302,8 @@ pub fn prune_oldest_consensus_state<E>(
 ) -> Result<(), ClientError>
 where
     E: ClientExecutionContext + TmValidationContext,
-    E::ClientStateRef: ClientStateExecution<E>,
+    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
+    E::AnyConsensusState: ConsensusStateConverter,
 {
     let mut heights = ctx.consensus_state_heights(client_id)?;
 
@@ -314,11 +316,7 @@ where
             height.revision_height(),
         );
         let consensus_state = ctx.consensus_state(&client_consensus_state_path)?;
-        let tm_consensus_state = consensus_state
-            .try_into()
-            .map_err(|err| ClientError::Other {
-                description: err.to_string(),
-            })?;
+        let tm_consensus_state = consensus_state.try_into()?;
 
         let host_timestamp =
             ctx.host_timestamp()?

@@ -12,10 +12,10 @@ use ibc_core_host_types::path::UpgradeClientPath;
 use super::Plan;
 
 pub type AnyUpgradedClientState<T> =
-    <<T as UpgradeValidationContext>::V as ClientValidationContext>::ClientStateRef;
+    <<T as UpgradeValidationContext>::V as ClientValidationContext>::AnyClientState;
 
 pub type AnyUpgradedConsensusState<T> =
-    <<T as UpgradeValidationContext>::V as ClientValidationContext>::ConsensusStateRef;
+    <<T as UpgradeValidationContext>::V as ClientValidationContext>::AnyConsensusState;
 
 /// Helper context to validate client upgrades, providing methods to retrieve
 /// an upgrade plan and related upgraded client and consensus states.

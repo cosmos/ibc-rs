@@ -37,9 +37,6 @@ impl MockClientContext for MockContext {
 }
 
 impl TmValidationContext for MockContext {
-    type ConversionError = &'static str;
-    type AnyConsensusState = AnyConsensusState;
-
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         ValidationContext::host_timestamp(self)
     }
@@ -133,10 +130,10 @@ impl TmValidationContext for MockContext {
 }
 
 impl ClientValidationContext for MockContext {
-    type ClientStateRef = AnyClientState;
-    type ConsensusStateRef = AnyConsensusState;
+    type AnyClientState = AnyClientState;
+    type AnyConsensusState = AnyConsensusState;
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError> {
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => {
                 client_record
@@ -202,7 +199,7 @@ impl ClientExecutionContext for MockContext {
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: Self::ClientStateRef,
+        client_state: Self::AnyClientState,
     ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 
@@ -223,7 +220,7 @@ impl ClientExecutionContext for MockContext {
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::ConsensusStateRef,
+        consensus_state: Self::AnyConsensusState,
     ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 

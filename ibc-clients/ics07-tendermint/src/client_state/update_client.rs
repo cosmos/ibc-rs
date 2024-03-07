@@ -9,8 +9,9 @@ use ibc_primitives::prelude::*;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
 
-use crate::consensus_state::ConsensusState as TmConsensusState;
-use crate::context::{TmVerifier, ValidationContext as TmValidationContext};
+use crate::context::{
+    ConsensusStateConverter, TmVerifier, ValidationContext as TmValidationContext,
+};
 
 pub fn verify_header<V>(
     client_state: &ClientStateType,
@@ -21,6 +22,7 @@ pub fn verify_header<V>(
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
+    V::AnyConsensusState: ConsensusStateConverter,
 {
     // Checks that the header fields are valid.
     header.validate_basic()?;
@@ -38,14 +40,11 @@ where
                 header.trusted_height.revision_number(),
                 header.trusted_height.revision_height(),
             );
-            let trusted_consensus_state: TmConsensusState = ctx
+            let trusted_consensus_state = ctx
                 .consensus_state(&trusted_client_cons_state_path)?
-                .try_into()
-                .map_err(|err| ClientError::Other {
-                    description: err.to_string(),
-                })?;
+                .try_into()?;
 
-            header.check_trusted_next_validator_set(trusted_consensus_state.inner())?;
+            header.check_trusted_next_validator_set(&trusted_consensus_state)?;
 
             TrustedBlockState {
                 chain_id: &client_state.chain_id.to_string().try_into().map_err(|e| {
@@ -65,7 +64,7 @@ where
                         .to_string(),
                     })?,
                 next_validators: &header.trusted_next_validator_set,
-                next_validators_hash: trusted_consensus_state.next_validators_hash(),
+                next_validators_hash: trusted_consensus_state.next_validators_hash,
             }
         };
 
@@ -106,6 +105,7 @@ pub fn check_for_misbehaviour_update_client<V>(
 ) -> Result<bool, ClientError>
 where
     V: TmValidationContext,
+    V::AnyConsensusState: ConsensusStateConverter,
 {
     let maybe_existing_consensus_state = {
         let path_at_header_height = ClientConsensusStatePath::new(
@@ -119,15 +119,9 @@ where
 
     match maybe_existing_consensus_state {
         Some(existing_consensus_state) => {
-            let existing_consensus_state =
-                existing_consensus_state
-                    .try_into()
-                    .map_err(|err| ClientError::Other {
-                        description: err.to_string(),
-                    })?;
+            let existing_consensus_state = existing_consensus_state.try_into()?;
 
-            let header_consensus_state =
-                TmConsensusState::from(ConsensusStateType::from(header.clone()));
+            let header_consensus_state = ConsensusStateType::from(header.clone());
 
             // There is evidence of misbehaviour if the stored consensus state
             // is different from the new one we received.
@@ -144,10 +138,7 @@ where
                 if let Some(prev_cs) = maybe_prev_cs {
                     // New header timestamp cannot occur *before* the
                     // previous consensus state's height
-                    let prev_cs: TmConsensusState =
-                        prev_cs.try_into().map_err(|err| ClientError::Other {
-                            description: err.to_string(),
-                        })?;
+                    let prev_cs = prev_cs.try_into()?;
 
                     if header.signed_header.header().time <= prev_cs.timestamp() {
                         return Ok(true);
@@ -163,9 +154,7 @@ where
                 if let Some(next_cs) = maybe_next_cs {
                     // New (untrusted) header timestamp cannot occur *after* next
                     // consensus state's height
-                    let next_cs = next_cs.try_into().map_err(|err| ClientError::Other {
-                        description: err.to_string(),
-                    })?;
+                    let next_cs = next_cs.try_into()?;
 
                     if header.signed_header.header().time >= next_cs.timestamp() {
                         return Ok(true);

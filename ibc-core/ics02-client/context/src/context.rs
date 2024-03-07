@@ -12,13 +12,13 @@ use crate::consensus_state::ConsensusState;
 /// [crate::client_state::ClientStateValidation] must
 /// inherit from this trait.
 pub trait ClientValidationContext: Sized {
-    type ClientStateRef: ClientStateValidation<Self>;
-    type ConsensusStateRef: ConsensusState;
+    type AnyClientState: ClientStateValidation<Self>;
+    type AnyConsensusState: ConsensusState;
 
     /// Returns the ClientState for the given identifier `client_id`.
     ///
     /// Note: Clients have the responsibility to store client states on client creation and update.
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
 
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.
@@ -29,7 +29,7 @@ pub trait ClientValidationContext: Sized {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::ConsensusStateRef, ContextError>;
+    ) -> Result<Self::AnyConsensusState, ContextError>;
 
     fn client_update_meta(
         &self,
@@ -48,20 +48,20 @@ pub trait ClientValidationContext: Sized {
 /// all clients.
 pub trait ClientExecutionContext: ClientValidationContext
 where
-    Self::ClientStateRef: ClientStateExecution<Self>,
+    Self::AnyClientState: ClientStateExecution<Self>,
 {
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: Self::ClientStateRef,
+        client_state: Self::AnyClientState,
     ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::ConsensusStateRef,
+        consensus_state: Self::AnyConsensusState,
     ) -> Result<(), ContextError>;
 
     /// Delete the consensus state from the store located at the given `ClientConsensusStatePath`

@@ -1,4 +1,6 @@
+use ibc_client_tendermint_types::ConsensusState as ConsensusStateType;
 use ibc_core_client::context::prelude::*;
+use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::types::identifiers::ClientId;
@@ -6,15 +8,24 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 use tendermint_light_client_verifier::ProdVerifier;
 
-use crate::consensus_state::ConsensusState as TmConsensusState;
+/// Enables conversion (`TryInto` and `From`) between the consensus state type
+/// used by the host and the one specific to the Tendermint light client, which
+/// is `ConsensusStateType`.
+pub trait ConsensusStateConverter:
+    TryInto<ConsensusStateType, Error = ClientError> + From<ConsensusStateType>
+{
+}
+
+impl<C> ConsensusStateConverter for C where
+    C: TryInto<ConsensusStateType, Error = ClientError> + From<ConsensusStateType>
+{
+}
 
 /// Client's context required during validation
-pub trait ValidationContext:
-    ClientValidationContext<ConsensusStateRef = Self::AnyConsensusState>
+pub trait ValidationContext: ClientValidationContext
+where
+    Self::AnyConsensusState: ConsensusStateConverter,
 {
-    type ConversionError: ToString;
-    type AnyConsensusState: TryInto<TmConsensusState, Error = Self::ConversionError>;
-
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
@@ -29,14 +40,14 @@ pub trait ValidationContext:
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
+    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
 }
 
 /// Client's context required during execution.
@@ -45,14 +56,16 @@ pub trait ValidationContext:
 /// [`ValidationContext`] and [`ClientExecutionContext`]
 pub trait ExecutionContext: ValidationContext + ClientExecutionContext
 where
-    Self::ClientStateRef: ClientStateExecution<Self>,
+    Self::AnyClientState: ClientStateExecution<Self>,
+    Self::AnyConsensusState: ConsensusStateConverter,
 {
 }
 
 impl<T> ExecutionContext for T
 where
     T: ValidationContext + ClientExecutionContext,
-    T::ClientStateRef: ClientStateExecution<T>,
+    T::AnyClientState: ClientStateExecution<T>,
+    T::AnyConsensusState: ConsensusStateConverter,
 {
 }
 
