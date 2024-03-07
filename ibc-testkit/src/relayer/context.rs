@@ -167,7 +167,7 @@ mod tests {
         for _i in 0..num_iterations {
             // Update client on chain B to latest height of A.
             // - create the client update message with the latest header from A
-            let a_latest_header = ctx_a.query_latest_header().unwrap();
+            let a_latest_header = ctx_a.query_latest_block().unwrap();
             let client_msg_b_res = build_client_update_datagram(
                 &ctx_b,
                 &client_on_b_for_a,
@@ -204,7 +204,7 @@ mod tests {
             // Update client on chain A to latest height of B.
             // - create the client update message with the latest header from B
             // The test uses LightClientBlock that does not store the trusted height
-            let mut b_latest_header = ctx_b.query_latest_header().unwrap().clone().into_header();
+            let mut b_latest_header = ctx_b.query_latest_block().unwrap().clone().into_header();
 
             let th = b_latest_header.height();
             b_latest_header.set_trusted_height(th.decrement().unwrap());

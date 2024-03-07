@@ -554,7 +554,7 @@ where
             .expect("Never fails")
     }
 
-    pub fn query_latest_header(&self) -> Option<&H::Block> {
+    pub fn query_latest_block(&self) -> Option<&H::Block> {
         self.host_block(&self.latest_height())
     }
 
