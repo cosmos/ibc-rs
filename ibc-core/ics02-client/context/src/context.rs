@@ -31,6 +31,8 @@ pub trait ClientValidationContext: Sized {
         client_cons_state_path: &ClientConsensusStatePath,
     ) -> Result<Self::AnyConsensusState, ContextError>;
 
+    /// Returns the timestamp and height of the host when it processed a client
+    /// update request at the specified height.
     fn client_update_meta(
         &self,
         client_id: &ClientId,
