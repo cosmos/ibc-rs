@@ -3,13 +3,12 @@ use ibc_core_channel_types::channel::State;
 use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::CloseInit;
 use ibc_core_channel_types::msgs::MsgChannelCloseInit;
-use ibc_core_client::context::client_state::ClientStateValidation;
-use ibc_core_client::context::ClientValidationContext;
+use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::ChannelEndPath;
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
@@ -35,6 +34,7 @@ pub fn chan_close_init_execute<ExecCtx>(
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
+    ClientStateMut<ExecCtx>: ClientStateExecution<ExecCtx::E>,
 {
     let extras = module.on_chan_close_init_execute(&msg.port_id_on_a, &msg.chan_id_on_a)?;
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);

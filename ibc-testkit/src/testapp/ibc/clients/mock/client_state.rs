@@ -1,10 +1,7 @@
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc::core::client::context::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation,
-};
-use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc::core::client::context::prelude::*;
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
 use ibc::core::client::types::{Height, Status};
 use ibc::core::commitment_types::commitment::{
@@ -289,9 +286,8 @@ where
 impl<E> ClientStateExecution<E> for MockClientState
 where
     E: ClientExecutionContext + MockClientContext,
-    <E as ClientExecutionContext>::ClientStateMut: From<MockClientState>,
-    <E as ClientValidationContext>::ConsensusStateRef: From<MockConsensusState>,
-    <E as ClientValidationContext>::ConsensusStateRef: TryInto<MockConsensusState>,
+    E::ClientStateRef: ClientStateExecution<E> + From<MockClientState>,
+    E::ConsensusStateRef: From<MockConsensusState> + TryInto<MockConsensusState>,
 {
     fn initialise(
         &self,

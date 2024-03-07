@@ -8,7 +8,7 @@ use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
@@ -35,6 +35,7 @@ pub fn chan_open_ack_execute<ExecCtx>(
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
+    ClientStateMut<ExecCtx>: ClientStateExecution<ExecCtx::E>,
 {
     let extras =
         module.on_chan_open_ack_execute(&msg.port_id_on_a, &msg.chan_id_on_a, &msg.version_on_b)?;

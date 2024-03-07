@@ -10,7 +10,7 @@ use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
@@ -51,6 +51,7 @@ pub fn timeout_packet_execute<ExecCtx>(
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
+    ClientStateMut<ExecCtx>: ClientStateExecution<ExecCtx::E>,
 {
     let (packet, signer) = match timeout_msg_type {
         TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),

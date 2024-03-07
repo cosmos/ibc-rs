@@ -13,7 +13,7 @@ use ibc_core_host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
     SeqRecvPath,
 };
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Expiry;
@@ -36,6 +36,7 @@ pub fn recv_packet_execute<ExecCtx>(
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
+    ClientStateMut<ExecCtx>: ClientStateExecution<ExecCtx::E>,
 {
     let chan_end_path_on_b =
         ChannelEndPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);

@@ -7,7 +7,7 @@ use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;
 use ibc_core_client_types::UpdateKind;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
 
@@ -38,6 +38,7 @@ where
 pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
+    ClientStateMut<Ctx>: ClientStateExecution<Ctx::E>,
 {
     let client_id = msg.client_id().clone();
     let update_kind = match msg {
@@ -48,7 +49,7 @@ where
 
     let client_exec_ctx = ctx.get_client_execution_context();
 
-    let client_state = client_exec_ctx.client_state_mut(&client_id)?;
+    let client_state = client_exec_ctx.client_state(&client_id)?;
 
     let found_misbehaviour =
         client_state.check_for_misbehaviour(client_exec_ctx, &client_id, client_message.clone())?;

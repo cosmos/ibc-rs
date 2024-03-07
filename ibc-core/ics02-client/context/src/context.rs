@@ -46,23 +46,15 @@ pub trait ClientValidationContext: Sized {
 /// Specifically, clients have the responsibility to store their client state
 /// and consensus states. This trait defines a uniform interface to do that for
 /// all clients.
-pub trait ClientExecutionContext:
-    ClientValidationContext<ClientStateRef = Self::ClientStateMut>
+pub trait ClientExecutionContext: ClientValidationContext
+where
+    Self::ClientStateRef: ClientStateExecution<Self>,
 {
-    type ClientStateMut: ClientStateExecution<Self>;
-
-    /// Returns the ClientState for the given identifier `client_id`.
-    ///
-    /// Note: Clients have the responsibility to store client states on client creation and update.
-    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, ContextError> {
-        self.client_state(client_id)
-    }
-
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: Self::ClientStateMut,
+        client_state: Self::ClientStateRef,
     ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update

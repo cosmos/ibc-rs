@@ -145,7 +145,10 @@ pub trait ValidationContext {
 /// Context to be implemented by the host that provides all "write-only" methods.
 ///
 /// Trait used for the top-level `execute` and `dispatch` entrypoints in the `ibc-core` crate.
-pub trait ExecutionContext: ValidationContext {
+pub trait ExecutionContext: ValidationContext
+where
+    ClientStateMut<Self>: ClientStateExecution<Self::E>,
+{
     type E: ClientExecutionContext;
 
     /// Retrieve the context that implements all clients' `ExecutionContext`.
@@ -245,25 +248,22 @@ pub trait ExecutionContext: ValidationContext {
     fn log_message(&mut self, message: String) -> Result<(), ContextError>;
 }
 
-/// The convenient type alias for accessing the `SelfClientState` type in the
-/// context.
-pub type HostClientState<Ctx> = <Ctx as ValidationContext>::HostClientState;
-
-/// The convenient type alias for accessing the `SelfConsensusState` type in the
-/// context.
-pub type HostConsensusState<Ctx> = <Ctx as ValidationContext>::HostConsensusState;
-
-/// The convenient type alias for accessing the `ClientStateRef` type in the
-/// context.
+/// Convenient type alias for `ClientStateRef`, providing access to client
+/// validation methods within the context.
 pub type ClientStateRef<Ctx> =
     <<Ctx as ValidationContext>::V as ClientValidationContext>::ClientStateRef;
 
-/// The convenient type alias for accessing the `ClientStateMut` type in the
-/// context.
+/// Convenient type alias for `ClientStateRef`, providing access to client
+/// execution methods within the context.
 pub type ClientStateMut<Ctx> =
-    <<Ctx as ExecutionContext>::E as ClientExecutionContext>::ClientStateMut;
+    <<Ctx as ExecutionContext>::E as ClientValidationContext>::ClientStateRef;
 
-/// The convenient type alias for accessing the `ConsensusStateRef` type in the
-/// context.
+/// Convenient type alias for `ConsensusStateRef`, providing access to client
+/// validation methods within the context.
 pub type ConsensusStateRef<Ctx> =
     <<Ctx as ValidationContext>::V as ClientValidationContext>::ConsensusStateRef;
+
+/// Convenient type alias for `ConsensusStateRef`, providing access to client
+/// execution methods within the context.
+pub type ConsensusStateMut<Ctx> =
+    <<Ctx as ExecutionContext>::E as ClientValidationContext>::ConsensusStateRef;

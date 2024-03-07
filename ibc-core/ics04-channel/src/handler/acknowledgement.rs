@@ -11,7 +11,7 @@ use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, SeqAckPath,
 };
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
@@ -37,6 +37,7 @@ pub fn acknowledgement_packet_execute<ExecCtx>(
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
+    ClientStateMut<ExecCtx>: ClientStateExecution<ExecCtx::E>,
 {
     let chan_end_path_on_a =
         ChannelEndPath::new(&msg.packet.port_id_on_a, &msg.packet.chan_id_on_a);

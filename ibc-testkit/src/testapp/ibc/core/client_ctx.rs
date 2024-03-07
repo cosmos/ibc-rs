@@ -199,8 +199,6 @@ impl ClientValidationContext for MockContext {
 }
 
 impl ClientExecutionContext for MockContext {
-    type ClientStateMut = AnyClientState;
-
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,

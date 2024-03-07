@@ -3,13 +3,12 @@
 use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, State};
 use ibc_core_channel_types::events::OpenInit;
 use ibc_core_channel_types::msgs::MsgChannelOpenInit;
-use ibc_core_client::context::client_state::ClientStateValidation;
-use ibc_core_client::context::ClientValidationContext;
+use ibc_core_client::context::prelude::*;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ChannelId;
 use ibc_core_host::types::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
@@ -43,6 +42,7 @@ pub fn chan_open_init_execute<ExecCtx>(
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
+    ClientStateMut<ExecCtx>: ClientStateExecution<ExecCtx::E>,
 {
     let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
     let (extras, version) = module.on_chan_open_init_execute(

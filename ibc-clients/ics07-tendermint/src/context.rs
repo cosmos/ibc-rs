@@ -1,4 +1,4 @@
-use ibc_core_client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc_core_client::context::prelude::*;
 use ibc_core_client::types::Height;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::types::identifiers::ClientId;
@@ -43,9 +43,18 @@ pub trait ValidationContext:
 ///
 /// This trait is automatically implemented for all types that implement
 /// [`ValidationContext`] and [`ClientExecutionContext`]
-pub trait ExecutionContext: ValidationContext + ClientExecutionContext {}
+pub trait ExecutionContext: ValidationContext + ClientExecutionContext
+where
+    Self::ClientStateRef: ClientStateExecution<Self>,
+{
+}
 
-impl<T> ExecutionContext for T where T: ValidationContext + ClientExecutionContext {}
+impl<T> ExecutionContext for T
+where
+    T: ValidationContext + ClientExecutionContext,
+    T::ClientStateRef: ClientStateExecution<T>,
+{
+}
 
 /// Specifies the Verifier interface that hosts must adhere to when customizing
 /// Tendermint client verification behaviour.

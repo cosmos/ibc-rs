@@ -7,7 +7,7 @@ use ibc_core_client_types::msgs::MsgUpgradeClient;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::ClientConsensusStatePath;
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 
 pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
@@ -58,12 +58,13 @@ where
 pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
+    ClientStateMut<Ctx>: ClientStateExecution<Ctx::E>,
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
     let client_exec_ctx = ctx.get_client_execution_context();
 
-    let old_client_state = client_exec_ctx.client_state_mut(&client_id)?;
+    let old_client_state = client_exec_ctx.client_state(&client_id)?;
 
     let latest_height = old_client_state.update_state_on_upgrade(
         client_exec_ctx,
