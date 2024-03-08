@@ -9,7 +9,7 @@ use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::{ClientId, ConnectionId};
 use ibc_core_host::types::path::{ClientConsensusStatePath, ConnectionPath, Path};
-use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
+use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
 
@@ -90,7 +90,6 @@ where
 pub fn execute<Ctx>(ctx_b: &mut Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
-    ClientStateMut<Ctx>: ClientStateExecution<Ctx::E>,
 {
     let vars = LocalVars::new(ctx_b, msg)?;
     execute_impl(ctx_b, msg, vars)
@@ -103,7 +102,6 @@ fn execute_impl<Ctx>(
 ) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
-    ClientStateMut<Ctx>: ClientStateExecution<Ctx::E>,
 {
     let client_id_on_a = vars.client_id_on_a();
     let client_id_on_b = vars.client_id_on_b();

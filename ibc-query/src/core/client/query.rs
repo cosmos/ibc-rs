@@ -12,7 +12,7 @@ use ibc::core::host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
 use ibc::core::host::{ConsensusStateRef, ValidationContext};
-use ibc::cosmos_host::upgrade_proposal::{AnyUpgradedConsensusState, UpgradeValidationContext};
+use ibc::cosmos_host::upgrade_proposal::{UpgradeValidationContext, UpgradedConsensusStateRef};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::{
     ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateRequest,
@@ -232,7 +232,7 @@ pub fn query_upgraded_consensus_state<U>(
 ) -> Result<QueryUpgradedConsensusStateResponse, QueryError>
 where
     U: UpgradeValidationContext,
-    AnyUpgradedConsensusState<U>: Into<Any>,
+    UpgradedConsensusStateRef<U>: Into<Any>,
 {
     let plan = upgrade_ctx.upgrade_plan().map_err(ClientError::from)?;
 

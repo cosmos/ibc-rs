@@ -12,13 +12,13 @@ use crate::consensus_state::ConsensusState;
 /// [crate::client_state::ClientStateValidation] must
 /// inherit from this trait.
 pub trait ClientValidationContext: Sized {
-    type AnyClientState: ClientStateValidation<Self>;
-    type AnyConsensusState: ConsensusState;
+    type ClientStateRef: ClientStateValidation<Self>;
+    type ConsensusStateRef: ConsensusState;
 
     /// Returns the ClientState for the given identifier `client_id`.
     ///
     /// Note: Clients have the responsibility to store client states on client creation and update.
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError>;
 
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.
@@ -29,7 +29,7 @@ pub trait ClientValidationContext: Sized {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError>;
+    ) -> Result<Self::ConsensusStateRef, ContextError>;
 
     /// Returns the timestamp and height of the host when it processed a client
     /// update request at the specified height.
@@ -48,22 +48,27 @@ pub trait ClientValidationContext: Sized {
 /// Specifically, clients have the responsibility to store their client state
 /// and consensus states. This trait defines a uniform interface to do that for
 /// all clients.
-pub trait ClientExecutionContext: ClientValidationContext
-where
-    Self::AnyClientState: ClientStateExecution<Self>,
+pub trait ClientExecutionContext:
+    ClientValidationContext<ClientStateRef = Self::ClientStateMut>
 {
+    type ClientStateMut: ClientStateExecution<Self>;
+
+    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, ContextError> {
+        self.client_state(client_id)
+    }
+
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: Self::AnyClientState,
+        client_state: Self::ClientStateRef,
     ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::AnyConsensusState,
+        consensus_state: Self::ConsensusStateRef,
     ) -> Result<(), ContextError>;
 
     /// Delete the consensus state from the store located at the given `ClientConsensusStatePath`

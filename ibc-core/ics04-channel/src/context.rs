@@ -8,7 +8,7 @@ use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::IbcEvent;
 use ibc_core_host::types::identifiers::{ConnectionId, Sequence};
 use ibc_core_host::types::path::{ChannelEndPath, CommitmentPath, SeqSendPath};
-use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
+use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 
 /// Methods required in send packet validation, to be implemented by the host
@@ -78,7 +78,6 @@ pub trait SendPacketExecutionContext: SendPacketValidationContext {
 impl<T> SendPacketExecutionContext for T
 where
     T: ExecutionContext,
-    ClientStateMut<T>: ClientStateExecution<T::E>,
 {
     fn store_next_sequence_send(
         &mut self,

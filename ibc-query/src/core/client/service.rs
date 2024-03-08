@@ -5,7 +5,7 @@
 use ibc::core::host::ConsensusStateRef;
 use ibc::core::primitives::prelude::*;
 use ibc::cosmos_host::upgrade_proposal::{
-    AnyUpgradedClientState, AnyUpgradedConsensusState, UpgradeValidationContext,
+    UpgradeValidationContext, UpgradedClientStateRef, UpgradedConsensusStateRef,
 };
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::query_server::Query as ClientQuery;
@@ -35,8 +35,8 @@ pub struct ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
-    AnyUpgradedClientState<U>: Into<Any>,
-    AnyUpgradedConsensusState<U>: Into<Any>,
+    UpgradedClientStateRef<U>: Into<Any>,
+    UpgradedConsensusStateRef<U>: Into<Any>,
 {
     ibc_context: I,
     upgrade_context: U,
@@ -46,8 +46,8 @@ impl<I, U> ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
-    AnyUpgradedClientState<U>: Into<Any>,
-    AnyUpgradedConsensusState<U>: Into<Any>,
+    UpgradedClientStateRef<U>: Into<Any>,
+    UpgradedConsensusStateRef<U>: Into<Any>,
 {
     /// Parameters `ibc_context` and `upgrade_context` must be a type where writes from one thread are readable from another.
     /// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
@@ -65,7 +65,7 @@ where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
     ConsensusStateRef<I>: Into<Any>,
-    AnyUpgradedConsensusState<U>: Into<Any>,
+    UpgradedConsensusStateRef<U>: Into<Any>,
 {
     async fn client_state(
         &self,

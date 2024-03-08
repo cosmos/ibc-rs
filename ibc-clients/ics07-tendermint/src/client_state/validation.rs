@@ -21,7 +21,7 @@ use crate::context::{
 impl<V> ClientStateValidation<V> for ClientState
 where
     V: TmValidationContext,
-    V::AnyConsensusState: ConsensusStateConverter,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
     /// standalone `verify_client_message` function. This is to make it as simple
@@ -74,7 +74,7 @@ pub fn verify_client_message<V>(
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
-    V::AnyConsensusState: ConsensusStateConverter,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
@@ -129,7 +129,7 @@ pub fn check_for_misbehaviour<V>(
 ) -> Result<bool, ClientError>
 where
     V: TmValidationContext,
-    V::AnyConsensusState: ConsensusStateConverter,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
@@ -156,7 +156,7 @@ pub fn status<V>(
 ) -> Result<Status, ClientError>
 where
     V: TmValidationContext,
-    V::AnyConsensusState: ConsensusStateConverter,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     if client_state.is_frozen() {
         return Ok(Status::Frozen);

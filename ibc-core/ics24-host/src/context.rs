@@ -145,10 +145,7 @@ pub trait ValidationContext {
 /// Context to be implemented by the host that provides all "write-only" methods.
 ///
 /// Trait used for the top-level `execute` and `dispatch` entrypoints in the `ibc-core` crate.
-pub trait ExecutionContext: ValidationContext
-where
-    ClientStateMut<Self>: ClientStateExecution<Self::E>,
-{
+pub trait ExecutionContext: ValidationContext {
     type E: ClientExecutionContext;
 
     /// Retrieve the context that implements all clients' `ExecutionContext`.
@@ -248,22 +245,17 @@ where
     fn log_message(&mut self, message: String) -> Result<(), ContextError>;
 }
 
-/// Convenient type alias for `AnyClientState`, providing access to client
+/// Convenient type alias for `ClientStateRef`, providing access to client
 /// validation methods within the context.
 pub type ClientStateRef<Ctx> =
-    <<Ctx as ValidationContext>::V as ClientValidationContext>::AnyClientState;
+    <<Ctx as ValidationContext>::V as ClientValidationContext>::ClientStateRef;
 
-/// Convenient type alias for `AnyClientState`, providing access to client
+/// Convenient type alias for `ClientStateMut`, providing access to client
 /// execution methods within the context.
 pub type ClientStateMut<Ctx> =
-    <<Ctx as ExecutionContext>::E as ClientValidationContext>::AnyClientState;
+    <<Ctx as ExecutionContext>::E as ClientExecutionContext>::ClientStateMut;
 
-/// Convenient type alias for `AnyConsensusState`, providing access to client
+/// Convenient type alias for `ConsensusStateRef`, providing access to client
 /// validation methods within the context.
 pub type ConsensusStateRef<Ctx> =
-    <<Ctx as ValidationContext>::V as ClientValidationContext>::AnyConsensusState;
-
-/// Convenient type alias for `AnyConsensusState`, providing access to client
-/// execution methods within the context.
-pub type ConsensusStateMut<Ctx> =
-    <<Ctx as ExecutionContext>::E as ClientValidationContext>::AnyConsensusState;
+    <<Ctx as ValidationContext>::V as ClientValidationContext>::ConsensusStateRef;

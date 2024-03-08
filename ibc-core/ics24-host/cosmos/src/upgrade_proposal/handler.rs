@@ -4,7 +4,7 @@ use ibc_core_host_types::path::UpgradeClientPath;
 use ibc_primitives::prelude::*;
 use tendermint::abci::Event as TmEvent;
 
-use super::AnyUpgradedClientState;
+use super::UpgradedClientStateRef;
 use crate::upgrade_proposal::{UpgradeClientProposal, UpgradeExecutionContext, UpgradeProposal};
 
 /// Handles an upgrade client proposal
@@ -18,7 +18,7 @@ pub fn upgrade_client_proposal_handler<Ctx>(
 ) -> Result<TmEvent, UpgradeClientError>
 where
     Ctx: UpgradeExecutionContext,
-    AnyUpgradedClientState<Ctx>: From<TmClientState>,
+    UpgradedClientStateRef<Ctx>: From<TmClientState>,
 {
     let plan = proposal.plan;
 

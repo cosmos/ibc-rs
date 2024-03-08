@@ -64,7 +64,7 @@ impl TmValidationContext for MockContext {
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
+    ) -> Result<Option<Self::ConsensusStateRef>, ContextError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -98,7 +98,7 @@ impl TmValidationContext for MockContext {
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, ContextError> {
+    ) -> Result<Option<Self::ConsensusStateRef>, ContextError> {
         let ibc_store = self.ibc_store.lock();
         let client_record =
             ibc_store
@@ -130,10 +130,10 @@ impl TmValidationContext for MockContext {
 }
 
 impl ClientValidationContext for MockContext {
-    type AnyClientState = AnyClientState;
-    type AnyConsensusState = AnyConsensusState;
+    type ClientStateRef = AnyClientState;
+    type ConsensusStateRef = AnyConsensusState;
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError> {
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError> {
         match self.ibc_store.lock().clients.get(client_id) {
             Some(client_record) => {
                 client_record
@@ -196,10 +196,12 @@ impl ClientValidationContext for MockContext {
 }
 
 impl ClientExecutionContext for MockContext {
+    type ClientStateMut = AnyClientState;
+
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: Self::AnyClientState,
+        client_state: Self::ClientStateRef,
     ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 
@@ -220,7 +222,7 @@ impl ClientExecutionContext for MockContext {
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::AnyConsensusState,
+        consensus_state: Self::ConsensusStateRef,
     ) -> Result<(), ContextError> {
         let mut ibc_store = self.ibc_store.lock();
 

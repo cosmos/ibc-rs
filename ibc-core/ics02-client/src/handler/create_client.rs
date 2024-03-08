@@ -51,7 +51,6 @@ where
 pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
-    ClientStateMut<Ctx>: ClientStateExecution<Ctx::E>,
 {
     let MsgCreateClient {
         client_state,

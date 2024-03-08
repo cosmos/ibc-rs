@@ -22,7 +22,7 @@ pub fn verify_header<V>(
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
-    V::AnyConsensusState: ConsensusStateConverter,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     // Checks that the header fields are valid.
     header.validate_basic()?;
@@ -105,7 +105,7 @@ pub fn check_for_misbehaviour_update_client<V>(
 ) -> Result<bool, ClientError>
 where
     V: TmValidationContext,
-    V::AnyConsensusState: ConsensusStateConverter,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     let maybe_existing_consensus_state = {
         let path_at_header_height = ClientConsensusStatePath::new(

@@ -18,8 +18,8 @@ use crate::context::{
 impl<E> ClientStateExecution<E> for ClientState
 where
     E: TmExecutionContext,
-    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
-    E::AnyConsensusState: ConsensusStateConverter,
+    E::ClientStateRef: From<ClientStateType>,
+    E::ConsensusStateRef: ConsensusStateConverter,
 {
     fn initialise(
         &self,
@@ -78,8 +78,8 @@ pub fn initialise<E>(
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext,
-    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
-    E::AnyConsensusState: ConsensusStateConverter,
+    E::ClientStateRef: From<ClientStateType>,
+    E::ConsensusStateRef: ConsensusStateConverter,
 {
     let host_timestamp = TmValidationContext::host_timestamp(ctx)?;
     let host_height = TmValidationContext::host_height(ctx)?;
@@ -123,8 +123,8 @@ pub fn update_state<E>(
 ) -> Result<Vec<Height>, ClientError>
 where
     E: TmExecutionContext,
-    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
-    E::AnyConsensusState: ConsensusStateConverter,
+    E::ClientStateRef: From<ClientStateType>,
+    E::ConsensusStateRef: ConsensusStateConverter,
 {
     let header = TmHeader::try_from(header)?;
     let header_height = header.height();
@@ -190,8 +190,8 @@ pub fn update_on_misbehaviour<E>(
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext,
-    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
-    E::AnyConsensusState: ConsensusStateConverter,
+    E::ClientStateRef: From<ClientStateType>,
+    E::ConsensusStateRef: ConsensusStateConverter,
 {
     // NOTE: frozen height is  set to `Height {revision_height: 0,
     // revision_number: 1}` and it is the same for all misbehaviour. This
@@ -222,8 +222,8 @@ pub fn update_on_upgrade<E>(
 ) -> Result<Height, ClientError>
 where
     E: TmExecutionContext,
-    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
-    E::AnyConsensusState: ConsensusStateConverter,
+    E::ClientStateRef: From<ClientStateType>,
+    E::ConsensusStateRef: ConsensusStateConverter,
 {
     let mut upgraded_tm_client_state = ClientState::try_from(upgraded_client_state)?;
     let upgraded_tm_cons_state = ConsensusStateType::try_from(upgraded_consensus_state)?;
@@ -302,8 +302,8 @@ pub fn prune_oldest_consensus_state<E>(
 ) -> Result<(), ClientError>
 where
     E: ClientExecutionContext + TmValidationContext,
-    E::AnyClientState: ClientStateExecution<E> + From<ClientStateType>,
-    E::AnyConsensusState: ConsensusStateConverter,
+    E::ClientStateRef: From<ClientStateType>,
+    E::ConsensusStateRef: ConsensusStateConverter,
 {
     let mut heights = ctx.consensus_state_heights(client_id)?;
 

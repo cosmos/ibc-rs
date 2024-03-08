@@ -24,7 +24,7 @@ pub fn verify_misbehaviour<V>(
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
-    V::AnyConsensusState: ConsensusStateConverter,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     misbehaviour.validate_basic()?;
 

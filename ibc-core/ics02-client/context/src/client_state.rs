@@ -135,7 +135,6 @@ where
 pub trait ClientStateExecution<E>: ClientStateValidation<E>
 where
     E: ClientExecutionContext,
-    E::AnyClientState: ClientStateExecution<E>,
 {
     /// Initialises the client with the initial client and consensus states.
     ///
@@ -197,14 +196,10 @@ use crate::context::{ClientExecutionContext, ClientValidationContext};
 /// more about what both generic parameters represent.
 pub trait ClientState<V: ClientValidationContext, E: ClientExecutionContext>:
     Send + Sync + ClientStateCommon + ClientStateValidation<V> + ClientStateExecution<E>
-where
-    E::AnyClientState: ClientStateExecution<E>,
 {
 }
 
-impl<V: ClientValidationContext, E: ClientExecutionContext, T> ClientState<V, E> for T
-where
-    T: Send + Sync + ClientStateCommon + ClientStateValidation<V> + ClientStateExecution<E>,
-    E::AnyClientState: ClientStateExecution<E>,
+impl<V: ClientValidationContext, E: ClientExecutionContext, T> ClientState<V, E> for T where
+    T: Send + Sync + ClientStateCommon + ClientStateValidation<V> + ClientStateExecution<E>
 {
 }

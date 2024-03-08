@@ -210,7 +210,7 @@ impl ClientStateCommon for MockClientState {
 impl<V> ClientStateValidation<V> for MockClientState
 where
     V: ClientValidationContext + MockClientContext,
-    V::AnyConsensusState: ConsensusStateConverter,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     fn verify_client_message(
         &self,
@@ -289,8 +289,8 @@ where
 impl<E> ClientStateExecution<E> for MockClientState
 where
     E: ClientExecutionContext + MockClientContext,
-    E::AnyClientState: ClientStateExecution<E> + From<MockClientState>,
-    E::AnyConsensusState: ConsensusStateConverter,
+    E::ClientStateRef: From<MockClientState>,
+    E::ConsensusStateRef: ConsensusStateConverter,
 {
     fn initialise(
         &self,

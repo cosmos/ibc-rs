@@ -8,7 +8,7 @@ use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::ChannelEndPath;
-use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
+use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
@@ -34,7 +34,6 @@ pub fn chan_close_init_execute<ExecCtx>(
 ) -> Result<(), ContextError>
 where
     ExecCtx: ExecutionContext,
-    ClientStateMut<ExecCtx>: ClientStateExecution<ExecCtx::E>,
 {
     let extras = module.on_chan_close_init_execute(&msg.port_id_on_a, &msg.chan_id_on_a)?;
     let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);

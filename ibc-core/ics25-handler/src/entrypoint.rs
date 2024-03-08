@@ -9,7 +9,6 @@ use ibc_core_channel::handler::{
 use ibc_core_channel::types::msgs::{
     channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
 };
-use ibc_core_client::context::client_state::ClientStateExecution;
 use ibc_core_client::handler::{create_client, update_client, upgrade_client};
 use ibc_core_client::types::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
 use ibc_core_connection::handler::{
@@ -18,7 +17,7 @@ use ibc_core_connection::handler::{
 use ibc_core_connection::types::msgs::ConnectionMsg;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::msgs::MsgEnvelope;
-use ibc_core_host::{ClientStateMut, ExecutionContext, ValidationContext};
+use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::router::Router;
 use ibc_core_router::types::error::RouterError;
 
@@ -30,7 +29,6 @@ pub fn dispatch<Ctx>(
 ) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
-    ClientStateMut<Ctx>: ClientStateExecution<Ctx::E>,
 {
     validate(ctx, router, msg.clone())?;
     execute(ctx, router, msg)
@@ -118,7 +116,6 @@ pub fn execute<Ctx>(
 ) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
-    ClientStateMut<Ctx>: ClientStateExecution<Ctx::E>,
 {
     match msg {
         MsgEnvelope::Client(msg) => match msg {

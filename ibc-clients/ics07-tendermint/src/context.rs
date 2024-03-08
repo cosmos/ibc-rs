@@ -24,7 +24,7 @@ impl<C> ConsensusStateConverter for C where
 /// Client's context required during validation
 pub trait ValidationContext: ClientValidationContext
 where
-    Self::AnyConsensusState: ConsensusStateConverter,
+    Self::ConsensusStateRef: ConsensusStateConverter,
 {
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
@@ -40,14 +40,14 @@ where
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
+    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, ContextError>;
+    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
 }
 
 /// Client's context required during execution.
@@ -56,16 +56,14 @@ where
 /// [`ValidationContext`] and [`ClientExecutionContext`]
 pub trait ExecutionContext: ValidationContext + ClientExecutionContext
 where
-    Self::AnyClientState: ClientStateExecution<Self>,
-    Self::AnyConsensusState: ConsensusStateConverter,
+    Self::ConsensusStateRef: ConsensusStateConverter,
 {
 }
 
 impl<T> ExecutionContext for T
 where
     T: ValidationContext + ClientExecutionContext,
-    T::AnyClientState: ClientStateExecution<T>,
-    T::AnyConsensusState: ConsensusStateConverter,
+    T::ConsensusStateRef: ConsensusStateConverter,
 {
 }
 
