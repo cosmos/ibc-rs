@@ -12,14 +12,15 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_try;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use rstest::*;
 use test_log::test;
 
 pub struct Fixture {
-    pub ctx: MockContext,
+    pub ctx: MockContext<MockHost>,
     pub router: MockRouter,
     pub msg: MsgEnvelope,
     pub client_id_on_b: ClientId,
@@ -54,7 +55,7 @@ fn fixture() -> Fixture {
 
     let msg = MsgEnvelope::from(ChannelMsg::from(msg_chan_open_try));
 
-    let ctx = MockContext::default();
+    let ctx = MockContext::<MockHost>::default();
 
     let router = MockRouter::new_with_transfer();
 
@@ -83,11 +84,9 @@ fn chan_open_try_validate_happy_path(fixture: Fixture) {
     } = fixture;
 
     let ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
-                .client_id(client_id_on_b.clone())
-                .latest_height(Height::new(0, proof_height).unwrap())
-                .build(),
+        .with_light_client(
+            &client_id_on_b,
+            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
 
@@ -110,11 +109,9 @@ fn chan_open_try_execute_happy_path(fixture: Fixture) {
     } = fixture;
 
     let mut ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
-                .client_id(client_id_on_b.clone())
-                .latest_height(Height::new(0, proof_height).unwrap())
-                .build(),
+        .with_light_client(
+            &client_id_on_b,
+            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
 

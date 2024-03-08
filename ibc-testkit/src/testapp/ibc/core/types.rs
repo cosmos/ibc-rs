@@ -1,7 +1,6 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
 use alloc::sync::Arc;
-use core::cmp::min;
 use core::fmt::Debug;
 use core::ops::{Add, Sub};
 use core::time::Duration;
@@ -9,8 +8,6 @@ use core::time::Duration;
 use basecoin_store::context::ProvableStore;
 use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore, SharedStore};
 use basecoin_store::types::{BinStore, JsonStore, ProtobufStore, TypedSet, TypedStore};
-use ibc::clients::tendermint::client_state::ClientState as TmClientState;
-use ibc::clients::tendermint::types::TENDERMINT_CLIENT_TYPE;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::client::context::ClientExecutionContext;
@@ -19,9 +16,7 @@ use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
 use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{
-    ChainId, ChannelId, ClientId, ClientType, ConnectionId, PortId, Sequence,
-};
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId, Sequence};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     ClientUpdateHeightPath, ClientUpdateTimePath, CommitmentPath, ConnectionPath,
@@ -37,18 +32,11 @@ use ibc_proto::ibc::core::channel::v1::Channel as RawChannelEnd;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::core::connection::v1::ConnectionEnd as RawConnectionEnd;
 use parking_lot::Mutex;
-use tendermint_testgen::Validator as TestgenValidator;
 use typed_builder::TypedBuilder;
 
-use crate::fixtures::clients::tendermint::ClientStateConfig as TmClientStateConfig;
 use crate::fixtures::core::context::MockContextConfig;
-use crate::hosts::block::{HostBlock, HostType};
+use crate::hosts::{TestBlock, TestHeader, TestHost};
 use crate::relayer::error::RelayerError;
-use crate::testapp::ibc::clients::mock::client_state::{
-    client_type as mock_client_type, MockClientState, MOCK_CLIENT_TYPE,
-};
-use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
-use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::utils::blocks_since;
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
@@ -164,22 +152,20 @@ where
 
 /// A context implementing the dependencies necessary for testing any IBC module.
 #[derive(Debug)]
-pub struct MockGenericContext<S>
+pub struct MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     /// The type of host chain underlying this mock context.
-    pub host_chain_type: HostType,
-
-    /// Host chain identifier.
-    pub host_chain_id: ChainId,
+    pub host: H,
 
     /// Maximum size for the history of the host chain. Any block older than this is pruned.
     pub max_history_size: u64,
 
     /// The chain of blocks underlying this context. A vector of size up to `max_history_size`
     /// blocks, ascending order by their height (latest block is on the last position).
-    pub history: Vec<HostBlock>,
+    pub history: Vec<H::Block>,
 
     /// Average time duration between blocks
     pub block_time: Duration,
@@ -188,327 +174,99 @@ where
     pub ibc_store: MockIbcStore<S>,
 }
 
-pub type MockContext = MockGenericContext<RevertibleStore<GrowingStore<InMemoryStore>>>;
+pub type MockContext<H> = MockGenericContext<RevertibleStore<GrowingStore<InMemoryStore>>, H>;
 
 #[derive(Debug, TypedBuilder)]
 pub struct MockClientConfig {
-    #[builder(default = ChainId::new("mockZ-1").expect("no error"))]
-    client_chain_id: ChainId,
-    #[builder(default)]
-    client_id: ClientId,
-    #[builder(default = mock_client_type())]
-    client_type: ClientType,
-    latest_height: Height,
-    #[builder(default)]
-    consensus_state_heights: Vec<Height>,
-    #[builder(default, setter(strip_option))]
-    latest_timestamp: Option<Timestamp>,
-
     #[builder(default = Duration::from_secs(64000))]
-    trusting_period: Duration,
+    pub trusting_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
-    max_clock_drift: Duration,
+    pub max_clock_drift: Duration,
     #[builder(default = Duration::from_secs(128000))]
-    unbonding_period: Duration,
+    pub unbonding_period: Duration,
+}
+
+impl Default for MockClientConfig {
+    fn default() -> Self {
+        Self::builder().build()
+    }
 }
 
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
-impl<S> Default for MockGenericContext<S>
+impl<S, H> Default for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug + Default,
+    H: TestHost,
 {
     fn default() -> Self {
         MockContextConfig::builder().build()
     }
 }
 
+pub struct LightClientState<H: TestHost> {
+    pub client_state: H::ClientState,
+    pub consensus_states:
+        BTreeMap<Height, <<H::Block as TestBlock>::Header as TestHeader>::ConsensusState>,
+}
+
+impl<H> Default for LightClientState<H>
+where
+    H: TestHost,
+{
+    fn default() -> Self {
+        let context = MockContext::<H>::default();
+        LightClientBuilder::init().context(&context).build()
+    }
+}
+
+impl<H> LightClientState<H>
+where
+    H: TestHost,
+{
+    pub fn with_latest_height(height: Height) -> Self {
+        let context = MockContextConfig::builder()
+            .latest_height(height)
+            .build::<MockContext<_>>();
+        LightClientBuilder::init().context(&context).build()
+    }
+}
+
+#[derive(TypedBuilder)]
+#[builder(builder_method(name = init), build_method(into))]
+pub struct LightClientBuilder<'a, H: TestHost> {
+    context: &'a MockContext<H>,
+    #[builder(default, setter(into))]
+    consensus_heights: Vec<Height>,
+    #[builder(default)]
+    params: H::LightClientParams,
+}
+
+impl<'a, H> From<LightClientBuilder<'a, H>> for LightClientState<H>
+where
+    H: TestHost,
+{
+    fn from(builder: LightClientBuilder<'a, H>) -> Self {
+        let LightClientBuilder {
+            context,
+            consensus_heights,
+            params,
+        } = builder;
+
+        context.generate_light_client(consensus_heights, &params)
+    }
+}
+
 /// Implementation of internal interface for use in testing. The methods in this interface should
 /// _not_ be accessible to any Ics handler.
-impl<S> MockGenericContext<S>
+impl<S, H> MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
-    /// Creates a mock context. Parameter `max_history_size` determines how many blocks will
-    /// the chain maintain in its history, which also determines the pruning window. Parameter
-    /// `latest_height` determines the current height of the chain. This context
-    /// has support to emulate two type of underlying chains: Mock or SyntheticTendermint.
-    #[deprecated(
-        since = "0.50.0",
-        note = "Please use `MockContextConfig::builder().build()` instead"
-    )]
-    pub fn new(
-        host_id: ChainId,
-        host_type: HostType,
-        max_history_size: u64,
-        latest_height: Height,
-    ) -> Self
-    where
-        S: Default,
-    {
-        assert_ne!(
-            max_history_size, 0,
-            "The chain must have a non-zero max_history_size"
-        );
-
-        assert_ne!(
-            latest_height.revision_height(),
-            0,
-            "The chain must have a non-zero revision_height"
-        );
-
-        // Compute the number of blocks to store.
-        let n = min(max_history_size, latest_height.revision_height());
-
-        assert_eq!(
-            host_id.revision_number(),
-            latest_height.revision_number(),
-            "The version in the chain identifier must match the version in the latest height"
-        );
-
-        let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
-        let next_block_timestamp = Timestamp::now().add(block_time).expect("Never fails");
-        Self {
-            host_chain_type: host_type,
-            host_chain_id: host_id.clone(),
-            max_history_size,
-            history: (0..n)
-                .rev()
-                .map(|i| {
-                    // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
-                    // where N = now(), BT = block_time
-                    HostBlock::generate_block(
-                        host_id.clone(),
-                        host_type,
-                        latest_height.sub(i).expect("Never fails").revision_height(),
-                        next_block_timestamp
-                            .sub(Duration::from_secs(DEFAULT_BLOCK_TIME_SECS * (i + 1)))
-                            .expect("Never fails"),
-                    )
-                })
-                .collect(),
-            block_time,
-            ibc_store: MockIbcStore::default(),
-        }
-    }
-
-    /// Same as [Self::new] but with custom validator sets for each block.
-    /// Note: the validator history is used accordingly for current validator set and next validator set.
-    /// `validator_history[i]` and `validator_history[i+1]` is i'th block's current and next validator set.
-    /// The number of blocks will be `validator_history.len() - 1` due to the above.
-    #[deprecated(
-        since = "0.50.0",
-        note = "Please use `MockContextConfig::builder().build()` instead"
-    )]
-    pub fn new_with_validator_history(
-        host_id: ChainId,
-        host_type: HostType,
-        validator_history: &[Vec<TestgenValidator>],
-        latest_height: Height,
-    ) -> Self
-    where
-        S: Default,
-    {
-        let max_history_size = validator_history.len() as u64 - 1;
-
-        assert_ne!(
-            max_history_size, 0,
-            "The chain must have a non-zero max_history_size"
-        );
-
-        assert_ne!(
-            latest_height.revision_height(),
-            0,
-            "The chain must have a non-zero revision_height"
-        );
-
-        assert!(
-            max_history_size <= latest_height.revision_height(),
-            "The number of blocks must be greater than the number of validator set histories"
-        );
-
-        assert_eq!(
-            host_id.revision_number(),
-            latest_height.revision_number(),
-            "The version in the chain identifier must match the version in the latest height"
-        );
-
-        let block_time = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
-        let next_block_timestamp = Timestamp::now().add(block_time).expect("Never fails");
-
-        let history = (0..max_history_size)
-            .rev()
-            .map(|i| {
-                // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
-                // where N = now(), BT = block_time
-                HostBlock::generate_block_with_validators(
-                    host_id.clone(),
-                    host_type,
-                    latest_height.sub(i).expect("Never fails").revision_height(),
-                    next_block_timestamp
-                        .sub(Duration::from_secs(DEFAULT_BLOCK_TIME_SECS * (i + 1)))
-                        .expect("Never fails"),
-                    &validator_history[(max_history_size - i) as usize - 1],
-                    &validator_history[(max_history_size - i) as usize],
-                )
-            })
-            .collect();
-
-        Self {
-            host_chain_type: host_type,
-            host_chain_id: host_id.clone(),
-            max_history_size,
-            history,
-            block_time,
-            ibc_store: MockIbcStore::default(),
-        }
-    }
-
-    pub fn chain_revision_number(&self) -> u64 {
-        self.host_chain_id.revision_number()
-    }
-
-    /// Associates a client record to this context.
-    /// Given a client id and a height, registers a new client in the context and also associates
-    /// to this client a mock client state and a mock consensus state for height `height`. The type
-    /// of this client is implicitly assumed to be Mock.
-    #[deprecated(
-        since = "0.50.0",
-        note = "Please use `MockClientConfig::builder().build()` instead"
-    )]
-    pub fn with_client(self, client_id: &ClientId, height: Height) -> Self {
-        // NOTE: this is wrong; the client chain ID is supposed to represent
-        // the chain ID of the counterparty chain. But at this point this is
-        // too ingrained in our tests; `with_client()` is called everywhere,
-        // which delegates to this.
-        let client_chain_id = self.host_chain_id.clone();
-
-        self.with_client_config(
-            MockClientConfig::builder()
-                .client_chain_id(client_chain_id)
-                .client_id(client_id.clone())
-                .latest_height(height)
-                .build(),
-        )
-    }
-
-    /// Similar to `with_client`, this function associates a client record to this context, but
-    /// additionally permits to parametrize two details of the client. If `client_type` is None,
-    /// then the client will have type Mock, otherwise the specified type. If
-    /// `consensus_state_height` is None, then the client will be initialized with a consensus
-    /// state matching the same height as the client state (`client_state_height`).
-    #[deprecated(
-        since = "0.50.0",
-        note = "Please use `MockClientConfig::builder().build()` instead"
-    )]
-    pub fn with_client_parametrized(
-        self,
-        client_id: &ClientId,
-        client_state_height: Height,
-        client_type: Option<ClientType>,
-        consensus_state_height: Option<Height>,
-    ) -> Self {
-        // NOTE: this is wrong; the client chain ID is supposed to represent
-        // the chain ID of the counterparty chain. But at this point this is
-        // too ingrained in our tests; `with_client()` is called everywhere,
-        // which delegates to this.
-        let client_chain_id = self.host_chain_id.clone();
-
-        self.with_client_config(
-            MockClientConfig::builder()
-                .client_chain_id(client_chain_id)
-                .client_id(client_id.clone())
-                .latest_height(client_state_height)
-                .client_type(client_type.unwrap_or_else(mock_client_type))
-                .consensus_state_heights(
-                    vec![consensus_state_height.unwrap_or(client_state_height)],
-                )
-                .build(),
-        )
-    }
-
-    #[deprecated(
-        since = "0.50.0",
-        note = "Please use `MockClientConfig::builder().build()` instead"
-    )]
-    pub fn with_client_parametrized_with_chain_id(
-        self,
-        client_chain_id: ChainId,
-        client_id: &ClientId,
-        client_state_height: Height,
-        client_type: Option<ClientType>,
-        consensus_state_height: Option<Height>,
-    ) -> Self {
-        self.with_client_config(
-            MockClientConfig::builder()
-                .client_chain_id(client_chain_id)
-                .client_id(client_id.clone())
-                .latest_height(client_state_height)
-                .client_type(client_type.unwrap_or_else(mock_client_type))
-                .consensus_state_heights(
-                    vec![consensus_state_height.unwrap_or(client_state_height)],
-                )
-                .build(),
-        )
-    }
-
-    #[deprecated(
-        since = "0.50.0",
-        note = "Please use `MockClientConfig::builder().build()` instead"
-    )]
-    pub fn with_client_parametrized_history(
-        self,
-        client_id: &ClientId,
-        client_state_height: Height,
-        client_type: Option<ClientType>,
-        consensus_state_height: Option<Height>,
-    ) -> Self {
-        let client_chain_id = self.host_chain_id.clone();
-        let current_consensus_height = consensus_state_height.unwrap_or(client_state_height);
-        let prev_consensus_height = current_consensus_height
-            .sub(1)
-            .unwrap_or(client_state_height);
-        self.with_client_config(
-            MockClientConfig::builder()
-                .client_chain_id(client_chain_id)
-                .client_id(client_id.clone())
-                .latest_height(client_state_height)
-                .client_type(client_type.unwrap_or_else(mock_client_type))
-                .consensus_state_heights(vec![prev_consensus_height, current_consensus_height])
-                .build(),
-        )
-    }
-
-    #[deprecated(
-        since = "0.50.0",
-        note = "Please use `MockClientConfig::builder().build()` instead"
-    )]
-    pub fn with_client_parametrized_history_with_chain_id(
-        self,
-        client_chain_id: ChainId,
-        client_id: &ClientId,
-        client_state_height: Height,
-        client_type: Option<ClientType>,
-        consensus_state_height: Option<Height>,
-    ) -> Self {
-        let current_consensus_height = consensus_state_height.unwrap_or(client_state_height);
-        let prev_consensus_height = current_consensus_height
-            .sub(1)
-            .unwrap_or(client_state_height);
-        self.with_client_config(
-            MockClientConfig::builder()
-                .client_chain_id(client_chain_id)
-                .client_id(client_id.clone())
-                .latest_height(client_state_height)
-                .client_type(client_type.unwrap_or_else(mock_client_type))
-                .consensus_state_heights(vec![prev_consensus_height, current_consensus_height])
-                .build(),
-        )
-    }
-
     pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
-        let client_state_path = ClientStatePath::new(client_id);
+        let client_state_path = ClientStatePath::new(client_id.clone());
         self.store_client_state(client_state_path, client_state)
             .expect("error writing to store");
         self
@@ -531,94 +289,56 @@ where
         self
     }
 
-    pub fn with_client_config(mut self, client: MockClientConfig) -> Self {
-        let cs_heights = if client.consensus_state_heights.is_empty() {
-            vec![client.latest_height]
+    pub fn generate_light_client(
+        &self,
+        mut consensus_heights: Vec<Height>,
+        client_params: &H::LightClientParams,
+    ) -> LightClientState<H> {
+        let client_height = if let Some(&height) = consensus_heights.last() {
+            height
         } else {
-            client.consensus_state_heights
+            consensus_heights.push(self.latest_height());
+            self.latest_height()
         };
 
-        let client_latest_timestamp = client
-            .latest_timestamp
-            .unwrap_or_else(|| self.latest_timestamp());
+        let client_state = self.host.generate_client_state(
+            self.host_block(&client_height)
+                .expect("latest block exists"),
+            client_params,
+        );
 
-        let (client_state, consensus_states): (
-            AnyClientState,
-            BTreeMap<Height, AnyConsensusState>,
-        ) = match client.client_type.as_str() {
-            MOCK_CLIENT_TYPE => {
-                let blocks: Vec<_> = cs_heights
-                    .into_iter()
-                    .map(|cs_height| {
-                        let n_blocks = blocks_since(client.latest_height, cs_height)
-                            .expect("less or equal height");
-                        (
-                            cs_height,
-                            MockHeader::new(cs_height).with_timestamp(
-                                client_latest_timestamp
-                                    .sub(self.block_time * (n_blocks as u32))
-                                    .expect("never fails"),
-                            ),
-                        )
-                    })
-                    .collect();
+        let consensus_states = consensus_heights
+            .into_iter()
+            .map(|height| {
+                (
+                    height,
+                    self.host_block(&height)
+                        .expect("block exists")
+                        .clone()
+                        .into_header()
+                        .into_consensus_state(),
+                )
+            })
+            .collect();
 
-                let client_state = MockClientState::new(
-                    MockHeader::new(client.latest_height).with_timestamp(client_latest_timestamp),
-                );
+        LightClientState {
+            client_state,
+            consensus_states,
+        }
+    }
 
-                let cs_states = blocks
-                    .into_iter()
-                    .map(|(height, block)| (height, MockConsensusState::new(block).into()))
-                    .collect();
+    pub fn with_light_client<RH>(
+        mut self,
+        client_id: &ClientId,
+        light_client: LightClientState<RH>,
+    ) -> Self
+    where
+        RH: TestHost,
+    {
+        self = self.with_client_state(client_id, light_client.client_state.into());
 
-                (client_state.into(), cs_states)
-            }
-            TENDERMINT_CLIENT_TYPE => {
-                let blocks: Vec<_> = cs_heights
-                    .into_iter()
-                    .map(|cs_height| {
-                        let n_blocks = blocks_since(client.latest_height, cs_height)
-                            .expect("less or equal height");
-                        (
-                            cs_height,
-                            HostBlock::generate_tm_block(
-                                client.client_chain_id.clone(),
-                                cs_height.revision_height(),
-                                client_latest_timestamp
-                                    .sub(self.block_time * (n_blocks as u32))
-                                    .expect("never fails"),
-                            ),
-                        )
-                    })
-                    .collect();
-
-                let client_state: TmClientState = TmClientStateConfig::builder()
-                    .chain_id(client.client_chain_id)
-                    .latest_height(client.latest_height)
-                    .trusting_period(client.trusting_period)
-                    .max_clock_drift(client.max_clock_drift)
-                    .unbonding_period(client.unbonding_period)
-                    .build()
-                    .try_into()
-                    .expect("never fails");
-
-                client_state.inner().validate().expect("never fails");
-
-                let cs_states = blocks
-                    .into_iter()
-                    .map(|(height, block)| (height, block.into()))
-                    .collect();
-
-                (client_state.into(), cs_states)
-            }
-            _ => panic!("unknown client type"),
-        };
-
-        self = self.with_client_state(&client.client_id, client_state);
-
-        for (height, consensus_state) in consensus_states {
-            self = self.with_consensus_state(&client.client_id, height, consensus_state);
+        for (height, consensus_state) in light_client.consensus_states {
+            self = self.with_consensus_state(client_id, height, consensus_state.into());
         }
 
         self
@@ -721,7 +441,7 @@ where
 
     /// Accessor for a block of the local (host) chain from this context.
     /// Returns `None` if the block at the requested height does not exist.
-    pub fn host_block(&self, target_height: &Height) -> Option<&HostBlock> {
+    pub fn host_block(&self, target_height: &Height) -> Option<&H::Block> {
         let target = target_height.revision_height();
         let latest = self.latest_height().revision_height();
 
@@ -736,14 +456,14 @@ where
     /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
     pub fn advance_host_chain_height(&mut self) {
         let latest_block = self.history.last().expect("history cannot be empty");
-        let new_block = HostBlock::generate_block(
-            self.host_chain_id.clone(),
-            self.host_chain_type,
+
+        let new_block = self.host.generate_block(
             latest_block.height().increment().revision_height(),
             latest_block
                 .timestamp()
                 .add(self.block_time)
                 .expect("Never fails"),
+            &H::BlockParams::default(),
         );
 
         // Append the new header at the tip of the history.
@@ -834,9 +554,8 @@ where
             .expect("Never fails")
     }
 
-    pub fn query_latest_header(&self) -> Option<HostBlock> {
-        let block_ref = self.host_block(&self.latest_height());
-        block_ref.cloned()
+    pub fn query_latest_block(&self) -> Option<&H::Block> {
+        self.host_block(&self.latest_height())
     }
 
     pub fn get_events(&self) -> Vec<IbcEvent> {
@@ -855,6 +574,7 @@ mod tests {
     use ibc::core::channel::types::error::{ChannelError, PacketError};
     use ibc::core::channel::types::packet::Packet;
     use ibc::core::channel::types::Version;
+    use ibc::core::host::types::identifiers::ChainId;
     use ibc::core::primitives::Signer;
     use ibc::core::router::module::Module;
     use ibc::core::router::types::module::{ModuleExtras, ModuleId};
@@ -862,145 +582,108 @@ mod tests {
     use super::*;
     use crate::fixtures::core::channel::PacketConfig;
     use crate::fixtures::core::signer::dummy_bech32_account;
+    use crate::hosts::{MockHost, TendermintHost};
     use crate::testapp::ibc::core::router::MockRouter;
 
     #[test]
-    fn test_history_manipulation() {
-        pub struct Test {
+    fn test_history_manipulation_mock() {
+        pub struct Test<H: TestHost> {
             name: String,
-            ctx: MockContext,
+            ctx: MockContext<H>,
         }
-        let cv = 1; // The version to use for all chains.
 
-        let mock_chain_id = ChainId::new(&format!("mockgaia-{cv}")).unwrap();
+        fn run_tests<H: TestHost>(sub_title: &str) {
+            let cv = 1; // The version to use for all chains.
+            let mock_chain_id = ChainId::new(&format!("mockgaia-{cv}")).unwrap();
 
-        let tests: Vec<Test> = vec![
-            Test {
-                name: "Empty history, small pruning window".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id.clone())
-                    .max_history_size(2)
-                    .latest_height(Height::new(cv, 1).expect("Never fails"))
-                    .build(),
-            },
-            Test {
-                name: "[Synthetic TM host] Empty history, small pruning window".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id.clone())
-                    .host_type(HostType::SyntheticTendermint)
-                    .max_history_size(2)
-                    .latest_height(Height::new(cv, 1).expect("Never fails"))
-                    .build(),
-            },
-            Test {
-                name: "Large pruning window".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id.clone())
-                    .max_history_size(30)
-                    .latest_height(Height::new(cv, 2).expect("Never fails"))
-                    .build(),
-            },
-            Test {
-                name: "[Synthetic TM host] Large pruning window".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id.clone())
-                    .host_type(HostType::SyntheticTendermint)
-                    .max_history_size(30)
-                    .latest_height(Height::new(cv, 2).expect("Never fails"))
-                    .build(),
-            },
-            Test {
-                name: "Small pruning window".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id.clone())
-                    .max_history_size(3)
-                    .latest_height(Height::new(cv, 30).expect("Never fails"))
-                    .build(),
-            },
-            Test {
-                name: "[Synthetic TM host] Small pruning window".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id.clone())
-                    .host_type(HostType::SyntheticTendermint)
-                    .max_history_size(3)
-                    .latest_height(Height::new(cv, 30).expect("Never fails"))
-                    .build(),
-            },
-            Test {
-                name: "Small pruning window, small starting height".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id.clone())
-                    .max_history_size(3)
-                    .latest_height(Height::new(cv, 2).expect("Never fails"))
-                    .build(),
-            },
-            Test {
-                name: "[Synthetic TM host] Small pruning window, small starting height".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id.clone())
-                    .host_type(HostType::SyntheticTendermint)
-                    .max_history_size(3)
-                    .latest_height(Height::new(cv, 2).expect("Never fails"))
-                    .build(),
-            },
-            Test {
-                name: "Large pruning window, large starting height".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id.clone())
-                    .max_history_size(50)
-                    .latest_height(Height::new(cv, 2000).expect("Never fails"))
-                    .build(),
-            },
-            Test {
-                name: "[Synthetic TM host] Large pruning window, large starting height".to_string(),
-                ctx: MockContextConfig::builder()
-                    .host_id(mock_chain_id)
-                    .host_type(HostType::SyntheticTendermint)
-                    .max_history_size(50)
-                    .latest_height(Height::new(cv, 2000).expect("Never fails"))
-                    .build(),
-            },
-        ];
+            let tests: Vec<Test<H>> = vec![
+                Test {
+                    name: "Empty history, small pruning window".to_string(),
+                    ctx: MockContextConfig::builder()
+                        .host_id(mock_chain_id.clone())
+                        .max_history_size(2)
+                        .latest_height(Height::new(cv, 1).expect("Never fails"))
+                        .build(),
+                },
+                Test {
+                    name: "Large pruning window".to_string(),
+                    ctx: MockContextConfig::builder()
+                        .host_id(mock_chain_id.clone())
+                        .max_history_size(30)
+                        .latest_height(Height::new(cv, 2).expect("Never fails"))
+                        .build(),
+                },
+                Test {
+                    name: "Small pruning window".to_string(),
+                    ctx: MockContextConfig::builder()
+                        .host_id(mock_chain_id.clone())
+                        .max_history_size(3)
+                        .latest_height(Height::new(cv, 30).expect("Never fails"))
+                        .build(),
+                },
+                Test {
+                    name: "Small pruning window, small starting height".to_string(),
+                    ctx: MockContextConfig::builder()
+                        .host_id(mock_chain_id.clone())
+                        .max_history_size(3)
+                        .latest_height(Height::new(cv, 2).expect("Never fails"))
+                        .build(),
+                },
+                Test {
+                    name: "Large pruning window, large starting height".to_string(),
+                    ctx: MockContextConfig::builder()
+                        .host_id(mock_chain_id.clone())
+                        .max_history_size(50)
+                        .latest_height(Height::new(cv, 2000).expect("Never fails"))
+                        .build(),
+                },
+            ];
 
-        for mut test in tests {
-            // All tests should yield a valid context after initialization.
-            assert!(
-                test.ctx.validate().is_ok(),
-                "failed in test {} while validating context {:?}",
-                test.name,
-                test.ctx
-            );
+            for mut test in tests {
+                // All tests should yield a valid context after initialization.
+                assert!(
+                    test.ctx.validate().is_ok(),
+                    "failed in test [{}] {} while validating context {:?}",
+                    sub_title,
+                    test.name,
+                    test.ctx
+                );
 
-            let current_height = test.ctx.latest_height();
+                let current_height = test.ctx.latest_height();
 
-            // After advancing the chain's height, the context should still be valid.
-            test.ctx.advance_host_chain_height();
-            assert!(
-                test.ctx.validate().is_ok(),
-                "failed in test {} while validating context {:?}",
-                test.name,
-                test.ctx
-            );
+                // After advancing the chain's height, the context should still be valid.
+                test.ctx.advance_host_chain_height();
+                assert!(
+                    test.ctx.validate().is_ok(),
+                    "failed in test [{}] {} while validating context {:?}",
+                    sub_title,
+                    test.name,
+                    test.ctx
+                );
 
-            let next_height = current_height.increment();
-            assert_eq!(
-                test.ctx.latest_height(),
-                next_height,
-                "failed while increasing height for context {:?}",
-                test.ctx
-            );
+                let next_height = current_height.increment();
+                assert_eq!(
+                    test.ctx.latest_height(),
+                    next_height,
+                    "failed while increasing height for context {:?}",
+                    test.ctx
+                );
 
-            assert_eq!(
-                test.ctx
-                    .host_block(&current_height)
-                    .expect("Never fails")
-                    .height(),
-                current_height,
-                "failed while fetching height {:?} of context {:?}",
-                current_height,
-                test.ctx
-            );
+                assert_eq!(
+                    test.ctx
+                        .host_block(&current_height)
+                        .expect("Never fails")
+                        .height(),
+                    current_height,
+                    "failed while fetching height {:?} of context {:?}",
+                    current_height,
+                    test.ctx
+                );
+            }
         }
+
+        run_tests::<MockHost>("Mock Host");
+        run_tests::<TendermintHost>("Synthetic TM Host");
     }
 
     #[test]

@@ -16,8 +16,9 @@ use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_ack;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use test_log::test;
 
 enum Ctx {
@@ -57,35 +58,29 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
     let mut conn_end_open = default_conn_end.clone();
     conn_end_open.set_state(State::Open); // incorrect field
 
-    let ctx_default = MockContext::default();
+    let ctx_default = MockContext::<MockHost>::default();
     let ctx_new = MockContextConfig::builder()
         .host_id(ChainId::new(&format!("mockgaia-{}", latest_height.revision_number())).unwrap())
         .latest_height(latest_height)
-        .build::<MockContext>();
+        .build::<MockContext<MockHost>>();
     let ctx = match ctx {
         Ctx::New => ctx_new,
         Ctx::NewWithConnection => ctx_new
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_id(client_id.clone())
-                    .latest_height(proof_height)
-                    .build(),
+            .with_light_client(
+                &client_id,
+                LightClientState::<MockHost>::with_latest_height(proof_height),
             )
             .with_connection(conn_id, default_conn_end),
         Ctx::DefaultWithConnection => ctx_default
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_id(client_id.clone())
-                    .latest_height(proof_height)
-                    .build(),
+            .with_light_client(
+                &client_id,
+                LightClientState::<MockHost>::with_latest_height(proof_height),
             )
             .with_connection(conn_id, default_conn_end),
         Ctx::NewWithConnectionEndOpen => ctx_new
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_id(client_id.clone())
-                    .latest_height(proof_height)
-                    .build(),
+            .with_light_client(
+                &client_id,
+                LightClientState::<MockHost>::with_latest_height(proof_height),
             )
             .with_connection(conn_id, conn_end_open),
     };
@@ -157,7 +152,7 @@ fn conn_open_ack_execute(fxt: &mut Fixture<MsgConnectionOpenAck>, expect: Expect
                 IbcEvent::OpenAckConnection(e) => e,
                 _ => unreachable!(),
             };
-            let conn_end = <MockContext as ValidationContext>::connection_end(
+            let conn_end = <MockContext<MockHost> as ValidationContext>::connection_end(
                 &fxt.ctx,
                 conn_open_try_event.conn_id_on_a(),
             )

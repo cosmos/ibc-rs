@@ -16,14 +16,15 @@ use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::relayer::context::RelayerContext;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use rstest::*;
 use test_log::test;
 
 pub struct Fixture {
-    pub context: MockContext,
+    pub context: MockContext<MockHost>,
     pub router: MockRouter,
     pub client_height: Height,
     pub host_height: Height,
@@ -34,7 +35,7 @@ pub struct Fixture {
 
 #[fixture]
 fn fixture() -> Fixture {
-    let context = MockContext::default();
+    let context = MockContext::<MockHost>::default();
 
     let router = MockRouter::new_with_transfer();
 
@@ -114,10 +115,9 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
 
     let packet = &msg.packet;
     let mut context = context
-        .with_client_config(
-            MockClientConfig::builder()
-                .latest_height(client_height)
-                .build(),
+        .with_light_client(
+            &ClientId::default(),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::default(), conn_end_on_b)
         .with_channel(
@@ -192,10 +192,9 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg_packet_old));
 
     let context = context
-        .with_client_config(
-            MockClientConfig::builder()
-                .latest_height(client_height)
-                .build(),
+        .with_light_client(
+            &ClientId::default(),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::default(), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_b)
@@ -222,10 +221,9 @@ fn recv_packet_execute_happy_path(fixture: Fixture) {
         ..
     } = fixture;
     let mut ctx = context
-        .with_client_config(
-            MockClientConfig::builder()
-                .latest_height(client_height)
-                .build(),
+        .with_light_client(
+            &ClientId::default(),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::default(), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_b);

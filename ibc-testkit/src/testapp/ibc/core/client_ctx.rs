@@ -1,5 +1,3 @@
-use alloc::collections::BTreeMap;
-use alloc::vec::Vec;
 use core::fmt::Debug;
 
 use basecoin_store::context::{ProvableStore, Store};
@@ -17,8 +15,9 @@ use ibc::core::host::types::path::{
 };
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
-use ibc::primitives::prelude::{format, *};
+use ibc::primitives::prelude::*;
 
+use crate::hosts::TestHost;
 use crate::testapp::ibc::clients::mock::client_state::MockClientContext;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::MockGenericContext;
@@ -36,9 +35,10 @@ pub struct MockClientRecord {
     pub consensus_states: BTreeMap<Height, AnyConsensusState>,
 }
 
-impl<S> MockClientContext for MockGenericContext<S>
+impl<S, H> MockClientContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     type ConversionError = &'static str;
     type AnyConsensusState = AnyConsensusState;
@@ -58,9 +58,10 @@ where
         ValidationContext::consensus_state(self, client_cons_state_path)
     }
 }
-impl<S> ClientValidationContext for MockGenericContext<S>
+impl<S, H> ClientValidationContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     /// Returns the time and height when the client state for the given
     /// [`ClientId`] was updated with a header for the given [`Height`]
@@ -100,9 +101,10 @@ where
     }
 }
 
-impl<S> ClientExecutionContext for MockGenericContext<S>
+impl<S, H> ClientExecutionContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     type V = Self;
 
@@ -213,9 +215,10 @@ where
     }
 }
 
-impl<S> TmCommonContext for MockGenericContext<S>
+impl<S, H> TmCommonContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     type ConversionError = &'static str;
     type AnyConsensusState = AnyConsensusState;
@@ -264,9 +267,10 @@ where
     }
 }
 
-impl<S> TmValidationContext for MockGenericContext<S>
+impl<S, H> TmValidationContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     fn next_consensus_state(
         &self,
@@ -281,7 +285,7 @@ where
         let found_path = keys.into_iter().find_map(|path| {
             if let Ok(Path::ClientConsensusState(path)) = path.try_into() {
                 if height
-                    > &Height::new(path.revision_number, path.revision_height).expect("no error")
+                    < &Height::new(path.revision_number, path.revision_height).expect("no error")
                 {
                     return Some(path);
                 }
@@ -289,20 +293,19 @@ where
             None
         });
 
-        if let Some(path) = found_path {
-            let consensus_state = self
-                .ibc_store
-                .consensus_state_store
-                .get(StoreHeight::Pending, &path)
-                .ok_or(ClientError::ConsensusStateNotFound {
-                    client_id: client_id.clone(),
-                    height: *height,
-                })?;
+        let consensus_state = found_path
+            .map(|path| {
+                self.ibc_store
+                    .consensus_state_store
+                    .get(StoreHeight::Pending, &path)
+                    .ok_or_else(|| ClientError::ConsensusStateNotFound {
+                        client_id: client_id.clone(),
+                        height: *height,
+                    })
+            })
+            .transpose()?;
 
-            Ok(Some(consensus_state))
-        } else {
-            Ok(None)
-        }
+        Ok(consensus_state)
     }
 
     fn prev_consensus_state(
@@ -315,32 +318,29 @@ where
             .unwrap(); // safety - path must be valid since ClientId and height are valid Identifiers
 
         let keys = self.ibc_store.store.get_keys(&path);
-        let pos = keys.iter().position(|path| {
-            if let Ok(Path::ClientConsensusState(path)) = path.clone().try_into() {
-                height
-                    >= &Height::new(path.revision_number, path.revision_height).expect("no error")
-            } else {
-                false
+        let found_path = keys.into_iter().rev().find_map(|path| {
+            if let Ok(Path::ClientConsensusState(path)) = path.try_into() {
+                if height
+                    > &Height::new(path.revision_number, path.revision_height).expect("no error")
+                {
+                    return Some(path);
+                }
             }
+            None
         });
 
-        if let Some(pos) = pos {
-            if pos > 0 {
-                let prev_path = match keys[pos - 1].clone().try_into() {
-                    Ok(Path::ClientConsensusState(p)) => p,
-                    _ => unreachable!(), // safety - path retrieved from store
-                };
-                let consensus_state = self
-                    .ibc_store
+        let consensus_state = found_path
+            .map(|path| {
+                self.ibc_store
                     .consensus_state_store
-                    .get(StoreHeight::Pending, &prev_path)
-                    .ok_or(ClientError::ConsensusStateNotFound {
+                    .get(StoreHeight::Pending, &path)
+                    .ok_or_else(|| ClientError::ConsensusStateNotFound {
                         client_id: client_id.clone(),
                         height: *height,
-                    })?;
-                return Ok(Some(consensus_state));
-            }
-        }
-        Ok(None)
+                    })
+            })
+            .transpose()?;
+
+        Ok(consensus_state)
     }
 }

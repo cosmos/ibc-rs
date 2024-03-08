@@ -32,12 +32,14 @@ use ibc::primitives::ToVec;
 use ibc_query::core::context::{ProvableContext, QueryContext};
 
 use super::types::MockGenericContext;
+use crate::hosts::{TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::utils::blocks_since;
 
-impl<S> ValidationContext for MockGenericContext<S>
+impl<S, H> ValidationContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     type V = Self;
     type E = Self;
@@ -104,7 +106,11 @@ where
             .checked_sub(1 + height_delta)
             .ok_or(ClientError::MissingLocalConsensusState { height: *height })?;
 
-        let consensus_state = self.history[index].clone().into();
+        let consensus_state = self.history[index]
+            .clone()
+            .into_header()
+            .into_consensus_state()
+            .into();
         Ok(consensus_state)
     }
 
@@ -276,7 +282,7 @@ where
 
     /// Returns the maximum expected time per block
     fn max_expected_time_per_block(&self) -> Duration {
-        Duration::from_secs(8)
+        self.block_time
     }
 
     fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
@@ -289,9 +295,10 @@ where
 }
 
 /// Trait to provide proofs in gRPC service blanket implementations.
-impl<S> ProvableContext for MockGenericContext<S>
+impl<S, H> ProvableContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     /// Returns the proof for the given [`Height`] and [`Path`]
     fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>> {
@@ -303,9 +310,10 @@ where
 }
 
 /// Trait to complete the gRPC service blanket implementations.
-impl<S> QueryContext for MockGenericContext<S>
+impl<S, H> QueryContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     /// Returns the list of all client states.
     fn client_states(&self) -> Result<Vec<(ClientId, Self::AnyClientState)>, ContextError> {
@@ -441,7 +449,7 @@ where
         &self,
         client_id: &ClientId,
     ) -> Result<Vec<ConnectionId>, ContextError> {
-        let client_connection_path = ClientConnectionPath::new(client_id);
+        let client_connection_path = ClientConnectionPath::new(client_id.clone());
 
         Ok(self
             .ibc_store
@@ -657,9 +665,10 @@ where
     }
 }
 
-impl<S> ExecutionContext for MockGenericContext<S>
+impl<S, H> ExecutionContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
+    H: TestHost,
 {
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
