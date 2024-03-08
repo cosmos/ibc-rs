@@ -73,11 +73,11 @@ impl FromStr for ConnectionId {
     }
 }
 
-impl Default for ConnectionId {
-    fn default() -> Self {
-        Self::new(0)
-    }
-}
+// impl Default for ConnectionId {
+//     fn default() -> Self {
+//         Self::new(0)
+//     }
+// }
 
 /// Equality check against string literal (satisfies &ConnectionId == &str).
 /// ```

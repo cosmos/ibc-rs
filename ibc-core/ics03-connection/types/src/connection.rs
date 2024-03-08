@@ -200,18 +200,6 @@ mod sealed {
     }
 }
 
-impl Default for ConnectionEnd {
-    fn default() -> Self {
-        Self {
-            state: State::Uninitialized,
-            client_id: ClientId::from("07-tendermint-0"),
-            counterparty: Default::default(),
-            versions: Vec::new(),
-            delay_period: ZERO_DURATION,
-        }
-    }
-}
-
 impl Protobuf<RawConnectionEnd> for ConnectionEnd {}
 
 impl TryFrom<RawConnectionEnd> for ConnectionEnd {
@@ -220,7 +208,17 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
         let state = value.state.try_into()?;
 
         if state == State::Uninitialized {
-            return Ok(ConnectionEnd::default());
+            return ConnectionEnd::new(
+                State::Uninitialized,
+                ClientId::from("07-tendermint-0"),
+                Counterparty::new(
+                    ClientId::from("07-tendermint-0"),
+                    None,
+                    CommitmentPrefix::empty(),
+                ),
+                Vec::new(),
+                ZERO_DURATION,
+            );
         }
 
         if value.client_id.is_empty() {
@@ -378,7 +376,7 @@ impl ConnectionEnd {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Counterparty {
     pub client_id: ClientId,
     pub connection_id: Option<ConnectionId>,
