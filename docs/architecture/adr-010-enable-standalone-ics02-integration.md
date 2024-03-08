@@ -158,7 +158,7 @@ pub trait ExecutionContext: ValidationContext {
 +    <<Ctx as ValidationContext>::V as ClientValidationContext>::ClientStateRef;
 
 + pub type ClientStateMut<Ctx> =
-+    <<Ctx as ExecutionContext>::E as ClientValidationContext>::ClientStateMut;
++    <<Ctx as ExecutionContext>::E as ClientExecutionContext>::ClientStateMut;
 
 + pub type ConsensusStateRef<Ctx> =
 +    <<Ctx as ValidationContext>::V as ClientValidationContext>::ConsensusStateRef;
