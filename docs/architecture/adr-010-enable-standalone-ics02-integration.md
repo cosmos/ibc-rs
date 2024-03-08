@@ -85,10 +85,18 @@ the following client-relevant API deficiencies as well:
 
 3. **Minimizing associated types’ declarations**
     - Our current APIs pose a challenge by requiring users to introduce multiple
-      yet the same associated types like AnyClientState, AnyConsensusState, etc
-      across different layers. A more efficient solution involves introducing
-      such types in fewer places, providing better access to the traits across
-      different layers.
+      yet the same associated types like `AnyClientState`, `AnyConsensusState`,
+      etc across different layers. A more efficient solution involves
+      introducing such types in fewer places, providing better access to the
+      traits across different layers. However, it's worth acknowledging that an
+      ideal solution might entail utilizing features from forthcoming stable
+      versions of Rust. This would enable us to leverage the advantages provided
+      by either
+      [associated_type_bounds](https://rust-lang.github.io/rfcs/2289-associated-type-bounds.html),
+      [associated_type_defaults](https://rust-lang.github.io/rfcs/2532-associated-type-defaults.html),
+      or
+      [implied_bounds](https://rust-lang.github.io/rfcs/2089-implied-bounds.html)
+      capabilities.
 
 ## Decision
 
