@@ -1,6 +1,6 @@
 pub mod mock;
 
-use derive_more::{From, TryInto};
+use derive_more::From;
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
 use ibc::clients::tendermint::types::{
@@ -67,7 +67,7 @@ impl From<ConsensusStateType> for AnyConsensusState {
     }
 }
 
-#[derive(Debug, Clone, From, TryInto, PartialEq, ConsensusState)]
+#[derive(Debug, Clone, From, PartialEq, ConsensusState)]
 pub enum AnyConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),
@@ -96,6 +96,33 @@ impl From<AnyConsensusState> for Any {
         match host_consensus_state {
             AnyConsensusState::Tendermint(cs) => cs.into(),
             AnyConsensusState::Mock(cs) => cs.into(),
+        }
+    }
+}
+
+impl TryFrom<AnyConsensusState> for ConsensusStateType {
+    type Error = ClientError;
+
+    fn try_from(value: AnyConsensusState) -> Result<Self, Self::Error> {
+        match value {
+            AnyConsensusState::Tendermint(cs) => Ok(cs.inner().clone()),
+            _ => Err(ClientError::Other {
+                description: "failed to convert AnyConsensusState to TmConsensusState".to_string(),
+            }),
+        }
+    }
+}
+
+impl TryFrom<AnyConsensusState> for MockConsensusState {
+    type Error = ClientError;
+
+    fn try_from(value: AnyConsensusState) -> Result<Self, Self::Error> {
+        match value {
+            AnyConsensusState::Mock(cs) => Ok(cs),
+            _ => Err(ClientError::Other {
+                description: "failed to convert AnyConsensusState to MockConsensusState"
+                    .to_string(),
+            }),
         }
     }
 }

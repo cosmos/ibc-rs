@@ -1,9 +1,6 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
 //!
-use ibc_core_client_context::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation,
-};
-use ibc_core_client_context::consensus_state::ConsensusState;
+use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::UpgradeClient;
 use ibc_core_client_types::msgs::MsgUpgradeClient;
@@ -23,12 +20,14 @@ where
 
     ctx.validate_message_signer(&signer)?;
 
+    let client_val_ctx = ctx.get_client_validation_context();
+
     // Read the current latest client state from the host chain store.
-    let old_client_state = ctx.client_state(&client_id)?;
+    let old_client_state = client_val_ctx.client_state(&client_id)?;
 
     // Check if the client is active.
     old_client_state
-        .status(ctx.get_client_validation_context(), &client_id)?
+        .status(client_val_ctx, &client_id)?
         .verify_is_active()?;
 
     // Read the latest consensus state from the host chain store.
@@ -37,7 +36,7 @@ where
         old_client_state.latest_height().revision_number(),
         old_client_state.latest_height().revision_height(),
     );
-    let old_consensus_state = ctx
+    let old_consensus_state = client_val_ctx
         .consensus_state(&old_client_cons_state_path)
         .map_err(|_| ClientError::ConsensusStateNotFound {
             client_id,
@@ -62,10 +61,12 @@ where
 {
     let MsgUpgradeClient { client_id, .. } = msg;
 
-    let old_client_state = ctx.client_state(&client_id)?;
+    let client_exec_ctx = ctx.get_client_execution_context();
+
+    let old_client_state = client_exec_ctx.client_state(&client_id)?;
 
     let latest_height = old_client_state.update_state_on_upgrade(
-        ctx.get_client_execution_context(),
+        client_exec_ctx,
         &client_id,
         msg.upgraded_client_state.clone(),
         msg.upgraded_consensus_state,

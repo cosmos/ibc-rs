@@ -3,13 +3,14 @@
 use alloc::format;
 use core::str::FromStr;
 
+use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, Path,
     ReceiptPath, SeqRecvPath, SeqSendPath,
 };
-use ibc::core::host::ValidationContext;
+use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::{
     QueryChannelClientStateRequest, QueryChannelClientStateResponse,
@@ -121,7 +122,6 @@ pub fn query_channel_client_state<I>(
 ) -> Result<QueryChannelClientStateResponse, QueryError>
 where
     I: QueryContext,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
 {
     let channel_id = ChannelId::from_str(request.channel_id.as_str())?;
 
@@ -139,7 +139,9 @@ where
             description: format!("Channel {} does not have a connection", channel_id),
         })??;
 
-    let client_state = ibc_ctx.client_state(connection_end.client_id())?;
+    let client_val_ctx = ibc_ctx.get_client_validation_context();
+
+    let client_state = client_val_ctx.client_state(connection_end.client_id())?;
 
     let current_height = ibc_ctx.host_height()?;
 
@@ -173,7 +175,7 @@ pub fn query_channel_consensus_state<I>(
 ) -> Result<QueryChannelConsensusStateResponse, QueryError>
 where
     I: QueryContext,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+    ConsensusStateRef<I>: Into<Any>,
 {
     let channel_id = ChannelId::from_str(request.channel_id.as_str())?;
 
@@ -198,8 +200,9 @@ where
         height.revision_number(),
         height.revision_height(),
     );
+    let client_val_ctx = ibc_ctx.get_client_validation_context();
 
-    let consensus_state = ibc_ctx.consensus_state(&consensus_path)?;
+    let consensus_state = client_val_ctx.consensus_state(&consensus_path)?;
 
     let current_height = ibc_ctx.host_height()?;
 

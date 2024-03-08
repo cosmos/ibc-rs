@@ -2,13 +2,14 @@ use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ConsensusState as TmConsensusState,
 };
 use ibc::core::client::context::client_state::ClientStateCommon;
+use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
 use ibc::core::client::types::Height;
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::ValidationContext;
+use ibc::core::host::{ClientStateRef, ValidationContext};
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
@@ -48,7 +49,7 @@ fn test_create_client_ok() {
 
     assert!(res.is_ok(), "execution happy path");
 
-    let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();
+    let expected_client_state = ClientStateRef::<MockContext>::try_from(msg.client_state).unwrap();
     assert_eq!(expected_client_state.client_type(), client_type);
     assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
 }
@@ -84,7 +85,7 @@ fn test_tm_create_client_ok() {
 
     assert!(res.is_ok(), "tendermint client execution happy path");
 
-    let expected_client_state = ctx.decode_client_state(msg.client_state).unwrap();
+    let expected_client_state = ClientStateRef::<MockContext>::try_from(msg.client_state).unwrap();
     assert_eq!(expected_client_state.client_type(), client_type);
     assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
 }

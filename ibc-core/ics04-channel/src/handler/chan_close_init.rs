@@ -3,7 +3,7 @@ use ibc_core_channel_types::channel::State;
 use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::CloseInit;
 use ibc_core_channel_types::msgs::MsgChannelCloseInit;
-use ibc_core_client::context::client_state::ClientStateValidation;
+use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
@@ -110,7 +110,10 @@ where
     conn_end_on_a.verify_state_matches(&ConnectionState::Open)?;
 
     let client_id_on_a = conn_end_on_a.client_id();
-    let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+
+    let client_val_ctx_a = ctx_a.get_client_validation_context();
+
+    let client_state_of_b_on_a = client_val_ctx_a.client_state(client_id_on_a)?;
     client_state_of_b_on_a
         .status(ctx_a.get_client_validation_context(), client_id_on_a)?
         .verify_is_active()?;

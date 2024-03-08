@@ -6,7 +6,7 @@ mod handler;
 mod plan;
 mod proposal;
 
-pub use context::{UpgradeExecutionContext, UpgradeValidationContext};
+pub use context::*;
 pub use events::{UpgradeChain, UpgradeClientProposal};
 pub use handler::upgrade_client_proposal_handler;
 pub use plan::Plan;

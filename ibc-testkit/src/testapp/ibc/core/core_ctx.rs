@@ -3,7 +3,6 @@
 use core::ops::Add;
 use core::time::Duration;
 
-use ibc::clients::tendermint::client_state::ClientState;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::channel::types::error::{ChannelError, PacketError};
@@ -15,81 +14,24 @@ use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::IbcEvent;
-use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
+use ibc::core::host::types::identifiers::{ConnectionId, Sequence};
 use ibc::core::host::types::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
-    ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath, ReceiptPath,
+    SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::{Signer, Timestamp};
-use ibc::primitives::proto::Any;
 
 use super::types::MockContext;
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
-use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
+use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
+use crate::testapp::ibc::clients::AnyConsensusState;
 
 impl ValidationContext for MockContext {
     type V = Self;
-    type E = Self;
-    type AnyConsensusState = AnyConsensusState;
-    type AnyClientState = AnyClientState;
-
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError> {
-        match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => {
-                client_record
-                    .client_state
-                    .clone()
-                    .ok_or_else(|| ClientError::ClientStateNotFound {
-                        client_id: client_id.clone(),
-                    })
-            }
-            None => Err(ClientError::ClientStateNotFound {
-                client_id: client_id.clone(),
-            }),
-        }
-        .map_err(ContextError::ClientError)
-    }
-
-    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError> {
-        if let Ok(client_state) = ClientState::try_from(client_state.clone()) {
-            client_state.inner().validate().map_err(ClientError::from)?;
-            Ok(client_state.into())
-        } else if let Ok(client_state) = MockClientState::try_from(client_state.clone()) {
-            Ok(client_state.into())
-        } else {
-            Err(ClientError::UnknownClientStateType {
-                client_state_type: client_state.type_url,
-            })
-        }
-        .map_err(ContextError::ClientError)
-    }
-
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<AnyConsensusState, ContextError> {
-        let client_id = &client_cons_state_path.client_id;
-        let height = Height::new(
-            client_cons_state_path.revision_number,
-            client_cons_state_path.revision_height,
-        )?;
-        match self.ibc_store.lock().clients.get(client_id) {
-            Some(client_record) => match client_record.consensus_states.get(&height) {
-                Some(consensus_state) => Ok(consensus_state.clone()),
-                None => Err(ClientError::ConsensusStateNotFound {
-                    client_id: client_id.clone(),
-                    height,
-                }),
-            },
-            None => Err(ClientError::ConsensusStateNotFound {
-                client_id: client_id.clone(),
-                height,
-            }),
-        }
-        .map_err(ContextError::ClientError)
-    }
+    type HostClientState = MockClientState;
+    type HostConsensusState = MockConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
         Ok(self.latest_height())
@@ -105,17 +47,71 @@ impl ValidationContext for MockContext {
             .expect("Never fails"))
     }
 
-    fn host_consensus_state(&self, height: &Height) -> Result<AnyConsensusState, ContextError> {
-        match self.host_block(height) {
+    fn client_counter(&self) -> Result<u64, ContextError> {
+        Ok(self.ibc_store.lock().client_ids_counter)
+    }
+
+    fn host_consensus_state(&self, height: &Height) -> Result<MockConsensusState, ContextError> {
+        let cs: AnyConsensusState = match self.host_block(height) {
             Some(block_ref) => Ok(block_ref.clone().into()),
             None => Err(ClientError::MissingLocalConsensusState { height: *height }),
         }
-        .map_err(ConnectionError::Client)
-        .map_err(ContextError::ConnectionError)
+        .map_err(ContextError::ClientError)?;
+
+        match cs {
+            AnyConsensusState::Mock(cs) => Ok(cs),
+            _ => Err(ClientError::Other {
+                description: "unexpected consensus state type".to_string(),
+            }
+            .into()),
+        }
     }
 
-    fn client_counter(&self) -> Result<u64, ContextError> {
-        Ok(self.ibc_store.lock().client_ids_counter)
+    fn validate_self_client(
+        &self,
+        client_state_of_host_on_counterparty: Self::HostClientState,
+    ) -> Result<(), ContextError> {
+        if client_state_of_host_on_counterparty.is_frozen() {
+            return Err(ClientError::ClientFrozen {
+                description: String::new(),
+            }
+            .into());
+        }
+
+        let self_chain_id = &self.host_chain_id;
+        let self_revision_number = self_chain_id.revision_number();
+        if self_revision_number
+            != client_state_of_host_on_counterparty
+                .latest_height()
+                .revision_number()
+        {
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client is not in the same revision as the chain. expected: {}, got: {}",
+                        self_revision_number,
+                        client_state_of_host_on_counterparty
+                            .latest_height()
+                            .revision_number()
+                    ),
+                },
+            ));
+        }
+
+        let host_current_height = self.latest_height().increment();
+        if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client has latest height {} greater than or equal to chain height {}",
+                        client_state_of_host_on_counterparty.latest_height(),
+                        host_current_height
+                    ),
+                },
+            ));
+        }
+
+        Ok(())
     }
 
     fn connection_end(&self, cid: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
@@ -126,53 +122,6 @@ impl ValidationContext for MockContext {
             }),
         }
         .map_err(ContextError::ConnectionError)
-    }
-
-    fn validate_self_client(
-        &self,
-        client_state_of_host_on_counterparty: Any,
-    ) -> Result<(), ContextError> {
-        let mock_client_state = MockClientState::try_from(client_state_of_host_on_counterparty)
-            .map_err(|_| ConnectionError::InvalidClientState {
-                reason: "client must be a mock client".to_string(),
-            })
-            .map_err(ContextError::ConnectionError)?;
-
-        if mock_client_state.is_frozen() {
-            return Err(ClientError::ClientFrozen {
-                description: String::new(),
-            }
-            .into());
-        }
-
-        let self_chain_id = &self.host_chain_id;
-        let self_revision_number = self_chain_id.revision_number();
-        if self_revision_number != mock_client_state.latest_height().revision_number() {
-            return Err(ContextError::ConnectionError(
-                ConnectionError::InvalidClientState {
-                    reason: format!(
-                        "client is not in the same revision as the chain. expected: {}, got: {}",
-                        self_revision_number,
-                        mock_client_state.latest_height().revision_number()
-                    ),
-                },
-            ));
-        }
-
-        let host_current_height = self.latest_height().increment();
-        if mock_client_state.latest_height() >= host_current_height {
-            return Err(ContextError::ConnectionError(
-                ConnectionError::InvalidClientState {
-                    reason: format!(
-                        "client has latest height {} greater than or equal to chain height {}",
-                        mock_client_state.latest_height(),
-                        host_current_height
-                    ),
-                },
-            ));
-        }
-
-        Ok(())
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
@@ -350,6 +299,8 @@ impl ValidationContext for MockContext {
 }
 
 impl ExecutionContext for MockContext {
+    type E = Self;
+
     fn get_client_execution_context(&mut self) -> &mut Self::E {
         self
     }

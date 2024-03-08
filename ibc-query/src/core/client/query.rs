@@ -4,14 +4,15 @@ use alloc::format;
 use core::str::FromStr;
 
 use ibc::core::client::context::client_state::ClientStateValidation;
+use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
-use ibc::core::host::ValidationContext;
-use ibc::cosmos_host::upgrade_proposal::UpgradeValidationContext;
+use ibc::core::host::{ConsensusStateRef, ValidationContext};
+use ibc::cosmos_host::upgrade_proposal::{UpgradeValidationContext, UpgradedConsensusStateRef};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::{
     ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateRequest,
@@ -23,7 +24,7 @@ use ibc_proto::ibc::core::client::v1::{
     QueryUpgradedConsensusStateResponse,
 };
 
-use crate::core::context::{ProvableContext, QueryContext};
+use crate::core::context::QueryContext;
 use crate::error::QueryError;
 
 /// Queries for the client state of a given client id.
@@ -32,12 +33,13 @@ pub fn query_client_state<I>(
     request: &QueryClientStateRequest,
 ) -> Result<QueryClientStateResponse, QueryError>
 where
-    I: ValidationContext + ProvableContext,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
+    I: QueryContext,
 {
     let client_id = ClientId::from_str(request.client_id.as_str())?;
 
-    let client_state = ibc_ctx.client_state(&client_id)?;
+    let client_val_ctx = ibc_ctx.get_client_validation_context();
+
+    let client_state = client_val_ctx.client_state(&client_id)?;
 
     let current_height = ibc_ctx.host_height()?;
 
@@ -64,7 +66,6 @@ pub fn query_client_states<I>(
 ) -> Result<QueryClientStatesResponse, QueryError>
 where
     I: QueryContext,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
 {
     let client_states = ibc_ctx.client_states()?;
 
@@ -88,7 +89,7 @@ pub fn query_consensus_state<I>(
 ) -> Result<QueryConsensusStateResponse, QueryError>
 where
     I: QueryContext,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+    ConsensusStateRef<I>: Into<Any>,
 {
     let client_id = ClientId::from_str(request.client_id.as_str())?;
 
@@ -103,7 +104,9 @@ where
     } else {
         let height = Height::new(request.revision_number, request.revision_height)?;
 
-        let consensus_state = ibc_ctx.consensus_state(&ClientConsensusStatePath::new(
+        let client_val_ctx = ibc_ctx.get_client_validation_context();
+
+        let consensus_state = client_val_ctx.consensus_state(&ClientConsensusStatePath::new(
             client_id.clone(),
             height.revision_number(),
             height.revision_height(),
@@ -141,7 +144,7 @@ pub fn query_consensus_states<I>(
 ) -> Result<QueryConsensusStatesResponse, QueryError>
 where
     I: QueryContext,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+    ConsensusStateRef<I>: Into<Any>,
 {
     let client_id = ClientId::from_str(request.client_id.as_str())?;
 
@@ -191,8 +194,8 @@ where
     I: ValidationContext,
 {
     let client_id = ClientId::from_str(request.client_id.as_str())?;
-
-    let client_state = ibc_ctx.client_state(&client_id)?;
+    let client_val_ctx = ibc_ctx.get_client_validation_context();
+    let client_state = client_val_ctx.client_state(&client_id)?;
     let client_validation_ctx = ibc_ctx.get_client_validation_context();
     let client_status = client_state.status(client_validation_ctx, &client_id)?;
 
@@ -208,7 +211,6 @@ pub fn query_upgraded_client_state<U>(
 ) -> Result<QueryUpgradedClientStateResponse, QueryError>
 where
     U: UpgradeValidationContext,
-    <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
 {
     let plan = upgrade_ctx.upgrade_plan().map_err(ClientError::from)?;
 
@@ -230,7 +232,7 @@ pub fn query_upgraded_consensus_state<U>(
 ) -> Result<QueryUpgradedConsensusStateResponse, QueryError>
 where
     U: UpgradeValidationContext,
-    <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
+    UpgradedConsensusStateRef<U>: Into<Any>,
 {
     let plan = upgrade_ctx.upgrade_plan().map_err(ClientError::from)?;
 

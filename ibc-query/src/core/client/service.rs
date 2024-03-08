@@ -2,9 +2,11 @@
 //! `I` must be a type where writes from one thread are readable from another.
 //! This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
 
-use ibc::core::host::ValidationContext;
+use ibc::core::host::ConsensusStateRef;
 use ibc::core::primitives::prelude::*;
-use ibc::cosmos_host::upgrade_proposal::UpgradeValidationContext;
+use ibc::cosmos_host::upgrade_proposal::{
+    UpgradeValidationContext, UpgradedClientStateRef, UpgradedConsensusStateRef,
+};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::query_server::Query as ClientQuery;
 use ibc_proto::ibc::core::client::v1::{
@@ -33,10 +35,8 @@ pub struct ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
-    <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
-    <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
+    UpgradedClientStateRef<U>: Into<Any>,
+    UpgradedConsensusStateRef<U>: Into<Any>,
 {
     ibc_context: I,
     upgrade_context: U,
@@ -46,10 +46,8 @@ impl<I, U> ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
-    <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
-    <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
+    UpgradedClientStateRef<U>: Into<Any>,
+    UpgradedConsensusStateRef<U>: Into<Any>,
 {
     /// Parameters `ibc_context` and `upgrade_context` must be a type where writes from one thread are readable from another.
     /// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
@@ -66,10 +64,8 @@ impl<I, U> ClientQuery for ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
-    <U as UpgradeValidationContext>::AnyClientState: Into<Any>,
-    <U as UpgradeValidationContext>::AnyConsensusState: Into<Any>,
+    ConsensusStateRef<I>: Into<Any>,
+    UpgradedConsensusStateRef<U>: Into<Any>,
 {
     async fn client_state(
         &self,
