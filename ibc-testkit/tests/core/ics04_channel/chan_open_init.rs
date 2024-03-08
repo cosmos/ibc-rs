@@ -52,7 +52,7 @@ fn fixture() -> Fixture {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a);
+        .with_connection(ConnectionId::new(0), conn_end_on_a);
 
     Fixture { ctx, router, msg }
 }

@@ -4,6 +4,7 @@ use ibc::core::channel::types::msgs::{MsgTimeoutOnClose, PacketMsg};
 use ibc::core::channel::types::Version;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::version::get_compatible_versions;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
@@ -56,18 +57,18 @@ fn fixture() -> Fixture {
         State::Open,
         Order::Ordered,
         Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
-        vec![ConnectionId::default()],
+        vec![ConnectionId::new(0)],
         Version::new("ics20-1".to_string()),
     )
     .unwrap();
 
     let conn_end_on_a = ConnectionEnd::new(
         ConnectionState::Open,
-        ClientId::default(),
+        ClientId::from("07-tendermint-0"),
         ConnectionCounterparty::new(
-            ClientId::default(),
-            Some(ConnectionId::default()),
-            Default::default(),
+            ClientId::from("07-tendermint-0"),
+            Some(ConnectionId::new(0)),
+            CommitmentPrefix::empty(),
         ),
         get_compatible_versions(),
         ZERO_DURATION,
@@ -116,7 +117,7 @@ fn timeout_on_close_success_no_packet_commitment(fixture: Fixture) {
     } = fixture;
     let context = context
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
-        .with_connection(ConnectionId::default(), conn_end_on_a);
+        .with_connection(ConnectionId::new(0), conn_end_on_a);
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
@@ -141,7 +142,7 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
     } = fixture;
     let mut context = context
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
-        .with_connection(ConnectionId::default(), conn_end_on_a)
+        .with_connection(ConnectionId::new(0), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),
             msg.packet.chan_id_on_a.clone(),
@@ -152,7 +153,7 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
     context
         .get_client_execution_context()
         .store_update_meta(
-            ClientId::default(),
+            ClientId::from("07-tendermint-0"),
             Height::new(0, 2).unwrap(),
             Timestamp::from_nanoseconds(5000).unwrap(),
             Height::new(0, 5).unwrap(),

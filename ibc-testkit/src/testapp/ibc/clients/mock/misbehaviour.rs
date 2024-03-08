@@ -23,7 +23,7 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
 
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
         Ok(Self {
-            client_id: Default::default(),
+            client_id: ClientId::from("07-tendermint-0"),
             header1: raw
                 .header1
                 .ok_or(ClientError::MissingRawMisbehaviour)?

@@ -4,6 +4,7 @@ use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::Version;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::version::get_compatible_versions;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
@@ -51,18 +52,18 @@ fn fixture() -> Fixture {
         State::Open,
         Order::Unordered,
         Counterparty::new(packet.port_id_on_a, Some(packet.chan_id_on_a)),
-        vec![ConnectionId::default()],
+        vec![ConnectionId::new(0)],
         Version::new("ics20-1".to_string()),
     )
     .unwrap();
 
     let conn_end_on_b = ConnectionEnd::new(
         ConnectionState::Open,
-        ClientId::default(),
+        ClientId::from("07-tendermint-0"),
         ConnectionCounterparty::new(
-            ClientId::default(),
-            Some(ConnectionId::default()),
-            Default::default(),
+            ClientId::from("07-tendermint-0"),
+            Some(ConnectionId::new(0)),
+            CommitmentPrefix::empty(),
         ),
         get_compatible_versions(),
         ZERO_DURATION,
@@ -119,7 +120,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_b)
+        .with_connection(ConnectionId::new(0), conn_end_on_b)
         .with_channel(
             packet.port_id_on_b.clone(),
             packet.chan_id_on_b.clone(),
@@ -141,7 +142,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
     context
         .get_client_execution_context()
         .store_update_meta(
-            ClientId::default(),
+            ClientId::from("07-tendermint-0"),
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 5).unwrap(),
@@ -197,7 +198,7 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_b)
+        .with_connection(ConnectionId::new(0), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b)
         .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into())
         .with_height(host_height);
@@ -227,7 +228,7 @@ fn recv_packet_execute_happy_path(fixture: Fixture) {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_b)
+        .with_connection(ConnectionId::new(0), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b);
 
     let msg_env = MsgEnvelope::from(PacketMsg::from(msg));

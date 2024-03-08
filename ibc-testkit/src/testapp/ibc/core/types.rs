@@ -125,7 +125,7 @@ pub struct MockContext {
 pub struct MockClientConfig {
     #[builder(default = ChainId::new("mockZ-1").expect("no error"))]
     client_chain_id: ChainId,
-    #[builder(default)]
+    #[builder(default = ClientId::from("07-tendermint-0"))]
     client_id: ClientId,
     #[builder(default = mock_client_type())]
     client_type: ClientType,

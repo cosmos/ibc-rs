@@ -73,7 +73,7 @@ pub fn dummy_raw_msg_conn_open_init() -> RawMsgConnectionOpenInit {
     RawMsgConnectionOpenInit {
         client_id: ClientId::from("07-tendermint-0").to_string(),
         counterparty: Some(dummy_raw_counterparty_conn(None)),
-        version: Some(get_compatible_versions()[0].into()),
+        version: Some(get_compatible_versions()[0].clone().into()),
         delay_period: 0,
         signer: dummy_bech32_account(),
     }

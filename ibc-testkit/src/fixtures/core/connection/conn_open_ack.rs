@@ -38,7 +38,7 @@ pub fn dummy_raw_msg_conn_open_ack(
         }),
         client_state: Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
         proof_client: dummy_proof(),
-        version: Some(get_compatible_versions()[0].into()),
+        version: Some(get_compatible_versions()[0].clone().into()),
         signer: dummy_bech32_account(),
         host_consensus_state_proof: vec![],
     }
