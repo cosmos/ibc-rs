@@ -2,7 +2,7 @@ use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::msgs::MsgConnectionOpenAck;
 use ibc::core::connection::types::proto::v1::MsgConnectionOpenAck as RawMsgConnectionOpenAck;
-use ibc::core::connection::types::version::Version;
+use ibc::core::connection::types::version::get_compatible_versions;
 use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::primitives::prelude::*;
 
@@ -38,7 +38,7 @@ pub fn dummy_raw_msg_conn_open_ack(
         }),
         client_state: Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
         proof_client: dummy_proof(),
-        version: Some(Version::default().into()),
+        version: Some(get_compatible_versions()[0].into()),
         signer: dummy_bech32_account(),
         host_consensus_state_proof: vec![],
     }

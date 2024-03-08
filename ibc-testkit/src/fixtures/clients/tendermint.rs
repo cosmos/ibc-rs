@@ -31,8 +31,8 @@ pub fn dummy_tm_client_state_from_header(tm_header: TmHeader) -> TmClientState {
         Duration::from_secs(128000),
         Duration::from_millis(3000),
         Height::new(chain_id.revision_number(), u64::from(tm_header.height)).expect("Never fails"),
-        Default::default(),
-        Default::default(),
+        ProofSpecs::cosmos(),
+        Vec::new(),
         AllowUpdate {
             after_expiry: false,
             after_misbehaviour: false,
@@ -56,8 +56,8 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
         unbonding_period: Some(Duration::from_secs(128000).into()),
         max_clock_drift: Some(Duration::from_millis(3000).into()),
         latest_height: Some(Height::new(0, 10).expect("Never fails").into()),
-        proof_specs: ProofSpecs::default().into(),
-        upgrade_path: Default::default(),
+        proof_specs: ProofSpecs::cosmos().into(),
+        upgrade_path: Vec::new(),
         frozen_height: Some(frozen_height),
         allow_update_after_expiry: false,
         allow_update_after_misbehaviour: false,
@@ -67,7 +67,7 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
 #[derive(typed_builder::TypedBuilder, Debug)]
 pub struct ClientStateConfig {
     pub chain_id: ChainId,
-    #[builder(default)]
+    #[builder(default = TrustThreshold::ONE_THIRD)]
     pub trust_level: TrustThreshold,
     #[builder(default = Duration::from_secs(64000))]
     pub trusting_period: Duration,
@@ -76,7 +76,7 @@ pub struct ClientStateConfig {
     #[builder(default = Duration::from_millis(3000))]
     max_clock_drift: Duration,
     pub latest_height: Height,
-    #[builder(default)]
+    #[builder(default = ProofSpecs::cosmos())]
     pub proof_specs: ProofSpecs,
     #[builder(default)]
     pub upgrade_path: Vec<String>,

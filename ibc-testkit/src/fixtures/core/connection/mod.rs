@@ -42,7 +42,7 @@ pub fn dummy_raw_counterparty_conn(conn_id: Option<u64>) -> RawCounterparty {
         None => "".to_string(),
     };
     RawCounterparty {
-        client_id: ClientId::default().to_string(),
+        client_id: ClientId::from("07-tendermint-0").to_string(),
         connection_id,
         prefix: Some(MerklePrefix {
             key_prefix: b"ibc".to_vec(),

@@ -678,7 +678,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
                     .into(),
                 ),
                 proof_specs: ProofSpecs::default().into(),
-                upgrade_path: Default::default(),
+                upgrade_path: Vec::new(),
                 frozen_height: Some(RawHeight {
                     revision_number: 0,
                     revision_height: 0,
