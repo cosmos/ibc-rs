@@ -187,6 +187,8 @@ restructured as follows, containing all the client relevant methods and types:
 
 ```diff
 pub trait ClientValidationContext: Sized {
+     // Given that we will be dropping `decode_client_state()` method,
+     // the client state type introduced here should have implemented `TryFrom<Any>` and `Into<Any>` traits.
 +    type ClientStateRef: ClientStateValidation<Self>;
 +    type ConsensusStateRef: ConsensusState;
 
@@ -329,16 +331,12 @@ pub trait ValidationContext:
 
 - We move away from the `decode_client_state()` method. Since per our design,
   users must utilize a `ClientState` type that implements both `TryFrom<Any>`
-  and `Into<Any>`, therefore, we can offer a trait named `ClientStateDecoder`
-  encompassing a `from_any()` method as follows, making it readily
-  available for users seeking to decode a client state from `Any` type:
+  and `Into<Any>`, therefore, we can offer a trait called `ClientStateDecoder`
+  as follows, making it readily available for users seeking to decode/encode a
+  client state from/into the `Any` type:
 
     ```rust
-    pub trait ClientStateDecoder: TryFrom<Any, Error = ClientError> {
-        fn from_any(client_state: Any) -> Result<Self, ClientError> {
-            Self::try_from(client_state)
-        }
-    }
+    pub trait ClientStateDecoder: TryFrom<Any, Error = ClientError> + Into<Any> {}
 
     impl<T> ClientStateDecoder for T where T: TryFrom<Any, Error = ClientError> {}
 
