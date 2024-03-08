@@ -204,7 +204,7 @@ impl Default for ConnectionEnd {
     fn default() -> Self {
         Self {
             state: State::Uninitialized,
-            client_id: Default::default(),
+            client_id: ClientId::from("07-tendermint-0"),
             counterparty: Default::default(),
             versions: Vec::new(),
             delay_period: ZERO_DURATION,

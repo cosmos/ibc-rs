@@ -76,9 +76,9 @@ impl FromStr for ClientId {
     }
 }
 
-impl Default for ClientId {
-    fn default() -> Self {
-        Self::from_str("07-tendermint-0").expect("Never fails because we use a valid client id")
+impl From<&str> for ClientId {
+    fn from(s: &str) -> Self {
+        Self::from_str(s).expect("Invalid client id")
     }
 }
 
