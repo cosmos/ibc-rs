@@ -26,7 +26,7 @@ pub fn dummy_tm_client_state_from_header(tm_header: TmHeader) -> TmClientState {
     let chain_id = ChainId::from_str(tm_header.chain_id.as_str()).expect("Never fails");
     let client_state = ClientStateType::new(
         chain_id.clone(),
-        Default::default(),
+        TrustThreshold::ONE_THIRD,
         Duration::from_secs(64000),
         Duration::from_secs(128000),
         Duration::from_millis(3000),

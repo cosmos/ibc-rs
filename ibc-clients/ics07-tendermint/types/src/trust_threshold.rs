@@ -134,11 +134,11 @@ impl TryFrom<Fraction> for TrustThreshold {
     }
 }
 
-impl Default for TrustThreshold {
-    fn default() -> Self {
-        Self::ONE_THIRD
-    }
-}
+// impl Default for TrustThreshold {
+//     fn default() -> Self {
+//         Self::ONE_THIRD
+//     }
+// }
 
 impl Display for TrustThreshold {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
