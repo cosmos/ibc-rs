@@ -445,7 +445,7 @@ mod tests {
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(0, 10).expect("Never fails"),
             proof_specs: ProofSpecs::cosmos(),
-            upgrade_path: Default::default(),
+            upgrade_path: Vec::new(),
             allow_update: AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
