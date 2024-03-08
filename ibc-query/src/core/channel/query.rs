@@ -10,7 +10,7 @@ use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, Path,
     ReceiptPath, SeqRecvPath, SeqSendPath,
 };
-use ibc::core::host::{ClientStateRef, ConsensusStateRef, ValidationContext};
+use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::{
     QueryChannelClientStateRequest, QueryChannelClientStateResponse,
@@ -122,7 +122,6 @@ pub fn query_channel_client_state<I>(
 ) -> Result<QueryChannelClientStateResponse, QueryError>
 where
     I: QueryContext,
-    ClientStateRef<I>: Into<Any>,
 {
     let channel_id = ChannelId::from_str(request.channel_id.as_str())?;
 

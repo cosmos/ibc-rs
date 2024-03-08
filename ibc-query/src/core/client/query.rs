@@ -11,10 +11,8 @@ use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
-use ibc::core::host::{ClientStateRef, ConsensusStateRef, ValidationContext};
-use ibc::cosmos_host::upgrade_proposal::{
-    AnyUpgradedClientState, AnyUpgradedConsensusState, UpgradeValidationContext,
-};
+use ibc::core::host::{ConsensusStateRef, ValidationContext};
+use ibc::cosmos_host::upgrade_proposal::{AnyUpgradedConsensusState, UpgradeValidationContext};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::{
     ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateRequest,
@@ -36,7 +34,6 @@ pub fn query_client_state<I>(
 ) -> Result<QueryClientStateResponse, QueryError>
 where
     I: QueryContext,
-    ClientStateRef<I>: Into<Any>,
 {
     let client_id = ClientId::from_str(request.client_id.as_str())?;
 
@@ -69,7 +66,6 @@ pub fn query_client_states<I>(
 ) -> Result<QueryClientStatesResponse, QueryError>
 where
     I: QueryContext,
-    ClientStateRef<I>: Into<Any>,
 {
     let client_states = ibc_ctx.client_states()?;
 
@@ -93,7 +89,6 @@ pub fn query_consensus_state<I>(
 ) -> Result<QueryConsensusStateResponse, QueryError>
 where
     I: QueryContext,
-    ClientStateRef<I>: Into<Any>,
     ConsensusStateRef<I>: Into<Any>,
 {
     let client_id = ClientId::from_str(request.client_id.as_str())?;
@@ -216,7 +211,6 @@ pub fn query_upgraded_client_state<U>(
 ) -> Result<QueryUpgradedClientStateResponse, QueryError>
 where
     U: UpgradeValidationContext,
-    AnyUpgradedClientState<U>: Into<Any>,
 {
     let plan = upgrade_ctx.upgrade_plan().map_err(ClientError::from)?;
 

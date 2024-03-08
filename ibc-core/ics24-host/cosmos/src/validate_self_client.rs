@@ -11,7 +11,7 @@ use ibc_primitives::prelude::*;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 
 /// Provides a default implementation intended for implementing the
-/// `ClientValidationContext::validate_self_client` API.
+/// `ValidationContext::validate_self_client` API.
 ///
 /// This validation logic tailored for Tendermint client states of a host chain
 /// operating across various counterparty chains.

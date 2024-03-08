@@ -36,7 +36,7 @@ where
     let client_val_ctx_b = ctx_b.get_client_validation_context();
 
     let client_state_of_b_on_a =
-        Ctx::HostClientState::from_any(msg.client_state_of_b_on_a.clone())?;
+        Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone())?;
 
     ctx_b.validate_self_client(client_state_of_b_on_a)?;
 

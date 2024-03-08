@@ -10,7 +10,7 @@ use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::host::types::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
-use ibc::core::host::{ClientStateRef, ConsensusStateRef, ValidationContext};
+use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
 use ibc_proto::ibc::core::connection::v1::{
@@ -79,7 +79,6 @@ pub fn query_client_connections<I>(
 ) -> Result<QueryClientConnectionsResponse, QueryError>
 where
     I: QueryContext,
-    ClientStateRef<I>: Into<Any>,
 {
     let client_id = ClientId::from_str(request.client_id.as_str())?;
 
@@ -110,7 +109,6 @@ pub fn query_connection_client_state<I>(
 ) -> Result<QueryConnectionClientStateResponse, QueryError>
 where
     I: QueryContext,
-    ClientStateRef<I>: Into<Any>,
 {
     let connection_id = ConnectionId::from_str(request.connection_id.as_str())?;
 

@@ -26,7 +26,7 @@ where
 
     let client_val_ctx = ctx.get_client_validation_context();
 
-    let client_state = ClientStateRef::<Ctx>::from_any(client_state)?;
+    let client_state = ClientStateRef::<Ctx>::try_from(client_state)?;
 
     let client_id = client_state.client_type().build_client_id(id_counter);
 
@@ -64,7 +64,7 @@ where
 
     let client_exec_ctx = ctx.get_client_execution_context();
 
-    let client_state = ClientStateMut::<Ctx>::from_any(client_state)?;
+    let client_state = ClientStateMut::<Ctx>::try_from(client_state)?;
 
     let client_type = client_state.client_type();
     let client_id = client_type.build_client_id(id_counter);

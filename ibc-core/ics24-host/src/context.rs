@@ -41,16 +41,19 @@ pub trait ValidationContext {
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
-    /// Returns a natural number, counting how many clients have been created
-    /// thus far. The value of this counter should increase only via method
-    /// `ExecutionContext::increase_client_counter`.
-    fn client_counter(&self) -> Result<u64, ContextError>;
-
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
     fn host_consensus_state(
         &self,
         height: &Height,
     ) -> Result<Self::HostConsensusState, ContextError>;
+
+    /// Returns a natural number, counting how many clients have been created
+    /// thus far. The value of this counter should increase only via method
+    /// `ExecutionContext::increase_client_counter`.
+    fn client_counter(&self) -> Result<u64, ContextError>;
+
+    /// Returns the ConnectionEnd for the given identifier `conn_id`.
+    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
 
     /// Validates the `ClientState` of the host chain stored on the counterparty
     /// chain against the host's internal state.
@@ -65,9 +68,6 @@ pub trait ValidationContext {
         &self,
         client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError>;
-
-    /// Returns the ConnectionEnd for the given identifier `conn_id`.
-    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;
