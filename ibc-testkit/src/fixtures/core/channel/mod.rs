@@ -46,7 +46,7 @@ pub fn dummy_raw_channel_end(state: i32, channel_id: Option<u64>) -> RawChannel 
         state,
         ordering: 2,
         counterparty: Some(dummy_raw_counterparty_chan(channel_id)),
-        connection_hops: vec![ConnectionId::default().to_string()],
+        connection_hops: vec![ConnectionId::new(0).to_string()],
         version: "".to_string(), // The version is not validated.
     }
 }

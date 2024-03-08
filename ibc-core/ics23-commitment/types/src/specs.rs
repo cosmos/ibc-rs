@@ -25,12 +25,6 @@ impl ProofSpecs {
     }
 }
 
-impl Default for ProofSpecs {
-    fn default() -> Self {
-        Self::cosmos()
-    }
-}
-
 impl From<Vec<RawProofSpec>> for ProofSpecs {
     fn from(ics23_specs: Vec<RawProofSpec>) -> Self {
         Self(
