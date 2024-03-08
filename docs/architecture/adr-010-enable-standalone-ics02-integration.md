@@ -145,31 +145,24 @@ pub trait ValidationContext {
     ... // other methods
 }
 
-pub trait ExecutionContext: ValidationContext
-+ where
-+     ClientStateMut<Self>: ClientStateExecution<Self::E>,
-+ {
+pub trait ExecutionContext: ValidationContext {
 +    type E: ClientExecutionContext;
 
     /// Retrieve the context that implements all clients' `ExecutionContext`.
     fn get_client_execution_context(&mut self) -> &mut Self::E;
 
     ... // other methods
-}
 
 /// Convenient type aliases
 + pub type ClientStateRef<Ctx> =
-+    <<Ctx as ValidationContext>::V as ClientValidationContext>::AnyClientState;
++    <<Ctx as ValidationContext>::V as ClientValidationContext>::ClientStateRef;
 
 + pub type ClientStateMut<Ctx> =
-+    <<Ctx as ExecutionContext>::E as ClientValidationContext>::AnyClientState;
++    <<Ctx as ExecutionContext>::E as ClientValidationContext>::ClientStateMut;
 
 + pub type ConsensusStateRef<Ctx> =
-+    <<Ctx as ValidationContext>::V as ClientValidationContext>::AnyConsensusState;
-
-+ pub type ConsensusStateMut<Ctx> =
-+    <<Ctx as ExecutionContext>::E as ClientValidationContext>::AnyConsensusState;
-
++    <<Ctx as ValidationContext>::V as ClientValidationContext>::ConsensusStateRef;
+}
 ```
 
 We should also highlight that ICS-02 houses various types, APIs and
@@ -194,15 +187,15 @@ restructured as follows, containing all the client relevant methods and types:
 
 ```diff
 pub trait ClientValidationContext: Sized {
-+    type AnyClientState: ClientStateValidation<Self>;
-+    type AnyConsensusState: ConsensusState;
++    type ClientStateRef: ClientStateValidation<Self>;
++    type ConsensusStateRef: ConsensusState;
 
-+    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
++    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError>;
 
 +    fn consensus_state(
 +        &self,
 +        client_cons_state_path: &ClientConsensusStatePath,
-+    ) -> Result<Self::AnyConsensusState, ContextError>;
++    ) -> Result<Self::ConsensusStateRef, ContextError>;
 
     fn client_update_meta(
         &self,
@@ -211,13 +204,17 @@ pub trait ClientValidationContext: Sized {
     ) -> Result<(Timestamp, Height), ContextError>;
 }
 
-+ pub trait ClientExecutionContext: ClientValidationContext
-+ where
-+    Self::AnyClientState: ClientStateExecution<Self>,
+pub trait ClientExecutionContext:
++    ClientValidationContext<ClientStateRef = Self::ClientStateMut>
 {
 -    type V: ClientValidationContext;
 -    type AnyClientState: ClientState<Self::V, Self>;
 -    type AnyConsensusState: ConsensusState;
++    type ClientStateMut: ClientStateExecution<Self>;
+
++    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, ContextError> {
++        self.client_state(client_id)
++    }
 
     fn store_client_state(
         &mut self,
@@ -252,13 +249,29 @@ pub trait ClientValidationContext: Sized {
 }
 ```
 
-Given the above changes, we now can streamline ICS-07 specific APIs, eliminating
-the requirement for implementing a redundant `consensus_state()` method. For the
-sake of simplification, we can remove the `CommonContext` trait and consolidate
-everything under the `TmValidationContext` as follows:
+The introduction of the `ClientStateMut` associated type in addition to the
+`ClientStateRef` became necessary to tackle the limitation that the
+`ClientState` retrieved from the regular `client_state()` method provides access
+only to validation methods. However, in `execute` handlers, there are scenarios
+(like
+[here](https://github.com/cosmos/ibc-rs/blob/f272f30e0f773d85a99fc553b75d41f9f768d5c5/ibc-core/ics02-client/src/handler/update_client.rs#L54))
+where access to the execution methods of the client state is required. We aim to
+simplify the user experience by providing a default implementation, relieving
+users from the need to implement the `client_state_mut` method.
+
+Also, the introduction of `<ClientStateRef = Self::ClientStateMut>` is prompted
+by the need to address the characteristics of concrete `ClientState`
+definitions. For instance, in the case of ICS-07, such as `TmClientState`, the
+struct definition can't be split into two fragments, one for validation and the
+other for execution. Therefore, contexts implementing `ClientExecutionContext`
+must introduce a `ClientStateMut` type the same as `ClientStateRef`.
+
+With the mentioned classification, we can now streamline ICS-07 specific APIs,
+eliminating the requirement for implementing a redundant `consensus_state()`
+method. For the sake of simplification, we can remove the `CommonContext` trait
+and consolidate everything under the `TmValidationContext` as follows:
 
 ```diff
-
 + /// Enables conversion (`TryInto` and `From`) between the consensus state type
 + /// used by the host and the one specific to the Tendermint light client, which
 + /// is `ConsensusStateType`.
@@ -273,18 +286,15 @@ everything under the `TmValidationContext` as follows:
 + }
 
 - pub trait CommonContext {
--    type ConversionError: ToString;
--    type AnyConsensusState: TryInto<TmConsensusState, Error = Self::ConversionError>;
-
 -    // methods will be moved to the below `ValidationContext`
 - }
 
 // Client's context required during validation
-- pub trait ValidationContext {
-+ pub trait ValidationContext: ClientValidationContext
-+ where
-+    Self::AnyConsensusState: ConsensusStateConverter,
-+ {
+pub trait ValidationContext:
++    ClientValidationContext<ConsensusStateRef = Self::AnyConsensusState>
+{
++    type ConversionError: ToString;
++    type AnyConsensusState: TryInto<TmConsensusState, Error = Self::ConversionError>;
 
 +    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
 
