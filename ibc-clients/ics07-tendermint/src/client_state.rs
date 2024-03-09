@@ -85,7 +85,6 @@ mod tests {
     use ibc_core_client::types::Height;
     use ibc_core_commitment_types::specs::ProofSpecs;
     use ibc_core_host::types::identifiers::ChainId;
-    use tests::common::validate_proof_height;
 
     use super::*;
 
