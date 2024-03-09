@@ -5,21 +5,22 @@
 //! [Basecoin-rs](https://github.com/informalsystems/basecoin-rs) repository.
 //! If it proves to be generic enough, we may move it to the ICS02 section.
 
-use ibc_core_client_context::client_state::ClientState;
-use ibc_core_client_context::consensus_state::ConsensusState;
-use ibc_core_client_context::{ClientExecutionContext, ClientValidationContext};
+use ibc_core_client_context::ClientValidationContext;
 use ibc_core_client_types::error::UpgradeClientError;
 use ibc_core_host_types::path::UpgradeClientPath;
 
 use super::Plan;
 
+pub type UpgradedClientStateRef<T> =
+    <<T as UpgradeValidationContext>::V as ClientValidationContext>::ClientStateRef;
+
+pub type UpgradedConsensusStateRef<T> =
+    <<T as UpgradeValidationContext>::V as ClientValidationContext>::ConsensusStateRef;
+
 /// Helper context to validate client upgrades, providing methods to retrieve
 /// an upgrade plan and related upgraded client and consensus states.
 pub trait UpgradeValidationContext {
     type V: ClientValidationContext;
-    type E: ClientExecutionContext;
-    type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<Self::V, Self::E>;
 
     /// Returns the upgrade plan that is scheduled and not have been executed yet.
     fn upgrade_plan(&self) -> Result<Plan, UpgradeClientError>;
@@ -28,13 +29,13 @@ pub trait UpgradeValidationContext {
     fn upgraded_client_state(
         &self,
         upgrade_path: &UpgradeClientPath,
-    ) -> Result<Self::AnyClientState, UpgradeClientError>;
+    ) -> Result<UpgradedClientStateRef<Self>, UpgradeClientError>;
 
     /// Returns the upgraded consensus state at the specified upgrade path.
     fn upgraded_consensus_state(
         &self,
         upgrade_path: &UpgradeClientPath,
-    ) -> Result<Self::AnyConsensusState, UpgradeClientError>;
+    ) -> Result<UpgradedConsensusStateRef<Self>, UpgradeClientError>;
 }
 
 /// Helper context to execute client upgrades, providing methods to schedule
@@ -50,13 +51,13 @@ pub trait UpgradeExecutionContext: UpgradeValidationContext {
     fn store_upgraded_client_state(
         &mut self,
         upgrade_path: UpgradeClientPath,
-        client_state: Self::AnyClientState,
+        client_state: UpgradedClientStateRef<Self>,
     ) -> Result<(), UpgradeClientError>;
 
     /// Stores the upgraded consensus state at the specified upgrade path.
     fn store_upgraded_consensus_state(
         &mut self,
         upgrade_path: UpgradeClientPath,
-        consensus_state: Self::AnyConsensusState,
+        consensus_state: UpgradedConsensusStateRef<Self>,
     ) -> Result<(), UpgradeClientError>;
 }

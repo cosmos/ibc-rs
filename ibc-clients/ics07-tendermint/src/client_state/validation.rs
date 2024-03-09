@@ -3,7 +3,6 @@ use ibc_client_tendermint_types::{
     TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
 use ibc_core_client::context::client_state::ClientStateValidation;
-use ibc_core_client::context::ClientValidationContext;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Status;
 use ibc_core_host::types::identifiers::ClientId;
@@ -15,14 +14,14 @@ use super::{
     check_for_misbehaviour_misbehavior, check_for_misbehaviour_update_client, ClientState,
 };
 use crate::client_state::{verify_header, verify_misbehaviour};
-use crate::consensus_state::ConsensusState as TmConsensusState;
-use crate::context::{DefaultVerifier, TmVerifier, ValidationContext as TmValidationContext};
+use crate::context::{
+    ConsensusStateConverter, DefaultVerifier, TmVerifier, ValidationContext as TmValidationContext,
+};
 
 impl<V> ClientStateValidation<V> for ClientState
 where
-    V: ClientValidationContext + TmValidationContext,
-    V::AnyConsensusState: TryInto<TmConsensusState>,
-    ClientError: From<<V::AnyConsensusState as TryInto<TmConsensusState>>::Error>,
+    V: TmValidationContext,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
     /// standalone `verify_client_message` function. This is to make it as simple
@@ -74,7 +73,8 @@ pub fn verify_client_message<V>(
     verifier: &impl TmVerifier,
 ) -> Result<(), ClientError>
 where
-    V: ClientValidationContext + TmValidationContext,
+    V: TmValidationContext,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
@@ -128,7 +128,8 @@ pub fn check_for_misbehaviour<V>(
     client_message: Any,
 ) -> Result<bool, ClientError>
 where
-    V: ClientValidationContext + TmValidationContext,
+    V: TmValidationContext,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
@@ -154,29 +155,24 @@ pub fn status<V>(
     client_id: &ClientId,
 ) -> Result<Status, ClientError>
 where
-    V: ClientValidationContext + TmValidationContext,
+    V: TmValidationContext,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     if client_state.is_frozen() {
         return Ok(Status::Frozen);
     }
 
-    let latest_consensus_state: TmConsensusState = {
-        let any_latest_consensus_state = match ctx.consensus_state(&ClientConsensusStatePath::new(
+    let latest_consensus_state = {
+        match ctx.consensus_state(&ClientConsensusStatePath::new(
             client_id.clone(),
             client_state.latest_height.revision_number(),
             client_state.latest_height.revision_height(),
         )) {
-            Ok(cs) => cs,
+            Ok(cs) => cs.try_into()?,
             // if the client state does not have an associated consensus state for its latest height
             // then it must be expired
             Err(_) => return Ok(Status::Expired),
-        };
-
-        any_latest_consensus_state
-            .try_into()
-            .map_err(|err| ClientError::Other {
-                description: err.to_string(),
-            })?
+        }
     };
 
     // Note: if the `duration_since()` is `None`, indicating that the latest

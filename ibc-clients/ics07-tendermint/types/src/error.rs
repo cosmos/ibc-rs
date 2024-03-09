@@ -5,6 +5,7 @@ use core::time::Duration;
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
+use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
@@ -35,6 +36,8 @@ pub enum Error {
     MissingSignedHeader,
     /// invalid header, failed basic validation: `{reason}`
     Validation { reason: String },
+    /// invalid client proof specs: `{0}`
+    InvalidProofSpec(CommitmentError),
     /// invalid raw client state: `{reason}`
     InvalidRawClientState { reason: String },
     /// missing validator set
@@ -116,6 +119,12 @@ impl From<Error> for ClientError {
 impl From<IdentifierError> for Error {
     fn from(e: IdentifierError) -> Self {
         Self::InvalidIdentifier(e)
+    }
+}
+
+impl From<CommitmentError> for Error {
+    fn from(e: CommitmentError) -> Self {
+        Self::InvalidProofSpec(e)
     }
 }
 

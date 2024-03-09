@@ -3,8 +3,7 @@ use ibc_core_channel_types::commitment::compute_packet_commitment;
 use ibc_core_channel_types::error::PacketError;
 use ibc_core_channel_types::events::SendPacket;
 use ibc_core_channel_types::packet::Packet;
-use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
-use ibc_core_client::context::consensus_state::ConsensusState;
+use ibc_core_client::context::prelude::*;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
@@ -51,7 +50,9 @@ pub fn send_packet_validate(
 
     let client_id_on_a = conn_end_on_a.client_id();
 
-    let client_state_of_b_on_a = ctx_a.client_state(client_id_on_a)?;
+    let client_val_ctx_a = ctx_a.get_client_validation_context();
+
+    let client_state_of_b_on_a = client_val_ctx_a.client_state(client_id_on_a)?;
 
     client_state_of_b_on_a
         .status(ctx_a.get_client_validation_context(), client_id_on_a)?
@@ -72,7 +73,8 @@ pub fn send_packet_validate(
         latest_height_on_a.revision_number(),
         latest_height_on_a.revision_height(),
     );
-    let consensus_state_of_b_on_a = ctx_a.client_consensus_state(&client_cons_state_path_on_a)?;
+    let consensus_state_of_b_on_a =
+        client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
     let latest_timestamp = consensus_state_of_b_on_a.timestamp();
     let packet_timestamp = packet.timeout_timestamp_on_b;
     if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {

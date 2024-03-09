@@ -1,7 +1,6 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenConfirm`.
 
-use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
-use ibc_core_client::context::consensus_state::ConsensusState;
+use ibc_core_client::context::prelude::*;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenConfirm;
 use ibc_core_connection_types::msgs::MsgConnectionOpenConfirm;
@@ -42,10 +41,12 @@ where
 
     // Verify proofs
     {
-        let client_state_of_a_on_b = ctx_b.client_state(client_id_on_b)?;
+        let client_val_ctx_b = ctx_b.get_client_validation_context();
+
+        let client_state_of_a_on_b = client_val_ctx_b.client_state(client_id_on_b)?;
 
         client_state_of_a_on_b
-            .status(ctx_b.get_client_validation_context(), client_id_on_b)?
+            .status(client_val_ctx_b, client_id_on_b)?
             .verify_is_active()?;
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
@@ -54,7 +55,8 @@ where
             msg.proof_height_on_a.revision_number(),
             msg.proof_height_on_a.revision_height(),
         );
-        let consensus_state_of_a_on_b = ctx_b.consensus_state(&client_cons_state_path_on_b)?;
+        let consensus_state_of_a_on_b =
+            client_val_ctx_b.consensus_state(&client_cons_state_path_on_b)?;
 
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
