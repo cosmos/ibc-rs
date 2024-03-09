@@ -120,13 +120,13 @@ fn split_for_impl(
     if let syn::PathArguments::AngleBracketed(ref gen) = args {
         for arg in gen.args.clone() {
             match arg.clone() {
-                syn::GenericArgument::Type(_) => {
+                GenericArgument::Type(_) => {
                     generics.push(arg);
                 }
-                syn::GenericArgument::Lifetime(_) => {
+                GenericArgument::Lifetime(_) => {
                     generics.push(arg);
                 }
-                syn::GenericArgument::Constraint(c) => {
+                GenericArgument::Constraint(c) => {
                     let ident = c.ident.into_token_stream();
 
                     let gen = syn::parse2(ident.into_token_stream())?;
