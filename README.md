@@ -17,7 +17,7 @@
 [![Code Coverage][codecov-image]][codecov-link]
 [![Apache 2.0 Licensed][license-image]][license-link]
 ![Rust Stable][rustc-image]
-![Rust 1.64+][rustc-version]
+![Rust 1.71.1+][rustc-version]
 ![Lines of Code][loc-image]
 
 </div>
@@ -98,7 +98,7 @@ specific language governing permissions and limitations under the License.
 [license-image]: https://img.shields.io/badge/license-Apache2.0-blue.svg
 [license-link]: https://github.com/cosmos/ibc-rs/blob/main/LICENSE
 [rustc-image]: https://img.shields.io/badge/rustc-stable-blue.svg
-[rustc-version]: https://img.shields.io/badge/rustc-1.60+-blue.svg
+[rustc-version]: https://img.shields.io/badge/rustc-1.71.1+-blue.svg
 
 [//]: # (general links)
 [ibc]: https://github.com/cosmos/ibc
