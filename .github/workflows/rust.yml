@@ -160,22 +160,42 @@ jobs:
 
   test-msrv:
     timeout-minutes: 30
+    env:
+      CARGO_MSRV_VERSION: 0.16.0-beta.20
+      MSRV: 1.71.1
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+        param:
+          [
+            { os: ubuntu-latest, system: unknown-linux-gnu },
+            { os: macos-latest, system: apple-darwin },
+          ]
+    runs-on: ${{ matrix.param.os }}
     steps:
       - uses: actions/checkout@v2
+
+      - name: Download cargo-msrv
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: foresterre/cargo-msrv
+          version: "tags/v${{ env.CARGO_MSRV_VERSION }}"
+          file: "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}.tgz"
+
       - uses: actions-rs/toolchain@v1
         with:
-          toolchain: 1.71.1
+          toolchain: ${{ env.MSRV }}
           override: true
       - uses: Swatinem/rust-cache@v1
+
+      - run: |
+          tar -xzf "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}.tgz"
+          mv "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}/cargo-msrv" ~/.cargo/bin
+          cargo msrv --version
+
+      - run: cargo msrv --output-format minimal --min 1.64.0
+      # - run: cargo msrv verify --output-format minimal
+
       - uses: actions-rs/cargo@v1
         with:
           command: build
           args: --all-features
-      - uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --no-default-features
