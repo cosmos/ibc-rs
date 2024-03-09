@@ -187,15 +187,18 @@ jobs:
           override: true
       - uses: Swatinem/rust-cache@v1
 
-      - run: |
+      - name: Install cargo-msrv
+        run: |
           tar -xzf "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}.tgz"
           mv "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}/cargo-msrv" ~/.cargo/bin
           cargo msrv --version
 
-      - run: cargo msrv --output-format minimal --min 1.64.0
-      # - run: cargo msrv verify --output-format minimal
+      - name: Calculate MSRV
+        run: cargo msrv --output-format minimal --min 1.64.0
 
-      - uses: actions-rs/cargo@v1
+      - name: Build with MSRV
+        uses: actions-rs/cargo@v1
         with:
+          toolchain: ${{ env.MSRV }}
           command: build
           args: --all-features
