@@ -10,8 +10,9 @@
 [![Docs][docs-image]][docs-link]
 [![Build Status][build-image]][build-link]
 [![Apache 2.0 Licensed][license-image]][license-link]
-![Rust Stable][rustc-image]
-![Rust 1.71.1+][rustc-version]
+![Version][crates-io-version]
+![Downloads][crates-io-downloads]
+![Rust Stable][msrv-image]
 
 </div>
 
@@ -58,10 +59,11 @@ specific language governing permissions and limitations under the License.
 [docs-link]: https://docs.rs/ibc/
 [build-image]: https://github.com/cosmos/ibc-rs/workflows/Rust/badge.svg
 [build-link]: https://github.com/cosmos/ibc-rs/actions?query=workflow%3ARust
-[license-image]: https://img.shields.io/badge/license-Apache2.0-blue.svg
+[license-image]: https://img.shields.io/crates/l/ibc
 [license-link]: https://github.com/cosmos/ibc-rs/blob/main/LICENSE
-[rustc-image]: https://img.shields.io/badge/rustc-stable-blue.svg
-[rustc-version]: https://img.shields.io/badge/rustc-1.71.1+-blue.svg
+[crates-io-version]: https://img.shields.io/crates/v/ibc.svg
+[crates-io-downloads]: https://img.shields.io/crates/d/ibc.svg
+[msrv-image]: https://img.shields.io/crates/msrv/ibc
 
 [//]: # (general links)
 
