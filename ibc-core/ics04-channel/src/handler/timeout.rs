@@ -82,11 +82,6 @@ where
 
     // apply state changes
     let chan_end_on_a = {
-        let commitment_path_on_a = CommitmentPath {
-            port_id: packet.port_id_on_a.clone(),
-            channel_id: packet.chan_id_on_a.clone(),
-            sequence: packet.seq_on_a,
-        };
         ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
 
         if let Order::Ordered = chan_end_on_a.ordering {
