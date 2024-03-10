@@ -276,7 +276,7 @@ impl ClientExecutionContext for MockContext {
         client_id: ClientId,
         height: Height,
     ) -> Result<(), ContextError> {
-        let key = (client_id.clone(), height);
+        let key = (client_id, height);
         let mut ibc_store = self.ibc_store.lock();
         ibc_store.client_processed_times.remove(&key);
         ibc_store.client_processed_heights.remove(&key);

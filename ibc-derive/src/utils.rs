@@ -29,9 +29,7 @@ impl Imports {
     pub fn prefix(&self) -> &TokenStream {
         &self.prefix
     }
-}
 
-impl Imports {
     pub fn commitment_root(&self) -> TokenStream {
         let Prefix = self.prefix();
         quote! {#Prefix::commitment_types::commitment::CommitmentRoot}

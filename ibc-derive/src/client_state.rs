@@ -73,8 +73,8 @@ impl Opts {
             return Err(Error::new_spanned(ast, MISSING_ATTR));
         }
 
-        for attr in ast.attrs.iter() {
-            if let syn::Meta::List(ref meta_list) = attr.meta {
+        for attr in &ast.attrs {
+            if let syn::Meta::List(meta_list) = &attr.meta {
                 let path: syn::Path = syn::parse2(meta_list.tokens.clone())?;
 
                 let path_segment = match path.segments.last() {
@@ -117,8 +117,8 @@ fn split_for_impl(
     let mut generics = vec![];
     let mut predicates = vec![];
 
-    if let syn::PathArguments::AngleBracketed(ref gen) = args {
-        for arg in gen.args.clone() {
+    if let syn::PathArguments::AngleBracketed(gen) = args {
+        for arg in gen.args {
             match arg.clone() {
                 GenericArgument::Type(_) | GenericArgument::Lifetime(_) => {
                     generics.push(arg);
@@ -150,8 +150,8 @@ pub fn client_state_derive_impl(ast: DeriveInput, imports: &Imports) -> TokenStr
     };
 
     let enum_name = &ast.ident;
-    let enum_variants = match ast.data {
-        syn::Data::Enum(ref enum_data) => &enum_data.variants,
+    let enum_variants = match &ast.data {
+        syn::Data::Enum(enum_data) => &enum_data.variants,
         _ => panic!("ClientState only supports enums"),
     };
 

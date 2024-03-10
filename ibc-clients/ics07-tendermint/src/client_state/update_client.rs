@@ -121,7 +121,7 @@ where
         Some(existing_consensus_state) => {
             let existing_consensus_state = existing_consensus_state.try_into()?;
 
-            let header_consensus_state = ConsensusStateType::from(header.clone());
+            let header_consensus_state = ConsensusStateType::from(header);
 
             // There is evidence of misbehaviour if the stored consensus state
             // is different from the new one we received.

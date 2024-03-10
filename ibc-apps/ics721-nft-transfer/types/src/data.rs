@@ -161,7 +161,7 @@ impl borsh::BorshSerialize for DataValue {
             Some(mime) => mime.to_string(),
             None => String::default(),
         };
-        borsh::BorshSerialize::serialize(&mime.to_string(), writer)?;
+        borsh::BorshSerialize::serialize(&mime, writer)?;
         Ok(())
     }
 }
