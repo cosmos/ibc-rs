@@ -24,7 +24,7 @@ pub(crate) struct ClientCtx {
 
 impl ClientCtx {
     fn new(ident: Ident, generics: Vec<GenericArgument>, predicates: Vec<WherePredicate>) -> Self {
-        ClientCtx {
+        Self {
             ident,
             generics,
             predicates,
@@ -104,7 +104,7 @@ impl Opts {
         let client_execution_context = client_execution_context
             .ok_or_else(|| Error::new_spanned(ast, MISSING_EXECUTION_ATTR))?;
 
-        Ok(Opts {
+        Ok(Self {
             client_validation_context,
             client_execution_context,
         })
