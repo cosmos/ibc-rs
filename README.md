@@ -19,7 +19,6 @@
 ![Version][crates-io-version]
 ![Downloads][crates-io-downloads]
 ![Rust Stable][msrv-image]
-![Lines of Code][loc-image]
 
 </div>
 </div>
@@ -95,7 +94,6 @@ specific language governing permissions and limitations under the License.
 [build-link]: https://github.com/cosmos/ibc-rs/actions?query=workflow%3ARust
 [codecov-image]: https://codecov.io/gh/cosmos/ibc-rs/branch/main/graph/badge.svg?token=wUm2aLCOu
 [codecov-link]: https://codecov.io/gh/cosmos/ibc-rs
-[loc-image]: https://tokei.rs/b1/github/cosmos/ibc-rs
 [license-image]: https://img.shields.io/crates/l/ibc
 [license-link]: https://github.com/cosmos/ibc-rs/blob/main/LICENSE
 [crates-io-version]: https://img.shields.io/crates/v/ibc.svg
