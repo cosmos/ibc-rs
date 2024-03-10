@@ -120,10 +120,7 @@ fn split_for_impl(
     if let syn::PathArguments::AngleBracketed(ref gen) = args {
         for arg in gen.args.clone() {
             match arg.clone() {
-                GenericArgument::Type(_) => {
-                    generics.push(arg);
-                }
-                GenericArgument::Lifetime(_) => {
+                GenericArgument::Type(_) | GenericArgument::Lifetime(_) => {
                     generics.push(arg);
                 }
                 GenericArgument::Constraint(c) => {
