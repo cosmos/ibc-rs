@@ -239,14 +239,11 @@ impl Add<Duration> for Timestamp {
     type Output = Result<Self, TimestampOverflowError>;
 
     fn add(self, duration: Duration) -> Result<Self, TimestampOverflowError> {
-        match self.time {
-            Some(time) => {
-                let time =
-                    (time + duration).map_err(|_| TimestampOverflowError::TimestampOverflow)?;
-                Ok(Self { time: Some(time) })
-            }
-            None => Ok(self),
-        }
+        self.time
+            .map(|time| time + duration)
+            .transpose()
+            .map(|time| Self { time })
+            .map_err(|_| TimestampOverflowError::TimestampOverflow)
     }
 }
 
@@ -254,14 +251,11 @@ impl Sub<Duration> for Timestamp {
     type Output = Result<Self, TimestampOverflowError>;
 
     fn sub(self, duration: Duration) -> Result<Self, TimestampOverflowError> {
-        match self.time {
-            Some(time) => {
-                let time =
-                    (time - duration).map_err(|_| TimestampOverflowError::TimestampOverflow)?;
-                Ok(Self { time: Some(time) })
-            }
-            None => Ok(self),
-        }
+        self.time
+            .map(|time| time - duration)
+            .transpose()
+            .map(|time| Self { time })
+            .map_err(|_| TimestampOverflowError::TimestampOverflow)
     }
 }
 
