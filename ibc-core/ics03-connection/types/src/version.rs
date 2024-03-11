@@ -58,6 +58,13 @@ impl Version {
         }
         Ok(())
     }
+    /// Returns the lists of supported versions
+    pub fn compatibles() -> Vec<Self> {
+        vec![Self {
+            identifier: "1".to_string(),
+            features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
+        }]
+    }
 }
 
 impl Protobuf<RawVersion> for Version {}
@@ -111,10 +118,7 @@ impl Display for Version {
 
 /// Returns the lists of supported versions
 pub fn get_compatible_versions() -> Vec<Version> {
-    vec![Version {
-        identifier: "1".to_string(),
-        features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
-    }]
+    Version::compatibles()
 }
 
 /// Iterates over the descending ordered set of compatible IBC versions and
