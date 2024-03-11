@@ -248,7 +248,9 @@ where
 
                 Ok(header_heights_equal && headers_are_in_future)
             }
-            _ => Ok(false),
+            header_type => Err(ClientError::UnknownHeaderType {
+                header_type: header_type.to_owned(),
+            }),
         }
     }
 
