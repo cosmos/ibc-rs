@@ -49,13 +49,11 @@ impl TryFrom<RawUpgradeProposal> for UpgradeProposal {
             });
         };
 
-        let upgraded_client_state = if let Some(upgraded_client_state) = raw.upgraded_client_state {
-            upgraded_client_state
-        } else {
-            return Err(UpgradeClientError::InvalidUpgradeProposal {
+        let upgraded_client_state = raw.upgraded_client_state.ok_or_else(|| {
+            UpgradeClientError::InvalidUpgradeProposal {
                 reason: "upgraded client state cannot be empty".to_string(),
-            });
-        };
+            }
+        })?;
 
         Ok(Self {
             title: raw.title,

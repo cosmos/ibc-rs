@@ -177,14 +177,12 @@ impl TryFrom<&str> for Height {
     type Error = HeightError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let (rev_number_str, rev_height_str) = match value.split_once('-') {
-            Some((rev_number_str, rev_height_str)) => (rev_number_str, rev_height_str),
-            None => {
-                return Err(HeightError::InvalidFormat {
+        let (rev_number_str, rev_height_str) =
+            value
+                .split_once('-')
+                .ok_or_else(|| HeightError::InvalidFormat {
                     raw_height: value.to_owned(),
-                })
-            }
-        };
+                })?;
 
         let revision_number =
             rev_number_str
