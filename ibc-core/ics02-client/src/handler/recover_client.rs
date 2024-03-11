@@ -1,10 +1,11 @@
 //! Protocol logic for processing ICS02 messages of type `MsgRecoverClient`.
 
 use ibc_core_client_context::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation,
+    ClientState, ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::msgs::MsgRecoverClient;
+use ibc_core_client_types::ClientState as ClientStateType;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_core_host::{ExecutionContext, ValidationContext};
@@ -80,14 +81,6 @@ where
     let subject_client_state = ctx.client_state(&subject_client_id)?;
     let substitute_client_state = ctx.client_state(&substitute_client_id)?;
 
-    // where and how is a client's `Status` set?
-    //    `Status` is set at the ics07 level
-    // how to fetch the substitute client's consensus state?
-    //    also need consensus metadata, i.e. processed height and processed time
-    // is using `ClientState::initialise` a viable way of overwriting the subject client's state?
-    // does `ClientState::update_state`'s function signature lend itself to overwriting the client state values that we need to overwrite as part of client recovery?
-    // how are race conditions between incrementing client counters avoided?
-
     let substitute_height = substitute_client_state.latest_height();
     let substitute_consensus_state_path = ClientConsensusStatePath::new(
         substitute_client_id,
@@ -99,10 +92,11 @@ where
     subject_client_state.initialise(
         ctx.get_client_execution_context(),
         &substitute_client_id,
-        substitute_consensus_state,
+        substitute_consensus_state.into(),
     )?;
 
-    subject_client_state.update_on_recovery(ctx.get_client_execution_context())?;
+    subject_client_state
+        .update_on_recovery(ctx.get_client_execution_context(), &substitute_client_state)?;
 
     Ok(())
 }
