@@ -669,7 +669,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
                     denominator: 3,
                 }),
                 trusting_period: Some(Duration::from_secs(64000).into()),
-                unbonding_period: Some(Duration::from_secs(128000).into()),
+                unbonding_period: Some(Duration::from_secs(128_000).into()),
                 max_clock_drift: Some(Duration::from_millis(3000).into()),
                 latest_height: Some(
                     Height::new(

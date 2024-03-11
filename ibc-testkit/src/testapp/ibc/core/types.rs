@@ -139,7 +139,7 @@ pub struct MockClientConfig {
     trusting_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
     max_clock_drift: Duration,
-    #[builder(default = Duration::from_secs(128000))]
+    #[builder(default = Duration::from_secs(128_000))]
     unbonding_period: Duration,
 }
 

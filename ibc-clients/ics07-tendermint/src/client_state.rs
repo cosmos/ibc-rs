@@ -108,7 +108,7 @@ mod tests {
             id: ChainId::new("ibc-1").unwrap(),
             trust_level: TrustThreshold::ONE_THIRD,
             trusting_period: Duration::new(64000, 0),
-            unbonding_period: Duration::new(128000, 0),
+            unbonding_period: Duration::new(128_000, 0),
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(1, 10).expect("Never fails"),
             proof_specs: ProofSpecs::default(),
