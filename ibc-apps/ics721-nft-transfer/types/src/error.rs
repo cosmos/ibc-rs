@@ -97,16 +97,16 @@ impl std::error::Error for NftTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::InvalidIdentifier(e) => Some(e),
             Self::InvalidUri {
                 validation_error: e,
                 ..
             } => Some(e),
-            Self::InvalidTracePortId {
+            Self::InvalidIdentifier(e)
+            | Self::InvalidTracePortId {
                 validation_error: e,
                 ..
-            } => Some(e),
-            Self::InvalidTraceChannelId {
+            }
+            | Self::InvalidTraceChannelId {
                 validation_error: e,
                 ..
             } => Some(e),

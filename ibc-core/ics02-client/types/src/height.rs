@@ -167,8 +167,7 @@ impl std::error::Error for HeightError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             HeightError::HeightConversion { error: e, .. } => Some(e),
-            HeightError::ZeroHeight => None,
-            HeightError::InvalidFormat { .. } => None,
+            HeightError::ZeroHeight | HeightError::InvalidFormat { .. } => None,
         }
     }
 }

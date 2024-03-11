@@ -100,9 +100,9 @@ impl std::error::Error for Error {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::InvalidIdentifier(e) => Some(e),
-            Self::InvalidHeader { error: e, .. } => Some(e),
-            Self::InvalidTendermintTrustThreshold(e) => Some(e),
-            Self::InvalidRawHeader(e) => Some(e),
+            Self::InvalidHeader { error: e, .. }
+            | Self::InvalidTendermintTrustThreshold(e)
+            | Self::InvalidRawHeader(e) => Some(e),
             _ => None,
         }
     }
