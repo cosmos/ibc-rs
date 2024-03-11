@@ -33,7 +33,7 @@ fn send_packet_processing() {
         State::Open,
         Order::Unordered,
         Counterparty::new(PortId::transfer(), Some(ChannelId::zero())),
-        vec![ConnectionId::new(0)],
+        vec![ConnectionId::zero()],
         Version::new("ics20-1".to_string()),
     )
     .unwrap();
@@ -43,7 +43,7 @@ fn send_packet_processing() {
         ClientId::from("07-tendermint-0"),
         ConnectionCounterparty::new(
             ClientId::from("07-tendermint-0"),
-            Some(ConnectionId::new(0)),
+            Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),
         get_compatible_versions(),
@@ -98,7 +98,7 @@ fn send_packet_processing() {
                         .latest_height(client_height)
                         .build(),
                 )
-                .with_connection(ConnectionId::new(0), conn_end_on_a.clone())
+                .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet,
@@ -113,7 +113,7 @@ fn send_packet_processing() {
                         .latest_height(client_height)
                         .build(),
                 )
-                .with_connection(ConnectionId::new(0), conn_end_on_a.clone())
+                .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_timeout_equal_client_height,
@@ -128,7 +128,7 @@ fn send_packet_processing() {
                         .latest_height(client_height)
                         .build(),
                 )
-                .with_connection(ConnectionId::new(0), conn_end_on_a.clone())
+                .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_timeout_one_before_client_height,
@@ -142,7 +142,7 @@ fn send_packet_processing() {
                         .latest_height(client_height)
                         .build(),
                 )
-                .with_connection(ConnectionId::new(0), conn_end_on_a)
+                .with_connection(ConnectionId::zero(), conn_end_on_a)
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_with_timestamp_old,

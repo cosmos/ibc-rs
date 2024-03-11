@@ -52,7 +52,7 @@ fn fixture() -> Fixture {
         State::Open,
         Order::Unordered,
         Counterparty::new(packet.port_id_on_a, Some(packet.chan_id_on_a)),
-        vec![ConnectionId::new(0)],
+        vec![ConnectionId::zero()],
         Version::new("ics20-1".to_string()),
     )
     .unwrap();
@@ -62,7 +62,7 @@ fn fixture() -> Fixture {
         ClientId::from("07-tendermint-0"),
         ConnectionCounterparty::new(
             ClientId::from("07-tendermint-0"),
-            Some(ConnectionId::new(0)),
+            Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),
         get_compatible_versions(),
@@ -120,7 +120,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::new(0), conn_end_on_b)
+        .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(
             packet.port_id_on_b.clone(),
             packet.chan_id_on_b.clone(),
@@ -198,7 +198,7 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::new(0), conn_end_on_b)
+        .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b)
         .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into())
         .with_height(host_height);
@@ -228,7 +228,7 @@ fn recv_packet_execute_happy_path(fixture: Fixture) {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::new(0), conn_end_on_b)
+        .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b);
 
     let msg_env = MsgEnvelope::from(PacketMsg::from(msg));

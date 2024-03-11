@@ -24,7 +24,7 @@ pub fn dummy_raw_msg_conn_open_ack(
 ) -> RawMsgConnectionOpenAck {
     let client_state_height = Height::new(0, consensus_height).expect("invalid height");
     RawMsgConnectionOpenAck {
-        connection_id: ConnectionId::new(0).to_string(),
+        connection_id: ConnectionId::zero().to_string(),
         counterparty_connection_id: ConnectionId::new(1).to_string(),
         proof_try: dummy_proof(),
         proof_height: Some(RawHeight {

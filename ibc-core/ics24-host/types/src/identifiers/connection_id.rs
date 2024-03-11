@@ -56,6 +56,11 @@ impl ConnectionId {
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
+
+    /// Return ConnectionId with identifier 0
+    pub fn zero() -> Self {
+        Self::new(0)
+    }
 }
 
 /// This implementation provides a `to_string` method.

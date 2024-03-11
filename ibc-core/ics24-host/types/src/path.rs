@@ -1214,7 +1214,7 @@ mod tests {
     )]
     #[case(
         "connections/connection-0",
-        Path::Connection(ConnectionPath(ConnectionId::new(0)))
+        Path::Connection(ConnectionPath(ConnectionId::zero()))
     )]
     #[case("ports/transfer", Path::Ports(PortPath(PortId::transfer())))]
     #[case(
@@ -1340,7 +1340,7 @@ mod tests {
 
         assert_eq!(
             parse_connections(&components),
-            Some(Path::Connection(ConnectionPath(ConnectionId::new(0)))),
+            Some(Path::Connection(ConnectionPath(ConnectionId::zero()))),
         );
     }
 

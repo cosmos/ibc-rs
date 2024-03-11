@@ -267,7 +267,7 @@ mod tests {
         let ibc_event = IbcEvent::SendPacket(SendPacket::new(
             packet,
             Order::Unordered,
-            ConnectionId::new(0),
+            ConnectionId::zero(),
         ));
         let _ = tendermint::abci::Event::try_from(ibc_event);
     }
