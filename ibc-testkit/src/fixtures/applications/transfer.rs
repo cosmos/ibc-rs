@@ -61,7 +61,7 @@ pub struct PacketDataConfig {
     pub sender: Signer,
     #[builder(default = dummy_account_id())]
     pub receiver: Signer,
-    #[builder(default = Memo::from(""))]
+    #[builder(default = "".into())]
     pub memo: Memo,
 }
 

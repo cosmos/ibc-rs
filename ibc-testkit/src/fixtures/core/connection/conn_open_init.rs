@@ -71,7 +71,7 @@ pub fn msg_conn_open_with_version(
 /// Returns a dummy `RawMsgConnectionOpenInit`, for testing purposes only!
 pub fn dummy_raw_msg_conn_open_init() -> RawMsgConnectionOpenInit {
     RawMsgConnectionOpenInit {
-        client_id: ClientId::from("07-tendermint-0").to_string(),
+        client_id: "07-tendermint-0".to_string(),
         counterparty: Some(dummy_raw_counterparty_conn(None)),
         version: Some(get_compatible_versions()[0].clone().into()),
         delay_period: 0,

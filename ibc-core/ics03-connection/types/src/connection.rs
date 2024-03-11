@@ -210,12 +210,8 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
         if state == State::Uninitialized {
             return ConnectionEnd::new(
                 State::Uninitialized,
-                ClientId::from("07-tendermint-0"),
-                Counterparty::new(
-                    ClientId::from("07-tendermint-0"),
-                    None,
-                    CommitmentPrefix::empty(),
-                ),
+                "07-tendermint-0".into(),
+                Counterparty::new("07-tendermint-0".into(), None, CommitmentPrefix::empty()),
                 Vec::new(),
                 ZERO_DURATION,
             );

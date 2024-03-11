@@ -12,7 +12,7 @@ use ibc::core::connection::types::{
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
@@ -77,9 +77,9 @@ fn fixture() -> Fixture {
 
     let conn_end_on_a = ConnectionEnd::new(
         ConnectionState::Open,
-        ClientId::from("07-tendermint-0"),
+        "07-tendermint-0".into(),
         ConnectionCounterparty::new(
-            ClientId::from("07-tendermint-0"),
+            "07-tendermint-0".into(),
             Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),
@@ -205,7 +205,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         );
 
     ctx.store_update_meta(
-        ClientId::from("07-tendermint-0"),
+        "07-tendermint-0".into(),
         client_height,
         Timestamp::from_nanoseconds(5).unwrap(),
         Height::new(0, 4).unwrap(),
@@ -287,7 +287,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
 
     ctx.get_client_execution_context()
         .store_update_meta(
-            ClientId::from("07-tendermint-0"),
+            "07-tendermint-0".into(),
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 5).unwrap(),
@@ -332,7 +332,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
         );
 
     ctx.store_update_meta(
-        ClientId::from("07-tendermint-0"),
+        "07-tendermint-0".into(),
         client_height,
         Timestamp::from_nanoseconds(1000).unwrap(),
         Height::new(0, 4).unwrap(),

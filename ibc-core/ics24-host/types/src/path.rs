@@ -1182,12 +1182,12 @@ mod tests {
     )]
     #[case(
         "clients/07-tendermint-0/clientState",
-        Path::ClientState(ClientStatePath(ClientId::from("07-tendermint-0")))
+        Path::ClientState(ClientStatePath("07-tendermint-0".into()))
     )]
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31",
         Path::ClientConsensusState(ClientConsensusStatePath {
-            client_id: ClientId::from("07-tendermint-0"),
+            client_id: "07-tendermint-0".into(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1195,7 +1195,7 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedTime",
         Path::ClientUpdateTime(ClientUpdateTimePath {
-            client_id: ClientId::from("07-tendermint-0"),
+            client_id: "07-tendermint-0".into(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1203,14 +1203,14 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedHeight",
         Path::ClientUpdateHeight(ClientUpdateHeightPath {
-            client_id: ClientId::from("07-tendermint-0"),
+            client_id: "07-tendermint-0".into(),
             revision_number: 15,
             revision_height: 31,
         })
     )]
     #[case(
         "clients/07-tendermint-0/connections",
-        Path::ClientConnection(ClientConnectionPath(ClientId::from("07-tendermint-0")))
+        Path::ClientConnection(ClientConnectionPath("07-tendermint-0".into()))
     )]
     #[case(
         "connections/connection-0",
@@ -1299,7 +1299,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientConsensusState(ClientConsensusStatePath {
-                client_id: ClientId::from("07-tendermint-0"),
+                client_id: "07-tendermint-0".into(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1314,7 +1314,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateTime(ClientUpdateTimePath {
-                client_id: ClientId::from("07-tendermint-0"),
+                client_id: "07-tendermint-0".into(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1326,7 +1326,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateHeight(ClientUpdateHeightPath {
-                client_id: ClientId::from("07-tendermint-0"),
+                client_id: "07-tendermint-0".into(),
                 revision_number: 15,
                 revision_height: 31,
             }))
