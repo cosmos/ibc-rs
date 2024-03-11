@@ -21,7 +21,7 @@ where
     let client_id = connection_end.client_id();
     let last_client_update = ctx
         .get_client_validation_context()
-        .update_meta(client_id, &packet_proof_height)?;
+        .client_update_meta(client_id, &packet_proof_height)?;
 
     // Fetch the connection delay time and height periods.
     let conn_delay_time_period = connection_end.delay_period();

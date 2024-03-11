@@ -2,7 +2,7 @@
 //! `I` must be a type where writes from one thread are readable from another.
 //! This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
 
-use ibc::core::host::ValidationContext;
+use ibc::core::host::ConsensusStateRef;
 use ibc::core::primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::query_server::Query as ChannelQuery;
@@ -37,8 +37,7 @@ use crate::core::context::QueryContext;
 pub struct ChannelQueryService<I>
 where
     I: QueryContext + Send + Sync + 'static,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+    ConsensusStateRef<I>: Into<Any>,
 {
     ibc_context: I,
 }
@@ -46,8 +45,7 @@ where
 impl<I> ChannelQueryService<I>
 where
     I: QueryContext + Send + Sync + 'static,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+    ConsensusStateRef<I>: Into<Any>,
 {
     /// The parameter `ibc_context` must be a type where writes from one thread are readable from another.
     /// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
@@ -60,8 +58,7 @@ where
 impl<I> ChannelQuery for ChannelQueryService<I>
 where
     I: QueryContext + Send + Sync + 'static,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+    ConsensusStateRef<I>: Into<Any>,
 {
     async fn channel(
         &self,

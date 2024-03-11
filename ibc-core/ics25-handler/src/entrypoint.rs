@@ -22,11 +22,14 @@ use ibc_core_router::router::Router;
 use ibc_core_router::types::error::RouterError;
 
 /// Entrypoint which performs both validation and message execution
-pub fn dispatch(
-    ctx: &mut impl ExecutionContext,
+pub fn dispatch<Ctx>(
+    ctx: &mut Ctx,
     router: &mut impl Router,
     msg: MsgEnvelope,
-) -> Result<(), ContextError> {
+) -> Result<(), ContextError>
+where
+    Ctx: ExecutionContext,
+{
     validate(ctx, router, msg.clone())?;
     execute(ctx, router, msg)
 }

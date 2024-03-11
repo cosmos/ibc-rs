@@ -4,17 +4,36 @@ use ibc_core_host_types::identifiers::ClientId;
 use ibc_core_host_types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_primitives::Timestamp;
 
-use super::client_state::ClientState;
-use super::consensus_state::ConsensusState;
+use crate::client_state::{ClientStateExecution, ClientStateValidation};
+use crate::consensus_state::ConsensusState;
 
 /// Defines the methods available to clients for validating client state
 /// transitions. The generic `V` parameter in
 /// [crate::client_state::ClientStateValidation] must
 /// inherit from this trait.
-pub trait ClientValidationContext {
-    /// Returns the time and height when the client state for the given
-    /// [`ClientId`] was updated with a header for the given [`Height`]
-    fn update_meta(
+pub trait ClientValidationContext: Sized {
+    type ClientStateRef: ClientStateValidation<Self>;
+    type ConsensusStateRef: ConsensusState;
+
+    /// Returns the ClientState for the given identifier `client_id`.
+    ///
+    /// Note: Clients have the responsibility to store client states on client creation and update.
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError>;
+
+    /// Retrieve the consensus state for the given client ID at the specified
+    /// height.
+    ///
+    /// Returns an error if no such state exists.
+    ///
+    /// Note: Clients have the responsibility to store consensus states on client creation and update.
+    fn consensus_state(
+        &self,
+        client_cons_state_path: &ClientConsensusStatePath,
+    ) -> Result<Self::ConsensusStateRef, ContextError>;
+
+    /// Returns the timestamp and height of the host when it processed a client
+    /// update request at the specified height.
+    fn client_update_meta(
         &self,
         client_id: &ClientId,
         height: &Height,
@@ -29,23 +48,27 @@ pub trait ClientValidationContext {
 /// Specifically, clients have the responsibility to store their client state
 /// and consensus states. This trait defines a uniform interface to do that for
 /// all clients.
-pub trait ClientExecutionContext: Sized {
-    type V: ClientValidationContext;
-    type AnyClientState: ClientState<Self::V, Self>;
-    type AnyConsensusState: ConsensusState;
+pub trait ClientExecutionContext:
+    ClientValidationContext<ClientStateRef = Self::ClientStateMut>
+{
+    type ClientStateMut: ClientStateExecution<Self>;
+
+    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, ContextError> {
+        self.client_state(client_id)
+    }
 
     /// Called upon successful client creation and update
     fn store_client_state(
         &mut self,
         client_state_path: ClientStatePath,
-        client_state: Self::AnyClientState,
+        client_state: Self::ClientStateRef,
     ) -> Result<(), ContextError>;
 
     /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-        consensus_state: Self::AnyConsensusState,
+        consensus_state: Self::ConsensusStateRef,
     ) -> Result<(), ContextError>;
 
     /// Delete the consensus state from the store located at the given `ClientConsensusStatePath`

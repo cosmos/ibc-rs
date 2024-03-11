@@ -3,9 +3,7 @@ use core::time::Duration;
 use ibc_core_channel_types::channel::ChannelEnd;
 use ibc_core_channel_types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc_core_channel_types::packet::Receipt;
-use ibc_core_client_context::client_state::ClientState;
-use ibc_core_client_context::consensus_state::ConsensusState;
-use ibc_core_client_context::{ClientExecutionContext, ClientValidationContext};
+use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentPrefix;
 use ibc_core_connection_types::version::{
@@ -14,13 +12,12 @@ use ibc_core_connection_types::version::{
 use ibc_core_connection_types::ConnectionEnd;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::IbcEvent;
-use ibc_core_host_types::identifiers::{ClientId, ConnectionId, Sequence};
+use ibc_core_host_types::identifiers::{ConnectionId, Sequence};
 use ibc_core_host_types::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, CommitmentPath,
-    ConnectionPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath, ReceiptPath,
+    SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;
-use ibc_primitives::proto::Any;
 use ibc_primitives::{Signer, Timestamp};
 
 use crate::utils::calculate_block_delay;
@@ -30,31 +27,13 @@ use crate::utils::calculate_block_delay;
 /// Trait used for the top-level `validate` entrypoint in the `ibc-core` crate.
 pub trait ValidationContext {
     type V: ClientValidationContext;
-    type E: ClientExecutionContext;
-    type AnyConsensusState: ConsensusState;
-    type AnyClientState: ClientState<Self::V, Self::E>;
+    /// The client state type for the host chain.
+    type HostClientState: ClientStateValidation<Self::V>;
+    /// The consensus state type for the host chain.
+    type HostConsensusState: ConsensusState;
 
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
-
-    /// Returns the ClientState for the given identifier `client_id`.
-    ///
-    /// Note: Clients have the responsibility to store client states on client creation and update.
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError>;
-
-    /// Tries to decode the given `client_state` into a concrete light client state.
-    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError>;
-
-    /// Retrieve the consensus state for the given client ID at the specified
-    /// height.
-    ///
-    /// Returns an error if no such state exists.
-    ///
-    /// Note: Clients have the responsibility to store consensus states on client creation and update.
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError>;
 
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
@@ -66,7 +45,7 @@ pub trait ValidationContext {
     fn host_consensus_state(
         &self,
         height: &Height,
-    ) -> Result<Self::AnyConsensusState, ContextError>;
+    ) -> Result<Self::HostConsensusState, ContextError>;
 
     /// Returns a natural number, counting how many clients have been created
     /// thus far. The value of this counter should increase only via method
@@ -76,17 +55,18 @@ pub trait ValidationContext {
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
 
-    /// Validates the `ClientState` of the client (a client referring to host) stored on the counterparty chain against the host's internal state.
+    /// Validates the `ClientState` of the host chain stored on the counterparty
+    /// chain against the host's internal state.
     ///
     /// For more information on the specific requirements for validating the
     /// client state of a host chain, please refer to the [ICS24 host
     /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation)
     ///
     /// Additionally, implementations specific to individual chains can be found
-    /// in the `ibc-core-hostkit` crate.
+    /// in the `ibc-core/ics24-host` module.
     fn validate_self_client(
         &self,
-        client_state_of_host_on_counterparty: Any,
+        client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
@@ -166,6 +146,8 @@ pub trait ValidationContext {
 ///
 /// Trait used for the top-level `execute` and `dispatch` entrypoints in the `ibc-core` crate.
 pub trait ExecutionContext: ValidationContext {
+    type E: ClientExecutionContext;
+
     /// Retrieve the context that implements all clients' `ExecutionContext`.
     fn get_client_execution_context(&mut self) -> &mut Self::E;
 
@@ -262,3 +244,18 @@ pub trait ExecutionContext: ValidationContext {
     /// Log the given message.
     fn log_message(&mut self, message: String) -> Result<(), ContextError>;
 }
+
+/// Convenient type alias for `ClientStateRef`, providing access to client
+/// validation methods within the context.
+pub type ClientStateRef<Ctx> =
+    <<Ctx as ValidationContext>::V as ClientValidationContext>::ClientStateRef;
+
+/// Convenient type alias for `ClientStateMut`, providing access to client
+/// execution methods within the context.
+pub type ClientStateMut<Ctx> =
+    <<Ctx as ExecutionContext>::E as ClientExecutionContext>::ClientStateMut;
+
+/// Convenient type alias for `ConsensusStateRef`, providing access to client
+/// validation methods within the context.
+pub type ConsensusStateRef<Ctx> =
+    <<Ctx as ValidationContext>::V as ClientValidationContext>::ConsensusStateRef;

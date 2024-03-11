@@ -11,7 +11,7 @@ use ibc_primitives::Timestamp;
 use tendermint_light_client_verifier::Verifier;
 
 use super::TmValidationContext;
-use crate::context::TmVerifier;
+use crate::context::{ConsensusStateConverter, TmVerifier};
 
 /// Determines whether or not two conflicting headers at the same height would
 /// have convinced the light client.
@@ -24,6 +24,7 @@ pub fn verify_misbehaviour<V>(
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     misbehaviour.validate_basic()?;
 
@@ -36,11 +37,7 @@ where
         );
         let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
-        consensus_state
-            .try_into()
-            .map_err(|err| ClientError::Other {
-                description: err.to_string(),
-            })?
+        consensus_state.try_into()?
     };
 
     let header_2 = misbehaviour.header2();
@@ -52,11 +49,7 @@ where
         );
         let consensus_state = ctx.consensus_state(&consensus_state_path)?;
 
-        consensus_state
-            .try_into()
-            .map_err(|err| ClientError::Other {
-                description: err.to_string(),
-            })?
+        consensus_state.try_into()?
     };
 
     let current_timestamp = ctx.host_timestamp()?;
@@ -64,14 +57,14 @@ where
     verify_misbehaviour_header(
         client_state,
         header_1,
-        trusted_consensus_state_1.inner(),
+        &trusted_consensus_state_1,
         current_timestamp,
         verifier,
     )?;
     verify_misbehaviour_header(
         client_state,
         header_2,
-        trusted_consensus_state_2.inner(),
+        &trusted_consensus_state_2,
         current_timestamp,
         verifier,
     )
