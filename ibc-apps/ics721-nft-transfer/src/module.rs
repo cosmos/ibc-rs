@@ -346,7 +346,7 @@ mod test {
         // Check that it's the same output as ibc-go
         // Note: this also implicitly checks that the ack bytes are non-empty,
         // which would make the conversion to `Acknowledgement` panic
-        assert_eq!(ack_success, r#"{"result":"AQ=="}"#.as_bytes());
+        assert_eq!(ack_success, br#"{"result":"AQ=="}"#);
     }
 
     #[test]
@@ -359,7 +359,7 @@ mod test {
         // which would make the conversion to `Acknowledgement` panic
         assert_eq!(
             ack_error,
-            r#"{"error":"failed to deserialize packet data"}"#.as_bytes()
+            br#"{"error":"failed to deserialize packet data"}"#
         );
     }
 
