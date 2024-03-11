@@ -6,7 +6,7 @@ use crate::fixtures::core::signer::dummy_bech32_account;
 
 /// Returns a dummy `RawMsgUpdateClient`, for testing purposes only!
 pub fn dummy_raw_msg_update_client() -> RawMsgUpdateClient {
-    let client_id = "07-tendermint-0".parse().unwrap();
+    let client_id = "07-tendermint-0".parse().expect("no error");
 
     let tm_header = dummy_ics07_header();
 
