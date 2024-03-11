@@ -81,20 +81,6 @@ where
     let subject_client_state = ctx.client_state(&subject_client_id)?;
     let substitute_client_state = ctx.client_state(&substitute_client_id)?;
 
-    let substitute_height = substitute_client_state.latest_height();
-    let substitute_consensus_state_path = ClientConsensusStatePath::new(
-        substitute_client_id,
-        substitute_height.revision_number(),
-        substitute_height.revision_height(),
-    );
-    let substitute_consensus_state = ctx.consensus_state(&substitute_consensus_state_path)?;
-
-    subject_client_state.initialise(
-        ctx.get_client_execution_context(),
-        &substitute_client_id,
-        substitute_consensus_state.into(),
-    )?;
-
     subject_client_state
         .update_on_recovery(ctx.get_client_execution_context(), &substitute_client_state)?;
 
