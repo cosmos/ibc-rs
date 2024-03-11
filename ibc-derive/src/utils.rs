@@ -121,10 +121,9 @@ impl Imports {
 ///
 pub fn get_enum_variant_type_path(enum_variant: &Variant) -> &Path {
     let variant_name = &enum_variant.ident;
-    let variant_unnamed_fields = match &enum_variant.fields {
-            syn::Fields::Unnamed(fields) => fields,
-            _ => panic!("\"{variant_name}\" variant must be unnamed, such as `{variant_name}({variant_name}ClientState)`")
-        };
+    let syn::Fields::Unnamed(variant_unnamed_fields) = &enum_variant.fields else {
+        panic!("\"{variant_name}\" variant must be unnamed, such as `{variant_name}({variant_name}ClientState)`")
+    };
 
     if variant_unnamed_fields.unnamed.iter().len() != 1 {
         panic!("\"{variant_name}\" must contain exactly one field, such as `{variant_name}({variant_name}ClientState)`");

@@ -106,9 +106,8 @@ fn conn_open_try_execute(fxt: &mut Fixture<MsgConnectionOpenTry>, expect: Expect
             let event = &ibc_events[1];
             assert!(matches!(event, &IbcEvent::OpenTryConnection(_)));
 
-            let conn_open_try_event = match event {
-                IbcEvent::OpenTryConnection(e) => e,
-                _ => unreachable!(),
+            let IbcEvent::OpenTryConnection(conn_open_try_event) = event else {
+                unreachable!()
             };
             let conn_end =
                 ValidationContext::connection_end(&fxt.ctx, conn_open_try_event.conn_id_on_b())

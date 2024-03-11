@@ -172,13 +172,9 @@ pub fn on_recv_packet_execute(
     ctx_b: &mut impl NftTransferExecutionContext,
     packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
-    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
-        Ok(data) => data,
-        Err(_) => {
-            let ack =
-                AcknowledgementStatus::error(NftTransferError::PacketDataDeserialization.into());
-            return (ModuleExtras::empty(), ack.into());
-        }
+    let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
+        let ack = AcknowledgementStatus::error(NftTransferError::PacketDataDeserialization.into());
+        return (ModuleExtras::empty(), ack.into());
     };
 
     let (mut extras, ack) = match process_recv_packet_execute(ctx_b, packet, data.clone()) {
@@ -227,26 +223,21 @@ pub fn on_acknowledgement_packet_execute(
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
 ) -> (ModuleExtras, Result<(), NftTransferError>) {
-    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
-        Ok(data) => data,
-        Err(_) => {
-            return (
-                ModuleExtras::empty(),
-                Err(NftTransferError::PacketDataDeserialization),
-            );
-        }
+    let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
+        return (
+            ModuleExtras::empty(),
+            Err(NftTransferError::PacketDataDeserialization),
+        );
     };
 
-    let acknowledgement =
-        match serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref()) {
-            Ok(ack) => ack,
-            Err(_) => {
-                return (
-                    ModuleExtras::empty(),
-                    Err(NftTransferError::AckDeserialization),
-                );
-            }
-        };
+    let Ok(acknowledgement) =
+        serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref())
+    else {
+        return (
+            ModuleExtras::empty(),
+            Err(NftTransferError::AckDeserialization),
+        );
+    };
 
     if !acknowledgement.is_successful() {
         if let Err(err) = refund_packet_nft_execute(ctx, packet, &data) {
@@ -289,14 +280,11 @@ pub fn on_timeout_packet_execute(
     packet: &Packet,
     _relayer: &Signer,
 ) -> (ModuleExtras, Result<(), NftTransferError>) {
-    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
-        Ok(data) => data,
-        Err(_) => {
-            return (
-                ModuleExtras::empty(),
-                Err(NftTransferError::PacketDataDeserialization),
-            );
-        }
+    let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
+        return (
+            ModuleExtras::empty(),
+            Err(NftTransferError::PacketDataDeserialization),
+        );
     };
 
     if let Err(err) = refund_packet_nft_execute(ctx, packet, &data) {

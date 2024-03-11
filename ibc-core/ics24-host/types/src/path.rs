@@ -947,15 +947,11 @@ fn parse_channel_ends(components: &[&str]) -> Option<Path> {
     let port = parse_ports(&components[1..=2]);
     let channel = parse_channels(&components[3..=4]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
@@ -975,15 +971,11 @@ fn parse_seqs(components: &[&str]) -> Option<Path> {
     let port = parse_ports(&components[1..=2]);
     let channel = parse_channels(&components[3..=4]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
@@ -1013,21 +1005,15 @@ fn parse_commitments(components: &[&str]) -> Option<Path> {
     let channel = parse_channels(&components[3..=4]);
     let sequence = parse_sequences(&components[5..]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
-    let sequence = if let Some(SubPath::Sequences(seq)) = sequence {
-        seq
-    } else {
+    let Some(SubPath::Sequences(sequence)) = sequence else {
         return None;
     };
 
@@ -1059,21 +1045,15 @@ fn parse_acks(components: &[&str]) -> Option<Path> {
     let channel = parse_channels(&components[3..=4]);
     let sequence = parse_sequences(&components[5..]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
-    let sequence = if let Some(SubPath::Sequences(seq)) = sequence {
-        seq
-    } else {
+    let Some(SubPath::Sequences(sequence)) = sequence else {
         return None;
     };
 
@@ -1105,21 +1085,15 @@ fn parse_receipts(components: &[&str]) -> Option<Path> {
     let channel = parse_channels(&components[3..=4]);
     let sequence = parse_sequences(&components[5..]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
-    let sequence = if let Some(SubPath::Sequences(seq)) = sequence {
-        seq
-    } else {
+    let Some(SubPath::Sequences(sequence)) = sequence else {
         return None;
     };
 
