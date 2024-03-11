@@ -55,7 +55,7 @@ impl TmValidationContext for MockContext {
                     client_id: client_id.clone(),
                 })?;
 
-        let heights = client_record.consensus_states.keys().cloned().collect();
+        let heights = client_record.consensus_states.keys().copied().collect();
 
         Ok(heights)
     }
@@ -75,7 +75,7 @@ impl TmValidationContext for MockContext {
                 })?;
 
         // Get the consensus state heights and sort them in ascending order.
-        let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
+        let mut heights: Vec<Height> = client_record.consensus_states.keys().copied().collect();
         heights.sort();
 
         // Search for next state.
@@ -109,7 +109,7 @@ impl TmValidationContext for MockContext {
                 })?;
 
         // Get the consensus state heights and sort them in descending order.
-        let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
+        let mut heights: Vec<Height> = client_record.consensus_states.keys().copied().collect();
         heights.sort_by(|a, b| b.cmp(a));
 
         // Search for previous state.
