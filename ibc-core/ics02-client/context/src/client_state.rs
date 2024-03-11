@@ -193,9 +193,13 @@ where
         upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError>;
 
-    /// Update the client and consensus states in the store in response to a successful
-    /// client recovery.
-    fn update_on_recovery(&self, ctx: &mut E) -> Result<(), ClientError>;
+    /// Update the client and consensus states in the store with the provided values
+    /// from a verified substitute client in response to a successful client recovery.
+    fn update_on_recovery(
+        &self,
+        ctx: &mut E,
+        substitute_client_state: &impl ClientStateExecution<E>,
+    ) -> Result<(), ClientError>;
 }
 
 use crate::context::{ClientExecutionContext, ClientValidationContext};

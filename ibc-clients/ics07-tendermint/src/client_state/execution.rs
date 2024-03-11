@@ -69,11 +69,9 @@ where
     fn update_on_recovery(
         &self,
         ctx: &mut E,
-        chain_id: &ChainId,
-        trusting_period: Duration,
-        latest_height: Height,
+        substitute_client_state: &ClientStateType,
     ) -> Result<(), ClientError> {
-        update_on_recovery(self.inner(), ctx, chain_id, trusting_period, latest_height)
+        update_on_recovery(self.inner(), ctx, substitute_client_state)
     }
 }
 
@@ -372,17 +370,22 @@ where
 /// trait, but has been made standalone in order to enable greater flexibility
 /// of the ClientState APIs.
 pub fn update_on_recovery<E>(
-    client_state: &ClientStateType,
+    subject_client_state: &ClientStateType,
     ctx: &mut E,
-    chain_id: &ChainId,
-    trusting_period: Duration,
-    latest_height: Height,
+    substitute_client_state: &ClientStateType,
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext + ExecutionContext,
     <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
     <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
 {
+    let ClientStateType {
+        chain_id,
+        trusting_period,
+        latest_height,
+        ..
+    } = substitute_client_state;
+
     let new_client_state = ClientStateType {
         chain_id,
         trusting_period,
