@@ -184,7 +184,7 @@ where
         client_message: Any,
     ) -> Result<(), ClientError>;
 
-    // Update the client state and consensus state in the store with the upgraded ones.
+    /// Update the client state and consensus state in the store with the upgraded ones.
     fn update_state_on_upgrade(
         &self,
         ctx: &mut E,
@@ -193,7 +193,9 @@ where
         upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError>;
 
-    fn update_on_recovery() -> Result<(), ClientError>;
+    /// Update the client and consensus states in the store in response to a successful
+    /// client recovery.
+    fn update_on_recovery(&self, ctx: &mut E) -> Result<(), ClientError>;
 }
 
 use crate::context::{ClientExecutionContext, ClientValidationContext};

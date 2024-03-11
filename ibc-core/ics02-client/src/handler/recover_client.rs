@@ -102,5 +102,7 @@ where
         substitute_consensus_state,
     )?;
 
+    subject_client_state.update_on_recovery(ctx.get_client_execution_context())?;
+
     Ok(())
 }

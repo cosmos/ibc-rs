@@ -1,3 +1,5 @@
+use core::time::Duration;
+
 use ibc_client_tendermint_types::{
     ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
 };
@@ -5,7 +7,7 @@ use ibc_core_client::context::client_state::ClientStateExecution;
 use ibc_core_client::context::ClientExecutionContext;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
-use ibc_core_host::types::identifiers::ClientId;
+use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_core_host::ExecutionContext;
 use ibc_primitives::prelude::*;
@@ -62,6 +64,16 @@ where
             upgraded_client_state,
             upgraded_consensus_state,
         )
+    }
+
+    fn update_on_recovery(
+        &self,
+        ctx: &mut E,
+        chain_id: &ChainId,
+        trusting_period: Duration,
+        latest_height: Height,
+    ) -> Result<(), ClientError> {
+        update_on_recovery(self.inner(), ctx, chain_id, trusting_period, latest_height)
     }
 }
 
@@ -208,7 +220,8 @@ where
     Ok(())
 }
 
-/// Commit the new client state and consensus state to the store.
+/// Commit the new client state and consensus state to the store upon a
+/// successful client upgrade.
 ///
 /// Note that this function is typically implemented as part of the
 /// [`ClientStateExecution`] trait, but has been made a standalone function
@@ -343,6 +356,56 @@ where
         ctx.delete_consensus_state(client_consensus_state_path)?;
         ctx.delete_update_meta(client_id.clone(), height)?;
     }
+
+    Ok(())
+}
+
+/// Update the `client_state`'s ID, trusting period, latest height, processed height,
+/// and processed time metadata values to those values given by a verified substitute
+/// client state in response to a successful client recovery.
+///
+/// Note that unlike the `update_on_upgrade` function, `update_on_recovery` assumes
+/// that client being updated has already been re-initialised such that it's original
+/// client and consensus states have been overwritten to their new states.
+///
+/// This function is typically implemented as part of the [`ClientStateExecution`]
+/// trait, but has been made standalone in order to enable greater flexibility
+/// of the ClientState APIs.
+pub fn update_on_recovery<E>(
+    client_state: &ClientStateType,
+    ctx: &mut E,
+    chain_id: &ChainId,
+    trusting_period: Duration,
+    latest_height: Height,
+) -> Result<(), ClientError>
+where
+    E: TmExecutionContext + ExecutionContext,
+    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
+    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
+{
+    let new_client_state = ClientStateType {
+        chain_id,
+        trusting_period,
+        latest_height,
+        frozen_height: None,
+        ..client_state
+    };
+
+    let client_id = client_state.client_id;
+    let host_timestamp = CommonContext::host_timestamp(ctx)?;
+    let host_height = CommonContext::host_height(ctx)?;
+
+    ctx.store_client_state(
+        ClientStatePath::new(client_id.clone()),
+        new_client_state.into(),
+    )?;
+
+    ctx.store_update_meta(
+        client_id.clone(),
+        latest_height,
+        host_timestamp,
+        host_height,
+    )?;
 
     Ok(())
 }
