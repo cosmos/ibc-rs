@@ -149,7 +149,7 @@ impl core::fmt::Display for Height {
 }
 
 /// Encodes all errors related to chain heights
-#[derive(Debug, Display, PartialEq)]
+#[derive(Debug, Display, PartialEq, Eq)]
 pub enum HeightError {
     /// cannot convert into a `Height` type from string `{height}`
     HeightConversion {
