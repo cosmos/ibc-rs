@@ -12,7 +12,7 @@ use ibc::core::connection::types::{
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
@@ -31,10 +31,13 @@ pub struct Fixture {
     pub msg: MsgRecvPacket,
     pub conn_end_on_b: ConnectionEnd,
     pub chan_end_on_b: ChannelEnd,
+    pub default_client_id: ClientId,
 }
 
 #[fixture]
 fn fixture() -> Fixture {
+    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
+
     let context = MockContext::default();
 
     let router = MockRouter::new_with_transfer();
@@ -59,9 +62,9 @@ fn fixture() -> Fixture {
 
     let conn_end_on_b = ConnectionEnd::new(
         ConnectionState::Open,
-        "07-tendermint-0".into(),
+        default_client_id.clone(),
         ConnectionCounterparty::new(
-            "07-tendermint-0".into(),
+            default_client_id.clone(),
             Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),
@@ -78,6 +81,7 @@ fn fixture() -> Fixture {
         msg,
         conn_end_on_b,
         chan_end_on_b,
+        default_client_id,
     }
 }
 
@@ -110,6 +114,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
         chan_end_on_b,
         client_height,
         host_height,
+        default_client_id,
         ..
     } = fixture;
 
@@ -142,7 +147,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
     context
         .get_client_execution_context()
         .store_update_meta(
-            "07-tendermint-0".into(),
+            default_client_id,
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 5).unwrap(),

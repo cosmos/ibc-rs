@@ -12,7 +12,7 @@ use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
-use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
 use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
@@ -20,6 +20,8 @@ use test_log::test;
 
 #[test]
 fn send_packet_processing() {
+    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
+
     struct Test {
         name: String,
         ctx: MockContext,
@@ -40,9 +42,9 @@ fn send_packet_processing() {
 
     let conn_end_on_a = ConnectionEnd::new(
         ConnectionState::Open,
-        "07-tendermint-0".into(),
+        default_client_id.clone(),
         ConnectionCounterparty::new(
-            "07-tendermint-0".into(),
+            default_client_id.clone(),
             Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),

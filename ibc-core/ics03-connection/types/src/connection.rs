@@ -1,6 +1,7 @@
 //! Defines the types that define a connection
 
 use core::fmt::{Display, Error as FmtError, Formatter};
+use core::str::FromStr;
 use core::time::Duration;
 use core::u64;
 
@@ -210,8 +211,12 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
         if state == State::Uninitialized {
             return ConnectionEnd::new(
                 State::Uninitialized,
-                "07-tendermint-0".into(),
-                Counterparty::new("07-tendermint-0".into(), None, CommitmentPrefix::empty()),
+                ClientId::from_str("07-tendermint-0").expect("should not fail"),
+                Counterparty::new(
+                    ClientId::from_str("07-tendermint-0").expect("should not fail"),
+                    None,
+                    CommitmentPrefix::empty(),
+                ),
                 Vec::new(),
                 ZERO_DURATION,
             );

@@ -43,7 +43,7 @@ struct Fixture {
 
 #[fixture]
 fn fixture() -> Fixture {
-    let client_id = ClientId::from("07-tendermint-0");
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
 
     let ctx = MockContext::default().with_client_config(
         MockClientConfig::builder()
@@ -82,7 +82,7 @@ fn test_update_client_ok(fixture: Fixture) {
         mut router,
     } = fixture;
 
-    let client_id = ClientId::from("07-tendermint-0");
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let signer = dummy_account_id();
     let timestamp = Timestamp::now();
 
@@ -114,7 +114,7 @@ fn test_update_client_ok(fixture: Fixture) {
 // client's height and ensures that `ConsensusState` is stored at the correct
 // path (header height).
 fn test_update_client_with_prev_header() {
-    let client_id = ClientId::from("07-tendermint-0");
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let chain_id_b = ChainId::new("mockgaiaA-0").unwrap();
     let latest_height = Height::new(0, 42).unwrap();
     let height_1 = Height::new(0, 43).unwrap();
@@ -780,7 +780,7 @@ fn test_update_client_events(fixture: Fixture) {
         mut router,
     } = fixture;
 
-    let client_id = ClientId::from("07-tendermint-0");
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let signer = dummy_account_id();
     let timestamp = Timestamp::now();
 
@@ -841,7 +841,7 @@ fn test_misbehaviour_client_ok(fixture: Fixture) {
         mut router,
     } = fixture;
 
-    let client_id = ClientId::from("07-tendermint-0");
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let msg_envelope = msg_update_client(&client_id);
 
     let res = validate(&ctx, &router, msg_envelope.clone());

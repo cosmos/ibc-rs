@@ -76,12 +76,6 @@ impl FromStr for ClientId {
     }
 }
 
-impl From<&str> for ClientId {
-    fn from(s: &str) -> Self {
-        Self::from_str(s).expect("Invalid client id")
-    }
-}
-
 /// Equality check against string literal (satisfies &ClientId == &str).
 /// ```
 /// use core::str::FromStr;

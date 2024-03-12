@@ -11,7 +11,7 @@ use ibc::core::connection::types::{
 };
 use ibc::core::entrypoint::validate;
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout_on_close;
@@ -30,6 +30,8 @@ pub struct Fixture {
 
 #[fixture]
 fn fixture() -> Fixture {
+    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
+
     let client_height = Height::new(0, 2).unwrap();
     let context = MockContext::default().with_client_config(
         MockClientConfig::builder()
@@ -64,9 +66,9 @@ fn fixture() -> Fixture {
 
     let conn_end_on_a = ConnectionEnd::new(
         ConnectionState::Open,
-        "07-tendermint-0".into(),
+        default_client_id.clone(),
         ConnectionCounterparty::new(
-            "07-tendermint-0".into(),
+            default_client_id.clone(),
             Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),
@@ -131,6 +133,8 @@ fn timeout_on_close_success_no_packet_commitment(fixture: Fixture) {
 
 #[rstest]
 fn timeout_on_close_success_happy_path(fixture: Fixture) {
+    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
+
     let Fixture {
         context,
         router,
@@ -153,7 +157,7 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
     context
         .get_client_execution_context()
         .store_update_meta(
-            "07-tendermint-0".into(),
+            default_client_id,
             Height::new(0, 2).unwrap(),
             Timestamp::from_nanoseconds(5000).unwrap(),
             Height::new(0, 5).unwrap(),

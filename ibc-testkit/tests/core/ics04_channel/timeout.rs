@@ -12,7 +12,7 @@ use ibc::core::connection::types::{
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
@@ -29,10 +29,13 @@ struct Fixture {
     conn_end_on_a: ConnectionEnd,
     chan_end_on_a_ordered: ChannelEnd,
     chan_end_on_a_unordered: ChannelEnd,
+    default_client_id: ClientId,
 }
 
 #[fixture]
 fn fixture() -> Fixture {
+    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
+
     let client_height = Height::new(0, 2).unwrap();
     let ctx = MockContext::default().with_client_config(
         MockClientConfig::builder()
@@ -77,9 +80,9 @@ fn fixture() -> Fixture {
 
     let conn_end_on_a = ConnectionEnd::new(
         ConnectionState::Open,
-        "07-tendermint-0".into(),
+        default_client_id.clone(),
         ConnectionCounterparty::new(
-            "07-tendermint-0".into(),
+            default_client_id.clone(),
             Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),
@@ -97,6 +100,7 @@ fn fixture() -> Fixture {
         conn_end_on_a,
         chan_end_on_a_ordered,
         chan_end_on_a_unordered,
+        default_client_id,
     }
 }
 
@@ -170,6 +174,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         chan_end_on_a_unordered,
         conn_end_on_a,
         client_height,
+        default_client_id,
         ..
     } = fixture;
 
@@ -205,7 +210,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         );
 
     ctx.store_update_meta(
-        "07-tendermint-0".into(),
+        default_client_id,
         client_height,
         Timestamp::from_nanoseconds(5).unwrap(),
         Height::new(0, 4).unwrap(),
@@ -261,6 +266,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
         conn_end_on_a,
         packet_commitment,
         client_height,
+        default_client_id,
         ..
     } = fixture;
 
@@ -287,7 +293,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
 
     ctx.get_client_execution_context()
         .store_update_meta(
-            "07-tendermint-0".into(),
+            default_client_id,
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 5).unwrap(),
@@ -311,6 +317,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
         conn_end_on_a,
         packet_commitment,
         client_height,
+        default_client_id,
         ..
     } = fixture;
 
@@ -332,7 +339,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
         );
 
     ctx.store_update_meta(
-        "07-tendermint-0".into(),
+        default_client_id,
         client_height,
         Timestamp::from_nanoseconds(1000).unwrap(),
         Height::new(0, 4).unwrap(),

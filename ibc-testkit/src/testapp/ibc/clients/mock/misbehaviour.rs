@@ -1,10 +1,9 @@
+use crate::testapp::ibc::clients::mock::header::MockHeader;
+use crate::testapp::ibc::clients::mock::proto::Misbehaviour as RawMisbehaviour;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
 use ibc::primitives::proto::{Any, Protobuf};
-
-use crate::testapp::ibc::clients::mock::header::MockHeader;
-use crate::testapp::ibc::clients::mock::proto::Misbehaviour as RawMisbehaviour;
 
 pub const MOCK_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.mock.Misbehavior";
 
@@ -23,7 +22,7 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
 
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
         Ok(Self {
-            client_id: "07-tendermint-0".into(),
+            client_id: ClientId::new("07-tendermint", 0).expect("no error"),
             header1: raw
                 .header1
                 .ok_or(ClientError::MissingRawMisbehaviour)?
