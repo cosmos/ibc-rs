@@ -45,6 +45,12 @@ impl From<String> for Memo {
     }
 }
 
+impl From<&str> for Memo {
+    fn from(memo: &str) -> Self {
+        Self(memo.to_owned())
+    }
+}
+
 impl FromStr for Memo {
     type Err = Infallible;
 

@@ -23,7 +23,7 @@ pub fn dummy_msg_upgrade_client(client_id: ClientId, upgrade_height: Height) -> 
 
 /// Returns a dummy `RawMsgUpgradeClient`, for testing purposes only!
 pub fn dummy_raw_msg_upgrade_client() -> RawMsgUpgradeClient {
-    let client_id = "07-tendermint-0".parse().unwrap();
+    let client_id = "07-tendermint-0".parse().expect("no error");
 
     let upgrade_height = Height::new(0, 10).expect("Never fails");
 

@@ -24,7 +24,7 @@ use crate::error::NftTransferError;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, Default, PartialEq, Eq, derive_more::From)]
+#[derive(Clone, Debug, PartialEq, Eq, derive_more::From)]
 pub struct Data(String);
 
 #[cfg(feature = "serde")]
@@ -88,7 +88,7 @@ impl<'de> serde::Deserialize<'de> for Data {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ics721Data(BTreeMap<String, DataValue>);
 
 #[cfg(feature = "serde")]
@@ -100,7 +100,7 @@ impl FromStr for Ics721Data {
     }
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataValue {
     value: String,
     mime: Option<Mime>,
@@ -161,7 +161,7 @@ impl borsh::BorshSerialize for DataValue {
             Some(mime) => mime.to_string(),
             None => String::default(),
         };
-        borsh::BorshSerialize::serialize(&mime.to_string(), writer)?;
+        borsh::BorshSerialize::serialize(&mime, writer)?;
         Ok(())
     }
 }

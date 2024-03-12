@@ -14,6 +14,8 @@ on:
       - ibc-clients/**
       - ibc-primitives/**
       - ibc-query/**
+      - ibc-testkit/**
+      - ibc-derive/**
   push:
     branches:
       - main

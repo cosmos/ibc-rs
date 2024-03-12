@@ -7,8 +7,8 @@ use crate::utils::{get_enum_variant_type_path, Imports};
 
 pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> TokenStream {
     let enum_name = &ast.ident;
-    let enum_variants = match ast.data {
-        syn::Data::Enum(ref enum_data) => &enum_data.variants,
+    let enum_variants = match &ast.data {
+        syn::Data::Enum(enum_data) => &enum_data.variants,
         _ => panic!("ConsensusState only supports enums"),
     };
 

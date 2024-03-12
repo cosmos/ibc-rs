@@ -153,9 +153,8 @@ fn conn_open_ack_execute(fxt: &mut Fixture<MsgConnectionOpenAck>, expect: Expect
             let event = &ibc_events[1];
             assert!(matches!(event, &IbcEvent::OpenAckConnection(_)));
 
-            let conn_open_try_event = match event {
-                IbcEvent::OpenAckConnection(e) => e,
-                _ => unreachable!(),
+            let IbcEvent::OpenAckConnection(conn_open_try_event) = event else {
+                unreachable!()
             };
             let conn_end = <MockContext as ValidationContext>::connection_end(
                 &fxt.ctx,

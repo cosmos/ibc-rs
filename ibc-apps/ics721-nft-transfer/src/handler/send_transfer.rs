@@ -81,14 +81,14 @@ where
                 &msg.chan_id_on_a,
                 class_id,
                 token_id,
-                &packet_data.memo.clone().unwrap_or_default(),
+                &packet_data.memo.clone().unwrap_or("".into()),
             )?;
         } else {
             transfer_ctx.burn_nft_validate(
                 &sender,
                 class_id,
                 token_id,
-                &packet_data.memo.clone().unwrap_or_default(),
+                &packet_data.memo.clone().unwrap_or("".into()),
             )?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
@@ -184,14 +184,14 @@ where
                 &msg.chan_id_on_a,
                 class_id,
                 token_id,
-                &packet_data.memo.clone().unwrap_or_default(),
+                &packet_data.memo.clone().unwrap_or("".into()),
             )?;
         } else {
             transfer_ctx.burn_nft_execute(
                 &sender,
                 class_id,
                 token_id,
-                &packet_data.memo.clone().unwrap_or_default(),
+                &packet_data.memo.clone().unwrap_or("".into()),
             )?;
         }
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
@@ -242,7 +242,7 @@ where
             receiver: packet_data.receiver,
             class: packet_data.class_id,
             tokens: packet_data.token_ids,
-            memo: packet_data.memo.unwrap_or_default(),
+            memo: packet_data.memo.unwrap_or("".into()),
         };
         send_packet_ctx_a.emit_ibc_event(ModuleEvent::from(transfer_event).into())?;
 

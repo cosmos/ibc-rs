@@ -57,6 +57,10 @@ impl ChannelId {
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
+
+    pub fn zero() -> Self {
+        Self::new(0)
+    }
 }
 
 /// This implementation provides a `to_string` method.
@@ -77,12 +81,6 @@ impl FromStr for ChannelId {
 impl AsRef<str> for ChannelId {
     fn as_ref(&self) -> &str {
         &self.0
-    }
-}
-
-impl Default for ChannelId {
-    fn default() -> Self {
-        Self::new(0)
     }
 }
 

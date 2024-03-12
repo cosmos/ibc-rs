@@ -17,7 +17,7 @@ use crate::error::IdentifierError;
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 /// The sequence number of a packet enforces ordering among packets from the same source.
-#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Hash, PartialOrd, Ord)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct Sequence(u64);
 
 impl core::str::FromStr for Sequence {

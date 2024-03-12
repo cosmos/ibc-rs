@@ -2,7 +2,7 @@ use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State}
 use ibc::core::channel::types::msgs::{ChannelMsg, MsgChannelOpenConfirm};
 use ibc::core::channel::types::Version;
 use ibc::core::client::types::Height;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -43,7 +43,7 @@ fn fixture() -> Fixture {
         ConnectionState::Open,
         client_id_on_b.clone(),
         ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
-        get_compatible_versions(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();
@@ -54,9 +54,9 @@ fn fixture() -> Fixture {
     let chan_end_on_b = ChannelEnd::new(
         State::TryOpen,
         Order::Unordered,
-        Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
+        Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::zero())),
         vec![conn_id_on_b.clone()],
-        Version::default(),
+        Version::empty(),
     )
     .unwrap();
 
@@ -94,11 +94,7 @@ fn chan_open_confirm_validate_happy_path(fixture: Fixture) {
                 .build(),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
-        .with_channel(
-            msg.port_id_on_b.clone(),
-            ChannelId::default(),
-            chan_end_on_b,
-        );
+        .with_channel(msg.port_id_on_b.clone(), ChannelId::zero(), chan_end_on_b);
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
@@ -129,11 +125,7 @@ fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
                 .build(),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
-        .with_channel(
-            msg.port_id_on_b.clone(),
-            ChannelId::default(),
-            chan_end_on_b,
-        );
+        .with_channel(msg.port_id_on_b.clone(), ChannelId::zero(), chan_end_on_b);
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
@@ -200,9 +192,9 @@ fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
     let wrong_chan_end = ChannelEnd::new(
         State::Init,
         Order::Unordered,
-        Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::default())),
+        Counterparty::new(msg.port_id_on_b.clone(), Some(ChannelId::zero())),
         vec![conn_id_on_b.clone()],
-        Version::default(),
+        Version::empty(),
     )
     .unwrap();
     let context = context
@@ -213,11 +205,7 @@ fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
                 .build(),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
-        .with_channel(
-            msg.port_id_on_b.clone(),
-            ChannelId::default(),
-            wrong_chan_end,
-        );
+        .with_channel(msg.port_id_on_b.clone(), ChannelId::zero(), wrong_chan_end);
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 

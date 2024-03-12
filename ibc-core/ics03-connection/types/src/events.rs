@@ -29,7 +29,7 @@ pub const COUNTERPARTY_CLIENT_ID_ATTRIBUTE_KEY: &str = "counterparty_client_id";
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 struct Attributes {
     pub connection_id: ConnectionId,
     pub client_id: ClientId,
@@ -323,7 +323,7 @@ mod tests {
 
         let client_type = ClientType::from_str("07-tendermint")
             .expect("never fails because it's a valid client type");
-        let conn_id_on_a = ConnectionId::default();
+        let conn_id_on_a = ConnectionId::zero();
         let client_id_on_a = client_type.build_client_id(0);
         let conn_id_on_b = ConnectionId::new(1);
         let client_id_on_b = client_type.build_client_id(1);
@@ -366,7 +366,7 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
-                expected_values: expected_values.iter().rev().cloned().collect(),
+                expected_values: expected_values.iter().rev().copied().collect(),
             },
             Test {
                 kind: CONNECTION_OPEN_ACK_EVENT,
@@ -385,7 +385,7 @@ mod tests {
                 event: OpenConfirm::new(conn_id_on_b, client_id_on_b, conn_id_on_a, client_id_on_a)
                     .into(),
                 expected_keys: expected_keys.clone(),
-                expected_values: expected_values.iter().rev().cloned().collect(),
+                expected_values: expected_values.iter().rev().copied().collect(),
             },
         ];
 

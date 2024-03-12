@@ -106,7 +106,7 @@ impl Display for TracePrefix {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, Default, Eq, PartialEq, PartialOrd, Ord, From)]
+#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, From)]
 pub struct TracePath(Vec<TracePrefix>);
 
 impl TracePath {
@@ -130,6 +130,11 @@ impl TracePath {
     /// Returns true if the path is empty and false otherwise.
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
+    }
+
+    /// Return empty trace path
+    pub fn empty() -> Self {
+        Self(vec![])
     }
 }
 
@@ -268,7 +273,7 @@ impl FromStr for PrefixedClassId {
 
         let (base_class_id, trace_path) = {
             if last_part == s {
-                (ClassId::from_str(s)?, TracePath::default())
+                (ClassId::from_str(s)?, TracePath::empty())
             } else {
                 let base_class_id = ClassId::from_str(last_part)?;
                 let trace_path = TracePath::try_from(parts)?;
@@ -308,7 +313,7 @@ impl From<PrefixedClassId> for RawClassTrace {
 impl From<ClassId> for PrefixedClassId {
     fn from(class_id: ClassId) -> Self {
         Self {
-            trace_path: Default::default(),
+            trace_path: TracePath::empty(),
             base_class_id: class_id,
         }
     }

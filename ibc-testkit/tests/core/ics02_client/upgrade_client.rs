@@ -1,4 +1,5 @@
 use ibc::clients::tendermint::types::client_type;
+use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
 use ibc::core::client::types::msgs::{ClientMsg, MsgUpgradeClient};
 use ibc::core::client::types::Height;
@@ -7,8 +8,6 @@ use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::path::ClientConsensusStatePath;
-use ibc::core::host::ValidationContext;
-use ibc::core::primitives::downcast;
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
@@ -102,8 +101,9 @@ fn upgrade_client_execute(fxt: &mut Fixture<MsgUpgradeClient>, expect: Expect) {
                 ibc_events[0],
                 IbcEvent::Message(MessageEvent::Client)
             ));
-            let upgrade_client_event =
-                downcast!(&ibc_events[1] => IbcEvent::UpgradeClient).unwrap();
+            let IbcEvent::UpgradeClient(upgrade_client_event) = &ibc_events[1] else {
+                panic!("unexpected event variant");
+            };
             let plan_height = Height::new(1, 26).unwrap();
 
             assert_eq!(upgrade_client_event.client_id(), &fxt.msg.client_id);

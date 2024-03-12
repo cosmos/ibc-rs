@@ -2,7 +2,7 @@ use ibc::apps::transfer::types::MODULE_ID_STR;
 use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State};
 use ibc::core::channel::types::msgs::{ChannelMsg, MsgChannelOpenAck};
 use ibc::core::client::types::Height;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -46,7 +46,7 @@ fn fixture() -> Fixture {
         ConnectionState::Open,
         client_id_on_a.clone(),
         ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
-        get_compatible_versions(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();

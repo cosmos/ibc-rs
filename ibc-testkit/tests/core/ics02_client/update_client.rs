@@ -19,7 +19,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChainId, ClientId, ClientType};
 use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
-use ibc::core::primitives::{downcast, Timestamp};
+use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
@@ -43,7 +43,7 @@ struct Fixture {
 
 #[fixture]
 fn fixture() -> Fixture {
-    let client_id = ClientId::default();
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
 
     let ctx = MockContext::default().with_client_config(
         MockClientConfig::builder()
@@ -82,7 +82,7 @@ fn test_update_client_ok(fixture: Fixture) {
         mut router,
     } = fixture;
 
-    let client_id = ClientId::default();
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let signer = dummy_account_id();
     let timestamp = Timestamp::now();
 
@@ -114,7 +114,7 @@ fn test_update_client_ok(fixture: Fixture) {
 // client's height and ensures that `ConsensusState` is stored at the correct
 // path (header height).
 fn test_update_client_with_prev_header() {
-    let client_id = ClientId::default();
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let chain_id_b = ChainId::new("mockgaiaA-0").unwrap();
     let latest_height = Height::new(0, 42).unwrap();
     let height_1 = Height::new(0, 43).unwrap();
@@ -256,7 +256,7 @@ fn test_consensus_state_pruning() {
         expired_height.revision_number(),
         expired_height.revision_height(),
     );
-    assert!(ctx.update_meta(&client_id, &expired_height).is_err());
+    assert!(ctx.client_update_meta(&client_id, &expired_height).is_err());
     assert!(ctx.consensus_state(&client_cons_state_path).is_err());
 
     // Check that latest valid consensus state exists.
@@ -267,7 +267,9 @@ fn test_consensus_state_pruning() {
         earliest_valid_height.revision_height(),
     );
 
-    assert!(ctx.update_meta(&client_id, &earliest_valid_height).is_ok());
+    assert!(ctx
+        .client_update_meta(&client_id, &earliest_valid_height)
+        .is_ok());
     assert!(ctx.consensus_state(&client_cons_state_path).is_ok());
 
     let end_host_timestamp = ctx.host_timestamp().unwrap();
@@ -654,7 +656,9 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
         // chain B
         let consensus_state: AnyConsensusState = block.clone().into();
 
-        let tm_block = downcast!(block.clone() => HostBlock::SyntheticTendermint).unwrap();
+        let HostBlock::SyntheticTendermint(tm_block) = &block else {
+            panic!("unexpected host block type");
+        };
 
         let chain_id = ChainId::from_str(tm_block.header().chain_id.as_str()).unwrap();
 
@@ -667,7 +671,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
                     denominator: 3,
                 }),
                 trusting_period: Some(Duration::from_secs(64000).into()),
-                unbonding_period: Some(Duration::from_secs(128000).into()),
+                unbonding_period: Some(Duration::from_secs(128_000).into()),
                 max_clock_drift: Some(Duration::from_millis(3000).into()),
                 latest_height: Some(
                     Height::new(
@@ -677,8 +681,8 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
                     .unwrap()
                     .into(),
                 ),
-                proof_specs: ProofSpecs::default().into(),
-                upgrade_path: Default::default(),
+                proof_specs: ProofSpecs::cosmos().into(),
+                upgrade_path: Vec::new(),
                 frozen_height: Some(RawHeight {
                     revision_number: 0,
                     revision_height: 0,
@@ -778,7 +782,7 @@ fn test_update_client_events(fixture: Fixture) {
         mut router,
     } = fixture;
 
-    let client_id = ClientId::default();
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let signer = dummy_account_id();
     let timestamp = Timestamp::now();
 
@@ -800,7 +804,9 @@ fn test_update_client_events(fixture: Fixture) {
         ibc_events[0],
         IbcEvent::Message(MessageEvent::Client)
     ));
-    let update_client_event = downcast!(&ibc_events[1] => IbcEvent::UpdateClient).unwrap();
+    let IbcEvent::UpdateClient(update_client_event) = &ibc_events[1] else {
+        panic!("unexpected event variant");
+    };
 
     assert_eq!(update_client_event.client_id(), &client_id);
     assert_eq!(update_client_event.client_type(), &mock_client_type());
@@ -822,8 +828,9 @@ fn ensure_misbehaviour(ctx: &MockContext, client_id: &ClientId, client_type: &Cl
         ibc_events[0],
         IbcEvent::Message(MessageEvent::Client),
     ));
-    let misbehaviour_client_event =
-        downcast!(&ibc_events[1] => IbcEvent::ClientMisbehaviour).unwrap();
+    let IbcEvent::ClientMisbehaviour(misbehaviour_client_event) = &ibc_events[1] else {
+        panic!("unexpected event variant");
+    };
     assert_eq!(misbehaviour_client_event.client_id(), client_id);
     assert_eq!(misbehaviour_client_event.client_type(), client_type);
 }
@@ -839,7 +846,7 @@ fn test_misbehaviour_client_ok(fixture: Fixture) {
         mut router,
     } = fixture;
 
-    let client_id = ClientId::default();
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let msg_envelope = msg_update_client(&client_id);
 
     let res = validate(&ctx, &router, msg_envelope.clone());

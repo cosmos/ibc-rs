@@ -744,19 +744,13 @@ fn parse_next_sequence(components: &[&str]) -> Option<Path> {
 }
 
 fn parse_client_paths(components: &[&str]) -> Option<Path> {
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != CLIENT_PREFIX {
         return None;
     }
 
-    let client_id = match ClientId::from_str(components[1]) {
-        Ok(s) => s,
-        Err(_) => return None,
-    };
+    let client_id = ClientId::from_str(components[1]).ok()?;
 
     if components.len() == 3 {
         match components[2] {
@@ -779,15 +773,9 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
         let revision_number = epoch_height[0];
         let revision_height = epoch_height[1];
 
-        let revision_number = match revision_number.parse::<u64>() {
-            Ok(ep) => ep,
-            Err(_) => return None,
-        };
+        let revision_number = revision_number.parse::<u64>().ok()?;
 
-        let revision_height = match revision_height.parse::<u64>() {
-            Ok(h) => h,
-            Err(_) => return None,
-        };
+        let revision_height = revision_height.parse::<u64>().ok()?;
 
         match components.len() {
             4 => Some(
@@ -829,24 +817,15 @@ fn parse_connections(components: &[&str]) -> Option<Path> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != CONNECTION_PREFIX {
         return None;
     }
 
-    let connection_id = match components.last() {
-        Some(c) => *c,
-        None => return None,
-    };
+    let connection_id = *components.last()?;
 
-    let connection_id = match ConnectionId::from_str(connection_id) {
-        Ok(c) => c,
-        Err(_) => return None,
-    };
+    let connection_id = ConnectionId::from_str(connection_id).ok()?;
 
     Some(ConnectionPath(connection_id).into())
 }
@@ -856,24 +835,15 @@ fn parse_ports(components: &[&str]) -> Option<Path> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != PORT_PREFIX {
         return None;
     }
 
-    let port_id = match components.last() {
-        Some(p) => *p,
-        None => return None,
-    };
+    let port_id = *components.last()?;
 
-    let port_id = match PortId::from_str(port_id) {
-        Ok(p) => p,
-        Err(_) => return None,
-    };
+    let port_id = PortId::from_str(port_id).ok()?;
 
     Some(PortPath(port_id).into())
 }
@@ -883,24 +853,15 @@ fn parse_channels(components: &[&str]) -> Option<SubPath> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != CHANNEL_PREFIX {
         return None;
     }
 
-    let channel_id = match components.last() {
-        Some(c) => *c,
-        None => return None,
-    };
+    let channel_id = *components.last()?;
 
-    let channel_id = match ChannelId::from_str(channel_id) {
-        Ok(c) => c,
-        Err(_) => return None,
-    };
+    let channel_id = ChannelId::from_str(channel_id).ok()?;
 
     Some(SubPath::Channels(channel_id))
 }
@@ -910,19 +871,13 @@ fn parse_sequences(components: &[&str]) -> Option<SubPath> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != SEQUENCE_PREFIX {
         return None;
     }
 
-    let sequence_number = match components.last() {
-        Some(s) => *s,
-        None => return None,
-    };
+    let sequence_number = *components.last()?;
 
     match Sequence::from_str(sequence_number) {
         Ok(seq) => Some(SubPath::Sequences(seq)),
@@ -935,10 +890,7 @@ fn parse_channel_ends(components: &[&str]) -> Option<Path> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != CHANNEL_END_PREFIX {
         return None;
@@ -947,15 +899,11 @@ fn parse_channel_ends(components: &[&str]) -> Option<Path> {
     let port = parse_ports(&components[1..=2]);
     let channel = parse_channels(&components[3..=4]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
@@ -967,23 +915,16 @@ fn parse_seqs(components: &[&str]) -> Option<Path> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     let port = parse_ports(&components[1..=2]);
     let channel = parse_channels(&components[3..=4]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
@@ -1000,10 +941,7 @@ fn parse_commitments(components: &[&str]) -> Option<Path> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != PACKET_COMMITMENT_PREFIX {
         return None;
@@ -1013,21 +951,15 @@ fn parse_commitments(components: &[&str]) -> Option<Path> {
     let channel = parse_channels(&components[3..=4]);
     let sequence = parse_sequences(&components[5..]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
-    let sequence = if let Some(SubPath::Sequences(seq)) = sequence {
-        seq
-    } else {
+    let Some(SubPath::Sequences(sequence)) = sequence else {
         return None;
     };
 
@@ -1046,10 +978,7 @@ fn parse_acks(components: &[&str]) -> Option<Path> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != PACKET_ACK_PREFIX {
         return None;
@@ -1059,21 +988,15 @@ fn parse_acks(components: &[&str]) -> Option<Path> {
     let channel = parse_channels(&components[3..=4]);
     let sequence = parse_sequences(&components[5..]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
-    let sequence = if let Some(SubPath::Sequences(seq)) = sequence {
-        seq
-    } else {
+    let Some(SubPath::Sequences(sequence)) = sequence else {
         return None;
     };
 
@@ -1092,10 +1015,7 @@ fn parse_receipts(components: &[&str]) -> Option<Path> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != PACKET_RECEIPT_PREFIX {
         return None;
@@ -1105,21 +1025,15 @@ fn parse_receipts(components: &[&str]) -> Option<Path> {
     let channel = parse_channels(&components[3..=4]);
     let sequence = parse_sequences(&components[5..]);
 
-    let port_id = if let Some(Path::Ports(PortPath(port_id))) = port {
-        port_id
-    } else {
+    let Some(Path::Ports(PortPath(port_id))) = port else {
         return None;
     };
 
-    let channel_id = if let Some(SubPath::Channels(channel_id)) = channel {
-        channel_id
-    } else {
+    let Some(SubPath::Channels(channel_id)) = channel else {
         return None;
     };
 
-    let sequence = if let Some(SubPath::Sequences(seq)) = sequence {
-        seq
-    } else {
+    let Some(SubPath::Sequences(sequence)) = sequence else {
         return None;
     };
 
@@ -1138,24 +1052,15 @@ fn parse_upgrades(components: &[&str]) -> Option<Path> {
         return None;
     }
 
-    let first = match components.first() {
-        Some(f) => *f,
-        None => return None,
-    };
+    let first = *components.first()?;
 
     if first != UPGRADED_IBC_STATE {
         return None;
     }
 
-    let last = match components.last() {
-        Some(l) => *l,
-        None => return None,
-    };
+    let last = *components.last()?;
 
-    let height = match components[1].parse::<u64>() {
-        Ok(h) => h,
-        Err(_) => return None,
-    };
+    let height = components[1].parse::<u64>().ok()?;
 
     match last {
         UPGRADED_CLIENT_STATE => Some(UpgradeClientPath::UpgradedClientState(height).into()),
@@ -1169,7 +1074,13 @@ fn parse_upgrades(components: &[&str]) -> Option<Path> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    const DEFAULT_CLIENT_ID_STR: &str = "07-tendermint-0";
+    impl ClientId {
+        pub fn new_dummy() -> Self {
+            ClientId::from_str(DEFAULT_CLIENT_ID_STR)
+                .expect("should not fail since we use a valid client id")
+        }
+    }
     #[rstest::rstest]
     #[case(NEXT_CLIENT_SEQUENCE, Path::NextClientSequence(NextClientSequencePath))]
     #[case(
@@ -1182,12 +1093,12 @@ mod tests {
     )]
     #[case(
         "clients/07-tendermint-0/clientState",
-        Path::ClientState(ClientStatePath(ClientId::default()))
+        Path::ClientState(ClientStatePath(ClientId::new_dummy()))
     )]
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31",
         Path::ClientConsensusState(ClientConsensusStatePath {
-            client_id: ClientId::default(),
+            client_id: ClientId::new_dummy(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1195,7 +1106,7 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedTime",
         Path::ClientUpdateTime(ClientUpdateTimePath {
-            client_id: ClientId::default(),
+            client_id: ClientId::new_dummy(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1203,58 +1114,58 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedHeight",
         Path::ClientUpdateHeight(ClientUpdateHeightPath {
-            client_id: ClientId::default(),
+            client_id: ClientId::new_dummy(),
             revision_number: 15,
             revision_height: 31,
         })
     )]
     #[case(
         "clients/07-tendermint-0/connections",
-        Path::ClientConnection(ClientConnectionPath(ClientId::default()))
+        Path::ClientConnection(ClientConnectionPath(ClientId::new_dummy()))
     )]
     #[case(
         "connections/connection-0",
-        Path::Connection(ConnectionPath(ConnectionId::new(0)))
+        Path::Connection(ConnectionPath(ConnectionId::zero()))
     )]
     #[case("ports/transfer", Path::Ports(PortPath(PortId::transfer())))]
     #[case(
         "channelEnds/ports/transfer/channels/channel-0",
-        Path::ChannelEnd(ChannelEndPath(PortId::transfer(), ChannelId::default()))
+        Path::ChannelEnd(ChannelEndPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "nextSequenceSend/ports/transfer/channels/channel-0",
-        Path::SeqSend(SeqSendPath(PortId::transfer(), ChannelId::default()))
+        Path::SeqSend(SeqSendPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "nextSequenceRecv/ports/transfer/channels/channel-0",
-        Path::SeqRecv(SeqRecvPath(PortId::transfer(), ChannelId::default()))
+        Path::SeqRecv(SeqRecvPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "nextSequenceAck/ports/transfer/channels/channel-0",
-        Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::default()))
+        Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "commitments/ports/transfer/channels/channel-0/sequences/0",
         Path::Commitment(CommitmentPath {
             port_id: PortId::transfer(),
-            channel_id: ChannelId::default(),
-            sequence: Sequence::default(),
+            channel_id: ChannelId::zero(),
+            sequence: Sequence::from(0),
         })
     )]
     #[case(
         "acks/ports/transfer/channels/channel-0/sequences/0",
         Path::Ack(AckPath {
             port_id: PortId::transfer(),
-            channel_id: ChannelId::default(),
-            sequence: Sequence::default(),
+            channel_id: ChannelId::zero(),
+            sequence: Sequence::from(0),
         })
     )]
     #[case(
         "receipts/ports/transfer/channels/channel-0/sequences/0",
         Path::Receipt(ReceiptPath {
             port_id: PortId::transfer(),
-            channel_id: ChannelId::default(),
-            sequence: Sequence::default(),
+            channel_id: ChannelId::zero(),
+            sequence: Sequence::from(0),
         })
     )]
     #[case(
@@ -1288,7 +1199,7 @@ mod tests {
 
         assert_eq!(
             parse_client_paths(&components),
-            Some(Path::ClientState(ClientStatePath(ClientId::default())))
+            Some(Path::ClientState(ClientStatePath(ClientId::new_dummy())))
         );
 
         let path = "clients/07-tendermint-0/consensusStates/15-31";
@@ -1297,7 +1208,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientConsensusState(ClientConsensusStatePath {
-                client_id: ClientId::default(),
+                client_id: ClientId::new_dummy(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1312,7 +1223,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateTime(ClientUpdateTimePath {
-                client_id: ClientId::default(),
+                client_id: ClientId::new_dummy(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1324,7 +1235,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateHeight(ClientUpdateHeightPath {
-                client_id: ClientId::default(),
+                client_id: ClientId::new_dummy(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1338,7 +1249,7 @@ mod tests {
 
         assert_eq!(
             parse_connections(&components),
-            Some(Path::Connection(ConnectionPath(ConnectionId::new(0)))),
+            Some(Path::Connection(ConnectionPath(ConnectionId::zero()))),
         );
     }
 
@@ -1360,7 +1271,7 @@ mod tests {
 
         assert_eq!(
             parse_channels(&components),
-            Some(SubPath::Channels(ChannelId::default())),
+            Some(SubPath::Channels(ChannelId::zero())),
         );
     }
 
@@ -1371,7 +1282,7 @@ mod tests {
 
         assert_eq!(
             parse_sequences(&components),
-            Some(SubPath::Sequences(Sequence::default()))
+            Some(SubPath::Sequences(Sequence::from(0)))
         );
     }
 
@@ -1384,7 +1295,7 @@ mod tests {
             parse_channel_ends(&components),
             Some(Path::ChannelEnd(ChannelEndPath(
                 PortId::transfer(),
-                ChannelId::default()
+                ChannelId::zero()
             ))),
         );
     }
@@ -1398,7 +1309,7 @@ mod tests {
             parse_seqs(&components),
             Some(Path::SeqSend(SeqSendPath(
                 PortId::transfer(),
-                ChannelId::default()
+                ChannelId::zero()
             ))),
         );
 
@@ -1409,7 +1320,7 @@ mod tests {
             parse_seqs(&components),
             Some(Path::SeqRecv(SeqRecvPath(
                 PortId::transfer(),
-                ChannelId::default()
+                ChannelId::zero()
             ))),
         );
 
@@ -1420,7 +1331,7 @@ mod tests {
             parse_seqs(&components),
             Some(Path::SeqAck(SeqAckPath(
                 PortId::transfer(),
-                ChannelId::default()
+                ChannelId::zero()
             ))),
         );
     }
@@ -1434,8 +1345,8 @@ mod tests {
             parse_commitments(&components),
             Some(Path::Commitment(CommitmentPath {
                 port_id: PortId::transfer(),
-                channel_id: ChannelId::default(),
-                sequence: Sequence::default(),
+                channel_id: ChannelId::zero(),
+                sequence: Sequence::from(0),
             })),
         );
     }
@@ -1449,8 +1360,8 @@ mod tests {
             parse_acks(&components),
             Some(Path::Ack(AckPath {
                 port_id: PortId::transfer(),
-                channel_id: ChannelId::default(),
-                sequence: Sequence::default(),
+                channel_id: ChannelId::zero(),
+                sequence: Sequence::from(0),
             })),
         );
     }
@@ -1464,8 +1375,8 @@ mod tests {
             parse_receipts(&components),
             Some(Path::Receipt(ReceiptPath {
                 port_id: PortId::transfer(),
-                channel_id: ChannelId::default(),
-                sequence: Sequence::default(),
+                channel_id: ChannelId::zero(),
+                sequence: Sequence::from(0),
             })),
         );
     }

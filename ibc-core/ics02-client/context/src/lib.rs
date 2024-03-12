@@ -24,6 +24,13 @@ pub mod consensus_state;
 mod context;
 pub use context::*;
 
+/// Trait preludes for the ICS-02 client implementation.
+pub mod prelude {
+    pub use crate::client_state::*;
+    pub use crate::consensus_state::*;
+    pub use crate::context::*;
+}
+
 pub mod types {
     #[doc(inline)]
     pub use ibc_core_client_types::*;

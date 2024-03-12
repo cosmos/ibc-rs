@@ -45,26 +45,15 @@ impl ProofSpecs {
     }
 }
 
-impl Default for ProofSpecs {
-    fn default() -> Self {
-        Self::cosmos()
-    }
-}
-
 impl From<Vec<RawProofSpec>> for ProofSpecs {
     fn from(ics23_specs: Vec<RawProofSpec>) -> Self {
-        Self(
-            ics23_specs
-                .into_iter()
-                .map(|ics23_spec| ics23_spec.into())
-                .collect(),
-        )
+        Self(ics23_specs.into_iter().map(Into::into).collect())
     }
 }
 
 impl From<ProofSpecs> for Vec<RawProofSpec> {
     fn from(specs: ProofSpecs) -> Self {
-        specs.0.into_iter().map(|spec| spec.into()).collect()
+        specs.0.into_iter().map(Into::into).collect()
     }
 }
 

@@ -117,12 +117,11 @@ impl From<&'static str> for ClientError {
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::InvalidMsgUpdateClientId(e) => Some(e),
-            Self::InvalidClientIdentifier(e) => Some(e),
-            Self::InvalidRawMisbehaviour(e) => Some(e),
-            Self::InvalidCommitmentProof(e) => Some(e),
+            Self::InvalidMsgUpdateClientId(e)
+            | Self::InvalidClientIdentifier(e)
+            | Self::InvalidRawMisbehaviour(e) => Some(e),
+            Self::InvalidCommitmentProof(e) | Self::Ics23Verification(e) => Some(e),
             Self::InvalidPacketTimestamp(e) => Some(e),
-            Self::Ics23Verification(e) => Some(e),
             _ => None,
         }
     }
@@ -158,8 +157,9 @@ impl From<UpgradeClientError> for ClientError {
 impl std::error::Error for UpgradeClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::InvalidUpgradeClientProof(e) => Some(e),
-            Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
+            Self::InvalidUpgradeClientProof(e) | Self::InvalidUpgradeConsensusStateProof(e) => {
+                Some(e)
+            }
             _ => None,
         }
     }

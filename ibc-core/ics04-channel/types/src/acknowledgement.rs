@@ -114,8 +114,7 @@ impl AcknowledgementStatus {
 impl Display for AcknowledgementStatus {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         match self {
-            AcknowledgementStatus::Success(v) => write!(f, "{v}"),
-            AcknowledgementStatus::Error(v) => write!(f, "{v}"),
+            AcknowledgementStatus::Success(v) | AcknowledgementStatus::Error(v) => write!(f, "{v}"),
         }
     }
 }

@@ -1,6 +1,5 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenTry`.;
-use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
-use ibc_core_client::context::consensus_state::ConsensusState;
+use ibc_core_client::context::prelude::*;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenTry;
 use ibc_core_connection_types::msgs::MsgConnectionOpenTry;
@@ -34,7 +33,12 @@ where
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
-    ctx_b.validate_self_client(msg.client_state_of_b_on_a.clone())?;
+    let client_val_ctx_b = ctx_b.get_client_validation_context();
+
+    let client_state_of_b_on_a =
+        Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone())?;
+
+    ctx_b.validate_self_client(client_state_of_b_on_a)?;
 
     let host_height = ctx_b.host_height().map_err(|_| ConnectionError::Other {
         description: "failed to get host height".to_string(),
@@ -52,10 +56,11 @@ where
 
     // Verify proofs
     {
-        let client_state_of_a_on_b = ctx_b.client_state(vars.conn_end_on_b.client_id())?;
+        let client_state_of_a_on_b =
+            client_val_ctx_b.client_state(vars.conn_end_on_b.client_id())?;
 
         client_state_of_a_on_b
-            .status(ctx_b.get_client_validation_context(), &msg.client_id_on_b)?
+            .status(client_val_ctx_b, &msg.client_id_on_b)?
             .verify_is_active()?;
         client_state_of_a_on_b.validate_proof_height(msg.proofs_height_on_a)?;
 
@@ -65,7 +70,8 @@ where
             msg.proofs_height_on_a.revision_height(),
         );
 
-        let consensus_state_of_a_on_b = ctx_b.consensus_state(&client_cons_state_path_on_b)?;
+        let consensus_state_of_a_on_b =
+            client_val_ctx_b.consensus_state(&client_cons_state_path_on_b)?;
 
         let prefix_on_a = vars.conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
