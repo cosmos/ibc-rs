@@ -5,7 +5,7 @@ use ibc::core::channel::types::Version;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::connection::types::version::Version;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -72,7 +72,7 @@ fn fixture() -> Fixture {
             Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),
-        get_compatible_versions(),
+        Version::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();

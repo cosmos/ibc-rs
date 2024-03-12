@@ -2,7 +2,7 @@ use ibc::core::connection::types::msgs::MsgConnectionOpenInit;
 use ibc::core::connection::types::proto::v1::{
     MsgConnectionOpenInit as RawMsgConnectionOpenInit, Version as RawVersion,
 };
-use ibc::core::connection::types::version::{get_compatible_versions, Version};
+use ibc::core::connection::types::version::Version;
 use ibc::core::connection::types::Counterparty;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
@@ -73,7 +73,7 @@ pub fn dummy_raw_msg_conn_open_init() -> RawMsgConnectionOpenInit {
     RawMsgConnectionOpenInit {
         client_id: "07-tendermint-0".to_string(),
         counterparty: Some(dummy_raw_counterparty_conn(None)),
-        version: Some(get_compatible_versions()[0].clone().into()),
+        version: Some(Version::compatibles()[0].clone().into()),
         delay_period: 0,
         signer: dummy_bech32_account(),
     }

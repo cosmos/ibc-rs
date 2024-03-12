@@ -107,11 +107,6 @@ impl Display for Version {
     }
 }
 
-/// Returns the lists of supported versions
-pub fn get_compatible_versions() -> Vec<Version> {
-    Version::compatibles()
-}
-
 /// Iterates over the descending ordered set of compatible IBC versions and
 /// selects the first version with a version identifier that is supported by the
 /// counterparty. The returned version contains a feature set with the
@@ -187,7 +182,7 @@ mod tests {
     use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
 
     use crate::error::ConnectionError;
-    use crate::version::{get_compatible_versions, pick_version, Version};
+    use crate::version::{pick_version, Version};
 
     fn get_dummy_features() -> Vec<String> {
         vec!["ORDER_RANDOM".to_string(), "ORDER_UNORDERED".to_string()]
@@ -353,8 +348,8 @@ mod tests {
         let tests: Vec<Test> = vec![
             Test {
                 name: "Compatible versions".to_string(),
-                supported: get_compatible_versions(),
-                counterparty: get_compatible_versions(),
+                supported: Version::compatibles(),
+                counterparty: Version::compatibles(),
                 picked: Ok(Version {
                     identifier: "1".to_string(),
                     features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],

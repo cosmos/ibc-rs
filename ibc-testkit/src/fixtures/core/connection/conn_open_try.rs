@@ -2,7 +2,7 @@ use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::msgs::MsgConnectionOpenTry;
 use ibc::core::connection::types::proto::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::connection::types::version::Version;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::primitives::prelude::*;
 

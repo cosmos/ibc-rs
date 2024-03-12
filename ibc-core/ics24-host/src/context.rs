@@ -6,9 +6,7 @@ use ibc_core_channel_types::packet::Receipt;
 use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentPrefix;
-use ibc_core_connection_types::version::{
-    get_compatible_versions, pick_version, Version as ConnectionVersion,
-};
+use ibc_core_connection_types::version::{pick_version, Version as ConnectionVersion};
 use ibc_core_connection_types::ConnectionEnd;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::IbcEvent;
@@ -78,7 +76,7 @@ pub trait ValidationContext {
     /// Function required by ICS-03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
     fn get_compatible_versions(&self) -> Vec<ConnectionVersion> {
-        get_compatible_versions()
+        ConnectionVersion::compatibles()
     }
 
     /// Function required by ICS-03. Returns one version out of the supplied list of versions, which the
@@ -88,7 +86,7 @@ pub trait ValidationContext {
         counterparty_candidate_versions: &[ConnectionVersion],
     ) -> Result<ConnectionVersion, ContextError> {
         let version = pick_version(
-            &self.get_compatible_versions(),
+            &self.        Version::compatibles(),
             counterparty_candidate_versions,
         )?;
         Ok(version)

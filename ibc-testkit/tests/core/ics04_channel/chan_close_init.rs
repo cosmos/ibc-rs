@@ -1,7 +1,7 @@
 use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State as ChannelState};
 use ibc::core::channel::types::msgs::{ChannelMsg, MsgChannelCloseInit};
 use ibc::core::channel::types::Version;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::connection::types::version::Version;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -26,7 +26,7 @@ fn test_chan_close_init_validate() {
         ConnectionState::Open,
         client_id.clone(),
         ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
-        get_compatible_versions(),
+        Version::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();
@@ -86,7 +86,7 @@ fn test_chan_close_init_execute() {
         ConnectionState::Open,
         client_id.clone(),
         ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
-        get_compatible_versions(),
+        Version::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();
