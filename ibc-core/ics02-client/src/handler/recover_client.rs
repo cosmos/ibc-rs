@@ -1,8 +1,6 @@
 //! Protocol logic for processing ICS02 messages of type `MsgRecoverClient`.
 
-use ibc_core_client_context::client_state::{
-    ClientStateCommon, ClientStateExecution, ClientStateValidation,
-};
+use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::msgs::MsgRecoverClient;
 use ibc_core_handler_types::error::ContextError;
@@ -22,8 +20,10 @@ where
 
     ctx.validate_message_signer(&signer)?;
 
-    let subject_client_state = ctx.client_state(&subject_client_id)?;
-    let substitute_client_state = ctx.client_state(&substitute_client_id)?;
+    let client_val_ctx = ctx.get_client_validation_context();
+
+    let subject_client_state = client_val_ctx.client_state(&subject_client_id)?;
+    let substitute_client_state = client_val_ctx.client_state(&substitute_client_id)?;
 
     let subject_height = subject_client_state.latest_height();
     let substitute_height = substitute_client_state.latest_height();
@@ -35,16 +35,6 @@ where
         }
         .into());
     }
-
-    // also check that the subject and substitute consensus state and consensus state metadata
-    // values are all present in the store
-    //
-    // how does ibc-go's governance proposal work in general?
-    // ibc-go does not perform the following two checks; perhaps these checks are being done in the
-    // governance module and ibc-go is trusting that these checks were performed
-    // need to validate these assumptions
-    // check that the commitment root is not empty on the substitute consensus state
-    // check that the timestamp of the substitute consensus state > timestamp of the subject consensus state
 
     substitute_client_state
         .status(ctx.get_client_validation_context(), &substitute_client_id)?
@@ -78,8 +68,10 @@ where
     let subject_client_id = msg.subject_client_id.clone();
     let substitute_client_id = msg.substitute_client_id.clone();
 
-    let subject_client_state = ctx.client_state(&subject_client_id)?;
-    let substitute_client_state = ctx.client_state(&substitute_client_id)?;
+    let client_exec_ctx = ctx.get_client_execution_context();
+
+    let subject_client_state = client_exec_ctx.client_state(&subject_client_id)?;
+    let substitute_client_state = client_exec_ctx.client_state(&substitute_client_id)?;
 
     subject_client_state.update_on_recovery(
         ctx.get_client_execution_context(),

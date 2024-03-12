@@ -6,6 +6,7 @@ use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
+use ibc_core_host::ValidationContext;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
@@ -378,9 +379,9 @@ pub fn update_on_recovery<E>(
     substitute_client_state: ClientStateType,
 ) -> Result<(), ClientError>
 where
-    E: TmExecutionContext + ExecutionContext,
-    <E as ClientExecutionContext>::AnyClientState: From<ClientStateType>,
-    <E as ClientExecutionContext>::AnyConsensusState: From<ConsensusStateType>,
+    E: TmExecutionContext,
+    E::ClientStateRef: From<ClientStateType>,
+    E::ConsensusStateRef: ConsensusStateConverter,
 {
     let ClientStateType {
         chain_id,
@@ -397,8 +398,8 @@ where
         ..subject_client_state
     };
 
-    let host_timestamp = CommonContext::host_timestamp(ctx)?;
-    let host_height = CommonContext::host_height(ctx)?;
+    let host_timestamp = <E as ValidationContext>::host_timestamp(ctx)?;
+    let host_height = <E as ValidationContext>::host_height(ctx)?;
 
     ctx.store_client_state(
         ClientStatePath::new(subject_client_id.clone()),

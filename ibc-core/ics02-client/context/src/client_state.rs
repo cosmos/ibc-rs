@@ -140,7 +140,7 @@ where
     fn check_substitute(
         &self,
         ctx: &V,
-        substitute_client_state: &impl ClientStateValidation<V>,
+        substitute_client_state: &V::ClientStateRef,
     ) -> Result<(), ClientError>;
 }
 
@@ -205,7 +205,7 @@ where
         &self,
         ctx: &mut E,
         subject_client_id: &ClientId,
-        substitute_client_state: impl ClientStateExecution<E>,
+        substitute_client_state: E::ClientStateRef,
     ) -> Result<(), ClientError>;
 }
 

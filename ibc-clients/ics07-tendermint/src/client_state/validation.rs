@@ -213,7 +213,8 @@ pub fn check_substitute<V>(
     substitute_client_state: &ClientStateType,
 ) -> Result<(), ClientError>
 where
-    V: ClientValidationContext + TmValidationContext,
+    V: TmValidationContext,
+    V::ConsensusStateRef: ConsensusStateConverter,
 {
     let subject = ClientStateType {
         latest_height: Height::new(0, 1).unwrap(),
