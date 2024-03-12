@@ -31,12 +31,12 @@ pub struct Fixture {
     pub msg: MsgRecvPacket,
     pub conn_end_on_b: ConnectionEnd,
     pub chan_end_on_b: ChannelEnd,
-    pub default_client_id: ClientId,
+    pub client_id: ClientId,
 }
 
 #[fixture]
 fn fixture() -> Fixture {
-    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
 
     let context = MockContext::default();
 
@@ -62,9 +62,9 @@ fn fixture() -> Fixture {
 
     let conn_end_on_b = ConnectionEnd::new(
         ConnectionState::Open,
-        default_client_id.clone(),
+        client_id.clone(),
         ConnectionCounterparty::new(
-            default_client_id.clone(),
+            client_id.clone(),
             Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),
@@ -81,7 +81,7 @@ fn fixture() -> Fixture {
         msg,
         conn_end_on_b,
         chan_end_on_b,
-        default_client_id,
+        client_id,
     }
 }
 
@@ -114,7 +114,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
         chan_end_on_b,
         client_height,
         host_height,
-        default_client_id,
+        client_id,
         ..
     } = fixture;
 
@@ -147,7 +147,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
     context
         .get_client_execution_context()
         .store_update_meta(
-            default_client_id,
+            client_id,
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 5).unwrap(),

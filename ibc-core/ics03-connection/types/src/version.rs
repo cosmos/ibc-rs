@@ -58,6 +58,7 @@ impl Version {
         }
         Ok(())
     }
+
     /// Returns the lists of supported versions
     pub fn compatibles() -> Vec<Self> {
         vec![Self {
@@ -293,7 +294,7 @@ mod tests {
                 name: "Compatible versions".to_string(),
                 versions: vec![Version {
                     identifier: "1".to_string(),
-                    features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
+                    features: get_dummy_features(),
                 }
                 .into()],
                 want_pass: true,

@@ -40,7 +40,7 @@ pub fn dummy_raw_msg_conn_open_try(
 
     #[allow(deprecated)]
     RawMsgConnectionOpenTry {
-        client_id: "07-tendermint-0".to_string(),
+        client_id: "07-tendermint-0".into(),
         previous_connection_id: ConnectionId::zero().to_string(),
         client_state: Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
         counterparty: Some(dummy_raw_counterparty_conn(Some(0))),
