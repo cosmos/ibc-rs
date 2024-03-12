@@ -114,7 +114,7 @@ impl Timestamp {
             // As the `u64` representation can only represent times up to
             // about year 2554, there is no risk of overflowing `Time`
             // or `OffsetDateTime`.
-            let ts = OffsetDateTime::from_unix_timestamp_nanos(i128::from(nanoseconds))
+            let ts = OffsetDateTime::from_unix_timestamp_nanos(nanoseconds.into())
                 .map_err(|e: time::error::ComponentRange| {
                     ParseTimestampError::DataOutOfRange(e.to_string())
                 })?
