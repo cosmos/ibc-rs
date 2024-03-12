@@ -1169,7 +1169,7 @@ fn parse_upgrades(components: &[&str]) -> Option<Path> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const DUMMY_CLIENT_ID: &str = "07-tendermint-0";
+    const DEFAULT_CLIENT_ID: &str = "07-tendermint-0";
     #[rstest::rstest]
     #[case(NEXT_CLIENT_SEQUENCE, Path::NextClientSequence(NextClientSequencePath))]
     #[case(
@@ -1182,11 +1182,11 @@ mod tests {
     )]
     #[case(
         "clients/07-tendermint-0/clientState",
-        Path::ClientState(ClientStatePath(DUMMY_CLIENT_ID.into())))]
+        Path::ClientState(ClientStatePath(DEFAULT_CLIENT_ID.into())))]
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31",
         Path::ClientConsensusState(ClientConsensusStatePath {
-            client_id: DUMMY_CLIENT_ID.into(),
+            client_id: DEFAULT_CLIENT_ID.into(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1194,7 +1194,7 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedTime",
         Path::ClientUpdateTime(ClientUpdateTimePath {
-            client_id: DUMMY_CLIENT_ID.into(),
+            client_id: DEFAULT_CLIENT_ID.into(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1202,7 +1202,7 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedHeight",
         Path::ClientUpdateHeight(ClientUpdateHeightPath {
-            client_id: DUMMY_CLIENT_ID.into(),
+            client_id: DEFAULT_CLIENT_ID.into(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1288,7 +1288,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientState(ClientStatePath(ClientId::from(
-                DUMMY_CLIENT_ID
+                DEFAULT_CLIENT_ID
             ))))
         );
 
@@ -1298,7 +1298,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientConsensusState(ClientConsensusStatePath {
-                client_id: DUMMY_CLIENT_ID.into(),
+                client_id: DEFAULT_CLIENT_ID.into(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1313,7 +1313,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateTime(ClientUpdateTimePath {
-                client_id: DUMMY_CLIENT_ID.into(),
+                client_id: DEFAULT_CLIENT_ID.into(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1325,7 +1325,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateHeight(ClientUpdateHeightPath {
-                client_id: DUMMY_CLIENT_ID.into(),
+                client_id: DEFAULT_CLIENT_ID.into(),
                 revision_number: 15,
                 revision_height: 31,
             }))

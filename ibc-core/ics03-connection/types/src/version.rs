@@ -96,15 +96,6 @@ impl From<Version> for RawVersion {
     }
 }
 
-// impl Default for Version {
-//     fn default() -> Self {
-//         Version {
-//             identifier: "1".to_string(),
-//             features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
-//         }
-//     }
-// }
-
 impl Display for Version {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
