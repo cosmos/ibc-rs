@@ -2,7 +2,7 @@ use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::msgs::MsgConnectionOpenTry;
 use ibc::core::connection::types::proto::v1::MsgConnectionOpenTry as RawMsgConnectionOpenTry;
-use ibc::core::connection::types::version::Version;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::primitives::prelude::*;
 
@@ -45,7 +45,7 @@ pub fn dummy_raw_msg_conn_open_try(
         client_state: Some(MockClientState::new(MockHeader::new(client_state_height)).into()),
         counterparty: Some(dummy_raw_counterparty_conn(Some(0))),
         delay_period: 0,
-        counterparty_versions: get_compatible_versions()
+        counterparty_versions: ConnectionVersion::compatibles()
             .iter()
             .map(|v| v.clone().into())
             .collect(),

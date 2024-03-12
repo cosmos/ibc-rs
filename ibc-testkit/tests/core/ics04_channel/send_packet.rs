@@ -7,7 +7,7 @@ use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::Version;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
-use ibc::core::connection::types::version::Version;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -48,7 +48,7 @@ fn send_packet_processing() {
             Some(ConnectionId::zero()),
             CommitmentPrefix::empty(),
         ),
-        Version::compatibles(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();

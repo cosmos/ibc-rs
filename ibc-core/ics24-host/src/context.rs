@@ -86,7 +86,7 @@ pub trait ValidationContext {
         counterparty_candidate_versions: &[ConnectionVersion],
     ) -> Result<ConnectionVersion, ContextError> {
         let version = pick_version(
-            &self.        Version::compatibles(),
+            &self.get_compatible_versions(),
             counterparty_candidate_versions,
         )?;
         Ok(version)

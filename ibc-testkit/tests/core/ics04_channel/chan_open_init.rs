@@ -1,7 +1,7 @@
 use ibc::clients::tendermint::types::client_type as tm_client_type;
 use ibc::core::channel::types::msgs::{ChannelMsg, MsgChannelOpenInit};
 use ibc::core::client::types::Height;
-use ibc::core::connection::types::version::Version;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{ConnectionEnd, State as ConnectionState};
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
@@ -40,7 +40,7 @@ fn fixture() -> Fixture {
         ConnectionState::Init,
         msg_conn_init.client_id_on_a.clone(),
         msg_conn_init.counterparty.clone(),
-        Version::compatibles(),
+        ConnectionVersion::compatibles(),
         msg_conn_init.delay_period,
     )
     .unwrap();
