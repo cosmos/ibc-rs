@@ -11,21 +11,21 @@ use typed_builder::TypedBuilder;
 #[derive(TypedBuilder, Debug)]
 #[builder(build_method(into = Packet))]
 pub struct PacketConfig {
-    #[builder(default)]
+    #[builder(default = Sequence::from(0))]
     pub seq_on_a: Sequence,
     #[builder(default = PortId::transfer())]
     pub port_id_on_a: PortId,
-    #[builder(default)]
+    #[builder(default = ChannelId::zero())]
     pub chan_id_on_a: ChannelId,
     #[builder(default = PortId::transfer())]
     pub port_id_on_b: PortId,
-    #[builder(default)]
+    #[builder(default = ChannelId::zero())]
     pub chan_id_on_b: ChannelId,
     #[builder(default)]
     pub data: Vec<u8>,
-    #[builder(default)]
+    #[builder(default = TimeoutHeight::Never)]
     pub timeout_height_on_b: TimeoutHeight,
-    #[builder(default)]
+    #[builder(default = Timestamp::none())]
     pub timeout_timestamp_on_b: Timestamp,
 }
 
@@ -49,9 +49,9 @@ pub fn dummy_raw_packet(timeout_height: u64, timeout_timestamp: u64) -> RawPacke
     RawPacket {
         sequence: 1,
         source_port: PortId::transfer().to_string(),
-        source_channel: ChannelId::default().to_string(),
+        source_channel: ChannelId::zero().to_string(),
         destination_port: PortId::transfer().to_string(),
-        destination_channel: ChannelId::default().to_string(),
+        destination_channel: ChannelId::zero().to_string(),
         data: vec![0],
         timeout_height: Some(RawHeight {
             revision_number: 0,
@@ -265,7 +265,7 @@ mod tests {
         let ibc_event = IbcEvent::SendPacket(SendPacket::new(
             packet,
             Order::Unordered,
-            ConnectionId::default(),
+            ConnectionId::zero(),
         ));
         let _ = tendermint::abci::Event::try_from(ibc_event);
     }

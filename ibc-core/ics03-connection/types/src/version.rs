@@ -58,6 +58,14 @@ impl Version {
         }
         Ok(())
     }
+
+    /// Returns the lists of supported versions
+    pub fn compatibles() -> Vec<Self> {
+        vec![Self {
+            identifier: "1".to_string(),
+            features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
+        }]
+    }
 }
 
 impl Protobuf<RawVersion> for Version {}
@@ -89,15 +97,6 @@ impl From<Version> for RawVersion {
     }
 }
 
-impl Default for Version {
-    fn default() -> Self {
-        Version {
-            identifier: "1".to_string(),
-            features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
-        }
-    }
-}
-
 impl Display for Version {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
         write!(
@@ -107,11 +106,6 @@ impl Display for Version {
             PrettySlice(&self.features)
         )
     }
-}
-
-/// Returns the lists of supported versions
-pub fn get_compatible_versions() -> Vec<Version> {
-    vec![Version::default()]
 }
 
 /// Iterates over the descending ordered set of compatible IBC versions and
@@ -189,7 +183,7 @@ mod tests {
     use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
 
     use crate::error::ConnectionError;
-    use crate::version::{get_compatible_versions, pick_version, Version};
+    use crate::version::{pick_version, Version};
 
     fn get_dummy_features() -> Vec<String> {
         vec!["ORDER_RANDOM".to_string(), "ORDER_UNORDERED".to_string()]
@@ -197,7 +191,11 @@ mod tests {
 
     fn good_versions() -> Vec<RawVersion> {
         vec![
-            Version::default().into(),
+            Version {
+                identifier: "1".to_string(),
+                features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
+            }
+            .into(),
             RawVersion {
                 identifier: "2".to_string(),
                 features: get_dummy_features(),
@@ -228,7 +226,10 @@ mod tests {
     fn overlapping() -> (Vec<Version>, Vec<Version>, Version) {
         (
             vec![
-                Version::default(),
+                Version {
+                    identifier: "1".to_string(),
+                    features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
+                },
                 Version {
                     identifier: "3".to_string(),
                     features: get_dummy_features(),
@@ -291,7 +292,11 @@ mod tests {
         let tests: Vec<Test> = vec![
             Test {
                 name: "Compatible versions".to_string(),
-                versions: vec![Version::default().into()],
+                versions: vec![Version {
+                    identifier: "1".to_string(),
+                    features: get_dummy_features(),
+                }
+                .into()],
                 want_pass: true,
             },
             Test {
@@ -344,9 +349,12 @@ mod tests {
         let tests: Vec<Test> = vec![
             Test {
                 name: "Compatible versions".to_string(),
-                supported: get_compatible_versions(),
-                counterparty: get_compatible_versions(),
-                picked: Ok(Version::default()),
+                supported: Version::compatibles(),
+                counterparty: Version::compatibles(),
+                picked: Ok(Version {
+                    identifier: "1".to_string(),
+                    features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
+                }),
                 want_pass: true,
             },
             Test {
@@ -382,7 +390,10 @@ mod tests {
     }
     #[test]
     fn serialize() {
-        let def = Version::default();
+        let def = Version {
+            identifier: "1".to_string(),
+            features: vec!["ORDER_ORDERED".to_string(), "ORDER_UNORDERED".to_string()],
+        };
         let def_raw: RawVersion = def.clone().into();
         let def_back = def_raw.try_into().unwrap();
         assert_eq!(def, def_back);

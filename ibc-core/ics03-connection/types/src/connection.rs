@@ -1,6 +1,7 @@
 //! Defines the types that define a connection
 
 use core::fmt::{Display, Error as FmtError, Formatter};
+use core::str::FromStr;
 use core::time::Duration;
 use core::u64;
 
@@ -200,18 +201,6 @@ mod sealed {
     }
 }
 
-impl Default for ConnectionEnd {
-    fn default() -> Self {
-        Self {
-            state: State::Uninitialized,
-            client_id: Default::default(),
-            counterparty: Default::default(),
-            versions: Vec::new(),
-            delay_period: ZERO_DURATION,
-        }
-    }
-}
-
 impl Protobuf<RawConnectionEnd> for ConnectionEnd {}
 
 impl TryFrom<RawConnectionEnd> for ConnectionEnd {
@@ -220,7 +209,17 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
         let state = value.state.try_into()?;
 
         if state == State::Uninitialized {
-            return Ok(ConnectionEnd::default());
+            return ConnectionEnd::new(
+                State::Uninitialized,
+                ClientId::from_str("07-tendermint-0").expect("should not fail"),
+                Counterparty::new(
+                    ClientId::from_str("07-tendermint-0").expect("should not fail"),
+                    None,
+                    CommitmentPrefix::empty(),
+                ),
+                Vec::new(),
+                ZERO_DURATION,
+            );
         }
 
         if value.client_id.is_empty() {
@@ -378,7 +377,7 @@ impl ConnectionEnd {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct Counterparty {
     pub client_id: ClientId,
     pub connection_id: Option<ConnectionId>,

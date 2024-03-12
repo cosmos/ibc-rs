@@ -111,8 +111,8 @@ mod tests {
             unbonding_period: Duration::new(128_000, 0),
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(1, 10).expect("Never fails"),
-            proof_specs: ProofSpecs::default(),
-            upgrade_path: Default::default(),
+            proof_specs: ProofSpecs::cosmos(),
+            upgrade_path: Vec::new(),
             allow_update: AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,

@@ -4,7 +4,8 @@ use ibc::core::channel::types::msgs::{MsgTimeout, PacketMsg};
 use ibc::core::channel::types::Version;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -28,10 +29,13 @@ struct Fixture {
     conn_end_on_a: ConnectionEnd,
     chan_end_on_a_ordered: ChannelEnd,
     chan_end_on_a_unordered: ChannelEnd,
+    client_id: ClientId,
 }
 
 #[fixture]
 fn fixture() -> Fixture {
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
+
     let client_height = Height::new(0, 2).unwrap();
     let ctx = MockContext::default().with_client_config(
         MockClientConfig::builder()
@@ -66,7 +70,7 @@ fn fixture() -> Fixture {
         State::Open,
         Order::Unordered,
         Counterparty::new(packet.port_id_on_b.clone(), Some(packet.chan_id_on_b)),
-        vec![ConnectionId::default()],
+        vec![ConnectionId::zero()],
         Version::new("ics20-1".to_string()),
     )
     .unwrap();
@@ -76,13 +80,13 @@ fn fixture() -> Fixture {
 
     let conn_end_on_a = ConnectionEnd::new(
         ConnectionState::Open,
-        ClientId::default(),
+        client_id.clone(),
         ConnectionCounterparty::new(
-            ClientId::default(),
-            Some(ConnectionId::default()),
-            Default::default(),
+            client_id.clone(),
+            Some(ConnectionId::zero()),
+            CommitmentPrefix::empty(),
         ),
-        get_compatible_versions(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();
@@ -96,6 +100,7 @@ fn fixture() -> Fixture {
         conn_end_on_a,
         chan_end_on_a_ordered,
         chan_end_on_a_unordered,
+        client_id,
     }
 }
 
@@ -139,10 +144,10 @@ fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
     let ctx = ctx
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a)
+        .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
             packet.port_id_on_a,
             packet.chan_id_on_a,
@@ -169,6 +174,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         chan_end_on_a_unordered,
         conn_end_on_a,
         client_height,
+        client_id,
         ..
     } = fixture;
 
@@ -190,10 +196,10 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a)
+        .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
         .with_packet_commitment(
@@ -204,7 +210,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         );
 
     ctx.store_update_meta(
-        ClientId::default(),
+        client_id,
         client_height,
         Timestamp::from_nanoseconds(5).unwrap(),
         Height::new(0, 4).unwrap(),
@@ -235,10 +241,10 @@ fn timeout_success_no_packet_commitment(fixture: Fixture) {
     let ctx = ctx
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a);
+        .with_connection(ConnectionId::zero(), conn_end_on_a);
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
@@ -260,6 +266,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
         conn_end_on_a,
         packet_commitment,
         client_height,
+        client_id,
         ..
     } = fixture;
 
@@ -271,10 +278,10 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a)
+        .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
         .with_packet_commitment(
@@ -286,7 +293,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
 
     ctx.get_client_execution_context()
         .store_update_meta(
-            ClientId::default(),
+            client_id,
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 5).unwrap(),
@@ -310,6 +317,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
         conn_end_on_a,
         packet_commitment,
         client_height,
+        client_id,
         ..
     } = fixture;
 
@@ -321,12 +329,8 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
                 .latest_height(client_height)
                 .build(),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a)
-        .with_channel(
-            PortId::transfer(),
-            ChannelId::default(),
-            chan_end_on_a_ordered,
-        )
+        .with_connection(ConnectionId::zero(), conn_end_on_a)
+        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a_ordered)
         .with_packet_commitment(
             packet.port_id_on_a,
             packet.chan_id_on_a,
@@ -335,7 +339,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
         );
 
     ctx.store_update_meta(
-        ClientId::default(),
+        client_id,
         client_height,
         Timestamp::from_nanoseconds(1000).unwrap(),
         Height::new(0, 4).unwrap(),
@@ -363,10 +367,10 @@ fn timeout_unordered_chan_execute(fixture: Fixture) {
     let mut ctx = ctx
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a)
+        .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),
             msg.packet.chan_id_on_a.clone(),
@@ -403,12 +407,8 @@ fn timeout_ordered_chan_execute(fixture: Fixture) {
         ..
     } = fixture;
     let mut ctx = ctx
-        .with_channel(
-            PortId::transfer(),
-            ChannelId::default(),
-            chan_end_on_a_ordered,
-        )
-        .with_connection(ConnectionId::default(), conn_end_on_a)
+        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a_ordered)
+        .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),
             msg.packet.chan_id_on_a.clone(),

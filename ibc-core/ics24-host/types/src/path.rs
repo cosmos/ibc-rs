@@ -1074,7 +1074,13 @@ fn parse_upgrades(components: &[&str]) -> Option<Path> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
+    const DEFAULT_CLIENT_ID_STR: &str = "07-tendermint-0";
+    impl ClientId {
+        pub fn new_dummy() -> Self {
+            ClientId::from_str(DEFAULT_CLIENT_ID_STR)
+                .expect("should not fail since we use a valid client id")
+        }
+    }
     #[rstest::rstest]
     #[case(NEXT_CLIENT_SEQUENCE, Path::NextClientSequence(NextClientSequencePath))]
     #[case(
@@ -1087,12 +1093,12 @@ mod tests {
     )]
     #[case(
         "clients/07-tendermint-0/clientState",
-        Path::ClientState(ClientStatePath(ClientId::default()))
+        Path::ClientState(ClientStatePath(ClientId::new_dummy()))
     )]
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31",
         Path::ClientConsensusState(ClientConsensusStatePath {
-            client_id: ClientId::default(),
+            client_id: ClientId::new_dummy(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1100,7 +1106,7 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedTime",
         Path::ClientUpdateTime(ClientUpdateTimePath {
-            client_id: ClientId::default(),
+            client_id: ClientId::new_dummy(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1108,58 +1114,58 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedHeight",
         Path::ClientUpdateHeight(ClientUpdateHeightPath {
-            client_id: ClientId::default(),
+            client_id: ClientId::new_dummy(),
             revision_number: 15,
             revision_height: 31,
         })
     )]
     #[case(
         "clients/07-tendermint-0/connections",
-        Path::ClientConnection(ClientConnectionPath(ClientId::default()))
+        Path::ClientConnection(ClientConnectionPath(ClientId::new_dummy()))
     )]
     #[case(
         "connections/connection-0",
-        Path::Connection(ConnectionPath(ConnectionId::new(0)))
+        Path::Connection(ConnectionPath(ConnectionId::zero()))
     )]
     #[case("ports/transfer", Path::Ports(PortPath(PortId::transfer())))]
     #[case(
         "channelEnds/ports/transfer/channels/channel-0",
-        Path::ChannelEnd(ChannelEndPath(PortId::transfer(), ChannelId::default()))
+        Path::ChannelEnd(ChannelEndPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "nextSequenceSend/ports/transfer/channels/channel-0",
-        Path::SeqSend(SeqSendPath(PortId::transfer(), ChannelId::default()))
+        Path::SeqSend(SeqSendPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "nextSequenceRecv/ports/transfer/channels/channel-0",
-        Path::SeqRecv(SeqRecvPath(PortId::transfer(), ChannelId::default()))
+        Path::SeqRecv(SeqRecvPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "nextSequenceAck/ports/transfer/channels/channel-0",
-        Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::default()))
+        Path::SeqAck(SeqAckPath(PortId::transfer(), ChannelId::zero()))
     )]
     #[case(
         "commitments/ports/transfer/channels/channel-0/sequences/0",
         Path::Commitment(CommitmentPath {
             port_id: PortId::transfer(),
-            channel_id: ChannelId::default(),
-            sequence: Sequence::default(),
+            channel_id: ChannelId::zero(),
+            sequence: Sequence::from(0),
         })
     )]
     #[case(
         "acks/ports/transfer/channels/channel-0/sequences/0",
         Path::Ack(AckPath {
             port_id: PortId::transfer(),
-            channel_id: ChannelId::default(),
-            sequence: Sequence::default(),
+            channel_id: ChannelId::zero(),
+            sequence: Sequence::from(0),
         })
     )]
     #[case(
         "receipts/ports/transfer/channels/channel-0/sequences/0",
         Path::Receipt(ReceiptPath {
             port_id: PortId::transfer(),
-            channel_id: ChannelId::default(),
-            sequence: Sequence::default(),
+            channel_id: ChannelId::zero(),
+            sequence: Sequence::from(0),
         })
     )]
     #[case(
@@ -1193,7 +1199,7 @@ mod tests {
 
         assert_eq!(
             parse_client_paths(&components),
-            Some(Path::ClientState(ClientStatePath(ClientId::default())))
+            Some(Path::ClientState(ClientStatePath(ClientId::new_dummy())))
         );
 
         let path = "clients/07-tendermint-0/consensusStates/15-31";
@@ -1202,7 +1208,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientConsensusState(ClientConsensusStatePath {
-                client_id: ClientId::default(),
+                client_id: ClientId::new_dummy(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1217,7 +1223,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateTime(ClientUpdateTimePath {
-                client_id: ClientId::default(),
+                client_id: ClientId::new_dummy(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1229,7 +1235,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateHeight(ClientUpdateHeightPath {
-                client_id: ClientId::default(),
+                client_id: ClientId::new_dummy(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1243,7 +1249,7 @@ mod tests {
 
         assert_eq!(
             parse_connections(&components),
-            Some(Path::Connection(ConnectionPath(ConnectionId::new(0)))),
+            Some(Path::Connection(ConnectionPath(ConnectionId::zero()))),
         );
     }
 
@@ -1265,7 +1271,7 @@ mod tests {
 
         assert_eq!(
             parse_channels(&components),
-            Some(SubPath::Channels(ChannelId::default())),
+            Some(SubPath::Channels(ChannelId::zero())),
         );
     }
 
@@ -1276,7 +1282,7 @@ mod tests {
 
         assert_eq!(
             parse_sequences(&components),
-            Some(SubPath::Sequences(Sequence::default()))
+            Some(SubPath::Sequences(Sequence::from(0)))
         );
     }
 
@@ -1289,7 +1295,7 @@ mod tests {
             parse_channel_ends(&components),
             Some(Path::ChannelEnd(ChannelEndPath(
                 PortId::transfer(),
-                ChannelId::default()
+                ChannelId::zero()
             ))),
         );
     }
@@ -1303,7 +1309,7 @@ mod tests {
             parse_seqs(&components),
             Some(Path::SeqSend(SeqSendPath(
                 PortId::transfer(),
-                ChannelId::default()
+                ChannelId::zero()
             ))),
         );
 
@@ -1314,7 +1320,7 @@ mod tests {
             parse_seqs(&components),
             Some(Path::SeqRecv(SeqRecvPath(
                 PortId::transfer(),
-                ChannelId::default()
+                ChannelId::zero()
             ))),
         );
 
@@ -1325,7 +1331,7 @@ mod tests {
             parse_seqs(&components),
             Some(Path::SeqAck(SeqAckPath(
                 PortId::transfer(),
-                ChannelId::default()
+                ChannelId::zero()
             ))),
         );
     }
@@ -1339,8 +1345,8 @@ mod tests {
             parse_commitments(&components),
             Some(Path::Commitment(CommitmentPath {
                 port_id: PortId::transfer(),
-                channel_id: ChannelId::default(),
-                sequence: Sequence::default(),
+                channel_id: ChannelId::zero(),
+                sequence: Sequence::from(0),
             })),
         );
     }
@@ -1354,8 +1360,8 @@ mod tests {
             parse_acks(&components),
             Some(Path::Ack(AckPath {
                 port_id: PortId::transfer(),
-                channel_id: ChannelId::default(),
-                sequence: Sequence::default(),
+                channel_id: ChannelId::zero(),
+                sequence: Sequence::from(0),
             })),
         );
     }
@@ -1369,8 +1375,8 @@ mod tests {
             parse_receipts(&components),
             Some(Path::Receipt(ReceiptPath {
                 port_id: PortId::transfer(),
-                channel_id: ChannelId::default(),
-                sequence: Sequence::default(),
+                channel_id: ChannelId::zero(),
+                sequence: Sequence::from(0),
             })),
         );
     }

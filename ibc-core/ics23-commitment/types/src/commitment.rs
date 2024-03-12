@@ -143,7 +143,7 @@ impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, PartialEq, Eq, Hash, Default)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct CommitmentPrefix {
     bytes: Vec<u8>,
 }
@@ -155,6 +155,10 @@ impl CommitmentPrefix {
 
     pub fn into_vec(self) -> Vec<u8> {
         self.bytes
+    }
+
+    pub fn empty() -> Self {
+        Self { bytes: Vec::new() }
     }
 }
 
