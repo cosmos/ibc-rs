@@ -1169,7 +1169,13 @@ fn parse_upgrades(components: &[&str]) -> Option<Path> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    const DEFAULT_CLIENT_ID: &str = "07-tendermint-0";
+    const DEFAULT_CLIENT_ID_STR: &str = "07-tendermint-0";
+    impl ClientId {
+        pub fn new_dummy() -> Self {
+            ClientId::from_str(DEFAULT_CLIENT_ID_STR)
+                .expect("should not fail since we use a valid client id")
+        }
+    }
     #[rstest::rstest]
     #[case(NEXT_CLIENT_SEQUENCE, Path::NextClientSequence(NextClientSequencePath))]
     #[case(
@@ -1182,11 +1188,12 @@ mod tests {
     )]
     #[case(
         "clients/07-tendermint-0/clientState",
-        Path::ClientState(ClientStatePath(DEFAULT_CLIENT_ID.into())))]
+        Path::ClientState(ClientStatePath(ClientId::new_dummy()))
+    )]
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31",
         Path::ClientConsensusState(ClientConsensusStatePath {
-            client_id: DEFAULT_CLIENT_ID.into(),
+            client_id: ClientId::new_dummy(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1194,7 +1201,7 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedTime",
         Path::ClientUpdateTime(ClientUpdateTimePath {
-            client_id: DEFAULT_CLIENT_ID.into(),
+            client_id: ClientId::new_dummy(),
             revision_number: 15,
             revision_height: 31,
         })
@@ -1202,14 +1209,14 @@ mod tests {
     #[case(
         "clients/07-tendermint-0/consensusStates/15-31/processedHeight",
         Path::ClientUpdateHeight(ClientUpdateHeightPath {
-            client_id: DEFAULT_CLIENT_ID.into(),
+            client_id: ClientId::new_dummy(),
             revision_number: 15,
             revision_height: 31,
         })
     )]
     #[case(
         "clients/07-tendermint-0/connections",
-        Path::ClientConnection(ClientConnectionPath("07-tendermint-0".into()))
+        Path::ClientConnection(ClientConnectionPath(ClientId::new_dummy()))
     )]
     #[case(
         "connections/connection-0",
@@ -1287,9 +1294,7 @@ mod tests {
 
         assert_eq!(
             parse_client_paths(&components),
-            Some(Path::ClientState(ClientStatePath(ClientId::from(
-                DEFAULT_CLIENT_ID
-            ))))
+            Some(Path::ClientState(ClientStatePath(ClientId::new_dummy())))
         );
 
         let path = "clients/07-tendermint-0/consensusStates/15-31";
@@ -1298,7 +1303,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientConsensusState(ClientConsensusStatePath {
-                client_id: DEFAULT_CLIENT_ID.into(),
+                client_id: ClientId::new_dummy(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1313,7 +1318,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateTime(ClientUpdateTimePath {
-                client_id: DEFAULT_CLIENT_ID.into(),
+                client_id: ClientId::new_dummy(),
                 revision_number: 15,
                 revision_height: 31,
             }))
@@ -1325,7 +1330,7 @@ mod tests {
         assert_eq!(
             parse_client_paths(&components),
             Some(Path::ClientUpdateHeight(ClientUpdateHeightPath {
-                client_id: DEFAULT_CLIENT_ID.into(),
+                client_id: ClientId::new_dummy(),
                 revision_number: 15,
                 revision_height: 31,
             }))
