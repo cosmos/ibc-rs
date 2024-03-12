@@ -62,9 +62,7 @@ pub fn dummy_raw_packet(timeout_height: u64, timeout_timestamp: u64) -> RawPacke
 }
 
 pub fn dummy_proof() -> Vec<u8> {
-    "Y29uc2Vuc3VzU3RhdGUvaWJjb25lY2xpZW50LzIy"
-        .as_bytes()
-        .to_vec()
+    b"Y29uc2Vuc3VzU3RhdGUvaWJjb25lY2xpZW50LzIy".to_vec()
 }
 
 #[cfg(test)]

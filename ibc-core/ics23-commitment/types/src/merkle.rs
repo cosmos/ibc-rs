@@ -109,7 +109,7 @@ impl MerkleProof {
                     ) {
                         return Err(CommitmentError::VerificationFailure);
                     }
-                    value = subroot.clone();
+                    value.clone_from(&subroot);
                 }
                 _ => return Err(CommitmentError::InvalidMerkleProof),
             }

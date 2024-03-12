@@ -320,12 +320,10 @@ impl From<ClientState> for RawTmClientState {
             // decode the `ClientState` value. In `RawClientState`, a
             // `frozen_height` of `0` means "not frozen". See:
             // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-            frozen_height: Some(value.frozen_height.map(|height| height.into()).unwrap_or(
-                RawHeight {
-                    revision_number: 0,
-                    revision_height: 0,
-                },
-            )),
+            frozen_height: Some(value.frozen_height.map(Into::into).unwrap_or(RawHeight {
+                revision_number: 0,
+                revision_height: 0,
+            })),
             latest_height: Some(value.latest_height.into()),
             proof_specs: value.proof_specs.into(),
             upgrade_path: value.upgrade_path,
@@ -437,7 +435,7 @@ mod tests {
             id: ChainId::new("ibc-0").unwrap(),
             trust_level: TrustThreshold::ONE_THIRD,
             trusting_period: Duration::new(64000, 0),
-            unbonding_period: Duration::new(128000, 0),
+            unbonding_period: Duration::new(128_000, 0),
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(0, 10).expect("Never fails"),
             proof_specs: ProofSpecs::cosmos(),

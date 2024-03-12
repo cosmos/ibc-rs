@@ -67,7 +67,7 @@ impl From<ConsensusStateType> for AnyConsensusState {
     }
 }
 
-#[derive(Debug, Clone, From, PartialEq, ConsensusState)]
+#[derive(Debug, Clone, From, PartialEq, Eq, ConsensusState)]
 pub enum AnyConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),

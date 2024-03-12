@@ -170,13 +170,10 @@ pub fn on_recv_packet_execute(
     ctx_b: &mut impl TokenTransferExecutionContext,
     packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
-    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
-        Ok(data) => data,
-        Err(_) => {
-            let ack =
-                AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into());
-            return (ModuleExtras::empty(), ack.into());
-        }
+    let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
+        let ack =
+            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into());
+        return (ModuleExtras::empty(), ack.into());
     };
 
     let (mut extras, ack) = match process_recv_packet_execute(ctx_b, packet, data.clone()) {
@@ -225,26 +222,21 @@ pub fn on_acknowledgement_packet_execute(
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
 ) -> (ModuleExtras, Result<(), TokenTransferError>) {
-    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
-        Ok(data) => data,
-        Err(_) => {
-            return (
-                ModuleExtras::empty(),
-                Err(TokenTransferError::PacketDataDeserialization),
-            );
-        }
+    let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
+        return (
+            ModuleExtras::empty(),
+            Err(TokenTransferError::PacketDataDeserialization),
+        );
     };
 
-    let acknowledgement =
-        match serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref()) {
-            Ok(ack) => ack,
-            Err(_) => {
-                return (
-                    ModuleExtras::empty(),
-                    Err(TokenTransferError::AckDeserialization),
-                );
-            }
-        };
+    let Ok(acknowledgement) =
+        serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref())
+    else {
+        return (
+            ModuleExtras::empty(),
+            Err(TokenTransferError::AckDeserialization),
+        );
+    };
 
     if !acknowledgement.is_successful() {
         if let Err(err) = refund_packet_token_execute(ctx, packet, &data) {
@@ -290,14 +282,11 @@ pub fn on_timeout_packet_execute(
     packet: &Packet,
     _relayer: &Signer,
 ) -> (ModuleExtras, Result<(), TokenTransferError>) {
-    let data = match serde_json::from_slice::<PacketData>(&packet.data) {
-        Ok(data) => data,
-        Err(_) => {
-            return (
-                ModuleExtras::empty(),
-                Err(TokenTransferError::PacketDataDeserialization),
-            );
-        }
+    let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
+        return (
+            ModuleExtras::empty(),
+            Err(TokenTransferError::PacketDataDeserialization),
+        );
     };
 
     if let Err(err) = refund_packet_token_execute(ctx, packet, &data) {
@@ -347,7 +336,7 @@ mod test {
         // Check that it's the same output as ibc-go
         // Note: this also implicitly checks that the ack bytes are non-empty,
         // which would make the conversion to `Acknowledgement` panic
-        assert_eq!(ack_success, r#"{"result":"AQ=="}"#.as_bytes());
+        assert_eq!(ack_success, br#"{"result":"AQ=="}"#);
     }
 
     #[test]
@@ -361,7 +350,7 @@ mod test {
         // which would make the conversion to `Acknowledgement` panic
         assert_eq!(
             ack_error,
-            r#"{"error":"failed to deserialize packet data"}"#.as_bytes()
+            br#"{"error":"failed to deserialize packet data"}"#
         );
     }
 

@@ -100,7 +100,7 @@ impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
                 .parse()
                 .map_err(ConnectionError::InvalidIdentifier)?,
             counterparty,
-            version: msg.version.map(|version| version.try_into()).transpose()?,
+            version: msg.version.map(TryInto::try_into).transpose()?,
             delay_period: Duration::from_nanos(msg.delay_period),
             signer: msg.signer.into(),
         })
@@ -112,7 +112,7 @@ impl From<MsgConnectionOpenInit> for RawMsgConnectionOpenInit {
         RawMsgConnectionOpenInit {
             client_id: ics_msg.client_id_on_a.as_str().to_string(),
             counterparty: Some(ics_msg.counterparty.into()),
-            version: ics_msg.version.map(|version| version.into()),
+            version: ics_msg.version.map(Into::into),
             delay_period: ics_msg.delay_period.as_nanos() as u64,
             signer: ics_msg.signer.to_string(),
         }

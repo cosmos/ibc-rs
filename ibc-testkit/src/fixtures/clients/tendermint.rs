@@ -28,7 +28,7 @@ pub fn dummy_tm_client_state_from_header(tm_header: TmHeader) -> TmClientState {
         chain_id.clone(),
         TrustThreshold::ONE_THIRD,
         Duration::from_secs(64000),
-        Duration::from_secs(128000),
+        Duration::from_secs(128_000),
         Duration::from_millis(3000),
         Height::new(chain_id.revision_number(), u64::from(tm_header.height)).expect("Never fails"),
         ProofSpecs::cosmos(),
@@ -53,7 +53,7 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
             denominator: 3,
         }),
         trusting_period: Some(Duration::from_secs(64000).into()),
-        unbonding_period: Some(Duration::from_secs(128000).into()),
+        unbonding_period: Some(Duration::from_secs(128_000).into()),
         max_clock_drift: Some(Duration::from_millis(3000).into()),
         latest_height: Some(Height::new(0, 10).expect("Never fails").into()),
         proof_specs: ProofSpecs::cosmos().into(),
@@ -71,7 +71,7 @@ pub struct ClientStateConfig {
     pub trust_level: TrustThreshold,
     #[builder(default = Duration::from_secs(64000))]
     pub trusting_period: Duration,
-    #[builder(default = Duration::from_secs(128000))]
+    #[builder(default = Duration::from_secs(128_000))]
     pub unbonding_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
     max_clock_drift: Duration,
