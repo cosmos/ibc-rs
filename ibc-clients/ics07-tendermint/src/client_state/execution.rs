@@ -1,5 +1,3 @@
-use core::time::Duration;
-
 use ibc_client_tendermint_types::{
     ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
 };
@@ -7,7 +5,7 @@ use ibc_core_client::context::client_state::ClientStateExecution;
 use ibc_core_client::context::ClientExecutionContext;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
-use ibc_core_host::types::identifiers::{ChainId, ClientId};
+use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_core_host::ExecutionContext;
 use ibc_primitives::prelude::*;
@@ -69,9 +67,15 @@ where
     fn update_on_recovery(
         &self,
         ctx: &mut E,
-        substitute_client_state: &ClientStateType,
+        subject_client_id: &ClientId,
+        substitute_client_state: ClientStateType,
     ) -> Result<(), ClientError> {
-        update_on_recovery(self.inner(), ctx, substitute_client_state)
+        update_on_recovery(
+            *self.inner(),
+            ctx,
+            subject_client_id,
+            substitute_client_state,
+        )
     }
 }
 
@@ -370,9 +374,10 @@ where
 /// trait, but has been made standalone in order to enable greater flexibility
 /// of the ClientState APIs.
 pub fn update_on_recovery<E>(
-    subject_client_state: &ClientStateType,
+    subject_client_state: ClientStateType,
     ctx: &mut E,
-    substitute_client_state: &ClientStateType,
+    subject_client_id: &ClientId,
+    substitute_client_state: ClientStateType,
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext + ExecutionContext,
@@ -391,20 +396,19 @@ where
         trusting_period,
         latest_height,
         frozen_height: None,
-        ..client_state
+        ..subject_client_state
     };
 
-    let client_id = client_state.client_id;
     let host_timestamp = CommonContext::host_timestamp(ctx)?;
     let host_height = CommonContext::host_height(ctx)?;
 
     ctx.store_client_state(
-        ClientStatePath::new(client_id.clone()),
+        ClientStatePath::new(subject_client_id.clone()),
         new_client_state.into(),
     )?;
 
     ctx.store_update_meta(
-        client_id.clone(),
+        subject_client_id.clone(),
         latest_height,
         host_timestamp,
         host_height,

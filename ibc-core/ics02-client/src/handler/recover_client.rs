@@ -1,13 +1,11 @@
 //! Protocol logic for processing ICS02 messages of type `MsgRecoverClient`.
 
 use ibc_core_client_context::client_state::{
-    ClientState, ClientStateCommon, ClientStateExecution, ClientStateValidation,
+    ClientStateCommon, ClientStateExecution, ClientStateValidation,
 };
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::msgs::MsgRecoverClient;
-use ibc_core_client_types::ClientState as ClientStateType;
 use ibc_core_handler_types::error::ContextError;
-use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 
 /// Performs the validation steps associated with the client recovery process. This
@@ -81,8 +79,11 @@ where
     let subject_client_state = ctx.client_state(&subject_client_id)?;
     let substitute_client_state = ctx.client_state(&substitute_client_id)?;
 
-    subject_client_state
-        .update_on_recovery(ctx.get_client_execution_context(), &substitute_client_state)?;
+    subject_client_state.update_on_recovery(
+        ctx.get_client_execution_context(),
+        &subject_client_id,
+        substitute_client_state,
+    )?;
 
     Ok(())
 }

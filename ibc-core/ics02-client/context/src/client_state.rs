@@ -134,7 +134,7 @@ where
     fn check_substitute(
         &self,
         ctx: &V,
-        substitute_client_state: impl ClientStateValidation<V>,
+        substitute_client_state: &impl ClientStateValidation<V>,
     ) -> Result<(), ClientError>;
 }
 
@@ -193,12 +193,13 @@ where
         upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError>;
 
-    /// Update the client and consensus states in the store with the provided values
-    /// from a verified substitute client in response to a successful client recovery.
+    /// Update the subject client using the `substitute_client_state` in response
+    /// to a successful client recovery.
     fn update_on_recovery(
         &self,
         ctx: &mut E,
-        substitute_client_state: &impl ClientStateExecution<E>,
+        subject_client_id: &ClientId,
+        substitute_client_state: impl ClientStateExecution<E>,
     ) -> Result<(), ClientError>;
 }
 
