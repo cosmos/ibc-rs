@@ -14,6 +14,7 @@ on:
       - ibc-clients/**
       - ibc-primitives/**
       - ibc-query/**
+      - ibc-testkit/**
       - ibc-derive/**
   push:
     tags:
@@ -34,6 +35,7 @@ on:
       - ibc-clients/**
       - ibc-primitives/**
       - ibc-query/**
+      - ibc-testkit/**
       - ibc-derive/**
 jobs:
   cw-check:
