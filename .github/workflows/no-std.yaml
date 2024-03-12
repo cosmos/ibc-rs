@@ -13,6 +13,8 @@ on:
       - ibc-data-types/**
       - ibc-clients/**
       - ibc-primitives/**
+      - ibc-query/**
+      - ibc-derive/**
   push:
     branches: main
     paths:
@@ -27,6 +29,8 @@ on:
       - ibc-data-types/**
       - ibc-clients/**
       - ibc-primitives/**
+      - ibc-query/**
+      - ibc-derive/**
 jobs:
   check-no-std-panic-conflict:
     name: Check no_std panic conflict
