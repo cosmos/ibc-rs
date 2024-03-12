@@ -13,8 +13,6 @@ on:
       - ibc-data-types/**
       - ibc-clients/**
       - ibc-primitives/**
-      - ibc-query/**
-      - ibc-testkit/**
       - ibc-derive/**
   push:
     branches: main
@@ -30,8 +28,6 @@ on:
       - ibc-data-types/**
       - ibc-clients/**
       - ibc-primitives/**
-      - ibc-query/**
-      - ibc-testkit/**
       - ibc-derive/**
 jobs:
   check-no-std-panic-conflict:
