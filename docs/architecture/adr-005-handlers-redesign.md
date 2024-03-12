@@ -1,12 +1,10 @@
 # ADR 005: Handlers validation and execution separation
 
 ## Status
-
 Accepted
 
 ## Changelog
-
-- 9/9/2022: initial proposal
+* 9/9/2022: initial proposal
 
 ## Context
 
@@ -17,9 +15,9 @@ Our current `deliver()` entrypoint can then be split into 2 entrypoints: `valida
 This ADR will only concern itself with the external-facing API.
 
 The following are out of scope for this ADR:
++ Exposing an `async` API
++ Enabling light clients to define and require the host to implement a set of traits
 
-- Exposing an `async` API
-- Enabling light clients to define and require the host to implement a set of traits
 
 ## Decision
 
@@ -28,8 +26,7 @@ Below is a diagram of how the main components of this ADR fit together.
 ![Main components](./assets/adr05.jpg)
 
 ### Validation vs Execution
-
-Each handler can be split into validation and execution. _Validation_ is the set of statements which can make the transaction fail. It comprises all the "checks". Execution is the set of statements which mutate the state. In the IBC standard handlers, validation occurs before execution. Note that execution can fail in practice, if say a write operation fails.
+Each handler can be split into validation and execution. *Validation* is the set of statements which can make the transaction fail. It comprises all the "checks". Execution is the set of statements which mutate the state. In the IBC standard handlers, validation occurs before execution. Note that execution can fail in practice, if say a write operation fails.
 
 As an example, consider the [`UpdateClient` handler](https://github.com/cosmos/ibc/blob/main/spec/core/ics-002-client-semantics/README.md#update).
 
@@ -57,7 +54,6 @@ function updateClient(
 ```
 
 ### `ValidationContext` and `ExecutionContext`
-
 Below, we define the `ValidationContext` and `ExecutionContext`.
 
 ```rust
@@ -82,7 +78,7 @@ trait ExecutionContext {
 }
 ```
 
-A useful way to understand how these traits work together is in seeing how they _could_ be used to implement `deliver()`.
+A useful way to understand how these traits work together is in seeing how they *could* be used to implement `deliver()`.
 
 ```rust
 fn deliver<V: ValidationContext, E: ExecutionContext>(val_ctx: &V, exec_ctx: &mut E, message: Any) -> Result<(), Error> {
@@ -91,7 +87,6 @@ fn deliver<V: ValidationContext, E: ExecutionContext>(val_ctx: &V, exec_ctx: &mu
     exec_ctx.execute(message)
 }
 ```
-
 Note however that we will not implement `deliver()` this way for efficiency reasons (see [discussion](https://github.com/informalsystems/ibc-rs/issues/2582#issuecomment-1229988512)).
 
 ### Host based API
@@ -214,20 +209,18 @@ See appendix C for an example of how we intend this to be used.
 ## Consequences
 
 ### Positive
-
-- Architectures that run "validation" separately from "execution" will now be able to use the handlers
++ Architectures that run "validation" separately from "execution" will now be able to use the handlers
 
 ### Negative
-
-- Still no async support
-- Light clients still cannot specify new requirements on the host `Context`
++ Still no async support
++ Light clients still cannot specify new requirements on the host `Context`
 
 ### Neutral
 
 ## References
 
-- [Issue #2582: ADR for redesigning the modules' API](https://github.com/informalsystems/ibc-rs/issues/2582)
-- [ICS24 spec](https://github.com/cosmos/ibc/blob/1b73c158dcd3b08c6af3917618dce259e30bc21b/spec/core/ics-024-host-requirements/README.md)
+* [Issue #2582: ADR for redesigning the modules' API](https://github.com/informalsystems/ibc-rs/issues/2582)
+* [ICS24 spec](https://github.com/cosmos/ibc/blob/1b73c158dcd3b08c6af3917618dce259e30bc21b/spec/core/ics-024-host-requirements/README.md)
 
 ## Appendices
 
