@@ -1,12 +1,14 @@
+use core::time::Duration;
+
 use ibc_client_tendermint_types::{
-    ClientState as ClientStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
-    TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
+    AllowUpdate, ClientState as ClientStateType, Header as TmHeader,
+    Misbehaviour as TmMisbehaviour, TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
 use ibc_core_client::context::client_state::ClientStateValidation;
 use ibc_core_client::context::ClientValidationContext;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Status;
-use ibc_core_host::types::identifiers::ClientId;
+use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
@@ -54,6 +56,14 @@ where
 
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
         status(self.inner(), ctx, client_id)
+    }
+
+    fn check_substitute(
+        &self,
+        ctx: &V,
+        substitute_client_state: impl ClientStateValidation<V>,
+    ) -> Result<(), ClientError> {
+        check_substitute(self.inner(), ctx, substitute_client_state)
     }
 }
 
@@ -193,4 +203,49 @@ where
     }
 
     Ok(Status::Active)
+}
+
+/// Check that the subject and substitute client states match as part of
+/// the client recovery validation step.
+///
+/// The subject and substitute client states match if all their respective
+/// client state parameters match except for frozen height, latest height,
+/// trusting period, and chain ID.
+pub fn check_substitute<V>(
+    subject_client_state: &ClientStateType,
+    ctx: &V,
+    substitute_client_state: &ClientStateType,
+) -> Result<(), ClientError>
+where
+    V: ClientValidationContext + TmValidationContext,
+{
+    let subject = ClientStateType {
+        latest_height: Height::default(),
+        frozen_height: None,
+        trusting_period: Duration::ZERO,
+        chain_id: ChainId::default(),
+        allow_update: AllowUpdate {
+            after_expiry: true,
+            after_misbehaviour: true,
+        },
+        ..subject_client_state
+    };
+
+    let substitute = ClientStateType {
+        latest_height: Height::default(),
+        frozen_height: None,
+        trusting_period: Duration::ZERO,
+        chain_id: ChainId::default(),
+        allow_update: AllowUpdate {
+            after_expiry: true,
+            after_misbehaviour: true,
+        },
+        ..substitute_client_state
+    };
+
+    if subject != substitute {
+        return Err(ClientError::ClientRecoveryStateMismatch);
+    }
+
+    Ok(())
 }
