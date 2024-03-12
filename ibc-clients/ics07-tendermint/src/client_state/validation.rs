@@ -7,7 +7,7 @@ use ibc_client_tendermint_types::{
 use ibc_core_client::context::client_state::ClientStateValidation;
 use ibc_core_client::context::ClientValidationContext;
 use ibc_core_client::types::error::ClientError;
-use ibc_core_client::types::Status;
+use ibc_core_client::types::{Height, Status};
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
@@ -61,7 +61,7 @@ where
     fn check_substitute(
         &self,
         ctx: &V,
-        substitute_client_state: impl ClientStateValidation<V>,
+        substitute_client_state: &ClientStateType,
     ) -> Result<(), ClientError> {
         check_substitute(self.inner(), ctx, substitute_client_state)
     }
@@ -220,27 +220,27 @@ where
     V: ClientValidationContext + TmValidationContext,
 {
     let subject = ClientStateType {
-        latest_height: Height::default(),
+        latest_height: Height::new(0, 1).unwrap(),
         frozen_height: None,
         trusting_period: Duration::ZERO,
-        chain_id: ChainId::default(),
+        chain_id: ChainId::new("").unwrap(),
         allow_update: AllowUpdate {
             after_expiry: true,
             after_misbehaviour: true,
         },
-        ..subject_client_state
+        ..subject_client_state.clone()
     };
 
     let substitute = ClientStateType {
-        latest_height: Height::default(),
+        latest_height: Height::new(0, 1).unwrap(),
         frozen_height: None,
         trusting_period: Duration::ZERO,
-        chain_id: ChainId::default(),
+        chain_id: ChainId::new("").unwrap(),
         allow_update: AllowUpdate {
             after_expiry: true,
             after_misbehaviour: true,
         },
-        ..substitute_client_state
+        ..substitute_client_state.clone()
     };
 
     if subject != substitute {
