@@ -259,7 +259,7 @@ where
     // this consensus state should not be used for packet verification as
     // the root is empty. The next consensus state submitted using update
     // will be usable for packet-verification.
-    let sentinel_root = "sentinel_root".as_bytes().to_vec();
+    let sentinel_root = b"sentinel_root".to_vec();
     let new_consensus_state = ConsensusStateType::new(
         sentinel_root.into(),
         upgraded_tm_cons_state.timestamp(),

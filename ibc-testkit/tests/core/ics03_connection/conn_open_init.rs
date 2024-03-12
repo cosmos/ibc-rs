@@ -97,9 +97,8 @@ fn conn_open_init_execute(
             let event = &ibc_events[1];
             assert!(matches!(event, &IbcEvent::OpenInitConnection(_)));
 
-            let conn_open_init_event = match event {
-                IbcEvent::OpenInitConnection(e) => e,
-                _ => unreachable!(),
+            let IbcEvent::OpenInitConnection(conn_open_init_event) = event else {
+                unreachable!()
             };
             let conn_end =
                 ValidationContext::connection_end(&fxt.ctx, conn_open_init_event.conn_id_on_a())

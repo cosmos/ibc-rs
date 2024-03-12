@@ -178,7 +178,7 @@ where
     Ok(QueryConsensusStateHeightsResponse {
         consensus_state_heights: consensus_state_heights
             .into_iter()
-            .map(|height| height.into())
+            .map(Into::into)
             .collect(),
         // no support for pagination yet
         pagination: None,

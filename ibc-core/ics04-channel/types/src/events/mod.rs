@@ -532,7 +532,7 @@ impl ChannelClosed {
             port_id_attr_on_a: port_id_on_a.into(),
             chan_id_attr_on_a: chan_id_on_a.into(),
             port_id_attr_on_b: port_id_on_b.into(),
-            maybe_chan_id_attr_on_b: maybe_chan_id_on_b.map(|c| c.into()),
+            maybe_chan_id_attr_on_b: maybe_chan_id_on_b.map(Into::into),
             conn_id_attr_on_a: conn_id_on_a.into(),
             channel_ordering_attr: channel_ordering.into(),
         }
@@ -547,7 +547,7 @@ impl ChannelClosed {
         &self.port_id_attr_on_b.counterparty_port_id
     }
     pub fn chan_id_on_a(&self) -> Option<&ChannelId> {
-        self.maybe_chan_id_attr_on_b.as_ref().map(|c| c.as_ref())
+        self.maybe_chan_id_attr_on_b.as_ref().map(AsRef::as_ref)
     }
     pub fn conn_id_on_b(&self) -> &ConnectionId {
         &self.conn_id_attr_on_a.connection_id
@@ -571,7 +571,7 @@ impl From<ChannelClosed> for abci::Event {
                 ev.port_id_attr_on_b.into(),
                 ev.maybe_chan_id_attr_on_b.map_or_else(
                     || (COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, "").into(),
-                    |c| c.into(),
+                    Into::into,
                 ),
                 ev.conn_id_attr_on_a.into(),
                 ev.channel_ordering_attr.into(),

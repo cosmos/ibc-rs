@@ -91,15 +91,15 @@ pub enum ConnectionError {
 impl std::error::Error for ConnectionError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::Client(e) => Some(e),
+            Self::Client(e)
+            | Self::VerifyConnectionState(e)
+            | Self::ConsensusStateVerificationFailure {
+                client_error: e, ..
+            }
+            | Self::ClientStateVerificationFailure {
+                client_error: e, ..
+            } => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
-            Self::VerifyConnectionState(e) => Some(e),
-            Self::ConsensusStateVerificationFailure {
-                client_error: e, ..
-            } => Some(e),
-            Self::ClientStateVerificationFailure {
-                client_error: e, ..
-            } => Some(e),
             Self::TimestampOverflow(e) => Some(e),
             _ => None,
         }
