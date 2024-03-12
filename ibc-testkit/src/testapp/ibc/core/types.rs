@@ -139,7 +139,7 @@ pub struct MockClientConfig {
     trusting_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
     max_clock_drift: Duration,
-    #[builder(default = Duration::from_secs(128000))]
+    #[builder(default = Duration::from_secs(128_000))]
     unbonding_period: Duration,
 }
 
@@ -296,7 +296,7 @@ impl MockContext {
 
         MockContext {
             host_chain_type: host_type,
-            host_chain_id: host_id.clone(),
+            host_chain_id: host_id,
             max_history_size,
             history,
             block_time,
@@ -535,7 +535,7 @@ impl MockContext {
         self.ibc_store
             .lock()
             .clients
-            .insert(client.client_id.clone(), client_record);
+            .insert(client.client_id, client_record);
         self
     }
 

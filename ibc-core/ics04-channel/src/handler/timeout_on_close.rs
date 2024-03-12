@@ -36,14 +36,12 @@ where
     );
 
     //verify the packet was sent, check the store
-    let commitment_on_a = match ctx_a.get_packet_commitment(&commitment_path_on_a) {
-        Ok(commitment_on_a) => commitment_on_a,
-
+    let Ok(commitment_on_a) = ctx_a.get_packet_commitment(&commitment_path_on_a) else {
         // This error indicates that the timeout has already been relayed
         // or there is a misconfigured relayer attempting to prove a timeout
         // for a packet never sent. Core IBC will treat this error as a no-op in order to
         // prevent an entire relay transaction from failing and consuming unnecessary fees.
-        Err(_) => return Ok(()),
+        return Ok(());
     };
 
     let expected_commitment_on_a = compute_packet_commitment(

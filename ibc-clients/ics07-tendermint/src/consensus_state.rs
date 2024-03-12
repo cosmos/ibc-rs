@@ -22,7 +22,7 @@ use tendermint::{Hash, Time};
 /// bypass Rust's orphan rules and implement traits from
 /// `ibc::core::client::context` on the `ConsensusState` type.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, derive_more::From)]
+#[derive(Clone, Debug, PartialEq, Eq, derive_more::From)]
 pub struct ConsensusState(ConsensusStateType);
 
 impl ConsensusState {

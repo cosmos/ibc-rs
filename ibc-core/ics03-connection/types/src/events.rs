@@ -366,7 +366,7 @@ mod tests {
                 )
                 .into(),
                 expected_keys: expected_keys.clone(),
-                expected_values: expected_values.iter().rev().cloned().collect(),
+                expected_values: expected_values.iter().rev().copied().collect(),
             },
             Test {
                 kind: CONNECTION_OPEN_ACK_EVENT,
@@ -385,7 +385,7 @@ mod tests {
                 event: OpenConfirm::new(conn_id_on_b, client_id_on_b, conn_id_on_a, client_id_on_a)
                     .into(),
                 expected_keys: expected_keys.clone(),
-                expected_values: expected_values.iter().rev().cloned().collect(),
+                expected_values: expected_values.iter().rev().copied().collect(),
             },
         ];
 

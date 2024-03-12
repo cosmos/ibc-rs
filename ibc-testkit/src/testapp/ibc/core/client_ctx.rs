@@ -55,7 +55,7 @@ impl TmValidationContext for MockContext {
                     client_id: client_id.clone(),
                 })?;
 
-        let heights = client_record.consensus_states.keys().cloned().collect();
+        let heights = client_record.consensus_states.keys().copied().collect();
 
         Ok(heights)
     }
@@ -75,7 +75,7 @@ impl TmValidationContext for MockContext {
                 })?;
 
         // Get the consensus state heights and sort them in ascending order.
-        let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
+        let mut heights: Vec<Height> = client_record.consensus_states.keys().copied().collect();
         heights.sort();
 
         // Search for next state.
@@ -109,7 +109,7 @@ impl TmValidationContext for MockContext {
                 })?;
 
         // Get the consensus state heights and sort them in descending order.
-        let mut heights: Vec<Height> = client_record.consensus_states.keys().cloned().collect();
+        let mut heights: Vec<Height> = client_record.consensus_states.keys().copied().collect();
         heights.sort_by(|a, b| b.cmp(a));
 
         // Search for previous state.
@@ -276,7 +276,7 @@ impl ClientExecutionContext for MockContext {
         client_id: ClientId,
         height: Height,
     ) -> Result<(), ContextError> {
-        let key = (client_id.clone(), height);
+        let key = (client_id, height);
         let mut ibc_store = self.ibc_store.lock();
         ibc_store.client_processed_times.remove(&key);
         ibc_store.client_processed_heights.remove(&key);

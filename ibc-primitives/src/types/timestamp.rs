@@ -48,8 +48,7 @@ impl borsh::BorshDeserialize for Timestamp {
         reader: &mut R,
     ) -> borsh::maybestd::io::Result<Self> {
         let timestamp = u64::deserialize_reader(reader)?;
-        Ok(Timestamp::from_nanoseconds(timestamp)
-            .map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
+        Ok(Self::from_nanoseconds(timestamp).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
     }
 }
 
@@ -66,7 +65,7 @@ impl parity_scale_codec::Decode for Timestamp {
         input: &mut I,
     ) -> Result<Self, parity_scale_codec::Error> {
         let timestamp = u64::decode(input)?;
-        Timestamp::from_nanoseconds(timestamp)
+        Self::from_nanoseconds(timestamp)
             .map_err(|_| parity_scale_codec::Error::from("from nanoseconds error"))
     }
 }
@@ -108,14 +107,14 @@ impl Timestamp {
     /// is not set. In this case, our domain type takes the
     /// value of None.
     ///
-    pub fn from_nanoseconds(nanoseconds: u64) -> Result<Timestamp, ParseTimestampError> {
+    pub fn from_nanoseconds(nanoseconds: u64) -> Result<Self, ParseTimestampError> {
         if nanoseconds == 0 {
-            Ok(Timestamp { time: None })
+            Ok(Self { time: None })
         } else {
             // As the `u64` representation can only represent times up to
             // about year 2554, there is no risk of overflowing `Time`
             // or `OffsetDateTime`.
-            let ts = OffsetDateTime::from_unix_timestamp_nanos(nanoseconds as i128)
+            let ts = OffsetDateTime::from_unix_timestamp_nanos(nanoseconds.into())
                 .map_err(|e: time::error::ComponentRange| {
                     ParseTimestampError::DataOutOfRange(e.to_string())
                 })?
@@ -123,26 +122,26 @@ impl Timestamp {
                 .map_err(|e: tendermint::error::Error| {
                     ParseTimestampError::DataOutOfRange(e.to_string())
                 })?;
-            Ok(Timestamp { time: Some(ts) })
+            Ok(Self { time: Some(ts) })
         }
     }
 
     /// Returns a `Timestamp` representation of the current time.
     #[cfg(feature = "std")]
-    pub fn now() -> Timestamp {
+    pub fn now() -> Self {
         Time::now().into()
     }
 
     /// Returns a `Timestamp` representation of a timestamp not being set.
     pub fn none() -> Self {
-        Timestamp { time: None }
+        Self { time: None }
     }
 
     /// Computes the duration difference of another `Timestamp` from the current one.
     /// Returns the difference in time as an [`core::time::Duration`].
     /// Returns `None` if the other `Timestamp` is more advanced
     /// than the current or if either of the `Timestamp`s is not set.
-    pub fn duration_since(&self, other: &Timestamp) -> Option<Duration> {
+    pub fn duration_since(&self, other: &Self) -> Option<Duration> {
         match (self.time, other.time) {
             (Some(time1), Some(time2)) => time1.duration_since(time2).ok(),
             _ => None,
@@ -197,7 +196,7 @@ impl Timestamp {
 
     /// Checks whether the timestamp has expired when compared to the
     /// `other` timestamp. Returns an [`Expiry`] result.
-    pub fn check_expiry(&self, other: &Timestamp) -> Expiry {
+    pub fn check_expiry(&self, other: &Self) -> Expiry {
         match (self.time, other.time) {
             (Some(time1), Some(time2)) => {
                 if time1 > time2 {
@@ -237,32 +236,26 @@ pub enum TimestampOverflowError {
 impl std::error::Error for TimestampOverflowError {}
 
 impl Add<Duration> for Timestamp {
-    type Output = Result<Timestamp, TimestampOverflowError>;
+    type Output = Result<Self, TimestampOverflowError>;
 
-    fn add(self, duration: Duration) -> Result<Timestamp, TimestampOverflowError> {
-        match self.time {
-            Some(time) => {
-                let time =
-                    (time + duration).map_err(|_| TimestampOverflowError::TimestampOverflow)?;
-                Ok(Timestamp { time: Some(time) })
-            }
-            None => Ok(self),
-        }
+    fn add(self, duration: Duration) -> Result<Self, TimestampOverflowError> {
+        self.time
+            .map(|time| time + duration)
+            .transpose()
+            .map(|time| Self { time })
+            .map_err(|_| TimestampOverflowError::TimestampOverflow)
     }
 }
 
 impl Sub<Duration> for Timestamp {
-    type Output = Result<Timestamp, TimestampOverflowError>;
+    type Output = Result<Self, TimestampOverflowError>;
 
-    fn sub(self, duration: Duration) -> Result<Timestamp, TimestampOverflowError> {
-        match self.time {
-            Some(time) => {
-                let time =
-                    (time - duration).map_err(|_| TimestampOverflowError::TimestampOverflow)?;
-                Ok(Timestamp { time: Some(time) })
-            }
-            None => Ok(self),
-        }
+    fn sub(self, duration: Duration) -> Result<Self, TimestampOverflowError> {
+        self.time
+            .map(|time| time - duration)
+            .transpose()
+            .map(|time| Self { time })
+            .map_err(|_| TimestampOverflowError::TimestampOverflow)
     }
 }
 
@@ -278,8 +271,8 @@ pub enum ParseTimestampError {
 impl std::error::Error for ParseTimestampError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            ParseTimestampError::ParseInt(e) => Some(e),
-            ParseTimestampError::DataOutOfRange(_) => None,
+            Self::ParseInt(e) => Some(e),
+            Self::DataOutOfRange(_) => None,
         }
     }
 }
@@ -290,13 +283,13 @@ impl FromStr for Timestamp {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let nanoseconds = u64::from_str(s).map_err(ParseTimestampError::ParseInt)?;
 
-        Timestamp::from_nanoseconds(nanoseconds)
+        Self::from_nanoseconds(nanoseconds)
     }
 }
 
 impl From<Time> for Timestamp {
-    fn from(tendermint_time: Time) -> Timestamp {
-        Timestamp {
+    fn from(tendermint_time: Time) -> Self {
+        Self {
             time: Some(tendermint_time),
         }
     }
