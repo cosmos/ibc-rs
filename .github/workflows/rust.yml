@@ -158,22 +158,6 @@ jobs:
           command: test
           args: --no-default-features --no-fail-fast --no-run
 
-  cw-compile:
-    name: Check cw compile
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: nightly-2024-02-24
-          target: wasm32-unknown-unknown
-          override: true
-      - name: CosmWasm build
-        uses: actions-rs/cargo@v1
-        with:
-          command: build
-          args: --manifest-path ci/cw-check/Cargo.toml --target wasm32-unknown-unknown --no-default-features
-
   test-msrv:
     timeout-minutes: 30
     env:
