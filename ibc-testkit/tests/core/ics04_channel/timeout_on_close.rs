@@ -15,12 +15,13 @@ use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, Por
 use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout_on_close;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use rstest::*;
 
 pub struct Fixture {
-    pub context: MockContext,
+    pub context: MockContext<MockHost>,
     pub router: MockRouter,
     pub msg: MsgTimeoutOnClose,
     pub packet_commitment: PacketCommitment,
@@ -33,10 +34,9 @@ fn fixture() -> Fixture {
     let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
 
     let client_height = Height::new(0, 2).unwrap();
-    let context = MockContext::default().with_client_config(
-        MockClientConfig::builder()
-            .latest_height(client_height)
-            .build(),
+    let context = MockContext::<MockHost>::default().with_light_client(
+        &ClientId::new("07-tendermint", 0).expect("no error"),
+        LightClientState::<MockHost>::with_latest_height(client_height),
     );
     let router = MockRouter::new_with_transfer();
 
@@ -70,7 +70,7 @@ fn fixture() -> Fixture {
         ConnectionCounterparty::new(
             default_client_id.clone(),
             Some(ConnectionId::zero()),
-            CommitmentPrefix::empty(),
+            CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
         ConnectionVersion::compatibles(),
         ZERO_DURATION,

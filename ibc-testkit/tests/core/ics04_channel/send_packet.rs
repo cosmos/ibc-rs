@@ -15,7 +15,8 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::hosts::MockHost;
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 use test_log::test;
 
 #[test]
@@ -24,12 +25,10 @@ fn send_packet_processing() {
 
     struct Test {
         name: String,
-        ctx: MockContext,
+        ctx: MockContext<MockHost>,
         packet: Packet,
         want_pass: bool,
     }
-
-    let context = MockContext::default();
 
     let chan_end_on_a = ChannelEnd::new(
         State::Open,
@@ -46,7 +45,7 @@ fn send_packet_processing() {
         ConnectionCounterparty::new(
             default_client_id.clone(),
             Some(ConnectionId::zero()),
-            CommitmentPrefix::empty(),
+            CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
         ConnectionVersion::compatibles(),
         ZERO_DURATION,
@@ -87,18 +86,16 @@ fn send_packet_processing() {
     let tests: Vec<Test> = vec![
         Test {
             name: "Processing fails because no channel exists in the context".to_string(),
-            ctx: context.clone(),
+            ctx: MockContext::<MockHost>::default(),
             packet: packet.clone(),
             want_pass: false,
         },
         Test {
             name: "Good parameters".to_string(),
-            ctx: context
-                .clone()
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::<MockHost>::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
@@ -108,12 +105,10 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height same as destination chain height".to_string(),
-            ctx: context
-                .clone()
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::<MockHost>::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
@@ -123,12 +118,10 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height one more than destination chain height".to_string(),
-            ctx: context
-                .clone()
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::<MockHost>::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
@@ -138,11 +131,10 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout due to timestamp".to_string(),
-            ctx: context
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::<MockHost>::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a)
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
@@ -164,7 +156,7 @@ fn send_packet_processing() {
                         "send_packet: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
                         test.name,
                         test.packet.clone(),
-                        test.ctx.clone()
+                        test.ctx
                     );
 
                 let ibc_events = test.ctx.get_events();
@@ -185,7 +177,7 @@ fn send_packet_processing() {
                     "send_packet: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
                     test.name,
                     test.packet.clone(),
-                    test.ctx.clone(),
+                    test.ctx,
                     e,
                 );
             }

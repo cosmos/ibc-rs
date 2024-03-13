@@ -13,15 +13,16 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_close_confirm;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
 
 #[test]
 fn test_chan_close_confirm_validate() {
     let client_id = mock_client_type().build_client_id(24);
     let conn_id = ConnectionId::new(2);
-    let default_context = MockContext::default();
+    let default_context = MockContext::<MockHost>::default();
     let client_consensus_state_height = default_context.host_height().unwrap();
 
     let conn_end = ConnectionEnd::new(
@@ -53,11 +54,9 @@ fn test_chan_close_confirm_validate() {
     .unwrap();
 
     let context = default_context
-        .with_client_config(
-            MockClientConfig::builder()
-                .client_id(client_id.clone())
-                .latest_height(client_consensus_state_height)
-                .build(),
+        .with_light_client(
+            &client_id,
+            LightClientState::<MockHost>::with_latest_height(client_consensus_state_height),
         )
         .with_connection(conn_id, conn_end)
         .with_channel(
@@ -80,7 +79,7 @@ fn test_chan_close_confirm_validate() {
 fn test_chan_close_confirm_execute() {
     let client_id = mock_client_type().build_client_id(24);
     let conn_id = ConnectionId::new(2);
-    let default_context = MockContext::default();
+    let default_context = MockContext::<MockHost>::default();
     let client_consensus_state_height = default_context.host_height().unwrap();
 
     let conn_end = ConnectionEnd::new(
@@ -112,11 +111,9 @@ fn test_chan_close_confirm_execute() {
     .unwrap();
 
     let mut context = default_context
-        .with_client_config(
-            MockClientConfig::builder()
-                .client_id(client_id.clone())
-                .latest_height(client_consensus_state_height)
-                .build(),
+        .with_light_client(
+            &client_id,
+            LightClientState::<MockHost>::with_latest_height(client_consensus_state_height),
         )
         .with_connection(conn_id, conn_end)
         .with_channel(

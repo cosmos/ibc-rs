@@ -1,3 +1,6 @@
+use alloc::fmt::Debug;
+
+use basecoin_store::context::ProvableStore;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
 use ibc::core::handler::types::error::ContextError;
@@ -6,8 +9,9 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 
+use crate::hosts::TestHost;
 use crate::testapp::ibc::clients::AnyClientState;
-use crate::testapp::ibc::core::types::MockContext;
+use crate::testapp::ibc::core::types::MockGenericContext;
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
 /// relay packets between chains. This trait comprises the dependencies towards a single chain.
 /// Most of the functions in this represent wrappers over the ABCI interface.
@@ -25,7 +29,11 @@ pub trait RelayerContext {
     fn signer(&self) -> Signer;
 }
 
-impl RelayerContext for MockContext {
+impl<S, H> RelayerContext for MockGenericContext<S, H>
+where
+    S: ProvableStore + Debug,
+    H: TestHost,
+{
     fn query_latest_height(&self) -> Result<Height, ContextError> {
         ValidationContext::host_height(self)
     }
@@ -55,19 +63,19 @@ mod tests {
 
     use super::RelayerContext;
     use crate::fixtures::core::context::MockContextConfig;
-    use crate::hosts::block::{HostBlock, HostType};
+    use crate::hosts::{MockHost, TendermintHost, TestBlock, TestHeader};
     use crate::relayer::context::ClientId;
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::testapp::ibc::core::types::MockClientConfig;
+    use crate::testapp::ibc::core::types::{LightClientBuilder, MockContext};
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
-    pub(crate) fn build_client_update_datagram<Ctx>(
+    pub(crate) fn build_client_update_datagram<Ctx, H: TestHeader>(
         dest: &Ctx,
         client_id: &ClientId,
-        src_header: &HostBlock,
+        src_header: &H,
     ) -> Result<ClientMsg, RelayerError>
     where
         Ctx: RelayerContext,
@@ -101,7 +109,7 @@ mod tests {
         // Client on destination chain can be updated.
         Ok(ClientMsg::UpdateClient(MsgUpdateClient {
             client_id: client_id.clone(),
-            client_message: (*src_header).clone().into(),
+            client_message: src_header.clone().into(),
             signer: dest.signer(),
         }))
     }
@@ -127,39 +135,45 @@ mod tests {
         let mut ctx_a = MockContextConfig::builder()
             .host_id(chain_id_a.clone())
             .latest_height(chain_a_start_height)
-            .build()
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_chain_id(chain_id_b.clone())
-                    .client_id(client_on_a_for_b.clone())
-                    .latest_height(client_on_a_for_b_height)
-                    .client_type(tm_client_type()) // The target host chain (B) is synthetic TM.
-                    .build(),
-            );
+            .build::<MockContext<MockHost>>();
+
+        let mut ctx_b = MockContextConfig::builder()
+            .host_id(chain_id_b.clone())
+            .latest_height(chain_b_start_height)
+            .latest_timestamp(ctx_a.timestamp_at(chain_a_start_height.decrement().unwrap())) // chain B is running slower than chain A
+            .build::<MockContext<TendermintHost>>();
+
+        ctx_a = ctx_a.with_light_client(
+            &client_on_a_for_b,
+            LightClientBuilder::init()
+                .context(&ctx_b)
+                .consensus_heights([client_on_a_for_b_height])
+                .build(),
+        );
+
+        ctx_b = ctx_b.with_light_client(
+            &client_on_b_for_a,
+            LightClientBuilder::init()
+                .context(&ctx_a)
+                .consensus_heights([client_on_b_for_a_height])
+                .build(),
+        );
+
         // dummy; not actually used in client updates
         let mut router_a = MockRouter::new_with_transfer();
 
-        let mut ctx_b = MockContextConfig::builder()
-            .host_id(chain_id_b)
-            .host_type(HostType::SyntheticTendermint)
-            .latest_height(chain_b_start_height)
-            .build()
-            .with_client_config(
-                MockClientConfig::builder()
-                    .client_chain_id(chain_id_a)
-                    .client_id(client_on_b_for_a.clone())
-                    .latest_height(client_on_b_for_a_height)
-                    .build(),
-            );
         // dummy; not actually used in client updates
         let mut router_b = MockRouter::new_with_transfer();
 
         for _i in 0..num_iterations {
             // Update client on chain B to latest height of A.
             // - create the client update message with the latest header from A
-            let a_latest_header = ctx_a.query_latest_header().unwrap();
-            let client_msg_b_res =
-                build_client_update_datagram(&ctx_b, &client_on_b_for_a, &a_latest_header);
+            let a_latest_header = ctx_a.query_latest_block().unwrap();
+            let client_msg_b_res = build_client_update_datagram(
+                &ctx_b,
+                &client_on_b_for_a,
+                &a_latest_header.into_header(),
+            );
 
             assert!(
                 client_msg_b_res.is_ok(),
@@ -191,7 +205,7 @@ mod tests {
             // Update client on chain A to latest height of B.
             // - create the client update message with the latest header from B
             // The test uses LightClientBlock that does not store the trusted height
-            let mut b_latest_header = ctx_b.query_latest_header().unwrap();
+            let mut b_latest_header = ctx_b.query_latest_block().unwrap().clone().into_header();
 
             let th = b_latest_header.height();
             b_latest_header.set_trusted_height(th.decrement().unwrap());
