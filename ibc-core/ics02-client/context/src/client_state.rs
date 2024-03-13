@@ -140,7 +140,7 @@ where
     fn check_substitute(
         &self,
         ctx: &V,
-        substitute_client_state: &V::ClientStateRef,
+        substitute_client_state: V::ClientStateRef,
     ) -> Result<(), ClientError>;
 }
 

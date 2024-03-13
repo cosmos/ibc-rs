@@ -6,7 +6,6 @@ use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
-use ibc_core_host::ValidationContext;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
@@ -20,6 +19,7 @@ impl<E> ClientStateExecution<E> for ClientState
 where
     E: TmExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
+    E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
     fn initialise(
@@ -69,10 +69,12 @@ where
         &self,
         ctx: &mut E,
         subject_client_id: &ClientId,
-        substitute_client_state: ClientStateType,
+        substitute_client_state: <E as ClientExecutionContext>::ClientStateMut,
     ) -> Result<(), ClientError> {
+        let subject_client_state = self.inner().clone();
+
         update_on_recovery(
-            *self.inner(),
+            subject_client_state,
             ctx,
             subject_client_id,
             substitute_client_state,
@@ -376,13 +378,16 @@ pub fn update_on_recovery<E>(
     subject_client_state: ClientStateType,
     ctx: &mut E,
     subject_client_id: &ClientId,
-    substitute_client_state: ClientStateType,
+    substitute_client_state: <E as ClientExecutionContext>::ClientStateMut,
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
+    E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
+    let substitute_client_state = TryInto::<ClientStateType>::try_into(substitute_client_state)?;
+
     let ClientStateType {
         chain_id,
         trusting_period,
@@ -398,8 +403,8 @@ where
         ..subject_client_state
     };
 
-    let host_timestamp = <E as ValidationContext>::host_timestamp(ctx)?;
-    let host_height = <E as ValidationContext>::host_height(ctx)?;
+    let host_timestamp = E::host_timestamp(ctx)?;
+    let host_height = E::host_height(ctx)?;
 
     ctx.store_client_state(
         ClientStatePath::new(subject_client_id.clone()),

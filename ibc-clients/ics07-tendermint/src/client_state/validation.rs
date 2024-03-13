@@ -5,6 +5,7 @@ use ibc_client_tendermint_types::{
     Misbehaviour as TmMisbehaviour, TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
 use ibc_core_client::context::client_state::ClientStateValidation;
+use ibc_core_client::context::ClientValidationContext;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::{Height, Status};
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
@@ -23,6 +24,7 @@ use crate::context::{
 impl<V> ClientStateValidation<V> for ClientState
 where
     V: TmValidationContext,
+    V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
@@ -60,7 +62,7 @@ where
     fn check_substitute(
         &self,
         ctx: &V,
-        substitute_client_state: &ClientStateType,
+        substitute_client_state: <V as ClientValidationContext>::ClientStateRef,
     ) -> Result<(), ClientError> {
         check_substitute(self.inner(), ctx, substitute_client_state)
     }
@@ -209,18 +211,19 @@ where
 /// trusting period, and chain ID.
 pub fn check_substitute<V>(
     subject_client_state: &ClientStateType,
-    ctx: &V,
-    substitute_client_state: &ClientStateType,
+    _ctx: &V,
+    substitute_client_state: <V as ClientValidationContext>::ClientStateRef,
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
+    V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     let subject = ClientStateType {
-        latest_height: Height::new(0, 1).unwrap(),
+        latest_height: Height::new(0, 1).expect("Panic while creating a Height { 0, 1 }"),
         frozen_height: None,
         trusting_period: Duration::ZERO,
-        chain_id: ChainId::new("").unwrap(),
+        chain_id: ChainId::new("").expect("Panic while creating an empty chain ID"),
         allow_update: AllowUpdate {
             after_expiry: true,
             after_misbehaviour: true,
@@ -228,11 +231,13 @@ where
         ..subject_client_state.clone()
     };
 
+    let substitute_client_state = TryInto::<ClientStateType>::try_into(substitute_client_state)?;
+
     let substitute = ClientStateType {
-        latest_height: Height::new(0, 1).unwrap(),
+        latest_height: Height::new(0, 1).expect("Panic while creating a Height { 0, 1 }"),
         frozen_height: None,
         trusting_period: Duration::ZERO,
-        chain_id: ChainId::new("").unwrap(),
+        chain_id: ChainId::new("").expect("Panic while creating an empty chain ID"),
         allow_update: AllowUpdate {
             after_expiry: true,
             after_misbehaviour: true,
