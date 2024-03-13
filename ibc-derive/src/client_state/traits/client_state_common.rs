@@ -136,9 +136,9 @@ pub(crate) fn impl_ClientStateCommon(
 ///
 /// Generates the per-enum variant function call delegation token streams.
 ///
-/// enum_name:     The user's enum identifier (e.g. `HostClientState`)
-/// enum_variants: An iterator of all enum variants (e.g. `[HostClientState::Tendermint, HostClientState::Mock]`)
-/// fn_call:       The tokens for the function call. Fully-qualified syntax is assumed, where the name for `self`
+/// `enum_name`:     The user's enum identifier (e.g. `HostClientState`)
+/// `enum_variants`: An iterator of all enum variants (e.g. `[HostClientState::Tendermint, HostClientState::Mock]`)
+/// `fn_call`:       The tokens for the function call. Fully-qualified syntax is assumed, where the name for `self`
 ///                  is `cs` (e.g. `client_type(cs)`).
 ///
 /// For example,

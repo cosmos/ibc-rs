@@ -10,7 +10,7 @@ use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore, Shared
 use basecoin_store::types::{BinStore, JsonStore, ProtobufStore, TypedSet, TypedStore};
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
-use ibc::core::client::context::ClientExecutionContext;
+use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
@@ -182,7 +182,7 @@ pub struct MockClientConfig {
     pub trusting_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
     pub max_clock_drift: Duration,
-    #[builder(default = Duration::from_secs(128000))]
+    #[builder(default = Duration::from_secs(128_000))]
     pub unbonding_period: Duration,
 }
 

@@ -296,7 +296,7 @@ trait ValidationContext {
     /// Function required by ICS 03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
     fn get_compatible_versions(&self) -> Vec<Version> {
-        get_compatible_versions()
+        ConnectionVersion::compatibles()
     }
 
     /// Function required by ICS 03. Returns one version out of the supplied list of versions, which the

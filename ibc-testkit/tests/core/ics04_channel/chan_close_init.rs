@@ -1,7 +1,7 @@
 use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State as ChannelState};
 use ibc::core::channel::types::msgs::{ChannelMsg, MsgChannelCloseInit};
 use ibc::core::channel::types::Version;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -27,7 +27,7 @@ fn test_chan_close_init_validate() {
         ConnectionState::Open,
         client_id.clone(),
         ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
-        get_compatible_versions(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();
@@ -39,13 +39,13 @@ fn test_chan_close_init_validate() {
 
     let chan_end = ChannelEnd::new(
         ChannelState::Open,
-        Order::default(),
+        Order::Unordered,
         Counterparty::new(
             msg_chan_close_init.port_id_on_a.clone(),
             Some(msg_chan_close_init.chan_id_on_a.clone()),
         ),
         vec![conn_id.clone()],
-        Version::default(),
+        Version::empty(),
     )
     .unwrap();
 
@@ -85,7 +85,7 @@ fn test_chan_close_init_execute() {
         ConnectionState::Open,
         client_id.clone(),
         ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
-        get_compatible_versions(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();
@@ -97,13 +97,13 @@ fn test_chan_close_init_execute() {
 
     let chan_end = ChannelEnd::new(
         ChannelState::Open,
-        Order::default(),
+        Order::Unordered,
         Counterparty::new(
             msg_chan_close_init.port_id_on_a.clone(),
             Some(msg_chan_close_init.chan_id_on_a.clone()),
         ),
         vec![conn_id.clone()],
-        Version::default(),
+        Version::empty(),
     )
     .unwrap();
 

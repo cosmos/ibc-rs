@@ -265,24 +265,20 @@ impl FromStr for ChainId {
 
         // Validates the chain name for allowed characters according to ICS-24.
         validate_identifier_chars(id)?;
-        match parse_chain_id_string(id) {
-            Ok((chain_name, revision_number)) => {
-                // Validate if the chain name with revision number has a valid length.
-                validate_prefix_length(chain_name, 1, 64)?;
-                Ok(Self {
-                    id: id.into(),
-                    revision_number,
-                })
-            }
-
-            _ => {
-                // Validate if the identifier has a valid length.
-                validate_identifier_length(id, 1, 64)?;
-                Ok(Self {
-                    id: id.into(),
-                    revision_number: 0,
-                })
-            }
+        if let Ok((chain_name, revision_number)) = parse_chain_id_string(id) {
+            // Validate if the chain name with revision number has a valid length.
+            validate_prefix_length(chain_name, 1, 64)?;
+            Ok(Self {
+                id: id.into(),
+                revision_number,
+            })
+        } else {
+            // Validate if the identifier has a valid length.
+            validate_identifier_length(id, 1, 64)?;
+            Ok(Self {
+                id: id.into(),
+                revision_number: 0,
+            })
         }
     }
 }

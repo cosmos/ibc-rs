@@ -149,7 +149,7 @@ impl core::fmt::Display for Height {
 }
 
 /// Encodes all errors related to chain heights
-#[derive(Debug, Display, PartialEq)]
+#[derive(Debug, Display, PartialEq, Eq)]
 pub enum HeightError {
     /// cannot convert into a `Height` type from string `{height}`
     HeightConversion {
@@ -167,8 +167,7 @@ impl std::error::Error for HeightError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             HeightError::HeightConversion { error: e, .. } => Some(e),
-            HeightError::ZeroHeight => None,
-            HeightError::InvalidFormat { .. } => None,
+            HeightError::ZeroHeight | HeightError::InvalidFormat { .. } => None,
         }
     }
 }
@@ -177,14 +176,12 @@ impl TryFrom<&str> for Height {
     type Error = HeightError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let (rev_number_str, rev_height_str) = match value.split_once('-') {
-            Some((rev_number_str, rev_height_str)) => (rev_number_str, rev_height_str),
-            None => {
-                return Err(HeightError::InvalidFormat {
+        let (rev_number_str, rev_height_str) =
+            value
+                .split_once('-')
+                .ok_or_else(|| HeightError::InvalidFormat {
                     raw_height: value.to_owned(),
-                })
-            }
-        };
+                })?;
 
         let revision_number =
             rev_number_str

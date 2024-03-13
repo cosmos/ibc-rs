@@ -21,7 +21,7 @@ impl Default for MockHeader {
     fn default() -> Self {
         Self {
             height: Height::min(0),
-            timestamp: Default::default(),
+            timestamp: Timestamp::none(),
         }
     }
 }

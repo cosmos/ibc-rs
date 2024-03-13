@@ -1,5 +1,6 @@
 use core::fmt::Debug;
 
+use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
@@ -70,7 +71,7 @@ pub trait TestBlock: Clone + Debug {
 /// TestHeader is a trait that defines the interface for a header produced by a host blockchain.
 pub trait TestHeader: Clone + Debug + Into<Any> {
     /// The type of consensus state can be extracted from the header.
-    type ConsensusState: Into<AnyConsensusState> + From<Self>;
+    type ConsensusState: ConsensusState + Into<AnyConsensusState> + From<Self>;
 
     /// The height of the block, as recorded in the header.
     fn height(&self) -> Height;

@@ -4,7 +4,8 @@ use ibc::core::channel::types::msgs::{MsgAcknowledgement, PacketMsg};
 use ibc::core::channel::types::Version;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -34,9 +35,11 @@ struct Fixture {
 
 #[fixture]
 fn fixture() -> Fixture {
+    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
+
     let client_height = Height::new(0, 2).unwrap();
     let ctx = MockContext::<MockHost>::default().with_light_client(
-        &ClientId::default(),
+        &ClientId::new("07-tendermint", 0).expect("no error"),
         LightClientState::<MockHost>::with_latest_height(client_height),
     );
 
@@ -59,7 +62,7 @@ fn fixture() -> Fixture {
         State::Open,
         Order::Unordered,
         Counterparty::new(packet.port_id_on_b, Some(packet.chan_id_on_b)),
-        vec![ConnectionId::default()],
+        vec![ConnectionId::zero()],
         Version::new("ics20-1".to_string()),
     )
     .unwrap();
@@ -69,13 +72,13 @@ fn fixture() -> Fixture {
 
     let conn_end_on_a = ConnectionEnd::new(
         ConnectionState::Open,
-        ClientId::default(),
+        default_client_id.clone(),
         ConnectionCounterparty::new(
-            ClientId::default(),
-            Some(ConnectionId::default()),
-            Default::default(),
+            default_client_id.clone(),
+            Some(ConnectionId::zero()),
+            CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
-        get_compatible_versions(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();
@@ -122,15 +125,15 @@ fn ack_success_no_packet_commitment(fixture: Fixture) {
     } = fixture;
     let ctx = ctx
         .with_light_client(
-            &ClientId::default(),
+            &ClientId::new("07-tendermint", 0).expect("no error"),
             LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a);
+        .with_connection(ConnectionId::zero(), conn_end_on_a);
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
@@ -144,6 +147,7 @@ fn ack_success_no_packet_commitment(fixture: Fixture) {
 
 #[rstest]
 fn ack_success_happy_path(fixture: Fixture) {
+    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let Fixture {
         ctx,
         router,
@@ -156,15 +160,15 @@ fn ack_success_happy_path(fixture: Fixture) {
     } = fixture;
     let mut ctx = ctx
         .with_light_client(
-            &ClientId::default(),
+            &ClientId::new("07-tendermint", 0).expect("no error"),
             LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a)
+        .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),
             msg.packet.chan_id_on_a.clone(),
@@ -173,7 +177,7 @@ fn ack_success_happy_path(fixture: Fixture) {
         );
     ctx.get_client_execution_context()
         .store_update_meta(
-            ClientId::default(),
+            default_client_id,
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 4).unwrap(),
@@ -204,10 +208,10 @@ fn ack_unordered_chan_execute(fixture: Fixture) {
     let mut ctx = ctx
         .with_channel(
             PortId::transfer(),
-            ChannelId::default(),
+            ChannelId::zero(),
             chan_end_on_a_unordered,
         )
-        .with_connection(ConnectionId::default(), conn_end_on_a)
+        .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),
             msg.packet.chan_id_on_a.clone(),
@@ -243,12 +247,8 @@ fn ack_ordered_chan_execute(fixture: Fixture) {
         ..
     } = fixture;
     let mut ctx = ctx
-        .with_channel(
-            PortId::transfer(),
-            ChannelId::default(),
-            chan_end_on_a_ordered,
-        )
-        .with_connection(ConnectionId::default(), conn_end_on_a)
+        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a_ordered)
+        .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),
             msg.packet.chan_id_on_a.clone(),

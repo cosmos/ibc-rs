@@ -6,7 +6,8 @@ use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State}
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::Version;
 use ibc::core::client::types::Height;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -20,6 +21,8 @@ use test_log::test;
 
 #[test]
 fn send_packet_processing() {
+    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
+
     struct Test {
         name: String,
         ctx: MockContext<MockHost>,
@@ -29,22 +32,22 @@ fn send_packet_processing() {
 
     let chan_end_on_a = ChannelEnd::new(
         State::Open,
-        Order::default(),
-        Counterparty::new(PortId::transfer(), Some(ChannelId::default())),
-        vec![ConnectionId::default()],
+        Order::Unordered,
+        Counterparty::new(PortId::transfer(), Some(ChannelId::zero())),
+        vec![ConnectionId::zero()],
         Version::new("ics20-1".to_string()),
     )
     .unwrap();
 
     let conn_end_on_a = ConnectionEnd::new(
         ConnectionState::Open,
-        ClientId::default(),
+        default_client_id.clone(),
         ConnectionCounterparty::new(
-            ClientId::default(),
-            Some(ConnectionId::default()),
-            Default::default(),
+            default_client_id.clone(),
+            Some(ConnectionId::zero()),
+            CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
-        get_compatible_versions(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();
@@ -91,16 +94,12 @@ fn send_packet_processing() {
             name: "Good parameters".to_string(),
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
-                    &ClientId::default(),
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
                     LightClientState::<MockHost>::with_latest_height(client_height),
                 )
-                .with_connection(ConnectionId::default(), conn_end_on_a.clone())
-                .with_channel(
-                    PortId::transfer(),
-                    ChannelId::default(),
-                    chan_end_on_a.clone(),
-                )
-                .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
+                .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
+                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet,
             want_pass: true,
         },
@@ -108,16 +107,12 @@ fn send_packet_processing() {
             name: "Packet timeout height same as destination chain height".to_string(),
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
-                    &ClientId::default(),
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
                     LightClientState::<MockHost>::with_latest_height(client_height),
                 )
-                .with_connection(ConnectionId::default(), conn_end_on_a.clone())
-                .with_channel(
-                    PortId::transfer(),
-                    ChannelId::default(),
-                    chan_end_on_a.clone(),
-                )
-                .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
+                .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
+                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_timeout_equal_client_height,
             want_pass: true,
         },
@@ -125,16 +120,12 @@ fn send_packet_processing() {
             name: "Packet timeout height one more than destination chain height".to_string(),
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
-                    &ClientId::default(),
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
                     LightClientState::<MockHost>::with_latest_height(client_height),
                 )
-                .with_connection(ConnectionId::default(), conn_end_on_a.clone())
-                .with_channel(
-                    PortId::transfer(),
-                    ChannelId::default(),
-                    chan_end_on_a.clone(),
-                )
-                .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
+                .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
+                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_timeout_one_before_client_height,
             want_pass: false,
         },
@@ -142,12 +133,12 @@ fn send_packet_processing() {
             name: "Packet timeout due to timestamp".to_string(),
             ctx: MockContext::<MockHost>::default()
                 .with_light_client(
-                    &ClientId::default(),
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
                     LightClientState::<MockHost>::with_latest_height(client_height),
                 )
-                .with_connection(ConnectionId::default(), conn_end_on_a)
-                .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_a)
-                .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into()),
+                .with_connection(ConnectionId::zero(), conn_end_on_a)
+                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
+                .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_with_timestamp_old,
             want_pass: false,
         },

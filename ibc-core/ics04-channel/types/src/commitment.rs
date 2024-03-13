@@ -124,7 +124,7 @@ mod test {
             0x4f, 0x84, 0xcc, 0x15,
         ];
         let actual = compute_packet_commitment(
-            "packet data".as_bytes(),
+            b"packet data",
             &TimeoutHeight::At(ibc_core_client_types::Height::new(42, 24).unwrap()),
             &Timestamp::from_nanoseconds(0x42).unwrap(),
         );

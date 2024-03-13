@@ -3,6 +3,8 @@ on:
   pull_request:
     paths:
       - .github/workflows/cw-check.yml
+      - Cargo.toml
+      - Cargo.lock
       - ci/cw-check/**
   push:
     tags:
@@ -22,7 +24,6 @@ on:
       - ibc-data-types/**
       - ibc-clients/**
       - ibc-primitives/**
-      - ibc-query/**
       - ibc-derive/**
 jobs:
   cw-check:

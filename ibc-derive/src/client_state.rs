@@ -24,7 +24,7 @@ pub(crate) struct ClientCtx {
 
 impl ClientCtx {
     fn new(ident: Ident, generics: Vec<GenericArgument>, predicates: Vec<WherePredicate>) -> Self {
-        ClientCtx {
+        Self {
             ident,
             generics,
             predicates,
@@ -73,8 +73,8 @@ impl Opts {
             return Err(Error::new_spanned(ast, MISSING_ATTR));
         }
 
-        for attr in ast.attrs.iter() {
-            if let syn::Meta::List(ref meta_list) = attr.meta {
+        for attr in &ast.attrs {
+            if let syn::Meta::List(meta_list) = &attr.meta {
                 let path: syn::Path = syn::parse2(meta_list.tokens.clone())?;
 
                 let path_segment = match path.segments.last() {
@@ -104,7 +104,7 @@ impl Opts {
         let client_execution_context = client_execution_context
             .ok_or_else(|| Error::new_spanned(ast, MISSING_EXECUTION_ATTR))?;
 
-        Ok(Opts {
+        Ok(Self {
             client_validation_context,
             client_execution_context,
         })
@@ -117,16 +117,13 @@ fn split_for_impl(
     let mut generics = vec![];
     let mut predicates = vec![];
 
-    if let syn::PathArguments::AngleBracketed(ref gen) = args {
-        for arg in gen.args.clone() {
+    if let syn::PathArguments::AngleBracketed(gen) = args {
+        for arg in gen.args {
             match arg.clone() {
-                syn::GenericArgument::Type(_) => {
+                GenericArgument::Type(_) | GenericArgument::Lifetime(_) => {
                     generics.push(arg);
                 }
-                syn::GenericArgument::Lifetime(_) => {
-                    generics.push(arg);
-                }
-                syn::GenericArgument::Constraint(c) => {
+                GenericArgument::Constraint(c) => {
                     let ident = c.ident.into_token_stream();
 
                     let gen = syn::parse2(ident.into_token_stream())?;
@@ -153,8 +150,8 @@ pub fn client_state_derive_impl(ast: DeriveInput, imports: &Imports) -> TokenStr
     };
 
     let enum_name = &ast.ident;
-    let enum_variants = match ast.data {
-        syn::Data::Enum(ref enum_data) => &enum_data.variants,
+    let enum_variants = match &ast.data {
+        syn::Data::Enum(enum_data) => &enum_data.variants,
         _ => panic!("ClientState only supports enums"),
     };
 

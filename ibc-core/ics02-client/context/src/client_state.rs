@@ -10,11 +10,17 @@ use ibc_core_host_types::path::Path;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
+/// Convenient trait to decode a client state from an `Any` type and obtain a
+/// handle to the local instance of `ClientState`.
+pub trait ClientStateDecoder: Into<Any> + TryFrom<Any, Error = ClientError> {}
+
+impl<T> ClientStateDecoder for T where T: Into<Any> + TryFrom<Any, Error = ClientError> {}
+
 /// `ClientState` methods needed in both validation and execution.
 ///
 /// They do not require access to a client `ValidationContext` nor
 /// `ExecutionContext`.
-pub trait ClientStateCommon {
+pub trait ClientStateCommon: ClientStateDecoder {
     /// Performs basic validation on the `consensus_state`.
     ///
     /// Notably, an implementation should verify that it can properly
@@ -90,7 +96,7 @@ pub trait ClientStateCommon {
 ///   // My Context methods
 /// }
 /// ```
-pub trait ClientStateValidation<V>
+pub trait ClientStateValidation<V>: ClientStateCommon
 where
     V: ClientValidationContext,
 {
@@ -126,7 +132,7 @@ where
 /// The generic type `E` enables light client developers to expand the set of
 /// methods available under the [`ClientExecutionContext`] trait and use them in
 /// their implementation for executing a client state transition.
-pub trait ClientStateExecution<E>
+pub trait ClientStateExecution<E>: ClientStateValidation<E>
 where
     E: ClientExecutionContext,
 {

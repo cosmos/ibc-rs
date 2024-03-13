@@ -16,9 +16,9 @@
 [![Build Status][build-image]][build-link]
 [![Code Coverage][codecov-image]][codecov-link]
 [![Apache 2.0 Licensed][license-image]][license-link]
-![Rust Stable][rustc-image]
-![Rust 1.64+][rustc-version]
-![Lines of Code][loc-image]
+![Version][crates-io-version]
+![Downloads][crates-io-downloads]
+![Rust Stable][msrv-image]
 
 </div>
 </div>
@@ -94,11 +94,11 @@ specific language governing permissions and limitations under the License.
 [build-link]: https://github.com/cosmos/ibc-rs/actions?query=workflow%3ARust
 [codecov-image]: https://codecov.io/gh/cosmos/ibc-rs/branch/main/graph/badge.svg?token=wUm2aLCOu
 [codecov-link]: https://codecov.io/gh/cosmos/ibc-rs
-[loc-image]: https://tokei.rs/b1/github/cosmos/ibc-rs
-[license-image]: https://img.shields.io/badge/license-Apache2.0-blue.svg
+[license-image]: https://img.shields.io/crates/l/ibc
 [license-link]: https://github.com/cosmos/ibc-rs/blob/main/LICENSE
-[rustc-image]: https://img.shields.io/badge/rustc-stable-blue.svg
-[rustc-version]: https://img.shields.io/badge/rustc-1.60+-blue.svg
+[crates-io-version]: https://img.shields.io/crates/v/ibc.svg
+[crates-io-downloads]: https://img.shields.io/crates/d/ibc.svg
+[msrv-image]: https://img.shields.io/crates/msrv/ibc
 
 [//]: # (general links)
 [ibc]: https://github.com/cosmos/ibc

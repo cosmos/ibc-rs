@@ -1,10 +1,10 @@
 //! Implementation of a global context mock. Used in testing handlers of all IBC modules.
 
-use alloc::fmt::Debug;
+use core::fmt::Debug;
 use core::time::Duration;
 
 use basecoin_store::context::ProvableStore;
-use basecoin_store::types::height::Height as StoreHeight;
+use basecoin_store::types::Height as StoreHeight;
 use ibc::core::channel::types::channel::{ChannelEnd, IdentifiedChannelEnd};
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::channel::types::error::{ChannelError, PacketError};
@@ -14,26 +14,24 @@ use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::error::ConnectionError;
-use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{ConnectionEnd, IdentifiedConnectionEnd};
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc::core::host::types::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
-    CommitmentPath, ConnectionPath, NextChannelSequencePath, NextClientSequencePath,
-    NextConnectionSequencePath, Path, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath,
+    NextChannelSequencePath, NextClientSequencePath, NextConnectionSequencePath, Path, ReceiptPath,
+    SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use ibc::core::host::{ExecutionContext, ValidationContext};
+use ibc::core::host::{ClientStateRef, ConsensusStateRef, ExecutionContext, ValidationContext};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::{Signer, Timestamp};
-use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
 use ibc_query::core::context::{ProvableContext, QueryContext};
 
-use super::types::MockGenericContext;
 use crate::hosts::{TestBlock, TestHeader, TestHost};
-use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
+use crate::testapp::ibc::clients::mock::client_state::MockClientState;
+use crate::testapp::ibc::core::types::MockGenericContext;
 use crate::testapp::ibc::utils::blocks_since;
 
 impl<S, H> ValidationContext for MockGenericContext<S, H>
@@ -42,44 +40,9 @@ where
     H: TestHost,
 {
     type V = Self;
-    type E = Self;
-    type AnyConsensusState = AnyConsensusState;
-    type AnyClientState = AnyClientState;
-
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, ContextError> {
-        Ok(self
-            .ibc_store
-            .client_state_store
-            .get(StoreHeight::Pending, &ClientStatePath(client_id.clone()))
-            .ok_or(ClientError::ClientStateNotFound {
-                client_id: client_id.clone(),
-            })?)
-    }
-
-    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, ContextError> {
-        Ok(AnyClientState::try_from(client_state)?)
-    }
-
-    fn consensus_state(
-        &self,
-        client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::AnyConsensusState, ContextError> {
-        let height = Height::new(
-            client_cons_state_path.revision_number,
-            client_cons_state_path.revision_height,
-        )
-        .map_err(|_| ClientError::InvalidHeight)?;
-        let consensus_state = self
-            .ibc_store
-            .consensus_state_store
-            .get(StoreHeight::Pending, client_cons_state_path)
-            .ok_or(ClientError::ConsensusStateNotFound {
-                client_id: client_cons_state_path.client_id.clone(),
-                height,
-            })?;
-
-        Ok(consensus_state)
-    }
+    type HostClientState = MockClientState;
+    type HostConsensusState =
+        <<<H as TestHost>::Block as TestBlock>::Header as TestHeader>::ConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
         // TODO(rano): height sync with block and merkle tree
@@ -92,10 +55,20 @@ where
         Ok(host_cons_state.timestamp())
     }
 
+    fn client_counter(&self) -> Result<u64, ContextError> {
+        Ok(self
+            .ibc_store
+            .client_counter
+            .get(StoreHeight::Pending, &NextClientSequencePath)
+            .ok_or(ClientError::Other {
+                description: "client counter not found".into(),
+            })?)
+    }
+
     fn host_consensus_state(
         &self,
         height: &Height,
-    ) -> Result<Self::AnyConsensusState, ContextError> {
+    ) -> Result<Self::HostConsensusState, ContextError> {
         // TODO(rano): height sync with block and merkle tree
         let height_delta = blocks_since(self.host_height().expect("no error"), *height)
             .expect("no error") as usize;
@@ -106,22 +79,57 @@ where
             .checked_sub(1 + height_delta)
             .ok_or(ClientError::MissingLocalConsensusState { height: *height })?;
 
-        let consensus_state = self.history[index]
+        Ok(self.history[index]
             .clone()
             .into_header()
-            .into_consensus_state()
-            .into();
-        Ok(consensus_state)
+            .into_consensus_state())
     }
 
-    fn client_counter(&self) -> Result<u64, ContextError> {
-        Ok(self
-            .ibc_store
-            .client_counter
-            .get(StoreHeight::Pending, &NextClientSequencePath)
-            .ok_or(ClientError::Other {
-                description: "client counter not found".into(),
-            })?)
+    fn validate_self_client(
+        &self,
+        client_state_of_host_on_counterparty: Self::HostClientState,
+    ) -> Result<(), ContextError> {
+        if client_state_of_host_on_counterparty.is_frozen() {
+            return Err(ClientError::ClientFrozen {
+                description: String::new(),
+            }
+            .into());
+        }
+
+        let self_chain_id = &self.host.chain_id();
+        let self_revision_number = self_chain_id.revision_number();
+        if self_revision_number
+            != client_state_of_host_on_counterparty
+                .latest_height()
+                .revision_number()
+        {
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client is not in the same revision as the chain. expected: {}, got: {}",
+                        self_revision_number,
+                        client_state_of_host_on_counterparty
+                            .latest_height()
+                            .revision_number()
+                    ),
+                },
+            ));
+        }
+
+        let host_current_height = self.latest_height().increment();
+        if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client has latest height {} greater than or equal to chain height {}",
+                        client_state_of_host_on_counterparty.latest_height(),
+                        host_current_height
+                    ),
+                },
+            ));
+        }
+
+        Ok(())
     }
 
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
@@ -134,14 +142,10 @@ where
             })?)
     }
 
-    fn validate_self_client(&self, _counterparty_client_state: Any) -> Result<(), ContextError> {
-        Ok(())
-    }
-
     fn commitment_prefix(&self) -> CommitmentPrefix {
         // this is prefix of ibc store
-        // using default, as in our mock context, we don't store any other data
-        CommitmentPrefix::default()
+        // using a dummy prefix as in our mock context
+        CommitmentPrefix::try_from(b"mock".to_vec()).expect("Never fails")
     }
 
     fn connection_counter(&self) -> Result<u64, ContextError> {
@@ -154,69 +158,61 @@ where
             })?)
     }
 
-    fn get_compatible_versions(&self) -> Vec<ConnectionVersion> {
-        vec![ConnectionVersion::default()]
-    }
-
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
-        let channel_end = self
+        Ok(self
             .ibc_store
             .channel_end_store
             .get(
                 StoreHeight::Pending,
                 &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
             )
-            .ok_or(ChannelError::MissingChannel)?;
-        Ok(channel_end)
+            .ok_or(ChannelError::MissingChannel)?)
     }
 
     fn get_next_sequence_send(
         &self,
         seq_send_path: &SeqSendPath,
     ) -> Result<Sequence, ContextError> {
-        let seq_send = self
+        Ok(self
             .ibc_store
             .send_sequence_store
             .get(
                 StoreHeight::Pending,
                 &SeqSendPath::new(&seq_send_path.0, &seq_send_path.1),
             )
-            .ok_or(PacketError::ImplementationSpecific)?;
-        Ok(seq_send)
+            .ok_or(PacketError::ImplementationSpecific)?)
     }
 
     fn get_next_sequence_recv(
         &self,
         seq_recv_path: &SeqRecvPath,
     ) -> Result<Sequence, ContextError> {
-        let seq_recv = self
+        Ok(self
             .ibc_store
             .recv_sequence_store
             .get(
                 StoreHeight::Pending,
                 &SeqRecvPath::new(&seq_recv_path.0, &seq_recv_path.1),
             )
-            .ok_or(PacketError::ImplementationSpecific)?;
-        Ok(seq_recv)
+            .ok_or(PacketError::ImplementationSpecific)?)
     }
 
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError> {
-        let seq_ack = self
+        Ok(self
             .ibc_store
             .ack_sequence_store
             .get(
                 StoreHeight::Pending,
                 &SeqAckPath::new(&seq_ack_path.0, &seq_ack_path.1),
             )
-            .ok_or(PacketError::ImplementationSpecific)?;
-        Ok(seq_ack)
+            .ok_or(PacketError::ImplementationSpecific)?)
     }
 
     fn get_packet_commitment(
         &self,
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, ContextError> {
-        let commitment = self
+        Ok(self
             .ibc_store
             .packet_commitment_store
             .get(
@@ -227,12 +223,11 @@ where
                     commitment_path.sequence,
                 ),
             )
-            .ok_or(PacketError::ImplementationSpecific)?;
-        Ok(commitment)
+            .ok_or(PacketError::ImplementationSpecific)?)
     }
 
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError> {
-        let receipt = self
+        Ok(self
             .ibc_store
             .packet_receipt_store
             .is_path_set(
@@ -246,15 +241,14 @@ where
             .then_some(Receipt::Ok)
             .ok_or(PacketError::PacketReceiptNotFound {
                 sequence: receipt_path.sequence,
-            })?;
-        Ok(receipt)
+            })?)
     }
 
     fn get_packet_acknowledgement(
         &self,
         ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, ContextError> {
-        let ack = self
+        Ok(self
             .ibc_store
             .packet_ack_store
             .get(
@@ -263,8 +257,7 @@ where
             )
             .ok_or(PacketError::PacketAcknowledgementNotFound {
                 sequence: ack_path.sequence,
-            })?;
-        Ok(ack)
+            })?)
     }
 
     /// Returns a counter on the number of channel ids have been created thus far.
@@ -316,7 +309,7 @@ where
     H: TestHost,
 {
     /// Returns the list of all client states.
-    fn client_states(&self) -> Result<Vec<(ClientId, Self::AnyClientState)>, ContextError> {
+    fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, ContextError> {
         let path = "clients".to_owned().into();
 
         self.ibc_store
@@ -347,7 +340,7 @@ where
     fn consensus_states(
         &self,
         client_id: &ClientId,
-    ) -> Result<Vec<(Height, Self::AnyConsensusState)>, ContextError> {
+    ) -> Result<Vec<(Height, ConsensusStateRef<Self>)>, ContextError> {
         let path = format!("clients/{}/consensusStates", client_id)
             .try_into()
             .map_err(|_| ClientError::Other {
@@ -670,6 +663,12 @@ where
     S: ProvableStore + Debug,
     H: TestHost,
 {
+    type E = Self;
+
+    fn get_client_execution_context(&mut self) -> &mut Self::E {
+        self
+    }
+
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
     /// Should never fail.
@@ -762,8 +761,13 @@ where
         Ok(())
     }
 
-    fn delete_packet_commitment(&mut self, key: &CommitmentPath) -> Result<(), ContextError> {
-        self.ibc_store.packet_commitment_store.delete(key.clone());
+    fn delete_packet_commitment(
+        &mut self,
+        commitment_path: &CommitmentPath,
+    ) -> Result<(), ContextError> {
+        self.ibc_store
+            .packet_commitment_store
+            .delete(commitment_path.clone());
         Ok(())
     }
 
@@ -796,7 +800,6 @@ where
         Ok(())
     }
 
-    /// Stores the given channel_end at a path associated with the port_id and channel_id.
     fn store_channel(
         &mut self,
         channel_end_path: &ChannelEndPath,
@@ -874,9 +877,5 @@ where
     fn log_message(&mut self, message: String) -> Result<(), ContextError> {
         self.ibc_store.logs.lock().push(message);
         Ok(())
-    }
-
-    fn get_client_execution_context(&mut self) -> &mut Self::E {
-        self
     }
 }

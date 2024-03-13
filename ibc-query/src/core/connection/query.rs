@@ -4,12 +4,13 @@ use alloc::format;
 use alloc::vec::Vec;
 use core::str::FromStr;
 
+use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::host::types::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
-use ibc::core::host::ValidationContext;
+use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
 use ibc_proto::ibc::core::connection::v1::{
@@ -78,7 +79,6 @@ pub fn query_client_connections<I>(
 ) -> Result<QueryClientConnectionsResponse, QueryError>
 where
     I: QueryContext,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
 {
     let client_id = ClientId::from_str(request.client_id.as_str())?;
 
@@ -109,13 +109,14 @@ pub fn query_connection_client_state<I>(
 ) -> Result<QueryConnectionClientStateResponse, QueryError>
 where
     I: QueryContext,
-    <I as ValidationContext>::AnyClientState: Into<Any>,
 {
     let connection_id = ConnectionId::from_str(request.connection_id.as_str())?;
 
     let connection_end = ibc_ctx.connection_end(&connection_id)?;
 
-    let client_state = ibc_ctx.client_state(connection_end.client_id())?;
+    let client_val_ctx = ibc_ctx.get_client_validation_context();
+
+    let client_state = client_val_ctx.client_state(connection_end.client_id())?;
 
     let current_height = ibc_ctx.host_height()?;
 
@@ -148,7 +149,7 @@ pub fn query_connection_consensus_state<I>(
 ) -> Result<QueryConnectionConsensusStateResponse, QueryError>
 where
     I: ValidationContext + ProvableContext,
-    <I as ValidationContext>::AnyConsensusState: Into<Any>,
+    ConsensusStateRef<I>: Into<Any>,
 {
     let connection_id = ConnectionId::from_str(request.connection_id.as_str())?;
 
@@ -162,7 +163,9 @@ where
         height.revision_height(),
     );
 
-    let consensus_state = ibc_ctx.consensus_state(&consensus_path)?;
+    let client_val_ctx = ibc_ctx.get_client_validation_context();
+
+    let consensus_state = client_val_ctx.consensus_state(&consensus_path)?;
 
     let current_height = ibc_ctx.host_height()?;
 

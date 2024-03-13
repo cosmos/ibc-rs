@@ -1,6 +1,6 @@
 use ibc::core::channel::types::msgs::{ChannelMsg, MsgChannelOpenTry};
 use ibc::core::client::types::Height;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -40,7 +40,7 @@ fn fixture() -> Fixture {
         ConnectionState::Open,
         client_id_on_b.clone(),
         ConnectionCounterparty::try_from(dummy_raw_counterparty_conn(Some(0))).unwrap(),
-        get_compatible_versions(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();

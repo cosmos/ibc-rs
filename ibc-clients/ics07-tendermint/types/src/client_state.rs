@@ -176,12 +176,8 @@ impl ClientState {
             });
         }
 
-        // Disallow empty proof-specs
-        if self.proof_specs.is_empty() {
-            return Err(Error::Validation {
-                reason: "ClientState proof-specs cannot be empty".to_string(),
-            });
-        }
+        // Sanity checks on client proof specs
+        self.proof_specs.validate()?;
 
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty
         for (idx, key) in self.upgrade_path.iter().enumerate() {
@@ -324,12 +320,10 @@ impl From<ClientState> for RawTmClientState {
             // decode the `ClientState` value. In `RawClientState`, a
             // `frozen_height` of `0` means "not frozen". See:
             // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-            frozen_height: Some(value.frozen_height.map(|height| height.into()).unwrap_or(
-                RawHeight {
-                    revision_number: 0,
-                    revision_height: 0,
-                },
-            )),
+            frozen_height: Some(value.frozen_height.map(Into::into).unwrap_or(RawHeight {
+                revision_number: 0,
+                revision_height: 0,
+            })),
             latest_height: Some(value.latest_height.into()),
             proof_specs: value.proof_specs.into(),
             upgrade_path: value.upgrade_path,
@@ -441,11 +435,11 @@ mod tests {
             id: ChainId::new("ibc-0").unwrap(),
             trust_level: TrustThreshold::ONE_THIRD,
             trusting_period: Duration::new(64000, 0),
-            unbonding_period: Duration::new(128000, 0),
+            unbonding_period: Duration::new(128_000, 0),
             max_clock_drift: Duration::new(3, 0),
             latest_height: Height::new(0, 10).expect("Never fails"),
-            proof_specs: ProofSpecs::default(),
-            upgrade_path: Default::default(),
+            proof_specs: ProofSpecs::cosmos(),
+            upgrade_path: Vec::new(),
             allow_update: AllowUpdate {
                 after_expiry: false,
                 after_misbehaviour: false,
@@ -565,7 +559,21 @@ mod tests {
             Test {
                 name: "Invalid (empty) proof specs".to_string(),
                 params: ClientStateParams {
-                    proof_specs: ProofSpecs::from(Vec::<Ics23ProofSpec>::new()),
+                    proof_specs: Vec::<Ics23ProofSpec>::new().into(),
+                    ..default_params.clone()
+                },
+                want_pass: false,
+            },
+            Test {
+                name: "Invalid (empty) proof specs depth range".to_string(),
+                params: ClientStateParams {
+                    proof_specs: vec![Ics23ProofSpec {
+                        leaf_spec: None,
+                        inner_spec: None,
+                        min_depth: 2,
+                        max_depth: 1,
+                        prehash_key_before_comparison: false,
+                    }].into(),
                     ..default_params
                 },
                 want_pass: false,

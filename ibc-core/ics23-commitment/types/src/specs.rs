@@ -2,6 +2,8 @@
 
 use ibc_primitives::prelude::*;
 use ibc_proto::ics23::{InnerSpec as RawInnerSpec, LeafOp as RawLeafOp, ProofSpec as RawProofSpec};
+
+use crate::error::CommitmentError;
 /// An array of proof specifications.
 ///
 /// This type encapsulates different types of proof specifications, mostly predefined, e.g., for
@@ -23,28 +25,35 @@ impl ProofSpecs {
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
-}
 
-impl Default for ProofSpecs {
-    fn default() -> Self {
-        Self::cosmos()
+    pub fn validate(&self) -> Result<(), CommitmentError> {
+        if self.is_empty() {
+            return Err(CommitmentError::EmptyProofSpecs);
+        }
+        for proof_spec in &self.0 {
+            if proof_spec.0.max_depth < proof_spec.0.min_depth
+                || proof_spec.0.min_depth < 0
+                || proof_spec.0.max_depth < 0
+            {
+                return Err(CommitmentError::InvalidDepthRange(
+                    proof_spec.0.min_depth,
+                    proof_spec.0.max_depth,
+                ));
+            }
+        }
+        Ok(())
     }
 }
 
 impl From<Vec<RawProofSpec>> for ProofSpecs {
     fn from(ics23_specs: Vec<RawProofSpec>) -> Self {
-        Self(
-            ics23_specs
-                .into_iter()
-                .map(|ics23_spec| ics23_spec.into())
-                .collect(),
-        )
+        Self(ics23_specs.into_iter().map(Into::into).collect())
     }
 }
 
 impl From<ProofSpecs> for Vec<RawProofSpec> {
     fn from(specs: ProofSpecs) -> Self {
-        specs.0.into_iter().map(|spec| spec.into()).collect()
+        specs.0.into_iter().map(Into::into).collect()
     }
 }
 

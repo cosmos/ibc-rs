@@ -162,6 +162,10 @@ impl CommitmentPrefix {
     pub fn into_vec(self) -> Vec<u8> {
         self.bytes
     }
+
+    pub fn empty() -> Self {
+        Self { bytes: Vec::new() }
+    }
 }
 
 impl TryFrom<Vec<u8>> for CommitmentPrefix {

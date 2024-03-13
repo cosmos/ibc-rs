@@ -4,7 +4,8 @@ use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::Version;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
-use ibc::core::connection::types::version::get_compatible_versions;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::{
     ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
 };
@@ -31,10 +32,13 @@ pub struct Fixture {
     pub msg: MsgRecvPacket,
     pub conn_end_on_b: ConnectionEnd,
     pub chan_end_on_b: ChannelEnd,
+    pub client_id: ClientId,
 }
 
 #[fixture]
 fn fixture() -> Fixture {
+    let client_id = ClientId::new("07-tendermint", 0).expect("no error");
+
     let context = MockContext::<MockHost>::default();
 
     let router = MockRouter::new_with_transfer();
@@ -50,22 +54,22 @@ fn fixture() -> Fixture {
 
     let chan_end_on_b = ChannelEnd::new(
         State::Open,
-        Order::default(),
+        Order::Unordered,
         Counterparty::new(packet.port_id_on_a, Some(packet.chan_id_on_a)),
-        vec![ConnectionId::default()],
+        vec![ConnectionId::zero()],
         Version::new("ics20-1".to_string()),
     )
     .unwrap();
 
     let conn_end_on_b = ConnectionEnd::new(
         ConnectionState::Open,
-        ClientId::default(),
+        client_id.clone(),
         ConnectionCounterparty::new(
-            ClientId::default(),
-            Some(ConnectionId::default()),
-            Default::default(),
+            client_id.clone(),
+            Some(ConnectionId::zero()),
+            CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
-        get_compatible_versions(),
+        ConnectionVersion::compatibles(),
         ZERO_DURATION,
     )
     .unwrap();
@@ -78,6 +82,7 @@ fn fixture() -> Fixture {
         msg,
         conn_end_on_b,
         chan_end_on_b,
+        client_id,
     }
 }
 
@@ -110,16 +115,17 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
         chan_end_on_b,
         client_height,
         host_height,
+        client_id,
         ..
     } = fixture;
 
     let packet = &msg.packet;
     let mut context = context
         .with_light_client(
-            &ClientId::default(),
+            &ClientId::new("07-tendermint", 0).expect("no error"),
             LightClientState::<MockHost>::with_latest_height(client_height),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_b)
+        .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(
             packet.port_id_on_b.clone(),
             packet.chan_id_on_b.clone(),
@@ -141,7 +147,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
     context
         .get_client_execution_context()
         .store_update_meta(
-            ClientId::default(),
+            client_id,
             client_height,
             Timestamp::from_nanoseconds(1000).unwrap(),
             Height::new(0, 5).unwrap(),
@@ -174,9 +180,9 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
     let packet_old = Packet {
         seq_on_a: 1.into(),
         port_id_on_a: PortId::transfer(),
-        chan_id_on_a: ChannelId::default(),
+        chan_id_on_a: ChannelId::zero(),
         port_id_on_b: PortId::transfer(),
-        chan_id_on_b: ChannelId::default(),
+        chan_id_on_b: ChannelId::zero(),
         data: Vec::new(),
         timeout_height_on_b: client_height.into(),
         timeout_timestamp_on_b: Timestamp::from_nanoseconds(1).unwrap(),
@@ -193,12 +199,12 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
 
     let context = context
         .with_light_client(
-            &ClientId::default(),
+            &ClientId::new("07-tendermint", 0).expect("no error"),
             LightClientState::<MockHost>::with_latest_height(client_height),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_b)
-        .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_b)
-        .with_send_sequence(PortId::transfer(), ChannelId::default(), 1.into())
+        .with_connection(ConnectionId::zero(), conn_end_on_b)
+        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b)
+        .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into())
         .with_height(host_height);
 
     let res = validate(&context, &router, msg_envelope);
@@ -222,11 +228,11 @@ fn recv_packet_execute_happy_path(fixture: Fixture) {
     } = fixture;
     let mut ctx = context
         .with_light_client(
-            &ClientId::default(),
+            &ClientId::new("07-tendermint", 0).expect("no error"),
             LightClientState::<MockHost>::with_latest_height(client_height),
         )
-        .with_connection(ConnectionId::default(), conn_end_on_b)
-        .with_channel(PortId::transfer(), ChannelId::default(), chan_end_on_b);
+        .with_connection(ConnectionId::zero(), conn_end_on_b)
+        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b);
 
     let msg_env = MsgEnvelope::from(PacketMsg::from(msg));
 

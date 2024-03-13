@@ -1306,6 +1306,7 @@ dependencies = [
 name = "ibc-client-tendermint"
 version = "0.50.0"
 dependencies = [
+ "derive_more",
  "ibc-client-tendermint-types",
  "ibc-core-client",
  "ibc-core-commitment-types",
