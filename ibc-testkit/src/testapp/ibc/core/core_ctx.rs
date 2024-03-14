@@ -73,47 +73,48 @@ where
 
     fn validate_self_client(
         &self,
-        _client_state_of_host_on_counterparty: Self::HostClientState,
+        client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
-        // if client_state_of_host_on_counterparty.is_frozen() {
-        //     return Err(ClientError::ClientFrozen {
-        //         description: String::new(),
-        //     }
-        //     .into());
-        // }
+        if client_state_of_host_on_counterparty.is_frozen() {
+            return Err(ClientError::ClientFrozen {
+                description: String::new(),
+            }
+            .into());
+        }
 
-        // let self_chain_id = &self.host.chain_id();
-        // let self_revision_number = self_chain_id.revision_number();
-        // if self_revision_number
-        //     != client_state_of_host_on_counterparty
-        //         .latest_height()
-        //         .revision_number()
-        // {
-        //     return Err(ContextError::ConnectionError(
-        //         ConnectionError::InvalidClientState {
-        //             reason: format!(
-        //                 "client is not in the same revision as the chain. expected: {}, got: {}",
-        //                 self_revision_number,
-        //                 client_state_of_host_on_counterparty
-        //                     .latest_height()
-        //                     .revision_number()
-        //             ),
-        //         },
-        //     ));
-        // }
+        let latest_height = self.host_height()?;
 
-        // let host_current_height = self.latest_height().increment();
-        // if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
-        //     return Err(ContextError::ConnectionError(
-        //         ConnectionError::InvalidClientState {
-        //             reason: format!(
-        //                 "client has latest height {} greater than or equal to chain height {}",
-        //                 client_state_of_host_on_counterparty.latest_height(),
-        //                 host_current_height
-        //             ),
-        //         },
-        //     ));
-        // }
+        let self_revision_number = latest_height.revision_number();
+        if self_revision_number
+            != client_state_of_host_on_counterparty
+                .latest_height()
+                .revision_number()
+        {
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client is not in the same revision as the chain. expected: {}, got: {}",
+                        self_revision_number,
+                        client_state_of_host_on_counterparty
+                            .latest_height()
+                            .revision_number()
+                    ),
+                },
+            ));
+        }
+
+        let host_current_height = latest_height.increment();
+        if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
+            return Err(ContextError::ConnectionError(
+                ConnectionError::InvalidClientState {
+                    reason: format!(
+                        "client has latest height {} greater than or equal to chain height {}",
+                        client_state_of_host_on_counterparty.latest_height(),
+                        host_current_height
+                    ),
+                },
+            ));
+        }
 
         Ok(())
     }
