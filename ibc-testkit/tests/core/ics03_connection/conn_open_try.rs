@@ -6,12 +6,13 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_try;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientState, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientState};
 use test_log::test;
 
 enum Ctx {

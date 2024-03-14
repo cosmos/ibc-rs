@@ -14,9 +14,10 @@ use ibc::core::connection::types::{
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
 use ibc_testkit::hosts::MockHost;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use test_log::test;
 
 #[test]

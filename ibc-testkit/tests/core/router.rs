@@ -22,6 +22,7 @@ use ibc::core::host::types::path::CommitmentPath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::applications::transfer::{
     extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
 };
@@ -43,7 +44,6 @@ use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
 use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
 use test_log::test;
 
 #[test]

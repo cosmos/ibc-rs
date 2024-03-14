@@ -12,10 +12,11 @@ use ibc::core::entrypoint::validate;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout_on_close;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
 
 pub struct Fixture {

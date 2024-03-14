@@ -24,6 +24,7 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
+use ibc_testkit::context::{MockClientConfig, MockContext};
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::tendermint::BlockParams;
@@ -35,9 +36,7 @@ use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
 use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{
-    LightClientBuilder, LightClientState, MockClientConfig, MockContext, MockIbcStore,
-};
+use ibc_testkit::testapp::ibc::core::types::{LightClientBuilder, LightClientState, MockIbcStore};
 use rstest::*;
 use tendermint_testgen::Validator as TestgenValidator;
 

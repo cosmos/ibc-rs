@@ -9,9 +9,9 @@ use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 
+use crate::context::MockGenericContext;
 use crate::hosts::TestHost;
 use crate::testapp::ibc::clients::AnyClientState;
-use crate::testapp::ibc::core::types::MockGenericContext;
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
 /// relay packets between chains. This trait comprises the dependencies towards a single chain.
 /// Most of the functions in this represent wrappers over the ABCI interface.
@@ -62,13 +62,14 @@ mod tests {
     use tracing::debug;
 
     use super::RelayerContext;
+    use crate::context::MockContext;
     use crate::fixtures::core::context::MockContextConfig;
     use crate::hosts::{MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
     use crate::relayer::context::ClientId;
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::testapp::ibc::core::types::{LightClientBuilder, MockContext};
+    use crate::testapp::ibc::core::types::LightClientBuilder;
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.

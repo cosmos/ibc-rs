@@ -1,4 +1,6 @@
+use alloc::sync::Arc;
 use alloc::vec::Vec;
+use std::sync::Mutex;
 
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
@@ -15,7 +17,7 @@ pub struct MockHost {
 
     /// The chain of blocks underlying this context. A vector of size up to `max_history_size`
     /// blocks, ascending order by their height (latest block is on the last position).
-    history: Vec<MockHeader>,
+    history: Arc<Mutex<Vec<MockHeader>>>,
 }
 
 impl TestHost for MockHost {
@@ -27,7 +29,7 @@ impl TestHost for MockHost {
     fn with_chain_id(chain_id: ChainId) -> Self {
         Self {
             chain_id,
-            history: Vec::new(),
+            history: Arc::new(Mutex::new(Vec::new())),
         }
     }
 
@@ -36,7 +38,7 @@ impl TestHost for MockHost {
     }
 
     fn history(&self) -> Vec<Self::Block> {
-        self.history.clone()
+        self.history.lock().expect("lock").clone()
     }
 
     fn generate_block(

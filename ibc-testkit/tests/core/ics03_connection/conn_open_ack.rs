@@ -14,12 +14,13 @@ use ibc::core::host::types::identifiers::{ChainId, ClientId};
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_ack;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext, MockIbcStore};
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockIbcStore};
 use test_log::test;
 
 enum Ctx {

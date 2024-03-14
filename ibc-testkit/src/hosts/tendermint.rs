@@ -21,8 +21,8 @@ use tendermint_testgen::{
 };
 
 use super::{TestBlock, TestHeader, TestHost};
+use crate::context::MockClientConfig;
 use crate::fixtures::clients::tendermint::ClientStateConfig;
-use crate::testapp::ibc::core::types::MockClientConfig;
 
 #[derive(Debug)]
 pub struct TendermintHost {
@@ -57,7 +57,7 @@ impl TestHost for TendermintHost {
     }
 
     fn history(&self) -> Vec<Self::Block> {
-        self.history.lock().unwrap().clone()
+        self.history.lock().expect("lock").clone()
     }
 
     fn generate_block(

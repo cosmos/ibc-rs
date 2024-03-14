@@ -10,8 +10,9 @@ use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use typed_builder::TypedBuilder;
 
+use crate::context::MockGenericContext;
 use crate::hosts::TestHost;
-use crate::testapp::ibc::core::types::{MockGenericContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
+use crate::testapp::ibc::core::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 use crate::utils::year_2023;
 
 /// Configuration of the `MockContext` type for generating dummy contexts.
