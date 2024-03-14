@@ -37,6 +37,14 @@ pub(crate) fn impl_ClientStateValidation(
         imports,
     );
 
+    let check_substitute_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        opts,
+        quote! { check_substitute(cs, ctx, substitute_client_id) },
+        imports,
+    );
+
     // The imports we need for the generated code.
     let Any = imports.any();
     let ClientId = imports.client_id();
@@ -87,7 +95,16 @@ pub(crate) fn impl_ClientStateValidation(
                 match self {
                     #(#status_impl),*
                 }
+            }
 
+            fn check_substitute(
+                &self,
+                ctx: &#ClientValidationContext,
+                substitute_client_state: #ClientValidationContext::ClientStateRef,
+            ) -> core::result::Result<(), #ClientError> {
+                match self {
+                    #(#check_substitute_impl),*
+                }
             }
         }
 

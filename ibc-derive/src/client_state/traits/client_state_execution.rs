@@ -43,6 +43,14 @@ pub(crate) fn impl_ClientStateExecution(
         imports,
     );
 
+    let update_on_recovery_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        opts,
+        quote! { update_state_on_misbehaviour(cs, ctx, client_id, substitute_client_state) },
+        imports,
+    );
+
     // The imports we need for the generated code.
     let Any = imports.any();
     let ClientId = imports.client_id();
@@ -105,6 +113,17 @@ pub(crate) fn impl_ClientStateExecution(
             ) -> core::result::Result<#Height, #ClientError> {
                 match self {
                     #(#update_state_with_upgrade_client_impl),*
+                }
+            }
+
+            fn update_on_recovery(
+                &self,
+                ctx: &mut #ClientExecutionContext,
+                subject_client_id: &#ClientId,
+                substitute_client_id: #ClientExecutionContext::ClientStateMut,
+            ) -> core::result::Result<(), #ClientError> {
+                match self {
+                    #(#update_on_recovery_impl),*
                 }
             }
         }
