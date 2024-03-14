@@ -2,7 +2,6 @@ use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State}
 use ibc::core::channel::types::commitment::{compute_packet_commitment, PacketCommitment};
 use ibc::core::channel::types::msgs::{MsgTimeout, PacketMsg};
 use ibc::core::channel::types::Version;
-use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::version::Version as ConnectionVersion;
@@ -13,7 +12,6 @@ use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
-use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
 use ibc_testkit::hosts::MockHost;
@@ -30,7 +28,6 @@ struct Fixture {
     conn_end_on_a: ConnectionEnd,
     chan_end_on_a_ordered: ChannelEnd,
     chan_end_on_a_unordered: ChannelEnd,
-    client_id: ClientId,
 }
 
 #[fixture]
@@ -101,7 +98,6 @@ fn fixture() -> Fixture {
         conn_end_on_a,
         chan_end_on_a_ordered,
         chan_end_on_a_unordered,
-        client_id,
     }
 }
 
@@ -174,7 +170,6 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         chan_end_on_a_unordered,
         conn_end_on_a,
         client_height,
-        client_id,
         ..
     } = fixture;
 
@@ -190,7 +185,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
 
     let packet = msg.packet.clone();
 
-    let mut ctx = ctx
+    let ctx = ctx
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
             LightClientState::<MockHost>::with_latest_height(client_height),
@@ -207,15 +202,6 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
             packet.seq_on_a,
             packet_commitment,
         );
-
-    ctx.ibc_store
-        .store_update_meta(
-            client_id,
-            client_height,
-            Timestamp::from_nanoseconds(5).unwrap(),
-            Height::new(0, 4).unwrap(),
-        )
-        .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
@@ -266,13 +252,12 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
         conn_end_on_a,
         packet_commitment,
         client_height,
-        client_id,
         ..
     } = fixture;
 
     let packet = msg.packet.clone();
 
-    let mut ctx = ctx
+    let ctx = ctx
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
             LightClientState::<MockHost>::with_latest_height(client_height),
@@ -289,16 +274,6 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
             packet.seq_on_a,
             packet_commitment,
         );
-
-    ctx.ibc_store
-        .get_client_execution_context()
-        .store_update_meta(
-            client_id,
-            client_height,
-            Timestamp::from_nanoseconds(1000).unwrap(),
-            Height::new(0, 5).unwrap(),
-        )
-        .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
@@ -317,13 +292,12 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
         conn_end_on_a,
         packet_commitment,
         client_height,
-        client_id,
         ..
     } = fixture;
 
     let packet = msg.packet.clone();
 
-    let mut ctx = ctx
+    let ctx = ctx
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
             LightClientState::<MockHost>::with_latest_height(client_height),
@@ -336,15 +310,6 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
             packet.seq_on_a,
             packet_commitment,
         );
-
-    ctx.ibc_store
-        .store_update_meta(
-            client_id,
-            client_height,
-            Timestamp::from_nanoseconds(1000).unwrap(),
-            Height::new(0, 4).unwrap(),
-        )
-        .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 

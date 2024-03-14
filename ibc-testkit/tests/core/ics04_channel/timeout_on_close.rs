@@ -2,7 +2,6 @@ use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State}
 use ibc::core::channel::types::commitment::{compute_packet_commitment, PacketCommitment};
 use ibc::core::channel::types::msgs::{MsgTimeoutOnClose, PacketMsg};
 use ibc::core::channel::types::Version;
-use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::version::Version as ConnectionVersion;
@@ -12,7 +11,6 @@ use ibc::core::connection::types::{
 use ibc::core::entrypoint::validate;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
-use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout_on_close;
 use ibc_testkit::hosts::MockHost;
@@ -133,8 +131,6 @@ fn timeout_on_close_success_no_packet_commitment(fixture: Fixture) {
 
 #[rstest]
 fn timeout_on_close_success_happy_path(fixture: Fixture) {
-    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
-
     let Fixture {
         context,
         router,
@@ -144,7 +140,7 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
         chan_end_on_a,
         ..
     } = fixture;
-    let mut context = context
+    let context = context
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
@@ -153,17 +149,6 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
             msg.packet.seq_on_a,
             packet_commitment,
         );
-
-    context
-        .ibc_store
-        .get_client_execution_context()
-        .store_update_meta(
-            default_client_id,
-            Height::new(0, 2).unwrap(),
-            Timestamp::from_nanoseconds(5000).unwrap(),
-            Height::new(0, 5).unwrap(),
-        )
-        .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 

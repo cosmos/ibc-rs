@@ -2,7 +2,6 @@ use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State}
 use ibc::core::channel::types::msgs::{MsgRecvPacket, PacketMsg};
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::Version;
-use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::version::Version as ConnectionVersion;
@@ -13,7 +12,6 @@ use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
-use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
 use ibc_testkit::fixtures::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
@@ -115,12 +113,11 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
         chan_end_on_b,
         client_height,
         host_height,
-        client_id,
         ..
     } = fixture;
 
     let packet = &msg.packet;
-    let mut context = context
+    let context = context
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
             LightClientState::<MockHost>::with_latest_height(client_height),
@@ -143,17 +140,6 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
             packet.chan_id_on_b.clone(),
             packet.seq_on_a,
         );
-
-    context
-        .ibc_store
-        .get_client_execution_context()
-        .store_update_meta(
-            client_id,
-            client_height,
-            Timestamp::from_nanoseconds(1000).unwrap(),
-            Height::new(0, 5).unwrap(),
-        )
-        .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 

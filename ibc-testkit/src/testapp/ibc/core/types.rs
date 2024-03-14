@@ -348,6 +348,15 @@ where
 
         for (height, consensus_state) in light_client.consensus_states {
             self = self.with_consensus_state(client_id, height, consensus_state.into());
+
+            self.ibc_store
+                .store_update_meta(
+                    client_id.clone(),
+                    height,
+                    self.latest_timestamp(),
+                    self.latest_height(),
+                )
+                .expect("error writing to store");
         }
 
         self
