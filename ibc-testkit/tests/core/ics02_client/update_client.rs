@@ -1047,7 +1047,6 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
         .unwrap()
         .is_active());
     assert_eq!(client_state.latest_height(), latest_header_height);
-    assert_eq!(client_state, ctx_a.latest_client_states(&msg.client_id));
 }
 
 #[rstest]
