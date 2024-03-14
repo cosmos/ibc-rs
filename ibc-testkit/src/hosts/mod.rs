@@ -161,14 +161,10 @@ pub trait TestBlock: Clone + Debug {
     }
 
     /// The height of the block.
-    fn height(&self) -> Height {
-        self.clone().into_header().height()
-    }
+    fn height(&self) -> Height;
 
     /// The timestamp of the block.
-    fn timestamp(&self) -> Timestamp {
-        self.clone().into_header().timestamp()
-    }
+    fn timestamp(&self) -> Timestamp;
 }
 
 /// TestHeader is a trait that defines the interface for a header produced by a host blockchain.

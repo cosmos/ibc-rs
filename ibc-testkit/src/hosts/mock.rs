@@ -64,6 +64,14 @@ impl TestHost for MockHost {
 
 impl TestBlock for MockHeader {
     type Header = MockHeader;
+
+    fn height(&self) -> Height {
+        self.height
+    }
+
+    fn timestamp(&self) -> Timestamp {
+        self.timestamp
+    }
 }
 
 impl From<MockHeader> for MockConsensusState {

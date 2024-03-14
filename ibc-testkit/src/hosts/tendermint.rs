@@ -113,6 +113,20 @@ impl TendermintBlock {
 
 impl TestBlock for TendermintBlock {
     type Header = TendermintHeader;
+
+    fn height(&self) -> Height {
+        Height::new(
+            ChainId::from_str(self.0.signed_header.header.chain_id.as_str())
+                .expect("Never fails")
+                .revision_number(),
+            self.0.signed_header.header.height.value(),
+        )
+        .expect("Never fails")
+    }
+
+    fn timestamp(&self) -> Timestamp {
+        self.0.signed_header.header.time.into()
+    }
 }
 
 #[derive(Debug)]
