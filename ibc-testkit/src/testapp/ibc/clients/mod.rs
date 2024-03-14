@@ -61,6 +61,19 @@ impl From<ClientStateType> for AnyClientState {
     }
 }
 
+impl TryFrom<AnyClientState> for ClientStateType {
+    type Error = ClientError;
+
+    fn try_from(any_client_state: AnyClientState) -> Result<Self, Self::Error> {
+        match any_client_state {
+            AnyClientState::Tendermint(tm_client_state) => Ok(tm_client_state.inner().clone()),
+            _ => Err(ClientError::Other {
+                description: "failed to convert AnyClientState to a tm client state".to_string(),
+            }),
+        }
+    }
+}
+
 impl From<ConsensusStateType> for AnyConsensusState {
     fn from(consensus_state: ConsensusStateType) -> Self {
         AnyConsensusState::Tendermint(consensus_state.into())

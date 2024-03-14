@@ -285,6 +285,14 @@ where
 
         Ok(Status::Active)
     }
+
+    fn check_substitute(
+        &self,
+        ctx: &V,
+        substitute_client_state: V::ClientStateRef,
+    ) -> Result<(), ClientError> {
+        Ok(())
+    }
 }
 
 impl<E> ClientStateExecution<E> for MockClientState
@@ -400,6 +408,15 @@ where
         )?;
 
         Ok(latest_height)
+    }
+
+    fn update_on_recovery(
+        &self,
+        ctx: &mut E,
+        subject_client_id: &ClientId,
+        substitute_client_state: E::ClientStateRef,
+    ) -> Result<(), ClientError> {
+        Ok(())
     }
 }
 
