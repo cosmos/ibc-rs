@@ -18,9 +18,7 @@ use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::{MockHeader, MOCK_HEADER_TYPE_URL};
 use crate::testapp::ibc::clients::mock::misbehaviour::{Misbehaviour, MOCK_MISBEHAVIOUR_TYPE_URL};
-use crate::testapp::ibc::clients::mock::proto::{
-    ClientState as RawMockClientState, Header as RawMockHeader,
-};
+use crate::testapp::ibc::clients::mock::proto::ClientState as RawMockClientState;
 
 pub const MOCK_CLIENT_STATE_TYPE_URL: &str = "/ibc.mock.ClientState";
 pub const MOCK_CLIENT_TYPE: &str = "9999-mock";
@@ -35,14 +33,16 @@ pub fn client_type() -> ClientType {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub struct MockClientState {
     pub header: MockHeader,
-    pub frozen_height: Option<Height>,
+    pub trusting_period: Duration,
+    pub frozen: bool,
 }
 
 impl MockClientState {
     pub fn new(header: MockHeader) -> Self {
         Self {
             header,
-            frozen_height: None,
+            trusting_period: Duration::from_nanos(0),
+            frozen: false,
         }
     }
 
@@ -54,15 +54,29 @@ impl MockClientState {
         None
     }
 
-    pub fn with_frozen_height(self, frozen_height: Height) -> Self {
+    pub fn with_trusting_period(self, trusting_period: Duration) -> Self {
         Self {
-            frozen_height: Some(frozen_height),
+            trusting_period,
+            ..self
+        }
+    }
+
+    pub fn frozen(self) -> Self {
+        Self {
+            frozen: true,
+            ..self
+        }
+    }
+
+    pub fn unfrozen(self) -> Self {
+        Self {
+            frozen: false,
             ..self
         }
     }
 
     pub fn is_frozen(&self) -> bool {
-        self.frozen_height.is_some()
+        self.frozen
     }
 
     fn expired(&self, _elapsed: Duration) -> bool {
@@ -76,17 +90,29 @@ impl TryFrom<RawMockClientState> for MockClientState {
     type Error = ClientError;
 
     fn try_from(raw: RawMockClientState) -> Result<Self, Self::Error> {
-        Ok(Self::new(raw.header.expect("Never fails").try_into()?))
+        Ok(Self {
+            header: raw
+                .header
+                .ok_or(ClientError::Other {
+                    description: "header is not present".into(),
+                })?
+                .try_into()?,
+            trusting_period: Duration::from_nanos(raw.trusting_period),
+            frozen: raw.frozen,
+        })
     }
 }
 
 impl From<MockClientState> for RawMockClientState {
     fn from(value: MockClientState) -> Self {
         RawMockClientState {
-            header: Some(RawMockHeader {
-                height: Some(value.header.height().into()),
-                timestamp: value.header.timestamp.nanoseconds(),
-            }),
+            header: Some(value.header.into()),
+            trusting_period: value
+                .trusting_period
+                .as_nanos()
+                .try_into()
+                .expect("no error"),
+            frozen: value.frozen,
         }
     }
 }
@@ -354,7 +380,7 @@ where
         client_id: &ClientId,
         _client_message: Any,
     ) -> Result<(), ClientError> {
-        let frozen_client_state = self.with_frozen_height(Height::min(0));
+        let frozen_client_state = self.frozen();
 
         ctx.store_client_state(
             ClientStatePath::new(client_id.clone()),

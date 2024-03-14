@@ -8,7 +8,8 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::query_server::Query as ChannelQuery;
 use ibc_proto::ibc::core::channel::v1::{
     QueryChannelClientStateRequest, QueryChannelClientStateResponse,
-    QueryChannelConsensusStateRequest, QueryChannelConsensusStateResponse, QueryChannelRequest,
+    QueryChannelConsensusStateRequest, QueryChannelConsensusStateResponse,
+    QueryChannelParamsRequest, QueryChannelParamsResponse, QueryChannelRequest,
     QueryChannelResponse, QueryChannelsRequest, QueryChannelsResponse,
     QueryConnectionChannelsRequest, QueryConnectionChannelsResponse,
     QueryNextSequenceReceiveRequest, QueryNextSequenceReceiveResponse,
@@ -18,6 +19,7 @@ use ibc_proto::ibc::core::channel::v1::{
     QueryPacketCommitmentResponse, QueryPacketCommitmentsRequest, QueryPacketCommitmentsResponse,
     QueryPacketReceiptRequest, QueryPacketReceiptResponse, QueryUnreceivedAcksRequest,
     QueryUnreceivedAcksResponse, QueryUnreceivedPacketsRequest, QueryUnreceivedPacketsResponse,
+    QueryUpgradeErrorRequest, QueryUpgradeErrorResponse, QueryUpgradeRequest, QueryUpgradeResponse,
 };
 use tonic::{Request, Response, Status};
 
@@ -187,5 +189,32 @@ where
         let response = query_next_sequence_send(&self.ibc_context, request.get_ref())?;
 
         Ok(Response::new(response))
+    }
+
+    async fn upgrade_error(
+        &self,
+        _request: Request<QueryUpgradeErrorRequest>,
+    ) -> Result<Response<QueryUpgradeErrorResponse>, Status> {
+        Err(Status::unimplemented(
+            "Querying UpgradeError is not supported yet",
+        ))
+    }
+
+    async fn upgrade(
+        &self,
+        _request: Request<QueryUpgradeRequest>,
+    ) -> Result<Response<QueryUpgradeResponse>, Status> {
+        Err(Status::unimplemented(
+            "Querying Upgrade is not supported yet",
+        ))
+    }
+
+    async fn channel_params(
+        &self,
+        _request: Request<QueryChannelParamsRequest>,
+    ) -> Result<Response<QueryChannelParamsResponse>, Status> {
+        Err(Status::unimplemented(
+            "Querying ChannelParams is not supported yet",
+        ))
     }
 }

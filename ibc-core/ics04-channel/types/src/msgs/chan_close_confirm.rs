@@ -35,6 +35,10 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
     type Error = ChannelError;
 
     fn try_from(raw_msg: RawMsgChannelCloseConfirm) -> Result<Self, Self::Error> {
+        if raw_msg.counterparty_upgrade_sequence != 0 {
+            return Err(ChannelError::UnsupportedChannelUpgradeSequence);
+        }
+
         Ok(MsgChannelCloseConfirm {
             port_id_on_b: raw_msg.port_id.parse()?,
             chan_id_on_b: raw_msg.channel_id.parse()?,
@@ -59,6 +63,7 @@ impl From<MsgChannelCloseConfirm> for RawMsgChannelCloseConfirm {
             proof_init: domain_msg.proof_chan_end_on_a.clone().into(),
             proof_height: Some(domain_msg.proof_height_on_a.into()),
             signer: domain_msg.signer.to_string(),
+            counterparty_upgrade_sequence: 0,
         }
     }
 }
