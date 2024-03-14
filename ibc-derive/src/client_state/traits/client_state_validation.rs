@@ -41,7 +41,7 @@ pub(crate) fn impl_ClientStateValidation(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
-        quote! { check_substitute(cs, ctx, substitute_client_id) },
+        quote! { check_substitute(cs, ctx, substitute_client_state) },
         imports,
     );
 
@@ -54,7 +54,9 @@ pub(crate) fn impl_ClientStateValidation(
 
     // The types we need for the generated code.
     let HostClientState = client_state_enum_name;
-    let ClientValidationContext = opts.client_validation_context.clone().into_token_stream();
+    let V = opts.client_validation_context.clone().into_token_stream();
+
+    let ClientValidationContext = imports.client_validation_context();
 
     // The `impl` block quote based on whether the context includes generics.
     let Impl = opts.client_validation_context.impl_ts();
@@ -64,10 +66,10 @@ pub(crate) fn impl_ClientStateValidation(
     let Where = opts.client_validation_context.where_clause_ts();
 
     quote! {
-        #Impl #ClientStateValidation<#ClientValidationContext> for #HostClientState #Where {
+        #Impl #ClientStateValidation<#V> for #HostClientState #Where {
             fn verify_client_message(
                 &self,
-                ctx: &#ClientValidationContext,
+                ctx: &#V,
                 client_id: &#ClientId,
                 client_message: #Any,
             ) -> core::result::Result<(), #ClientError> {
@@ -78,7 +80,7 @@ pub(crate) fn impl_ClientStateValidation(
 
             fn check_for_misbehaviour(
                 &self,
-                ctx: &#ClientValidationContext,
+                ctx: &#V,
                 client_id: &#ClientId,
                 client_message: #Any,
             ) -> core::result::Result<bool, #ClientError> {
@@ -89,7 +91,7 @@ pub(crate) fn impl_ClientStateValidation(
 
             fn status(
                 &self,
-                ctx: &#ClientValidationContext,
+                ctx: &#V,
                 client_id: &#ClientId,
             ) -> core::result::Result<#Status, #ClientError> {
                 match self {
@@ -99,8 +101,8 @@ pub(crate) fn impl_ClientStateValidation(
 
             fn check_substitute(
                 &self,
-                ctx: &#ClientValidationContext,
-                substitute_client_state: #ClientValidationContext::ClientStateRef,
+                ctx: &#V,
+                substitute_client_state: <#V as #ClientValidationContext>::ClientStateRef,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#check_substitute_impl),*

@@ -205,7 +205,7 @@ where
         &self,
         ctx: &mut E,
         subject_client_id: &ClientId,
-        substitute_client_state: E::ClientStateRef,
+        substitute_client_state: E::ClientStateMut,
     ) -> Result<(), ClientError>;
 }
 

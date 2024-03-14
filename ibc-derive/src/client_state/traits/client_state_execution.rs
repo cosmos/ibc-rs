@@ -60,7 +60,9 @@ pub(crate) fn impl_ClientStateExecution(
 
     // The types we need for the generated code.
     let HostClientState = client_state_enum_name;
-    let ClientExecutionContext = &opts.client_execution_context.clone().into_token_stream();
+    let E = &opts.client_execution_context.clone().into_token_stream();
+
+    let ClientExecutionContext = imports.client_execution_context();
 
     // The `impl` block quote based on whether the context includes generics.
     let Impl = opts.client_execution_context.impl_ts();
@@ -70,10 +72,10 @@ pub(crate) fn impl_ClientStateExecution(
     let Where = opts.client_execution_context.where_clause_ts();
 
     quote! {
-        #Impl #ClientStateExecution<#ClientExecutionContext> for #HostClientState #Where {
+        #Impl #ClientStateExecution<#E> for #HostClientState #Where {
             fn initialise(
                 &self,
-                ctx: &mut #ClientExecutionContext,
+                ctx: &mut #E,
                 client_id: &#ClientId,
                 consensus_state: #Any,
             ) -> Result<(), #ClientError> {
@@ -84,7 +86,7 @@ pub(crate) fn impl_ClientStateExecution(
 
             fn update_state(
                 &self,
-                ctx: &mut #ClientExecutionContext,
+                ctx: &mut #E,
                 client_id: &#ClientId,
                 header: #Any,
             ) -> core::result::Result<Vec<#Height>, #ClientError> {
@@ -95,7 +97,7 @@ pub(crate) fn impl_ClientStateExecution(
 
             fn update_state_on_misbehaviour(
                 &self,
-                ctx: &mut #ClientExecutionContext,
+                ctx: &mut #E,
                 client_id: &#ClientId,
                 client_message: #Any,
             ) -> core::result::Result<(), #ClientError> {
@@ -106,7 +108,7 @@ pub(crate) fn impl_ClientStateExecution(
 
             fn update_state_on_upgrade(
                 &self,
-                ctx: &mut #ClientExecutionContext,
+                ctx: &mut #E,
                 client_id: &#ClientId,
                 upgraded_client_state: #Any,
                 upgraded_consensus_state: #Any,
@@ -118,9 +120,9 @@ pub(crate) fn impl_ClientStateExecution(
 
             fn update_on_recovery(
                 &self,
-                ctx: &mut #ClientExecutionContext,
+                ctx: &mut #E,
                 subject_client_id: &#ClientId,
-                substitute_client_id: #ClientExecutionContext::ClientStateMut,
+                substitute_client_state: <#E as #ClientExecutionContext>::ClientStateMut,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#update_on_recovery_impl),*

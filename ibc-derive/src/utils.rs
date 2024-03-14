@@ -30,6 +30,16 @@ impl Imports {
         &self.prefix
     }
 
+    pub fn client_validation_context(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::client::context::ClientValidationContext}
+    }
+
+    pub fn client_execution_context(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::client::context::ClientExecutionContext}
+    }
+
     pub fn commitment_root(&self) -> TokenStream {
         let Prefix = self.prefix();
         quote! {#Prefix::commitment_types::commitment::CommitmentRoot}
