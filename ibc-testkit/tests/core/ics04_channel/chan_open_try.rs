@@ -90,7 +90,7 @@ fn chan_open_try_validate_happy_path(fixture: Fixture) {
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
 
-    let res = validate(&ctx, &router, msg);
+    let res = validate(&ctx.ibc_store, &router, msg);
 
     assert!(res.is_ok(), "Validation success: happy path")
 }
@@ -115,11 +115,11 @@ fn chan_open_try_execute_happy_path(fixture: Fixture) {
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
 
-    let res = execute(&mut ctx, &mut router, msg);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg);
 
     assert!(res.is_ok(), "Execution success: happy path");
 
-    assert_eq!(ctx.channel_counter().unwrap(), 1);
+    assert_eq!(ctx.ibc_store.channel_counter().unwrap(), 1);
 
     let ibc_events = ctx.get_events();
 
@@ -138,7 +138,7 @@ fn chan_open_try_fail_no_connection(fixture: Fixture) {
         ctx, router, msg, ..
     } = fixture;
 
-    let res = validate(&ctx, &router, msg);
+    let res = validate(&ctx.ibc_store, &router, msg);
 
     assert!(
         res.is_err(),
@@ -158,7 +158,7 @@ fn chan_open_try_fail_no_client_state(fixture: Fixture) {
     } = fixture;
     let ctx = ctx.with_connection(conn_id_on_b, conn_end_on_b);
 
-    let res = validate(&ctx, &router, msg);
+    let res = validate(&ctx.ibc_store, &router, msg);
 
     assert!(
         res.is_err(),

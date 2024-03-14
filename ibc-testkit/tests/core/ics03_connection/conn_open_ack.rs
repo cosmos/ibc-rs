@@ -1,5 +1,6 @@
 use core::str::FromStr;
 
+use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore};
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::error::ConnectionError;
@@ -18,7 +19,7 @@ use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext, MockIbcStore};
 use test_log::test;
 
 enum Ctx {
@@ -64,25 +65,34 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
         .latest_height(latest_height)
         .build::<MockContext<MockHost>>();
     let ctx = match ctx {
-        Ctx::New => ctx_new,
-        Ctx::NewWithConnection => ctx_new
-            .with_light_client(
-                &client_id,
-                LightClientState::<MockHost>::with_latest_height(proof_height),
-            )
-            .with_connection(conn_id, default_conn_end),
-        Ctx::DefaultWithConnection => ctx_default
-            .with_light_client(
-                &client_id,
-                LightClientState::<MockHost>::with_latest_height(proof_height),
-            )
-            .with_connection(conn_id, default_conn_end),
-        Ctx::NewWithConnectionEndOpen => ctx_new
-            .with_light_client(
-                &client_id,
-                LightClientState::<MockHost>::with_latest_height(proof_height),
-            )
-            .with_connection(conn_id, conn_end_open),
+        Ctx::New => ctx_new.ibc_store,
+        Ctx::NewWithConnection => {
+            ctx_new
+                .with_light_client(
+                    &client_id,
+                    LightClientState::<MockHost>::with_latest_height(proof_height),
+                )
+                .with_connection(conn_id, default_conn_end)
+                .ibc_store
+        }
+        Ctx::DefaultWithConnection => {
+            ctx_default
+                .with_light_client(
+                    &client_id,
+                    LightClientState::<MockHost>::with_latest_height(proof_height),
+                )
+                .with_connection(conn_id, default_conn_end)
+                .ibc_store
+        }
+        Ctx::NewWithConnectionEndOpen => {
+            ctx_new
+                .with_light_client(
+                    &client_id,
+                    LightClientState::<MockHost>::with_latest_height(proof_height),
+                )
+                .with_connection(conn_id, conn_end_open)
+                .ibc_store
+        }
     };
 
     Fixture { ctx, msg }
@@ -137,7 +147,7 @@ fn conn_open_ack_execute(fxt: &mut Fixture<MsgConnectionOpenAck>, expect: Expect
             assert!(res.is_err(), "{err_msg}");
         }
         Expect::Success => {
-            let ibc_events = fxt.ctx.get_events();
+            let ibc_events = fxt.ctx.events.lock();
             assert!(res.is_ok(), "{err_msg}");
             assert_eq!(ibc_events.len(), 2);
 
@@ -151,7 +161,7 @@ fn conn_open_ack_execute(fxt: &mut Fixture<MsgConnectionOpenAck>, expect: Expect
             let IbcEvent::OpenAckConnection(conn_open_try_event) = event else {
                 unreachable!()
             };
-            let conn_end = <MockContext<MockHost> as ValidationContext>::connection_end(
+            let conn_end = <MockIbcStore<RevertibleStore<GrowingStore<InMemoryStore>>> as ValidationContext>::connection_end(
                 &fxt.ctx,
                 conn_open_try_event.conn_id_on_a(),
             )

@@ -1,6 +1,8 @@
+use core::fmt::Debug;
 use core::str::FromStr;
 use core::time::Duration;
 
+use basecoin_store::context::ProvableStore;
 use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
 use ibc::clients::tendermint::types::{
@@ -34,7 +36,7 @@ use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as Mock
 use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{
-    LightClientBuilder, LightClientState, MockClientConfig, MockContext,
+    LightClientBuilder, LightClientState, MockClientConfig, MockContext, MockIbcStore,
 };
 use ibc_testkit::testapp::ibc::utils::blocks_since;
 use rstest::*;
@@ -97,16 +99,16 @@ fn test_update_client_ok(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx.ibc_store, &router, msg_envelope.clone());
 
     assert!(res.is_ok(), "validation happy path");
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok(), "execution happy path");
 
     assert_eq!(
-        ctx.client_state(&msg.client_id).unwrap(),
+        ctx.ibc_store.client_state(&msg.client_id).unwrap(),
         MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into()
     );
 }
@@ -127,10 +129,13 @@ fn test_update_client_with_prev_header() {
         .latest_height(latest_height)
         .build::<MockContext<TendermintHost>>();
 
-    let mut ctx = MockContext::<MockHost>::default().with_light_client(
-        &client_id,
-        LightClientBuilder::init().context(&ctx_b).build(),
-    );
+    let mut ctx = MockContext::<MockHost>::default()
+        .with_light_client(
+            &client_id,
+            LightClientBuilder::init().context(&ctx_b).build(),
+        )
+        .ibc_store;
+
     let mut router = MockRouter::new_with_transfer();
 
     fn build_msg_from_header(
@@ -234,8 +239,6 @@ fn test_consensus_state_pruning() {
 
     let mut router = MockRouter::new_with_transfer();
 
-    let start_host_timestamp = ctx.host_timestamp().unwrap();
-
     // Move the chain forward by 2 blocks to pass the trusting period.
     for _ in 1..=2 {
         let signer = dummy_account_id();
@@ -257,9 +260,13 @@ fn test_consensus_state_pruning() {
 
         let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-        let _ = validate(&ctx, &router, msg_envelope.clone());
-        let _ = execute(&mut ctx, &mut router, msg_envelope);
+        let _ = validate(&ctx.ibc_store, &router, msg_envelope.clone());
+        let _ = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     }
+
+    let ibc_ctx = ctx.ibc_store;
+
+    let start_host_timestamp = ibc_ctx.host_timestamp().unwrap();
 
     // Check that latest expired consensus state is pruned.
     let expired_height = Height::new(1, 1).unwrap();
@@ -268,8 +275,10 @@ fn test_consensus_state_pruning() {
         expired_height.revision_number(),
         expired_height.revision_height(),
     );
-    assert!(ctx.client_update_meta(&client_id, &expired_height).is_err());
-    assert!(ctx.consensus_state(&client_cons_state_path).is_err());
+    assert!(ibc_ctx
+        .client_update_meta(&client_id, &expired_height)
+        .is_err());
+    assert!(ibc_ctx.consensus_state(&client_cons_state_path).is_err());
 
     // Check that latest valid consensus state exists.
     let earliest_valid_height = Height::new(1, 2).unwrap();
@@ -279,12 +288,12 @@ fn test_consensus_state_pruning() {
         earliest_valid_height.revision_height(),
     );
 
-    assert!(ctx
+    assert!(ibc_ctx
         .client_update_meta(&client_id, &earliest_valid_height)
         .is_ok());
-    assert!(ctx.consensus_state(&client_cons_state_path).is_ok());
+    assert!(ibc_ctx.consensus_state(&client_cons_state_path).is_ok());
 
-    let end_host_timestamp = ctx.host_timestamp().unwrap();
+    let end_host_timestamp = ibc_ctx.host_timestamp().unwrap();
 
     assert_eq!(
         end_host_timestamp,
@@ -306,7 +315,7 @@ fn test_update_nonexisting_client(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(res.is_err());
 }
@@ -351,16 +360,16 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx.ibc_store, &router, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx.client_state(&msg.client_id).unwrap();
+    let client_state = ctx.ibc_store.client_state(&msg.client_id).unwrap();
 
     assert!(client_state
-        .status(&ctx, &msg.client_id)
+        .status(&ctx.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
 
@@ -453,15 +462,15 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx_a.client_state(&msg.client_id).unwrap();
+    let client_state = ctx_a.ibc_store.client_state(&msg.client_id).unwrap();
     assert!(client_state
-        .status(&ctx_a, &msg.client_id)
+        .status(&ctx_a.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
     assert_eq!(client_state.latest_height(), latest_header_height);
@@ -571,7 +580,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router, msg_envelope);
+    let res = validate(&ctx_a.ibc_store, &router, msg_envelope);
 
     assert!(res.is_err());
 }
@@ -662,7 +671,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
 
     assert!(res.is_err());
 }
@@ -759,15 +768,15 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx_a.client_state(&msg.client_id).unwrap();
+    let client_state = ctx_a.ibc_store.client_state(&msg.client_id).unwrap();
     assert!(client_state
-        .status(&ctx_a, &msg.client_id)
+        .status(&ctx_a.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
     assert_eq!(client_state.latest_height(), latest_header_height);
@@ -856,7 +865,7 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
 
     assert!(res.is_err());
 }
@@ -903,16 +912,16 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx.ibc_store, &router, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx.client_state(&msg.client_id).unwrap();
+    let client_state = ctx.ibc_store.client_state(&msg.client_id).unwrap();
 
     assert!(client_state
-        .status(&ctx, &msg.client_id)
+        .status(&ctx.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
 
@@ -1026,15 +1035,15 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok(), "result: {res:?}");
 
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx_a.client_state(&msg.client_id).unwrap();
+    let client_state = ctx_a.ibc_store.client_state(&msg.client_id).unwrap();
     assert!(client_state
-        .status(&ctx_a, &msg.client_id)
+        .status(&ctx_a.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
     assert_eq!(client_state.latest_height(), latest_header_height);
@@ -1078,7 +1087,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
 }
 
@@ -1102,7 +1111,7 @@ fn test_update_client_events(fixture: Fixture) {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     assert!(res.is_ok());
 
     let ibc_events = ctx.get_events();
@@ -1123,8 +1132,8 @@ fn test_update_client_events(fixture: Fixture) {
     assert_eq!(update_client_event.header(), &header.to_vec());
 }
 
-fn ensure_misbehaviour<H: TestHost>(
-    ctx: &MockContext<H>,
+fn ensure_misbehaviour<S: ProvableStore + Debug>(
+    ctx: &MockIbcStore<S>,
     client_id: &ClientId,
     client_type: &ClientType,
 ) {
@@ -1134,7 +1143,7 @@ fn ensure_misbehaviour<H: TestHost>(
     assert!(status.is_frozen(), "client_state status: {status}");
 
     // check events
-    let ibc_events = ctx.get_events();
+    let ibc_events = ctx.events.lock();
     assert_eq!(ibc_events.len(), 2);
     assert!(matches!(
         ibc_events[0],
@@ -1161,13 +1170,13 @@ fn test_misbehaviour_client_ok(fixture: Fixture) {
     let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let msg_envelope = msg_update_client(&client_id);
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx.ibc_store, &router, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     assert!(res.is_ok());
 
-    ensure_misbehaviour(&ctx, &client_id, &mock_client_type());
+    ensure_misbehaviour(&ctx.ibc_store, &client_id, &mock_client_type());
 }
 
 #[rstest]
@@ -1182,7 +1191,7 @@ fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
         &client_id,
         LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
 }
 
@@ -1198,7 +1207,7 @@ fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
         &client_id,
         LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
 }
 
@@ -1260,11 +1269,11 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok());
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok());
-    ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
+    ensure_misbehaviour(&ctx_a.ibc_store, &client_id, &tm_client_type());
 }
 
 #[rstest]
@@ -1329,11 +1338,11 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok());
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok());
-    ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
+    ensure_misbehaviour(&ctx_a.ibc_store, &client_id, &tm_client_type());
 }
 
 #[rstest]
@@ -1372,14 +1381,18 @@ fn test_expired_client() {
                 .build(),
         );
 
-    while ctx.host_timestamp().expect("no error") < (timestamp + trusting_period).expect("no error")
+    while ctx.ibc_store.host_timestamp().expect("no error")
+        < (timestamp + trusting_period).expect("no error")
     {
         ctx.advance_host_chain_height();
     }
 
-    let client_state = ctx.client_state(&client_id).unwrap();
+    let client_state = ctx.ibc_store.client_state(&client_id).unwrap();
 
-    assert!(client_state.status(&ctx, &client_id).unwrap().is_expired());
+    assert!(client_state
+        .status(&ctx.ibc_store, &client_id)
+        .unwrap()
+        .is_expired());
 }
 
 #[rstest]
@@ -1420,8 +1433,8 @@ fn test_client_update_max_clock_drift() {
 
     let router_a = MockRouter::new_with_transfer();
 
-    while ctx_b.host_timestamp().expect("no error")
-        < (ctx_a.host_timestamp().expect("no error") + max_clock_drift).expect("no error")
+    while ctx_b.ibc_store.host_timestamp().expect("no error")
+        < (ctx_a.ibc_store.host_timestamp().expect("no error") + max_clock_drift).expect("no error")
     {
         ctx_b.advance_host_chain_height();
     }
@@ -1454,6 +1467,6 @@ fn test_client_update_max_clock_drift() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope);
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope);
     assert!(res.is_err());
 }

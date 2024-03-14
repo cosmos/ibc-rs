@@ -51,7 +51,7 @@ fn test_chan_close_init_validate() {
 
     let context = {
         let default_context = MockContext::<MockHost>::default();
-        let client_consensus_state_height = default_context.host_height().unwrap();
+        let client_consensus_state_height = default_context.ibc_store.host_height().unwrap();
 
         default_context
             .with_light_client(
@@ -68,7 +68,7 @@ fn test_chan_close_init_validate() {
 
     let router = MockRouter::new_with_transfer();
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),
@@ -109,7 +109,7 @@ fn test_chan_close_init_execute() {
 
     let mut context = {
         let default_context = MockContext::<MockHost>::default();
-        let client_consensus_state_height = default_context.host_height().unwrap();
+        let client_consensus_state_height = default_context.ibc_store.host_height().unwrap();
 
         default_context
             .with_light_client(
@@ -126,7 +126,7 @@ fn test_chan_close_init_execute() {
 
     let mut router = MockRouter::new_with_transfer();
 
-    let res = execute(&mut context, &mut router, msg_envelope);
+    let res = execute(&mut context.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok(), "Execution happy path");
 

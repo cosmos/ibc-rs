@@ -39,7 +39,7 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
         State::Init,
         client_id.clone(),
         counterparty,
-        ValidationContext::get_compatible_versions(&ctx_default),
+        ValidationContext::get_compatible_versions(&ctx_default.ibc_store),
         ZERO_DURATION,
     )
     .unwrap();
@@ -48,19 +48,25 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
     correct_conn_end.set_state(State::TryOpen);
 
     let ctx = match ctx {
-        Ctx::Default => ctx_default,
-        Ctx::IncorrectConnection => ctx_default
-            .with_light_client(
-                &client_id,
-                LightClientState::<MockHost>::with_latest_height(Height::new(0, 10).unwrap()),
-            )
-            .with_connection(msg.conn_id_on_b.clone(), incorrect_conn_end_state),
-        Ctx::CorrectConnection => ctx_default
-            .with_light_client(
-                &client_id,
-                LightClientState::<MockHost>::with_latest_height(Height::new(0, 10).unwrap()),
-            )
-            .with_connection(msg.conn_id_on_b.clone(), correct_conn_end),
+        Ctx::Default => ctx_default.ibc_store,
+        Ctx::IncorrectConnection => {
+            ctx_default
+                .with_light_client(
+                    &client_id,
+                    LightClientState::<MockHost>::with_latest_height(Height::new(0, 10).unwrap()),
+                )
+                .with_connection(msg.conn_id_on_b.clone(), incorrect_conn_end_state)
+                .ibc_store
+        }
+        Ctx::CorrectConnection => {
+            ctx_default
+                .with_light_client(
+                    &client_id,
+                    LightClientState::<MockHost>::with_latest_height(Height::new(0, 10).unwrap()),
+                )
+                .with_connection(msg.conn_id_on_b.clone(), correct_conn_end)
+                .ibc_store
+        }
     };
 
     Fixture { ctx, msg }
@@ -91,7 +97,7 @@ fn conn_open_confirm_execute(fxt: &mut Fixture<MsgConnectionOpenConfirm>, expect
             assert!(res.is_err(), "{err_msg}");
         }
         Expect::Success => {
-            let ibc_events = fxt.ctx.get_events();
+            let ibc_events = fxt.ctx.events.lock();
             assert!(res.is_ok(), "{err_msg}");
             assert_eq!(ibc_events.len(), 2);
 

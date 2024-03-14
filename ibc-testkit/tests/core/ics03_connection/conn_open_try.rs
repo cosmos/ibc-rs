@@ -11,7 +11,7 @@ use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientState, MockContext};
 use test_log::test;
 
 enum Ctx {
@@ -56,13 +56,17 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
         .latest_height(host_chain_height)
         .build::<MockContext<MockHost>>();
     let ctx = match ctx_variant {
-        Ctx::Default => MockContext::<MockHost>::default(),
-        Ctx::WithClient => ctx_new.with_light_client(
-            &msg.client_id_on_b,
-            LightClientState::<MockHost>::with_latest_height(
-                Height::new(0, client_cons_state_height).unwrap(),
-            ),
-        ),
+        Ctx::Default => DefaultIbcStore::default(),
+        Ctx::WithClient => {
+            ctx_new
+                .with_light_client(
+                    &msg.client_id_on_b,
+                    LightClientState::<MockHost>::with_latest_height(
+                        Height::new(0, client_cons_state_height).unwrap(),
+                    ),
+                )
+                .ibc_store
+        }
     };
     Fixture { ctx, msg }
 }
@@ -96,7 +100,7 @@ fn conn_open_try_execute(fxt: &mut Fixture<MsgConnectionOpenTry>, expect: Expect
 
             assert_eq!(fxt.ctx.connection_counter().unwrap(), 1);
 
-            let ibc_events = fxt.ctx.get_events();
+            let ibc_events = fxt.ctx.events.lock();
 
             assert_eq!(ibc_events.len(), 2);
 

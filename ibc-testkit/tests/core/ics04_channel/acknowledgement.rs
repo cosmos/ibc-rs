@@ -103,7 +103,7 @@ fn ack_fail_no_channel(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_err(),
@@ -137,7 +137,7 @@ fn ack_success_no_packet_commitment(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),
@@ -175,7 +175,8 @@ fn ack_success_happy_path(fixture: Fixture) {
             msg.packet.seq_on_a,
             packet_commitment,
         );
-    ctx.get_client_execution_context()
+    ctx.ibc_store
+        .get_client_execution_context()
         .store_update_meta(
             default_client_id,
             client_height,
@@ -186,7 +187,7 @@ fn ack_success_happy_path(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),
@@ -221,7 +222,7 @@ fn ack_unordered_chan_execute(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok());
 
@@ -258,7 +259,7 @@ fn ack_ordered_chan_execute(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok());
 

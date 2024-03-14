@@ -119,7 +119,7 @@ fn timeout_fail_no_channel(fixture: Fixture) {
         LightClientState::<MockHost>::with_latest_height(client_height),
     );
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_err(),
@@ -157,7 +157,7 @@ fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
             res.is_err(),
@@ -208,17 +208,18 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.store_update_meta(
-        client_id,
-        client_height,
-        Timestamp::from_nanoseconds(5).unwrap(),
-        Height::new(0, 4).unwrap(),
-    )
-    .unwrap();
+    ctx.ibc_store
+        .store_update_meta(
+            client_id,
+            client_height,
+            Timestamp::from_nanoseconds(5).unwrap(),
+            Height::new(0, 4).unwrap(),
+        )
+        .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
             res.is_err(),
@@ -247,7 +248,7 @@ fn timeout_success_no_packet_commitment(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),
@@ -289,7 +290,8 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.get_client_execution_context()
+    ctx.ibc_store
+        .get_client_execution_context()
         .store_update_meta(
             client_id,
             client_height,
@@ -300,7 +302,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(res.is_ok(), "Good parameters for unordered channels")
 }
@@ -335,17 +337,18 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.store_update_meta(
-        client_id,
-        client_height,
-        Timestamp::from_nanoseconds(1000).unwrap(),
-        Height::new(0, 4).unwrap(),
-    )
-    .unwrap();
+    ctx.ibc_store
+        .store_update_meta(
+            client_id,
+            client_height,
+            Timestamp::from_nanoseconds(1000).unwrap(),
+            Height::new(0, 4).unwrap(),
+        )
+        .unwrap();
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(res.is_ok(), "Good parameters for unordered channels")
 }
@@ -377,7 +380,7 @@ fn timeout_unordered_chan_execute(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok());
 
@@ -415,7 +418,7 @@ fn timeout_ordered_chan_execute(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok());
 

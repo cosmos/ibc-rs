@@ -147,7 +147,7 @@ fn send_packet_processing() {
     .collect();
 
     for mut test in tests {
-        let res = send_packet(&mut test.ctx, test.packet.clone());
+        let res = send_packet(&mut test.ctx.ibc_store, test.packet.clone());
         // Additionally check the events and the output objects in the result.
         match res {
             Ok(()) => {

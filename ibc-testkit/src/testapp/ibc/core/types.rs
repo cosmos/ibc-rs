@@ -37,9 +37,12 @@ use typed_builder::TypedBuilder;
 use crate::fixtures::core::context::MockContextConfig;
 use crate::hosts::{TestBlock, TestHeader, TestHost};
 use crate::relayer::error::RelayerError;
+use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::utils::blocks_since;
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
+
+pub type DefaultIbcStore = MockIbcStore<RevertibleStore<GrowingStore<InMemoryStore>>>;
 
 /// An object that stores all IBC related data.
 #[derive(Debug)]
@@ -86,7 +89,7 @@ where
     /// A typed-store for packet ack
     pub packet_ack_store: BinStore<SharedStore<S>, AckPath, AcknowledgementCommitment>,
     /// Map of host consensus states
-    pub consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
+    pub consensus_states: Arc<Mutex<BTreeMap<u64, MockConsensusState>>>,
     /// IBC Events
     pub events: Arc<Mutex<Vec<IbcEvent>>>,
     /// message logs
@@ -265,9 +268,14 @@ where
     S: ProvableStore + Debug,
     H: TestHost,
 {
+    pub fn ibc_store(&self) -> &MockIbcStore<S> {
+        &self.ibc_store
+    }
+
     pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
         let client_state_path = ClientStatePath::new(client_id.clone());
-        self.store_client_state(client_state_path, client_state)
+        self.ibc_store
+            .store_client_state(client_state_path, client_state)
             .expect("error writing to store");
         self
     }
@@ -283,7 +291,8 @@ where
             height.revision_number(),
             height.revision_height(),
         );
-        self.store_consensus_state(consensus_state_path, consensus_state)
+        self.ibc_store
+            .store_consensus_state(consensus_state_path, consensus_state)
             .expect("error writing to store");
 
         self
@@ -351,7 +360,8 @@ where
         connection_end: ConnectionEnd,
     ) -> Self {
         let connection_path = ConnectionPath::new(&connection_id);
-        self.store_connection(&connection_path, connection_end)
+        self.ibc_store
+            .store_connection(&connection_path, connection_end)
             .expect("error writing to store");
         self
     }
@@ -364,7 +374,8 @@ where
         channel_end: ChannelEnd,
     ) -> Self {
         let channel_end_path = ChannelEndPath::new(&port_id, &chan_id);
-        self.store_channel(&channel_end_path, channel_end)
+        self.ibc_store
+            .store_channel(&channel_end_path, channel_end)
             .expect("error writing to store");
         self
     }
@@ -376,7 +387,8 @@ where
         seq_number: Sequence,
     ) -> Self {
         let seq_send_path = SeqSendPath::new(&port_id, &chan_id);
-        self.store_next_sequence_send(&seq_send_path, seq_number)
+        self.ibc_store
+            .store_next_sequence_send(&seq_send_path, seq_number)
             .expect("error writing to store");
         self
     }
@@ -388,7 +400,8 @@ where
         seq_number: Sequence,
     ) -> Self {
         let seq_recv_path = SeqRecvPath::new(&port_id, &chan_id);
-        self.store_next_sequence_recv(&seq_recv_path, seq_number)
+        self.ibc_store
+            .store_next_sequence_recv(&seq_recv_path, seq_number)
             .expect("error writing to store");
         self
     }
@@ -400,7 +413,8 @@ where
         seq_number: Sequence,
     ) -> Self {
         let seq_ack_path = SeqAckPath::new(&port_id, &chan_id);
-        self.store_next_sequence_ack(&seq_ack_path, seq_number)
+        self.ibc_store
+            .store_next_sequence_ack(&seq_ack_path, seq_number)
             .expect("error writing to store");
         self
     }
@@ -434,7 +448,8 @@ where
         data: PacketCommitment,
     ) -> Self {
         let commitment_path = CommitmentPath::new(&port_id, &chan_id, seq);
-        self.store_packet_commitment(&commitment_path, data)
+        self.ibc_store
+            .store_packet_commitment(&commitment_path, data)
             .expect("error writing to store");
         self
     }
@@ -485,7 +500,7 @@ where
         router: &mut impl Router,
         msg: MsgEnvelope,
     ) -> Result<(), RelayerError> {
-        dispatch(self, router, msg).map_err(RelayerError::TransactionFailed)?;
+        dispatch(&mut self.ibc_store, router, msg).map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
         self.advance_host_chain_height();
         Ok(())
@@ -520,25 +535,13 @@ where
     }
 
     pub fn latest_client_states(&self, client_id: &ClientId) -> AnyClientState {
-        self.client_state(client_id)
+        self.ibc_store
+            .client_state(client_id)
             .expect("error reading from store")
     }
 
-    pub fn latest_consensus_states(
-        &self,
-        client_id: &ClientId,
-        height: &Height,
-    ) -> AnyConsensusState {
-        self.consensus_state(&ClientConsensusStatePath::new(
-            client_id.clone(),
-            height.revision_number(),
-            height.revision_height(),
-        ))
-        .expect("error reading from store")
-    }
-
     pub fn latest_height(&self) -> Height {
-        self.host_height().expect("Never fails")
+        self.ibc_store.host_height().expect("Never fails")
     }
 
     pub fn latest_timestamp(&self) -> Timestamp {

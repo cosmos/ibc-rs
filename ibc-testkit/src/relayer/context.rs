@@ -1,11 +1,11 @@
 use alloc::fmt::Debug;
 
 use basecoin_store::context::ProvableStore;
+use ibc::clients::tendermint::context::ValidationContext;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::ClientId;
-use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 
@@ -35,12 +35,12 @@ where
     H: TestHost,
 {
     fn query_latest_height(&self) -> Result<Height, ContextError> {
-        ValidationContext::host_height(self)
+        self.ibc_store.host_height()
     }
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState> {
         // Forward call to Ics2.
-        self.client_state(client_id).ok()
+        self.ibc_store.client_state(client_id).ok()
     }
 
     fn signer(&self) -> Signer {

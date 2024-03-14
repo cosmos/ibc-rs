@@ -42,11 +42,15 @@ fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConn
 
     let ctx_default = MockContext::<MockHost>::default();
     let ctx = match ctx_variant {
-        Ctx::WithClient => ctx_default.with_light_client(
-            &msg.client_id_on_a,
-            LightClientState::<MockHost>::with_latest_height(Height::new(0, 10).unwrap()),
-        ),
-        _ => ctx_default,
+        Ctx::WithClient => {
+            ctx_default
+                .with_light_client(
+                    &msg.client_id_on_a,
+                    LightClientState::<MockHost>::with_latest_height(Height::new(0, 10).unwrap()),
+                )
+                .ibc_store
+        }
+        _ => ctx_default.ibc_store,
     };
 
     Fixture { ctx, msg }
@@ -81,7 +85,7 @@ fn conn_open_init_execute(
             assert!(res.is_err(), "{err_msg}")
         }
         Expect::Success => {
-            let ibc_events = fxt.ctx.get_events();
+            let ibc_events = fxt.ctx.events.lock();
 
             assert!(res.is_ok(), "{err_msg}");
 

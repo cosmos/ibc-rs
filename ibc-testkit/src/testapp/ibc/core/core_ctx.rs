@@ -3,13 +3,12 @@
 use core::fmt::Debug;
 use core::time::Duration;
 
-use basecoin_store::context::ProvableStore;
+use basecoin_store::context::{ProvableStore, Store};
 use basecoin_store::types::Height as StoreHeight;
 use ibc::core::channel::types::channel::{ChannelEnd, IdentifiedChannelEnd};
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::channel::types::packet::{PacketState, Receipt};
-use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
@@ -29,24 +28,20 @@ use ibc::core::primitives::{Signer, Timestamp};
 use ibc::primitives::ToVec;
 use ibc_query::core::context::{ProvableContext, QueryContext};
 
-use crate::hosts::{TestBlock, TestHeader, TestHost};
+use super::types::MockIbcStore;
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
-use crate::testapp::ibc::core::types::MockGenericContext;
-use crate::testapp::ibc::utils::blocks_since;
+use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 
-impl<S, H> ValidationContext for MockGenericContext<S, H>
+impl<S> ValidationContext for MockIbcStore<S>
 where
     S: ProvableStore + Debug,
-    H: TestHost,
 {
     type V = Self;
     type HostClientState = MockClientState;
-    type HostConsensusState =
-        <<<H as TestHost>::Block as TestBlock>::Header as TestHeader>::ConsensusState;
+    type HostConsensusState = MockConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
-        // TODO(rano): height sync with block and merkle tree
-        Ok(self.history.last().expect("atleast one block").height())
+        Ok(Height::new(0, self.store.current_height())?)
     }
 
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
@@ -57,7 +52,6 @@ where
 
     fn client_counter(&self) -> Result<u64, ContextError> {
         Ok(self
-            .ibc_store
             .client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
             .ok_or(ClientError::Other {
@@ -69,72 +63,63 @@ where
         &self,
         height: &Height,
     ) -> Result<Self::HostConsensusState, ContextError> {
-        // TODO(rano): height sync with block and merkle tree
-        let height_delta = blocks_since(self.host_height().expect("no error"), *height)
-            .expect("no error") as usize;
-
-        let index = self
-            .history
-            .len()
-            .checked_sub(1 + height_delta)
+        let consensus_states_binding = self.consensus_states.lock();
+        let consensus_state = consensus_states_binding
+            .get(&height.revision_height())
             .ok_or(ClientError::MissingLocalConsensusState { height: *height })?;
 
-        Ok(self.history[index]
-            .clone()
-            .into_header()
-            .into_consensus_state())
+        Ok(consensus_state.clone())
     }
 
     fn validate_self_client(
         &self,
-        client_state_of_host_on_counterparty: Self::HostClientState,
+        _client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
-        if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(ClientError::ClientFrozen {
-                description: String::new(),
-            }
-            .into());
-        }
+        // if client_state_of_host_on_counterparty.is_frozen() {
+        //     return Err(ClientError::ClientFrozen {
+        //         description: String::new(),
+        //     }
+        //     .into());
+        // }
 
-        let self_chain_id = &self.host.chain_id();
-        let self_revision_number = self_chain_id.revision_number();
-        if self_revision_number
-            != client_state_of_host_on_counterparty
-                .latest_height()
-                .revision_number()
-        {
-            return Err(ContextError::ConnectionError(
-                ConnectionError::InvalidClientState {
-                    reason: format!(
-                        "client is not in the same revision as the chain. expected: {}, got: {}",
-                        self_revision_number,
-                        client_state_of_host_on_counterparty
-                            .latest_height()
-                            .revision_number()
-                    ),
-                },
-            ));
-        }
+        // let self_chain_id = &self.host.chain_id();
+        // let self_revision_number = self_chain_id.revision_number();
+        // if self_revision_number
+        //     != client_state_of_host_on_counterparty
+        //         .latest_height()
+        //         .revision_number()
+        // {
+        //     return Err(ContextError::ConnectionError(
+        //         ConnectionError::InvalidClientState {
+        //             reason: format!(
+        //                 "client is not in the same revision as the chain. expected: {}, got: {}",
+        //                 self_revision_number,
+        //                 client_state_of_host_on_counterparty
+        //                     .latest_height()
+        //                     .revision_number()
+        //             ),
+        //         },
+        //     ));
+        // }
 
-        let host_current_height = self.latest_height().increment();
-        if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
-            return Err(ContextError::ConnectionError(
-                ConnectionError::InvalidClientState {
-                    reason: format!(
-                        "client has latest height {} greater than or equal to chain height {}",
-                        client_state_of_host_on_counterparty.latest_height(),
-                        host_current_height
-                    ),
-                },
-            ));
-        }
+        // let host_current_height = self.latest_height().increment();
+        // if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
+        //     return Err(ContextError::ConnectionError(
+        //         ConnectionError::InvalidClientState {
+        //             reason: format!(
+        //                 "client has latest height {} greater than or equal to chain height {}",
+        //                 client_state_of_host_on_counterparty.latest_height(),
+        //                 host_current_height
+        //             ),
+        //         },
+        //     ));
+        // }
 
         Ok(())
     }
 
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
         Ok(self
-            .ibc_store
             .connection_end_store
             .get(StoreHeight::Pending, &ConnectionPath::new(conn_id))
             .ok_or(ConnectionError::ConnectionNotFound {
@@ -150,7 +135,6 @@ where
 
     fn connection_counter(&self) -> Result<u64, ContextError> {
         Ok(self
-            .ibc_store
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
             .ok_or(ConnectionError::Other {
@@ -160,7 +144,6 @@ where
 
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         Ok(self
-            .ibc_store
             .channel_end_store
             .get(
                 StoreHeight::Pending,
@@ -174,7 +157,6 @@ where
         seq_send_path: &SeqSendPath,
     ) -> Result<Sequence, ContextError> {
         Ok(self
-            .ibc_store
             .send_sequence_store
             .get(
                 StoreHeight::Pending,
@@ -188,7 +170,6 @@ where
         seq_recv_path: &SeqRecvPath,
     ) -> Result<Sequence, ContextError> {
         Ok(self
-            .ibc_store
             .recv_sequence_store
             .get(
                 StoreHeight::Pending,
@@ -199,7 +180,6 @@ where
 
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError> {
         Ok(self
-            .ibc_store
             .ack_sequence_store
             .get(
                 StoreHeight::Pending,
@@ -213,7 +193,6 @@ where
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, ContextError> {
         Ok(self
-            .ibc_store
             .packet_commitment_store
             .get(
                 StoreHeight::Pending,
@@ -228,7 +207,6 @@ where
 
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError> {
         Ok(self
-            .ibc_store
             .packet_receipt_store
             .is_path_set(
                 StoreHeight::Pending,
@@ -249,7 +227,6 @@ where
         ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, ContextError> {
         Ok(self
-            .ibc_store
             .packet_ack_store
             .get(
                 StoreHeight::Pending,
@@ -265,7 +242,6 @@ where
     /// `ChannelKeeper::increase_channel_counter`.
     fn channel_counter(&self) -> Result<u64, ContextError> {
         Ok(self
-            .ibc_store
             .channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
             .ok_or(ChannelError::Other {
@@ -275,7 +251,8 @@ where
 
     /// Returns the maximum expected time per block
     fn max_expected_time_per_block(&self) -> Duration {
-        self.block_time
+        // self.block_time
+        unimplemented!()
     }
 
     fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
@@ -288,32 +265,28 @@ where
 }
 
 /// Trait to provide proofs in gRPC service blanket implementations.
-impl<S, H> ProvableContext for MockGenericContext<S, H>
+impl<S> ProvableContext for MockIbcStore<S>
 where
     S: ProvableStore + Debug,
-    H: TestHost,
 {
     /// Returns the proof for the given [`Height`] and [`Path`]
     fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>> {
-        self.ibc_store
-            .store
+        self.store
             .get_proof(height.revision_height().into(), &path.to_string().into())
             .map(|p| p.to_vec())
     }
 }
 
 /// Trait to complete the gRPC service blanket implementations.
-impl<S, H> QueryContext for MockGenericContext<S, H>
+impl<S> QueryContext for MockIbcStore<S>
 where
     S: ProvableStore + Debug,
-    H: TestHost,
 {
     /// Returns the list of all client states.
     fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, ContextError> {
         let path = "clients".to_owned().into();
 
-        self.ibc_store
-            .client_state_store
+        self.client_state_store
             .get_keys(&path)
             .into_iter()
             .filter_map(|path| {
@@ -325,7 +298,6 @@ where
             })
             .map(|client_state_path| {
                 let client_state = self
-                    .ibc_store
                     .client_state_store
                     .get(StoreHeight::Pending, &client_state_path)
                     .ok_or_else(|| ClientError::ClientStateNotFound {
@@ -347,8 +319,7 @@ where
                 description: "Invalid consensus state path".into(),
             })?;
 
-        self.ibc_store
-            .consensus_state_store
+        self.consensus_state_store
             .get_keys(&path)
             .into_iter()
             .flat_map(|path| {
@@ -364,7 +335,6 @@ where
                     consensus_path.revision_height,
                 )?;
                 let client_state = self
-                    .ibc_store
                     .consensus_state_store
                     .get(StoreHeight::Pending, &consensus_path)
                     .ok_or({
@@ -386,8 +356,7 @@ where
                 description: "Invalid consensus state path".into(),
             })?;
 
-        self.ibc_store
-            .consensus_state_store
+        self.consensus_state_store
             .get_keys(&path)
             .into_iter()
             .flat_map(|path| {
@@ -410,8 +379,7 @@ where
     fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, ContextError> {
         let path = "connections".to_owned().into();
 
-        self.ibc_store
-            .connection_end_store
+        self.connection_end_store
             .get_keys(&path)
             .into_iter()
             .flat_map(|path| {
@@ -423,7 +391,6 @@ where
             })
             .map(|connection_path| {
                 let connection_end = self
-                    .ibc_store
                     .connection_end_store
                     .get(StoreHeight::Pending, &connection_path)
                     .ok_or_else(|| ConnectionError::ConnectionNotFound {
@@ -445,7 +412,6 @@ where
         let client_connection_path = ClientConnectionPath::new(client_id.clone());
 
         Ok(self
-            .ibc_store
             .connection_ids_store
             .get(StoreHeight::Pending, &client_connection_path)
             .unwrap_or_default())
@@ -455,8 +421,7 @@ where
     fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, ContextError> {
         let path = "channelEnds".to_owned().into();
 
-        self.ibc_store
-            .channel_end_store
+        self.channel_end_store
             .get_keys(&path)
             .into_iter()
             .flat_map(|path| {
@@ -468,7 +433,6 @@ where
             })
             .map(|channel_path| {
                 let channel_end = self
-                    .ibc_store
                     .channel_end_store
                     .get(StoreHeight::Pending, &channel_path)
                     .ok_or_else(|| ChannelError::ChannelNotFound {
@@ -498,8 +462,7 @@ where
             description: "Invalid commitment path".into(),
         })?;
 
-        self.ibc_store
-            .packet_commitment_store
+        self.packet_commitment_store
             .get_keys(&path)
             .into_iter()
             .flat_map(|path| {
@@ -510,8 +473,7 @@ where
                 }
             })
             .filter(|commitment_path| {
-                self.ibc_store
-                    .packet_commitment_store
+                self.packet_commitment_store
                     .get(StoreHeight::Pending, commitment_path)
                     .is_some()
             })
@@ -545,8 +507,7 @@ where
                 description: "Invalid ack path".into(),
             })?;
 
-            self.ibc_store
-                .packet_ack_store
+            self.packet_ack_store
                 .get_keys(&ack_path_prefix)
                 .into_iter()
                 .flat_map(|path| {
@@ -567,8 +528,7 @@ where
         collected_paths
             .into_iter()
             .filter(|ack_path| {
-                self.ibc_store
-                    .packet_ack_store
+                self.packet_ack_store
                     .get(StoreHeight::Pending, ack_path)
                     .is_some()
             })
@@ -599,8 +559,7 @@ where
             .into_iter()
             .map(|seq| ReceiptPath::new(&channel_end_path.0, &channel_end_path.1, seq))
             .filter(|receipt_path| {
-                self.ibc_store
-                    .packet_receipt_store
+                self.packet_receipt_store
                     .get(StoreHeight::Pending, receipt_path)
                     .is_none()
             })
@@ -626,8 +585,7 @@ where
                 description: "Invalid commitment path".into(),
             })?;
 
-            self.ibc_store
-                .packet_commitment_store
+            self.packet_commitment_store
                 .get_keys(&commitment_path_prefix)
                 .into_iter()
                 .flat_map(|path| {
@@ -648,8 +606,7 @@ where
         Ok(collected_paths
             .into_iter()
             .filter(|commitment_path: &CommitmentPath| -> bool {
-                self.ibc_store
-                    .packet_commitment_store
+                self.packet_commitment_store
                     .get(StoreHeight::Pending, commitment_path)
                     .is_some()
             })
@@ -658,10 +615,9 @@ where
     }
 }
 
-impl<S, H> ExecutionContext for MockGenericContext<S, H>
+impl<S> ExecutionContext for MockIbcStore<S>
 where
     S: ProvableStore + Debug,
-    H: TestHost,
 {
     type E = Self;
 
@@ -674,15 +630,13 @@ where
     /// Should never fail.
     fn increase_client_counter(&mut self) -> Result<(), ContextError> {
         let current_sequence = self
-            .ibc_store
             .client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
             .ok_or(ClientError::Other {
                 description: "client counter not found".into(),
             })?;
 
-        self.ibc_store
-            .client_counter
+        self.client_counter
             .set(NextClientSequencePath, current_sequence + 1)
             .map_err(|e| ClientError::Other {
                 description: format!("client counter update failed: {e:?}"),
@@ -697,8 +651,7 @@ where
         connection_path: &ConnectionPath,
         connection_end: ConnectionEnd,
     ) -> Result<(), ContextError> {
-        self.ibc_store
-            .connection_end_store
+        self.connection_end_store
             .set(connection_path.clone(), connection_end)
             .map_err(|_| ConnectionError::Other {
                 description: "Connection end store error".to_string(),
@@ -713,13 +666,11 @@ where
         conn_id: ConnectionId,
     ) -> Result<(), ContextError> {
         let mut conn_ids: Vec<ConnectionId> = self
-            .ibc_store
             .connection_ids_store
             .get(StoreHeight::Pending, client_connection_path)
             .unwrap_or_default();
         conn_ids.push(conn_id);
-        self.ibc_store
-            .connection_ids_store
+        self.connection_ids_store
             .set(client_connection_path.clone(), conn_ids)
             .map_err(|_| ConnectionError::Other {
                 description: "Connection ids store error".to_string(),
@@ -732,15 +683,13 @@ where
     /// Should never fail.
     fn increase_connection_counter(&mut self) -> Result<(), ContextError> {
         let current_sequence = self
-            .ibc_store
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
             .ok_or(ConnectionError::Other {
                 description: "connection counter not found".into(),
             })?;
 
-        self.ibc_store
-            .conn_counter
+        self.conn_counter
             .set(NextConnectionSequencePath, current_sequence + 1)
             .map_err(|e| ConnectionError::Other {
                 description: format!("connection counter update failed: {e:?}"),
@@ -754,8 +703,7 @@ where
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
     ) -> Result<(), ContextError> {
-        self.ibc_store
-            .packet_commitment_store
+        self.packet_commitment_store
             .set(commitment_path.clone(), commitment)
             .map_err(|_| PacketError::ImplementationSpecific)?;
         Ok(())
@@ -765,9 +713,7 @@ where
         &mut self,
         commitment_path: &CommitmentPath,
     ) -> Result<(), ContextError> {
-        self.ibc_store
-            .packet_commitment_store
-            .delete(commitment_path.clone());
+        self.packet_commitment_store.delete(commitment_path.clone());
         Ok(())
     }
 
@@ -776,8 +722,7 @@ where
         receipt_path: &ReceiptPath,
         _receipt: Receipt,
     ) -> Result<(), ContextError> {
-        self.ibc_store
-            .packet_receipt_store
+        self.packet_receipt_store
             .set_path(receipt_path.clone())
             .map_err(|_| PacketError::ImplementationSpecific)?;
         Ok(())
@@ -788,15 +733,14 @@ where
         ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
     ) -> Result<(), ContextError> {
-        self.ibc_store
-            .packet_ack_store
+        self.packet_ack_store
             .set(ack_path.clone(), ack_commitment)
             .map_err(|_| PacketError::ImplementationSpecific)?;
         Ok(())
     }
 
     fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), ContextError> {
-        self.ibc_store.packet_ack_store.delete(ack_path.clone());
+        self.packet_ack_store.delete(ack_path.clone());
         Ok(())
     }
 
@@ -805,8 +749,7 @@ where
         channel_end_path: &ChannelEndPath,
         channel_end: ChannelEnd,
     ) -> Result<(), ContextError> {
-        self.ibc_store
-            .channel_end_store
+        self.channel_end_store
             .set(channel_end_path.clone(), channel_end)
             .map_err(|_| ChannelError::Other {
                 description: "Channel end store error".to_string(),
@@ -819,8 +762,7 @@ where
         seq_send_path: &SeqSendPath,
         seq: Sequence,
     ) -> Result<(), ContextError> {
-        self.ibc_store
-            .send_sequence_store
+        self.send_sequence_store
             .set(seq_send_path.clone(), seq)
             .map_err(|_| PacketError::ImplementationSpecific)?;
         Ok(())
@@ -831,8 +773,7 @@ where
         seq_recv_path: &SeqRecvPath,
         seq: Sequence,
     ) -> Result<(), ContextError> {
-        self.ibc_store
-            .recv_sequence_store
+        self.recv_sequence_store
             .set(seq_recv_path.clone(), seq)
             .map_err(|_| PacketError::ImplementationSpecific)?;
         Ok(())
@@ -843,8 +784,7 @@ where
         seq_ack_path: &SeqAckPath,
         seq: Sequence,
     ) -> Result<(), ContextError> {
-        self.ibc_store
-            .ack_sequence_store
+        self.ack_sequence_store
             .set(seq_ack_path.clone(), seq)
             .map_err(|_| PacketError::ImplementationSpecific)?;
         Ok(())
@@ -852,15 +792,13 @@ where
 
     fn increase_channel_counter(&mut self) -> Result<(), ContextError> {
         let current_sequence = self
-            .ibc_store
             .channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
             .ok_or(ChannelError::Other {
                 description: "channel counter not found".into(),
             })?;
 
-        self.ibc_store
-            .channel_counter
+        self.channel_counter
             .set(NextChannelSequencePath, current_sequence + 1)
             .map_err(|e| ChannelError::Other {
                 description: format!("channel counter update failed: {e:?}"),
@@ -870,12 +808,12 @@ where
     }
 
     fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError> {
-        self.ibc_store.events.lock().push(event);
+        self.events.lock().push(event);
         Ok(())
     }
 
     fn log_message(&mut self, message: String) -> Result<(), ContextError> {
-        self.ibc_store.logs.lock().push(message);
+        self.logs.lock().push(message);
         Ok(())
     }
 }

@@ -1,3 +1,4 @@
+use ibc::clients::tendermint::context::ValidationContext;
 use ibc::clients::tendermint::types::client_type;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
@@ -39,8 +40,8 @@ fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<Msg
         LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
     let ctx = match ctx_variant {
-        Ctx::Default => ctx_default,
-        Ctx::WithClient => ctx_with_client,
+        Ctx::Default => ctx_default.ibc_store,
+        Ctx::WithClient => ctx_with_client.ibc_store,
     };
 
     let upgrade_height = Height::new(1, 26).unwrap();
@@ -95,7 +96,7 @@ fn upgrade_client_execute(fxt: &mut Fixture<MsgUpgradeClient>, expect: Expect) {
         }
         Expect::Success => {
             assert!(res.is_ok(), "{err_msg}");
-            let ibc_events = fxt.ctx.get_events();
+            let ibc_events = fxt.ctx.events.lock();
             assert!(matches!(
                 ibc_events[0],
                 IbcEvent::Message(MessageEvent::Client)
@@ -152,7 +153,7 @@ fn upgrade_client_fail_low_upgrade_height() {
         msg_upgrade_client_fixture(Ctx::WithClient, Msg::LowUpgradeHeight);
     let expected_err: ClientError = UpgradeClientError::LowUpgradeHeight {
         upgraded_height: Height::new(0, 26).unwrap(),
-        client_height: fxt.ctx.latest_height(),
+        client_height: fxt.ctx.host_height().unwrap(),
     }
     .into();
     upgrade_client_validate(
