@@ -93,7 +93,7 @@ ibc-client-wasm-types       = { version = "0.50.0", path = "./ibc-clients/ics08-
 ibc-app-transfer-types      = { version = "0.50.0", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 ibc-app-nft-transfer-types  = { version = "0.50.0", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
 
-ibc-proto = { version = "0.42.1", default-features = false }
+ibc-proto = { version = "0.42.2", default-features = false }
 
 # cosmos dependencies
 tendermint                       = { version = "0.34.0", default-features = false }
@@ -106,6 +106,3 @@ tendermint-testgen               = { version = "0.34.0", default-features = fals
 # parity dependencies
 parity-scale-codec = { version = "3.6.5", default-features = false, features = ["full"] }
 scale-info         = { version = "2.10.0", default-features = false, features = ["derive"] }
-
-[patch.crates-io]
-ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs", rev="618ebea" }
