@@ -62,12 +62,12 @@ impl TestHost for Host {
 
     fn generate_client_state(
         &self,
-        latest_block: &Self::Block,
+        latest_height: Height,
         params: &Self::LightClientParams,
     ) -> Self::ClientState {
         let client_state: ClientState = ClientStateConfig::builder()
             .chain_id(self.chain_id().clone())
-            .latest_height(latest_block.height())
+            .latest_height(latest_height)
             .trusting_period(params.trusting_period)
             .max_clock_drift(params.max_clock_drift)
             .unbonding_period(params.unbonding_period)

@@ -38,10 +38,10 @@ impl TestHost for Host {
 
     fn generate_client_state(
         &self,
-        latest_block: &Self::Block,
+        latest_height: Height,
         _: &Self::LightClientParams,
     ) -> Self::ClientState {
-        MockClientState::new(*latest_block)
+        MockClientState::new(MockHeader::new(latest_height))
     }
 }
 

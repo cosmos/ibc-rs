@@ -300,21 +300,18 @@ where
 
     pub fn generate_light_client(
         &self,
-        mut consensus_heights: Vec<Height>,
+        consensus_heights: Vec<Height>,
         client_params: &H::LightClientParams,
     ) -> LightClientState<H> {
         let client_height = if let Some(&height) = consensus_heights.last() {
             height
         } else {
-            consensus_heights.push(self.latest_height());
             self.latest_height()
         };
 
-        let client_state = self.host.generate_client_state(
-            self.host_block(&client_height)
-                .expect("latest block exists"),
-            client_params,
-        );
+        let client_state = self
+            .host
+            .generate_client_state(client_height, client_params);
 
         let consensus_states = consensus_heights
             .into_iter()

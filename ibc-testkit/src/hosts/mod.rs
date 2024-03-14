@@ -46,7 +46,7 @@ pub trait TestHost: Debug {
     /// Generate a client state using the block at the given height and the provided parameters.
     fn generate_client_state(
         &self,
-        latest_block: &Self::Block,
+        latest_height: Height,
         params: &Self::LightClientParams,
     ) -> Self::ClientState;
 }
