@@ -33,6 +33,8 @@ pub enum ChannelError {
     NonUtf8PacketData,
     /// missing counterparty
     MissingCounterparty,
+    /// unsupported channel upgrade sequence
+    UnsupportedChannelUpgradeSequence,
     /// version not supported: expected `{expected}`, actual `{actual}`
     VersionNotSupported { expected: Version, actual: Version },
     /// missing channel end
