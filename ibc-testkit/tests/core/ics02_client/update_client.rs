@@ -38,7 +38,6 @@ use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{
     LightClientBuilder, LightClientState, MockClientConfig, MockContext, MockIbcStore,
 };
-use ibc_testkit::testapp::ibc::utils::blocks_since;
 use rstest::*;
 use tendermint_testgen::Validator as TestgenValidator;
 
@@ -245,7 +244,7 @@ fn test_consensus_state_pruning() {
 
         let update_height = ctx.latest_height();
 
-        ctx.advance_host_chain_height();
+        ctx.host.advance_block();
 
         let block = ctx.host_block(&update_height).unwrap().clone();
         let mut block = block.into_header();
@@ -940,7 +939,6 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
     let ctx_b = MockContextConfig::builder()
         .host_id(ctx_b_chain_id)
         .latest_height(client_height)
-        .max_history_size(blocks_since(client_height, start_height).expect("no error") + 1)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx_a = MockContextConfig::builder()
@@ -1383,7 +1381,7 @@ fn test_expired_client() {
     while ctx.ibc_store.host_timestamp().expect("no error")
         < (timestamp + trusting_period).expect("no error")
     {
-        ctx.advance_host_chain_height();
+        ctx.host.advance_block();
     }
 
     let client_state = ctx.ibc_store.client_state(&client_id).unwrap();
@@ -1435,11 +1433,11 @@ fn test_client_update_max_clock_drift() {
     while ctx_b.ibc_store.host_timestamp().expect("no error")
         < (ctx_a.ibc_store.host_timestamp().expect("no error") + max_clock_drift).expect("no error")
     {
-        ctx_b.advance_host_chain_height();
+        ctx_b.host.advance_block();
     }
 
     // include current block
-    ctx_b.advance_host_chain_height();
+    ctx_b.host.advance_block();
 
     let update_height = ctx_b.latest_height();
 

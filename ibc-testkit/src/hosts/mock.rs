@@ -1,3 +1,5 @@
+use alloc::vec::Vec;
+
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::Timestamp;
@@ -8,20 +10,33 @@ use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 
 #[derive(Debug)]
-pub struct Host(ChainId);
+pub struct MockHost {
+    chain_id: ChainId,
 
-impl TestHost for Host {
+    /// The chain of blocks underlying this context. A vector of size up to `max_history_size`
+    /// blocks, ascending order by their height (latest block is on the last position).
+    history: Vec<MockHeader>,
+}
+
+impl TestHost for MockHost {
     type Block = MockHeader;
     type BlockParams = ();
     type LightClientParams = ();
     type ClientState = MockClientState;
 
     fn with_chain_id(chain_id: ChainId) -> Self {
-        Self(chain_id)
+        Self {
+            chain_id,
+            history: Vec::new(),
+        }
     }
 
     fn chain_id(&self) -> &ChainId {
-        &self.0
+        &self.chain_id
+    }
+
+    fn history(&self) -> Vec<Self::Block> {
+        self.history.clone()
     }
 
     fn generate_block(
@@ -47,14 +62,6 @@ impl TestHost for Host {
 
 impl TestBlock for MockHeader {
     type Header = MockHeader;
-
-    fn height(&self) -> Height {
-        self.height
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.timestamp
-    }
 }
 
 impl From<MockHeader> for MockConsensusState {

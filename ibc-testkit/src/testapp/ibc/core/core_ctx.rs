@@ -28,7 +28,7 @@ use ibc::core::primitives::{Signer, Timestamp};
 use ibc::primitives::ToVec;
 use ibc_query::core::context::{ProvableContext, QueryContext};
 
-use super::types::MockIbcStore;
+use super::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 
@@ -251,8 +251,7 @@ where
 
     /// Returns the maximum expected time per block
     fn max_expected_time_per_block(&self) -> Duration {
-        // self.block_time
-        unimplemented!()
+        Duration::from_secs(DEFAULT_BLOCK_TIME_SECS)
     }
 
     fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {

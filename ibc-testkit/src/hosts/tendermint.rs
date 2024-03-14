@@ -1,4 +1,6 @@
+use alloc::sync::Arc;
 use core::str::FromStr;
+use std::sync::Mutex;
 
 use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState;
@@ -23,20 +25,39 @@ use crate::fixtures::clients::tendermint::ClientStateConfig;
 use crate::testapp::ibc::core::types::MockClientConfig;
 
 #[derive(Debug)]
-pub struct Host(ChainId);
+pub struct TendermintHost {
+    pub chain_id: ChainId,
 
-impl TestHost for Host {
+    /// The chain of blocks underlying this context. A vector of size up to `max_history_size`
+    /// blocks, ascending order by their height (latest block is on the last position).
+    pub history: Arc<Mutex<Vec<TendermintBlock>>>,
+}
+
+impl TendermintHost {
+    pub fn new(chain_id: ChainId) -> Self {
+        Self {
+            chain_id,
+            history: Arc::new(Mutex::new(Vec::new())),
+        }
+    }
+}
+
+impl TestHost for TendermintHost {
     type Block = TendermintBlock;
     type BlockParams = BlockParams;
     type LightClientParams = MockClientConfig;
     type ClientState = ClientState;
 
     fn with_chain_id(chain_id: ChainId) -> Self {
-        Self(chain_id)
+        Self::new(chain_id)
     }
 
     fn chain_id(&self) -> &ChainId {
-        &self.0
+        &self.chain_id
+    }
+
+    fn history(&self) -> Vec<Self::Block> {
+        self.history.lock().unwrap().clone()
     }
 
     fn generate_block(
@@ -92,19 +113,6 @@ impl TendermintBlock {
 
 impl TestBlock for TendermintBlock {
     type Header = TendermintHeader;
-    fn height(&self) -> Height {
-        Height::new(
-            ChainId::from_str(self.0.signed_header.header.chain_id.as_str())
-                .expect("Never fails")
-                .revision_number(),
-            self.0.signed_header.header.height.value(),
-        )
-        .expect("Never fails")
-    }
-
-    fn timestamp(&self) -> Timestamp {
-        self.0.signed_header.header.time.into()
-    }
 }
 
 #[derive(Debug)]

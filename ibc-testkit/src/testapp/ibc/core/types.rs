@@ -2,7 +2,7 @@
 
 use alloc::sync::Arc;
 use core::fmt::Debug;
-use core::ops::{Add, Sub};
+use core::ops::Sub;
 use core::time::Duration;
 
 use basecoin_store::context::ProvableStore;
@@ -39,7 +39,6 @@ use crate::hosts::{TestBlock, TestHeader, TestHost};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
-use crate::testapp::ibc::utils::blocks_since;
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
 pub type DefaultIbcStore = MockIbcStore<RevertibleStore<GrowingStore<InMemoryStore>>>;
@@ -163,16 +162,6 @@ where
     /// The type of host chain underlying this mock context.
     pub host: H,
 
-    /// Maximum size for the history of the host chain. Any block older than this is pruned.
-    pub max_history_size: u64,
-
-    /// The chain of blocks underlying this context. A vector of size up to `max_history_size`
-    /// blocks, ascending order by their height (latest block is on the last position).
-    pub history: Vec<H::Block>,
-
-    /// Average time duration between blocks
-    pub block_time: Duration,
-
     /// An object that stores all IBC related data.
     pub ibc_store: MockIbcStore<S>,
 }
@@ -272,6 +261,45 @@ where
         &self.ibc_store
     }
 
+    pub fn host_block(&self, target_height: &Height) -> Option<H::Block> {
+        self.host.get_block(target_height)
+    }
+
+    pub fn query_latest_block(&self) -> Option<H::Block> {
+        self.host.get_block(&self.latest_height())
+    }
+
+    pub fn advance_block_up_to(mut self, target_height: Height) -> Self {
+        self.host.advance_block_up_to(target_height);
+        self
+    }
+
+    pub fn latest_height(&self) -> Height {
+        let latest_ibc_height = self.ibc_store.host_height().expect("Never fails");
+        let latest_host_height = self.host.latest_height();
+        assert_eq!(
+            latest_ibc_height, latest_host_height,
+            "The IBC store and the host chain must have the same height"
+        );
+        latest_ibc_height
+    }
+
+    pub fn latest_timestamp(&self) -> Timestamp {
+        self.host_block(&self.latest_height())
+            .expect("Never fails")
+            .timestamp()
+    }
+
+    pub fn timestamp_at(&self, height: Height) -> Timestamp {
+        let n_blocks = self
+            .host
+            .blocks_since(height)
+            .expect("less or equal height");
+        self.latest_timestamp()
+            .sub(self.host.block_time() * (n_blocks as u32))
+            .expect("Never fails")
+    }
+
     pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
         let client_state_path = ClientStatePath::new(client_id.clone());
         self.ibc_store
@@ -320,7 +348,6 @@ where
                     height,
                     self.host_block(&height)
                         .expect("block exists")
-                        .clone()
                         .into_header()
                         .into_consensus_state(),
                 )
@@ -425,27 +452,6 @@ where
         self
     }
 
-    pub fn with_height(self, target_height: Height) -> Self {
-        let latest_height = self.latest_height();
-        if target_height.revision_number() > latest_height.revision_number() {
-            unimplemented!()
-        } else if target_height.revision_number() < latest_height.revision_number() {
-            panic!("Cannot rewind history of the chain to a smaller revision number!")
-        } else if target_height.revision_height() < latest_height.revision_height() {
-            panic!("Cannot rewind history of the chain to a smaller revision height!")
-        } else if target_height.revision_height() > latest_height.revision_height() {
-            // Repeatedly advance the host chain height till we hit the desired height
-            let mut ctx = self;
-            while ctx.latest_height().revision_height() < target_height.revision_height() {
-                ctx.advance_host_chain_height()
-            }
-            ctx
-        } else {
-            // Both the revision number and height match
-            self
-        }
-    }
-
     pub fn with_packet_commitment(
         mut self,
         port_id: PortId,
@@ -460,44 +466,6 @@ where
         self
     }
 
-    /// Accessor for a block of the local (host) chain from this context.
-    /// Returns `None` if the block at the requested height does not exist.
-    pub fn host_block(&self, target_height: &Height) -> Option<&H::Block> {
-        let target = target_height.revision_height();
-        let latest = self.latest_height().revision_height();
-
-        // Check that the block is not too advanced, nor has it been pruned.
-        if (target > latest) || (target <= latest - self.history.len() as u64) {
-            None // Block for requested height does not exist in history.
-        } else {
-            Some(&self.history[self.history.len() + target as usize - latest as usize - 1])
-        }
-    }
-
-    /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
-    pub fn advance_host_chain_height(&mut self) {
-        let latest_block = self.history.last().expect("history cannot be empty");
-
-        let new_block = self.host.generate_block(
-            latest_block.height().increment().revision_height(),
-            latest_block
-                .timestamp()
-                .add(self.block_time)
-                .expect("Never fails"),
-            &H::BlockParams::default(),
-        );
-
-        // Append the new header at the tip of the history.
-        if self.history.len() as u64 >= self.max_history_size {
-            // History is full, we rotate and replace the tip with the new header.
-            self.history.rotate_left(1);
-            self.history[self.max_history_size as usize - 1] = new_block;
-        } else {
-            // History is not full yet.
-            self.history.push(new_block);
-        }
-    }
-
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
@@ -508,57 +476,8 @@ where
     ) -> Result<(), RelayerError> {
         dispatch(&mut self.ibc_store, router, msg).map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
-        self.advance_host_chain_height();
+        self.host.advance_block();
         Ok(())
-    }
-
-    /// Validates this context. Should be called after the context is mutated by a test.
-    pub fn validate(&self) -> Result<(), String> {
-        // Check that the number of entries is not higher than window size.
-        if self.history.len() as u64 > self.max_history_size {
-            return Err("too many entries".to_string());
-        }
-
-        // Check the content of the history.
-        if !self.history.is_empty() {
-            // Get the highest block.
-            let lh = &self.history[self.history.len() - 1];
-            // Check latest is properly updated with highest header height.
-            if lh.height() != self.latest_height() {
-                return Err("latest height is not updated".to_string());
-            }
-        }
-
-        // Check that headers in the history are in sequential order.
-        for i in 1..self.history.len() {
-            let ph = &self.history[i - 1];
-            let h = &self.history[i];
-            if ph.height().increment() != h.height() {
-                return Err("headers in history not sequential".to_string());
-            }
-        }
-        Ok(())
-    }
-
-    pub fn latest_height(&self) -> Height {
-        self.ibc_store.host_height().expect("Never fails")
-    }
-
-    pub fn latest_timestamp(&self) -> Timestamp {
-        self.host_block(&self.latest_height())
-            .expect("Never fails")
-            .timestamp()
-    }
-
-    pub fn timestamp_at(&self, height: Height) -> Timestamp {
-        let n_blocks = blocks_since(self.latest_height(), height).expect("less or equal height");
-        self.latest_timestamp()
-            .sub(self.block_time * (n_blocks as u32))
-            .expect("Never fails")
-    }
-
-    pub fn query_latest_block(&self) -> Option<&H::Block> {
-        self.host_block(&self.latest_height())
     }
 
     pub fn get_events(&self) -> Vec<IbcEvent> {
@@ -645,7 +564,7 @@ mod tests {
             for mut test in tests {
                 // All tests should yield a valid context after initialization.
                 assert!(
-                    test.ctx.validate().is_ok(),
+                    test.ctx.host.validate().is_ok(),
                     "failed in test [{}] {} while validating context {:?}",
                     sub_title,
                     test.name,
@@ -655,9 +574,9 @@ mod tests {
                 let current_height = test.ctx.latest_height();
 
                 // After advancing the chain's height, the context should still be valid.
-                test.ctx.advance_host_chain_height();
+                test.ctx.host.advance_block();
                 assert!(
-                    test.ctx.validate().is_ok(),
+                    test.ctx.host.validate().is_ok(),
                     "failed in test [{}] {} while validating context {:?}",
                     sub_title,
                     test.name,
@@ -674,7 +593,8 @@ mod tests {
 
                 assert_eq!(
                     test.ctx
-                        .host_block(&current_height)
+                        .host
+                        .get_block(&current_height)
                         .expect("Never fails")
                         .height(),
                     current_height,

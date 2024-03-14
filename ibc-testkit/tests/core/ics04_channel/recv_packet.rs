@@ -133,7 +133,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
             packet.chan_id_on_b.clone(),
             1.into(),
         )
-        .with_height(host_height)
+        .advance_block_up_to(host_height)
         // This `with_recv_sequence` is required for ordered channels
         .with_recv_sequence(
             packet.port_id_on_b.clone(),
@@ -192,7 +192,7 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
         .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b)
         .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into())
-        .with_height(host_height);
+        .advance_block_up_to(host_height);
 
     let res = validate(&context.ibc_store, &router, msg_envelope);
 

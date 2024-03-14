@@ -63,7 +63,7 @@ mod tests {
 
     use super::RelayerContext;
     use crate::fixtures::core::context::MockContextConfig;
-    use crate::hosts::{MockHost, TendermintHost, TestBlock, TestHeader};
+    use crate::hosts::{MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
     use crate::relayer::context::ClientId;
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
@@ -185,7 +185,7 @@ mod tests {
             // - send the message to B. We bypass ICS18 interface and call directly into
             // MockContext `recv` method (to avoid additional serialization steps).
             let dispatch_res_b = ctx_b.deliver(&mut router_b, MsgEnvelope::Client(client_msg_b));
-            let validation_res = ctx_b.validate();
+            let validation_res = ctx_b.host.validate();
             assert!(
                 validation_res.is_ok(),
                 "context validation failed with error {validation_res:?} for context {ctx_b:?}",
@@ -224,7 +224,7 @@ mod tests {
 
             // - send the message to A
             let dispatch_res_a = ctx_a.deliver(&mut router_a, MsgEnvelope::Client(client_msg_a));
-            let validation_res = ctx_a.validate();
+            let validation_res = ctx_a.host.validate();
             assert!(
                 validation_res.is_ok(),
                 "context validation failed with error {validation_res:?} for context {ctx_a:?}",
