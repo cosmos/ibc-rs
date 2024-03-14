@@ -106,3 +106,6 @@ tendermint-testgen               = { version = "0.34.0", default-features = fals
 # parity dependencies
 parity-scale-codec = { version = "3.6.5", default-features = false, features = ["full"] }
 scale-info         = { version = "2.10.0", default-features = false, features = ["derive"] }
+
+[patch.crates-io]
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs", rev="618ebea" }
