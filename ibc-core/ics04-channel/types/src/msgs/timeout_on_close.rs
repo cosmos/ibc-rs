@@ -6,8 +6,7 @@ use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgTimeoutOnClose as RawMsgTimeoutOnClose;
 use ibc_proto::Protobuf;
 
-use crate::error::ChannelError;
-use crate::error::PacketError;
+use crate::error::{ChannelError, PacketError};
 use crate::packet::Packet;
 
 pub const TIMEOUT_ON_CLOSE_TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
