@@ -36,7 +36,7 @@ pub fn instantiate(
     let d =
         serde_json::to_string(&ConnectionId::from_str(msg.test.as_str()).unwrap()).expect("test");
     let e = serde_json::to_string(&PrefixedDenom {
-        trace_path: TracePath::default(),
+        trace_path: TracePath::empty(),
         base_denom: BaseDenom::from_str(msg.test.as_str()).unwrap(),
     })
     .expect("test");
