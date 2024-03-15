@@ -287,7 +287,7 @@ where
         Ok(Status::Active)
     }
 
-    fn check_substitute(&self, ctx: &V, substitute_client_state: Any) -> Result<(), ClientError> {
+    fn check_substitute(&self, _ctx: &V, _substitute_client_state: Any) -> Result<(), ClientError> {
         Ok(())
     }
 }
