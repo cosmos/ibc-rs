@@ -5,7 +5,6 @@ use ibc_client_tendermint_types::{
     Misbehaviour as TmMisbehaviour, TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
 use ibc_core_client::context::client_state::ClientStateValidation;
-use ibc_core_client::context::ClientValidationContext;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::{Height, Status};
 use ibc_core_host::types::identifiers::{ChainId, ClientId};

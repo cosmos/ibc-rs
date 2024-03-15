@@ -48,8 +48,10 @@ where
     // Check that the subject client state and substitute client states match, i.e., that
     // all their respective client state parameters match except for frozen height, latest
     // height, trusting period, and chain ID
-    subject_client_state
-        .check_substitute(ctx.get_client_validation_context(), substitute_client_state)?;
+    subject_client_state.check_substitute(
+        ctx.get_client_validation_context(),
+        substitute_client_state.into(),
+    )?;
 
     Ok(())
 }
@@ -74,7 +76,7 @@ where
     subject_client_state.update_on_recovery(
         ctx.get_client_execution_context(),
         &subject_client_id,
-        substitute_client_state,
+        substitute_client_state.into(),
     )?;
 
     Ok(())
