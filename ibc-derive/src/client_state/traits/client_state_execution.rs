@@ -47,7 +47,7 @@ pub(crate) fn impl_ClientStateExecution(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
-        quote! { update_state_on_misbehaviour(cs, ctx, client_id, substitute_client_state) },
+        quote! { update_on_recovery(cs, ctx, client_id, substitute_client_state) },
         imports,
     );
 
@@ -121,7 +121,7 @@ pub(crate) fn impl_ClientStateExecution(
             fn update_on_recovery(
                 &self,
                 ctx: &mut #E,
-                subject_client_id: &#ClientId,
+                client_id: &#ClientId,
                 substitute_client_state: #Any,
             ) -> core::result::Result<(), #ClientError> {
                 match self {

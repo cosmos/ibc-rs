@@ -1,6 +1,7 @@
 use core::str::FromStr;
 use core::time::Duration;
 
+use ibc::clients::tendermint::types::ClientState as ClientStateType;
 use ibc::core::client::context::prelude::*;
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
 use ibc::core::client::types::{Height, Status};
@@ -412,6 +413,31 @@ where
         subject_client_id: &ClientId,
         substitute_client_state: Any,
     ) -> Result<(), ClientError> {
+        let substitute_client_state =
+            TryInto::<ClientStateType>::try_into(substitute_client_state)?;
+
+        let ClientStateType { latest_height, .. } = substitute_client_state;
+
+        let new_mock_client_state = MockClientState {
+            frozen_height: None,
+            header: self.header,
+        };
+
+        let host_timestamp = ctx.host_timestamp()?;
+        let host_height = ctx.host_height()?;
+
+        ctx.store_client_state(
+            ClientStatePath::new(subject_client_id.clone()),
+            new_mock_client_state.into(),
+        )?;
+
+        ctx.store_update_meta(
+            subject_client_id.clone(),
+            latest_height,
+            host_timestamp,
+            host_height,
+        )?;
+
         Ok(())
     }
 }
