@@ -122,7 +122,7 @@ pub(crate) fn impl_ClientStateExecution(
                 &self,
                 ctx: &mut #E,
                 subject_client_id: &#ClientId,
-                substitute_client_state: <#E as #ClientExecutionContext>::ClientStateMut,
+                substitute_client_state: #Any,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#update_on_recovery_impl),*

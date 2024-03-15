@@ -59,11 +59,7 @@ where
         status(self.inner(), ctx, client_id)
     }
 
-    fn check_substitute(
-        &self,
-        ctx: &V,
-        substitute_client_state: <V as ClientValidationContext>::ClientStateRef,
-    ) -> Result<(), ClientError> {
+    fn check_substitute(&self, ctx: &V, substitute_client_state: Any) -> Result<(), ClientError> {
         check_substitute(self.inner(), ctx, substitute_client_state)
     }
 }
@@ -212,7 +208,7 @@ where
 pub fn check_substitute<V>(
     subject_client_state: &ClientStateType,
     _ctx: &V,
-    substitute_client_state: <V as ClientValidationContext>::ClientStateRef,
+    substitute_client_state: Any,
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,

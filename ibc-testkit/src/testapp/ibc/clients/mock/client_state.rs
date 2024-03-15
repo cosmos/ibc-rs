@@ -286,11 +286,7 @@ where
         Ok(Status::Active)
     }
 
-    fn check_substitute(
-        &self,
-        ctx: &V,
-        substitute_client_state: V::ClientStateRef,
-    ) -> Result<(), ClientError> {
+    fn check_substitute(&self, ctx: &V, substitute_client_state: Any) -> Result<(), ClientError> {
         Ok(())
     }
 }
@@ -414,7 +410,7 @@ where
         &self,
         ctx: &mut E,
         subject_client_id: &ClientId,
-        substitute_client_state: E::ClientStateRef,
+        substitute_client_state: Any,
     ) -> Result<(), ClientError> {
         Ok(())
     }

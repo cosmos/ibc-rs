@@ -137,11 +137,7 @@ where
     /// level.
     ///
     /// Returns `Ok` if the subject and substitute client states match, `Err` otherwise.
-    fn check_substitute(
-        &self,
-        ctx: &V,
-        substitute_client_state: V::ClientStateRef,
-    ) -> Result<(), ClientError>;
+    fn check_substitute(&self, ctx: &V, substitute_client_state: Any) -> Result<(), ClientError>;
 }
 
 /// `ClientState` methods which require access to the client's
@@ -205,7 +201,7 @@ where
         &self,
         ctx: &mut E,
         subject_client_id: &ClientId,
-        substitute_client_state: E::ClientStateMut,
+        substitute_client_state: Any,
     ) -> Result<(), ClientError>;
 }
 

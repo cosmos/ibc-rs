@@ -102,7 +102,7 @@ pub(crate) fn impl_ClientStateValidation(
             fn check_substitute(
                 &self,
                 ctx: &#V,
-                substitute_client_state: <#V as #ClientValidationContext>::ClientStateRef,
+                substitute_client_state: #Any,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#check_substitute_impl),*

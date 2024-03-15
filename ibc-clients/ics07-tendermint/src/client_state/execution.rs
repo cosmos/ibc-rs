@@ -69,7 +69,7 @@ where
         &self,
         ctx: &mut E,
         subject_client_id: &ClientId,
-        substitute_client_state: <E as ClientExecutionContext>::ClientStateMut,
+        substitute_client_state: Any,
     ) -> Result<(), ClientError> {
         let subject_client_state = self.inner().clone();
 
@@ -378,7 +378,7 @@ pub fn update_on_recovery<E>(
     subject_client_state: ClientStateType,
     ctx: &mut E,
     subject_client_id: &ClientId,
-    substitute_client_state: <E as ClientExecutionContext>::ClientStateMut,
+    substitute_client_state: Any,
 ) -> Result<(), ClientError>
 where
     E: TmExecutionContext,
