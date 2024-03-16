@@ -16,5 +16,5 @@ to the proto types for efficient integration.
 - Includes convenient `QueryContext` and `ProvableContext` traits that extend
   the capabilities of an implemented IBC module, enabling the retrieval of state
   from the chain.
-- Derives `serde` for all the domain types to facilitate (de)serialization of
-  the domain types.
+- Derives `serde` and `schema` for all the domain types to facilitate
+  (de)serialization of the domain types.

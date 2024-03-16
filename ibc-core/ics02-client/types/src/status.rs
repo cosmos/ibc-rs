@@ -16,7 +16,7 @@ pub enum UpdateKind {
 }
 
 /// Represents the status of a client
-#[derive(Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Status {
     /// The client is active and allowed to be used
     Active,

@@ -19,13 +19,14 @@ use ibc_proto::ibc::core::channel::v1::{
     QueryUnreceivedAcksRequest as RawQueryUnreceivedAcksRequest,
     QueryUnreceivedPacketsRequest as RawQueryUnreceivedPacketsRequest,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::error::QueryError;
 use crate::types::PageRequest;
 
 /// Defines the RPC method request type for querying a channel
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryChannelRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -45,7 +46,9 @@ impl TryFrom<RawQueryChannelRequest> for QueryChannelRequest {
 }
 
 /// Defines the RPC method request type for querying all channels
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryChannelsRequest {
     pub pagination: Option<PageRequest>,
 }
@@ -60,7 +63,9 @@ impl From<RawQueryChannelsRequest> for QueryChannelsRequest {
 
 /// Defines the RPC method request type for querying the client state associated
 /// with a channel
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryChannelClientStateRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -81,7 +86,9 @@ impl TryFrom<RawQueryChannelClientStateRequest> for QueryChannelClientStateReque
 
 /// Defines the RPC method request type for querying the consensus state
 /// associated with a channel
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryChannelConsensusStateRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -104,7 +111,9 @@ impl TryFrom<RawQueryChannelConsensusStateRequest> for QueryChannelConsensusStat
 
 /// Defines the RPC method request type for querying all channels associated
 /// with a connection identifier
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionChannelsRequest {
     pub connection_id: ConnectionId,
     pub pagination: Option<PageRequest>,
@@ -123,7 +132,9 @@ impl TryFrom<RawQueryConnectionChannelsRequest> for QueryConnectionChannelsReque
 
 /// Defines the RPC method request type for querying the packet commitment
 /// associated with the specified channel
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketCommitmentRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -146,7 +157,9 @@ impl TryFrom<RawQueryPacketCommitmentRequest> for QueryPacketCommitmentRequest {
 
 /// Defines the RPC method request type for querying all packet commitments
 /// associated with the specified channel
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketCommitmentsRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -177,7 +190,9 @@ impl From<QueryPacketCommitmentsRequest> for RawQueryPacketCommitmentsRequest {
 
 /// Defines the RPC method request type for querying the packet receipt
 /// associated with the specified channel and sequence number
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketReceiptRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -200,7 +215,9 @@ impl TryFrom<RawQueryPacketReceiptRequest> for QueryPacketReceiptRequest {
 
 /// Defines the RPC method request type for querying the unreceived packets
 /// associated with the specified channel
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUnreceivedPacketsRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -239,7 +256,9 @@ impl From<QueryUnreceivedPacketsRequest> for RawQueryUnreceivedPacketsRequest {
 
 /// Defines the RPC method request type for querying the packet acknowledgement
 /// associated with the specified channel and sequence number
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketAcknowledgementRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -262,7 +281,9 @@ impl TryFrom<RawQueryPacketAcknowledgementRequest> for QueryPacketAcknowledgemen
 
 /// Defines the RPC method request type for querying the packet acknowledgements
 /// associated with the specified channel
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketAcknowledgementsRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -304,7 +325,9 @@ impl From<QueryPacketAcknowledgementsRequest> for RawQueryPacketAcknowledgements
 
 /// gRPC query to fetch the unreceived acknowledgements sequences associated with
 /// the specified channel.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUnreceivedAcksRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -343,7 +366,9 @@ impl From<QueryUnreceivedAcksRequest> for RawQueryUnreceivedAcksRequest {
 
 /// Defines the RPC method request type for querying the next sequence receive
 /// number for the specified channel
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryNextSequenceReceiveRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,
@@ -363,7 +388,9 @@ impl TryFrom<RawQueryNextSequenceReceiveRequest> for QueryNextSequenceReceiveReq
 }
 /// Defines the RPC method request type for querying the next sequence send
 /// number for the specified channel
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryNextSequenceSendRequest {
     pub port_id: PortId,
     pub channel_id: ChannelId,

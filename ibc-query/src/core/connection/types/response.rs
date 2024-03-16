@@ -14,13 +14,14 @@ use ibc_proto::ibc::core::connection::v1::{
     QueryConnectionResponse as RawQueryConnectionResponse,
     QueryConnectionsResponse as RawQueryConnectionsResponse,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::core::client::IdentifiedClientState;
 use crate::types::{PageResponse, Proof};
 
 /// Defines the RPC method response type when querying a connection.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionResponse {
     pub conn_end: ConnectionEnd,
     pub proof: Proof,
@@ -49,7 +50,9 @@ impl From<QueryConnectionResponse> for RawQueryConnectionResponse {
 
 /// Defines the RPC method response type when querying client state associated
 /// with a connection.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionClientStateResponse {
     pub identified_client_state: IdentifiedClientState,
     pub proof: Proof,
@@ -81,7 +84,9 @@ impl From<QueryConnectionClientStateResponse> for RawQueryConnectionClientStateR
 }
 
 /// Defines the RPC method response type when querying all the existing connection ends.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionsResponse {
     pub connections: Vec<IdentifiedConnectionEnd>,
     pub query_height: Height,
@@ -114,7 +119,9 @@ impl From<QueryConnectionsResponse> for RawQueryConnectionsResponse {
 
 /// Defines the RPC method response type when querying all the existing
 /// connection ends for a given client.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientConnectionsResponse {
     pub connection_paths: Vec<ConnectionId>,
     pub proof: Proof,
@@ -147,7 +154,9 @@ impl From<QueryClientConnectionsResponse> for RawQueryClientConnectionsResponse 
 
 /// Defines the RPC method response type when querying the consensus state for a
 /// connection.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionConsensusStateResponse {
     pub consensus_state: Any,
     pub client_id: ClientId,
@@ -182,7 +191,9 @@ impl From<QueryConnectionConsensusStateResponse> for RawQueryConnectionConsensus
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionParamsResponse {
     pub max_expected_time_per_block: u64,
 }

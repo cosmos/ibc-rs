@@ -4,6 +4,7 @@
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]
 #![cfg_attr(not(test), deny(clippy::disallowed_methods, clippy::disallowed_types,))]
+#![allow(clippy::result_large_err)]
 #![deny(
     warnings,
     trivial_casts,

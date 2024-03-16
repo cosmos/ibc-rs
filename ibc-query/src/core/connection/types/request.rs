@@ -14,13 +14,14 @@ use ibc_proto::ibc::core::connection::v1::{
     QueryConnectionRequest as RawQueryConnectionRequest,
     QueryConnectionsRequest as RawQueryConnectionsRequest,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::error::QueryError;
 use crate::types::PageRequest;
 
 /// Defines the RPC method request type for querying connections.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionsRequest {
     pub pagination: Option<PageRequest>,
 }
@@ -35,7 +36,9 @@ impl From<RawQueryConnectionsRequest> for QueryConnectionsRequest {
 
 /// Defines the RPC method request type for querying connections associated with
 /// a client.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientConnectionsRequest {
     pub client_id: ClientId,
 }
@@ -51,10 +54,12 @@ impl TryFrom<RawQueryClientConnectionsRequest> for QueryClientConnectionsRequest
 }
 
 /// Defines the RPC method request type for querying a connection.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionRequest {
     pub connection_id: ConnectionId,
-    pub height: Option<Height>,
+    pub query_height: Option<Height>,
 }
 
 impl TryFrom<RawQueryConnectionRequest> for QueryConnectionRequest {
@@ -63,14 +68,16 @@ impl TryFrom<RawQueryConnectionRequest> for QueryConnectionRequest {
     fn try_from(request: RawQueryConnectionRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             connection_id: request.connection_id.parse()?,
-            height: None,
+            query_height: None,
         })
     }
 }
 
 /// Defines the RPC method request type for querying the channels associated
 /// with a connection.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionChannelsRequest {
     pub connection_id: ConnectionId,
     pub pagination: Option<PageRequest>,
@@ -98,7 +105,9 @@ impl From<QueryConnectionChannelsRequest> for RawQueryConnectionChannelsRequest 
 
 /// Defines the RPC method request type for querying the client state associated
 /// with a connection.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionClientStateRequest {
     pub connection_id: ConnectionId,
     pub query_height: Option<Height>,
@@ -117,7 +126,9 @@ impl TryFrom<RawQueryConnectionClientStateRequest> for QueryConnectionClientStat
 
 /// Defines the RPC method request type for querying the consensus state
 /// associated with a connection.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionConsensusStateRequest {
     pub connection_id: ConnectionId,
     pub height: Height,
@@ -137,7 +148,9 @@ impl TryFrom<RawQueryConnectionConsensusStateRequest> for QueryConnectionConsens
 }
 
 /// Defines the RPC method request type for querying the connection parameters.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionParamsRequest {
     pub query_height: Option<Height>,
 }

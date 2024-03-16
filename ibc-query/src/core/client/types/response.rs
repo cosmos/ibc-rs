@@ -18,11 +18,12 @@ use ibc_proto::ibc::core::client::v1::{
     QueryUpgradedClientStateResponse as RawQueryUpgradedClientStateResponse,
     QueryUpgradedConsensusStateResponse as RawQueryUpgradedConsensusStateResponse,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::types::{PageResponse, Proof};
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientStateResponse {
     /// The client identifier.
     pub client_state: Any,
@@ -52,7 +53,9 @@ impl From<QueryClientStateResponse> for RawQueryClientStateResponse {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientStatesResponse {
     pub client_states: Vec<IdentifiedClientState>,
     pub pagination: Option<PageResponse>,
@@ -83,7 +86,9 @@ impl From<QueryClientStatesResponse> for RawQueryClientStatesResponse {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct IdentifiedClientState {
     pub client_id: ClientId,
     pub client_state: Any,
@@ -107,7 +112,9 @@ impl From<IdentifiedClientState> for RawIdentifiedClientState {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConsensusStateResponse {
     consensus_state: Any,
     proof: Proof,
@@ -134,7 +141,9 @@ impl From<QueryConsensusStateResponse> for RawQueryConsensusStateResponse {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ConsensusStateWithHeight {
     height: Height,
     consensus_state: Any,
@@ -158,7 +167,9 @@ impl From<ConsensusStateWithHeight> for RawConsensusStateWithHeight {
     }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConsensusStatesResponse {
     consensus_states: Vec<ConsensusStateWithHeight>,
     pagination: Option<PageResponse>,
@@ -189,6 +200,10 @@ impl From<QueryConsensusStatesResponse> for RawQueryConsensusStatesResponse {
     }
 }
 
+/// Defines the RPC method response type for querying the consensus state heights.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConsensusStateHeightsResponse {
     consensus_state_heights: Vec<Height>,
     pagination: Option<PageResponse>,
@@ -216,6 +231,10 @@ impl From<QueryConsensusStateHeightsResponse> for RawQueryConsensusStateHeightsR
     }
 }
 
+/// Defines the RPC method response type for querying the client status.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientStatusResponse {
     status: Status,
 }
@@ -234,6 +253,10 @@ impl From<QueryClientStatusResponse> for RawQueryClientStatusResponse {
     }
 }
 
+/// Defines the RPC method response type for querying the client parameters.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientParamsResponse {
     allowed_clients: Vec<ClientId>,
 }
@@ -258,6 +281,10 @@ impl From<QueryClientParamsResponse> for RawQueryClientParamsResponse {
     }
 }
 
+/// Defines the RPC method response type for querying the upgraded client state.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedClientStateResponse {
     upgraded_client_state: Any,
 }
@@ -278,6 +305,10 @@ impl From<QueryUpgradedClientStateResponse> for RawQueryUpgradedClientStateRespo
     }
 }
 
+/// Defines the RPC method response type for querying the upgraded consensus state.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedConsensusStateResponse {
     upgraded_consensus_state: Any,
 }

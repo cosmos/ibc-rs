@@ -2,11 +2,12 @@ use ibc::core::primitives::prelude::Vec;
 use ibc_proto::cosmos::base::query::v1beta1::{
     PageRequest as RawPageRequest, PageResponse as RawPageResponse,
 };
-use serde::{Deserialize, Serialize};
 
 pub type Proof = Vec<u8>;
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct PageRequest {
     /// key is a value returned in PageResponse.next_key to begin
     /// querying the next page most efficiently. Only one of offset or key
@@ -64,7 +65,9 @@ impl From<RawPageRequest> for PageRequest {
     }
 }
 
-#[derive(Clone, Debug, Default, Serialize, Deserialize)]
+#[derive(Clone, Debug, Default)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct PageResponse {
     /// next_key is the key to be passed to PageRequest.key to
     /// query the next page most efficiently. It will be empty if

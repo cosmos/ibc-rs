@@ -16,7 +16,8 @@ description  = """
 [dependencies]
 # external dependencies
 displaydoc = { version = "0.2", default-features = false }
-serde      = { workspace = true }
+schemars   = { workspace = true , optional = true }
+serde      = { workspace = true, optional = true }
 tonic      = "0.10"
 
 # ibc dependencies
@@ -25,4 +26,20 @@ ibc-proto = { workspace = true, features = ["server"] }
 
 [features]
 default = ["std"]
-std = ["ibc-proto/std", "ibc/std", "serde/std"]
+std = [
+    "ibc/std",
+    "ibc-proto/std",
+]
+serde = [
+    "dep:serde",
+    "ibc/serde",
+    "ibc-proto/serde",
+]
+schema = [
+    "dep:schemars",
+    "ibc/schema",
+    "ibc-proto/json-schema",
+    "serde",
+    "std",
+]
+

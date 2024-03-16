@@ -24,13 +24,14 @@ use ibc_proto::ibc::core::channel::v1::{
     QueryUnreceivedAcksResponse as RawQueryUnreceivedAcksResponse,
     QueryUnreceivedPacketsResponse as RawQueryUnreceivedPacketsResponse,
 };
-use serde::{Deserialize, Serialize};
 
 use crate::core::client::IdentifiedClientState;
 use crate::types::{PageResponse, Proof};
 
 /// Defines the RPC method response type when querying a channel.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryChannelResponse {
     pub channel: ChannelEnd,
     pub proof: Proof,
@@ -58,7 +59,9 @@ impl From<QueryChannelResponse> for RawQueryChannelResponse {
 }
 
 /// Defines the RPC method response type when querying a list of channels.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryChannelsResponse {
     pub channels: Vec<IdentifiedChannelEnd>,
     pub query_height: Height,
@@ -90,7 +93,9 @@ impl From<QueryChannelsResponse> for RawQueryChannelsResponse {
 }
 
 /// Defines the RPC method response type when querying a channel client state.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryChannelClientStateResponse {
     pub identified_client_state: IdentifiedClientState,
     pub proof: Proof,
@@ -122,7 +127,9 @@ impl From<QueryChannelClientStateResponse> for RawQueryChannelClientStateRespons
 }
 
 /// Defines the RPC method response when for querying a channel consensus state.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryChannelConsensusStateResponse {
     pub consensus_state: Any,
     pub client_id: ClientId,
@@ -158,7 +165,9 @@ impl From<QueryChannelConsensusStateResponse> for RawQueryChannelConsensusStateR
 }
 
 /// Defines the RPC method response type when querying a list of channels associated with a connection.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConnectionChannelsResponse {
     pub channels: Vec<IdentifiedChannelEnd>,
     pub query_height: Height,
@@ -190,7 +199,9 @@ impl From<QueryConnectionChannelsResponse> for RawQueryConnectionChannelsRespons
 }
 
 /// Defines the RPC method response type when querying the next sequence to be received on a channel.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryNextSequenceReceiveResponse {
     pub next_sequence_receive: Sequence,
     pub proof: Proof,
@@ -219,7 +230,9 @@ impl From<QueryNextSequenceReceiveResponse> for RawQueryNextSequenceReceiveRespo
 
 /// Defines the RPC method response type when querying the next sequence to be
 /// sent on a channel.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryNextSequenceSendResponse {
     pub next_sequence_send: Sequence,
     pub proof: Proof,
@@ -247,7 +260,9 @@ impl From<QueryNextSequenceSendResponse> for RawQueryNextSequenceSendResponse {
 }
 
 /// Defines the RPC method response type when querying a packet acknowledgement.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketAcknowledgementResponse {
     pub acknowledgement: Vec<u8>,
     pub proof: Proof,
@@ -276,7 +291,9 @@ impl From<QueryPacketAcknowledgementResponse> for RawQueryPacketAcknowledgementR
 
 /// Defines the RPC method response type when querying a list of packet
 /// acknowledgements.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketAcknowledgementsResponse {
     pub acknowledgements: Vec<PacketState>,
     pub height: Height,
@@ -312,7 +329,9 @@ impl From<QueryPacketAcknowledgementsResponse> for RawQueryPacketAcknowledgement
 }
 
 /// Defines the RPC method response type when querying a packet commitment.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketCommitmentResponse {
     pub packet_commitment: PacketCommitment,
     pub proof: Proof,
@@ -340,7 +359,9 @@ impl From<QueryPacketCommitmentResponse> for RawQueryPacketCommitmentResponse {
 }
 
 /// Defines the RPC method response type when querying a list of packet commitments.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketCommitmentsResponse {
     pub commitments: Vec<PacketState>,
     pub height: Height,
@@ -372,7 +393,9 @@ impl From<QueryPacketCommitmentsResponse> for RawQueryPacketCommitmentsResponse 
 }
 
 /// Defines the RPC method response type when querying a packet receipt.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketReceiptResponse {
     pub received: bool,
     pub proof: Proof,
@@ -400,7 +423,9 @@ impl From<QueryPacketReceiptResponse> for RawQueryPacketReceiptResponse {
 }
 
 /// Defines the RPC method response type when querying a list of unreceived acks.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUnreceivedAcksResponse {
     pub sequences: Vec<Sequence>,
     pub height: Height,
@@ -422,7 +447,9 @@ impl From<QueryUnreceivedAcksResponse> for RawQueryUnreceivedAcksResponse {
 }
 
 /// Defines the RPC method response type when querying a list of unreceived packets.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUnreceivedPacketsResponse {
     pub sequences: Vec<Sequence>,
     pub height: Height,

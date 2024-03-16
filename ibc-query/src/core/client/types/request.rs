@@ -17,12 +17,13 @@ use ibc_proto::ibc::core::client::v1::{
     QueryUpgradedConsensusStateRequest as RawUpgradedConsensusStateRequest,
 };
 use ibc_proto::Protobuf;
-use serde::{Deserialize, Serialize};
 
 use crate::error::QueryError;
 use crate::types::PageRequest;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientStateRequest {
     /// The client identifier.
     pub client_id: ClientId,
@@ -43,7 +44,9 @@ impl TryFrom<RawQueryClientStateRequest> for QueryClientStateRequest {
 }
 
 /// Defines the RPC method request type for querying all client states.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientStatesRequest {
     pub pagination: Option<PageRequest>,
 }
@@ -58,7 +61,9 @@ impl From<RawQueryClientStatesRequest> for QueryClientStatesRequest {
 
 /// Defines the RPC method request type for querying the consensus state of a
 /// client.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConsensusStateRequest {
     /// The client identifier.
     pub client_id: ClientId,
@@ -89,7 +94,9 @@ impl TryFrom<RawQueryConsensusStateRequest> for QueryConsensusStateRequest {
 }
 
 /// Defines the RPC method request type for querying the upgraded client state.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedClientStateRequest {
     /// Height at which the chain is scheduled to halt for upgrade
     pub upgrade_height: Option<Height>,
@@ -105,7 +112,9 @@ impl From<RawUpgradedClientStateRequest> for QueryUpgradedClientStateRequest {
 
 /// Defines the RPC method request type for querying the upgraded consensus
 /// state.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedConsensusStateRequest {
     /// Height at which the chain is scheduled to halt for upgrade.
     pub upgrade_height: Option<Height>,
@@ -120,7 +129,9 @@ impl From<RawUpgradedConsensusStateRequest> for QueryUpgradedConsensusStateReque
 }
 
 /// Defines the RPC method request type for querying all consensus states.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConsensusStatesRequest {
     pub client_id: ClientId,
     pub pagination: Option<PageRequest>,
@@ -150,7 +161,9 @@ impl From<QueryConsensusStatesRequest> for RawQueryConsensusStatesRequest {
 
 /// Defines the RPC method request type for querying the consensus state
 /// heights.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConsensusStateHeightsRequest {
     pub client_id: ClientId,
     pub pagination: Option<PageRequest>,
@@ -179,13 +192,17 @@ impl From<QueryConsensusStateHeightsRequest> for RawQueryConsensusStateHeightsRe
 }
 
 /// Defines the RPC method request type for querying the host consensus state.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryHostConsensusStateRequest {
     pub query_height: Option<Height>,
 }
 
 /// Defines the RPC method request type for querying the status of a client.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientStatusRequest {
     pub client_id: ClientId,
     pub query_height: Option<Height>,
@@ -203,7 +220,9 @@ impl TryFrom<RawQueryClientStatusRequest> for QueryClientStatusRequest {
 }
 
 /// Defines the RPC method request type for querying the parameters of a client.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientParamsRequest {
     pub query_height: Option<Height>,
 }
