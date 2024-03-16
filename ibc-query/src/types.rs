@@ -1,4 +1,4 @@
-use ibc::core::primitives::prelude::Vec;
+use ibc::core::primitives::prelude::*;
 use ibc_proto::cosmos::base::query::v1beta1::{
     PageRequest as RawPageRequest, PageResponse as RawPageResponse,
 };

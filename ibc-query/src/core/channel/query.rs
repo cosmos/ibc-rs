@@ -317,7 +317,7 @@ where
         })?;
 
     Ok(QueryPacketAcknowledgementResponse::new(
-        packet_acknowledgement_data.into_vec(),
+        packet_acknowledgement_data,
         proof,
         current_height,
     ))

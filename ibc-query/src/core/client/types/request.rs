@@ -5,6 +5,7 @@ use alloc::string::ToString;
 
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ClientId;
+use ibc::primitives::prelude::*;
 use ibc_proto::ibc::core::client::v1::{
     QueryClientParamsRequest as RawQueryClientParamsRequest,
     QueryClientStateRequest as RawQueryClientStateRequest,

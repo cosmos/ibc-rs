@@ -1,5 +1,7 @@
 use core::fmt::{Debug, Display, Formatter};
 
+use ibc_primitives::prelude::*;
+
 use crate::error::ClientError;
 
 /// `UpdateKind` represents the 2 ways that a client can be updated
@@ -17,6 +19,8 @@ pub enum UpdateKind {
 
 /// Represents the status of a client
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Status {
     /// The client is active and allowed to be used
     Active,

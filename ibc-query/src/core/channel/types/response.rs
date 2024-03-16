@@ -2,7 +2,7 @@
 //! and from the corresponding gRPC proto types for the channel module.
 
 use ibc::core::channel::types::channel::{ChannelEnd, IdentifiedChannelEnd};
-use ibc::core::channel::types::commitment::PacketCommitment;
+use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::channel::types::packet::PacketState;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::{ClientId, Sequence};
@@ -264,13 +264,17 @@ impl From<QueryNextSequenceSendResponse> for RawQueryNextSequenceSendResponse {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryPacketAcknowledgementResponse {
-    pub acknowledgement: Vec<u8>,
+    pub acknowledgement: AcknowledgementCommitment,
     pub proof: Proof,
     pub proof_height: Height,
 }
 
 impl QueryPacketAcknowledgementResponse {
-    pub fn new(acknowledgement: Vec<u8>, proof: Proof, proof_height: Height) -> Self {
+    pub fn new(
+        acknowledgement: AcknowledgementCommitment,
+        proof: Proof,
+        proof_height: Height,
+    ) -> Self {
         Self {
             acknowledgement,
             proof,
@@ -282,7 +286,7 @@ impl QueryPacketAcknowledgementResponse {
 impl From<QueryPacketAcknowledgementResponse> for RawQueryPacketAcknowledgementResponse {
     fn from(response: QueryPacketAcknowledgementResponse) -> Self {
         Self {
-            acknowledgement: response.acknowledgement,
+            acknowledgement: response.acknowledgement.into_vec(),
             proof: response.proof,
             proof_height: Some(response.proof_height.into()),
         }
