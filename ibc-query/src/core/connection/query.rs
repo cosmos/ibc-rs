@@ -1,28 +1,25 @@
 //! Provides utility functions for querying IBC connection states.
 
 use alloc::format;
-use alloc::vec::Vec;
-use core::str::FromStr;
 
 use ibc::core::client::context::ClientValidationContext;
-use ibc::core::client::types::Height;
-use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::host::types::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
 use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::core::client::v1::IdentifiedClientState;
-use ibc_proto::ibc::core::connection::v1::{
-    Params as ConnectionParams, QueryClientConnectionsRequest, QueryClientConnectionsResponse,
+
+use super::{
+    QueryClientConnectionsRequest, QueryClientConnectionsResponse,
     QueryConnectionClientStateRequest, QueryConnectionClientStateResponse,
     QueryConnectionConsensusStateRequest, QueryConnectionConsensusStateResponse,
     QueryConnectionParamsRequest, QueryConnectionParamsResponse, QueryConnectionRequest,
     QueryConnectionResponse, QueryConnectionsRequest, QueryConnectionsResponse,
 };
-
+use crate::core::client::IdentifiedClientState;
 use crate::core::context::{ProvableContext, QueryContext};
 use crate::error::QueryError;
+use crate::types::Proof;
 
 /// Queries for the connection end of a given connection id.
 pub fn query_connection<I>(
@@ -32,26 +29,27 @@ pub fn query_connection<I>(
 where
     I: ValidationContext + ProvableContext,
 {
-    let connection_id = ConnectionId::from_str(request.connection_id.as_str())?;
-
-    let connection_end = ibc_ctx.connection_end(&connection_id)?;
+    let connection_end = ibc_ctx.connection_end(&request.connection_id)?;
 
     let current_height = ibc_ctx.host_height()?;
 
     let proof = ibc_ctx
         .get_proof(
             current_height,
-            &Path::Connection(ConnectionPath::new(&connection_id)),
+            &Path::Connection(ConnectionPath::new(&request.connection_id)),
         )
         .ok_or(QueryError::ProofNotFound {
-            description: format!("Proof not found for connection path: {connection_id:?}"),
+            description: format!(
+                "Proof not found for connection path: {:?}",
+                request.connection_id
+            ),
         })?;
 
-    Ok(QueryConnectionResponse {
-        connection: Some(connection_end.into()),
+    Ok(QueryConnectionResponse::new(
+        connection_end,
         proof,
-        proof_height: Some(current_height.into()),
-    })
+        current_height,
+    ))
 }
 
 /// Queries for all the existing connection ends.
@@ -64,12 +62,11 @@ where
 {
     let connections = ibc_ctx.connection_ends()?;
 
-    Ok(QueryConnectionsResponse {
-        connections: connections.into_iter().map(Into::into).collect(),
-        height: Some(ibc_ctx.host_height()?.into()),
-        // no support for pagination yet
-        pagination: None,
-    })
+    Ok(QueryConnectionsResponse::new(
+        connections,
+        ibc_ctx.host_height()?,
+        None,
+    ))
 }
 
 /// Queries for all the existing connection ends for a given client.
@@ -80,26 +77,27 @@ pub fn query_client_connections<I>(
 where
     I: QueryContext,
 {
-    let client_id = ClientId::from_str(request.client_id.as_str())?;
-
-    let connections = ibc_ctx.client_connection_ends(&client_id)?;
+    let connections = ibc_ctx.client_connection_ends(&request.client_id)?;
 
     let current_height = ibc_ctx.host_height()?;
 
-    let proof: Vec<u8> = ibc_ctx
+    let proof: Proof = ibc_ctx
         .get_proof(
             current_height,
-            &Path::ClientConnection(ClientConnectionPath::new(client_id.clone())),
+            &Path::ClientConnection(ClientConnectionPath::new(request.client_id.clone())),
         )
         .ok_or(QueryError::ProofNotFound {
-            description: format!("Proof not found for client connection path: {client_id:?}"),
+            description: format!(
+                "Proof not found for client connection path: {:?}",
+                request.client_id
+            ),
         })?;
 
-    Ok(QueryClientConnectionsResponse {
-        connection_paths: connections.into_iter().map(|x| x.as_str().into()).collect(),
+    Ok(QueryClientConnectionsResponse::new(
+        connections,
         proof,
-        proof_height: Some(current_height.into()),
-    })
+        current_height,
+    ))
 }
 
 /// Queries for the client state of a given connection id.
@@ -110,9 +108,7 @@ pub fn query_connection_client_state<I>(
 where
     I: QueryContext,
 {
-    let connection_id = ConnectionId::from_str(request.connection_id.as_str())?;
-
-    let connection_end = ibc_ctx.connection_end(&connection_id)?;
+    let connection_end = ibc_ctx.connection_end(&request.connection_id)?;
 
     let client_val_ctx = ibc_ctx.get_client_validation_context();
 
@@ -132,14 +128,11 @@ where
             ),
         })?;
 
-    Ok(QueryConnectionClientStateResponse {
-        identified_client_state: Some(IdentifiedClientState {
-            client_id: connection_end.client_id().as_str().into(),
-            client_state: Some(client_state.into()),
-        }),
+    Ok(QueryConnectionClientStateResponse::new(
+        IdentifiedClientState::new(connection_end.client_id().clone(), client_state.into()),
         proof,
-        proof_height: Some(current_height.into()),
-    })
+        current_height,
+    ))
 }
 
 /// Queries for the consensus state of a given connection id and height.
@@ -151,16 +144,12 @@ where
     I: ValidationContext + ProvableContext,
     ConsensusStateRef<I>: Into<Any>,
 {
-    let connection_id = ConnectionId::from_str(request.connection_id.as_str())?;
-
-    let connection_end = ibc_ctx.connection_end(&connection_id)?;
-
-    let height = Height::new(request.revision_number, request.revision_height)?;
+    let connection_end = ibc_ctx.connection_end(&request.connection_id)?;
 
     let consensus_path = ClientConsensusStatePath::new(
         connection_end.client_id().clone(),
-        height.revision_number(),
-        height.revision_height(),
+        request.height.revision_number(),
+        request.height.revision_height(),
     );
 
     let client_val_ctx = ibc_ctx.get_client_validation_context();
@@ -178,12 +167,12 @@ where
             ),
         })?;
 
-    Ok(QueryConnectionConsensusStateResponse {
-        consensus_state: Some(consensus_state.into()),
-        client_id: connection_end.client_id().as_str().into(),
+    Ok(QueryConnectionConsensusStateResponse::new(
+        consensus_state.into(),
+        connection_end.client_id().clone(),
         proof,
-        proof_height: Some(current_height.into()),
-    })
+        current_height,
+    ))
 }
 
 /// Queries for the connection parameters.
@@ -194,9 +183,7 @@ pub fn query_connection_params<I>(
 where
     I: QueryContext,
 {
-    Ok(QueryConnectionParamsResponse {
-        params: Some(ConnectionParams {
-            max_expected_time_per_block: ibc_ctx.max_expected_time_per_block().as_secs(),
-        }),
-    })
+    Ok(QueryConnectionParamsResponse::new(
+        ibc_ctx.max_expected_time_per_block().as_secs(),
+    ))
 }

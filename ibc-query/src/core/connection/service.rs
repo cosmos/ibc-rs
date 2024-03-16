@@ -1,6 +1,7 @@
-//! [`ConnectionQueryService`](ConnectionQueryService) takes a generic `I` to store `ibc_context` that implements [`QueryContext`](QueryContext).
-//! `I` must be a type where writes from one thread are readable from another.
-//! This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
+//! [`ConnectionQueryService`](ConnectionQueryService) takes a generic `I` to
+//! store `ibc_context` that implements [`QueryContext`](QueryContext). `I` must
+//! be a type where writes from one thread are readable from another. This means
+//! using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
 
 use ibc::core::host::ConsensusStateRef;
 use ibc::core::primitives::prelude::*;
@@ -20,11 +21,13 @@ use super::{
     query_connection_consensus_state, query_connection_params, query_connections,
 };
 use crate::core::context::QueryContext;
+use crate::utils::{IntoDomain, IntoProto, TryIntoDomain};
 
 // TODO(rano): currently the services don't support pagination, so we return all the results.
 
-/// The generic `I` must be a type where writes from one thread are readable from another.
-/// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
+/// The generic `I` must be a type where writes from one thread are readable
+/// from another. This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most
+/// cases.
 pub struct ConnectionQueryService<I>
 where
     I: QueryContext + Send + Sync + 'static,
@@ -38,8 +41,9 @@ where
     I: QueryContext + Send + Sync + 'static,
     ConsensusStateRef<I>: Into<Any>,
 {
-    /// The parameter `ibc_context` must be a type where writes from one thread are readable from another.
-    /// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
+    /// The parameter `ibc_context` must be a type where writes from one thread
+    /// are readable from another. This means using `Arc<Mutex<_>>` or
+    /// `Arc<RwLock<_>>` in most cases.
     pub fn new(ibc_context: I) -> Self {
         Self { ibc_context }
     }
@@ -55,53 +59,42 @@ where
         &self,
         request: Request<QueryConnectionRequest>,
     ) -> Result<Response<QueryConnectionResponse>, Status> {
-        let response = query_connection(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_connection(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
     }
 
     async fn connections(
         &self,
         request: Request<QueryConnectionsRequest>,
     ) -> Result<Response<QueryConnectionsResponse>, Status> {
-        let response = query_connections(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_connections(&self.ibc_context, &request.into_domain())?.into_proto()
     }
 
     async fn client_connections(
         &self,
         request: Request<QueryClientConnectionsRequest>,
     ) -> Result<Response<QueryClientConnectionsResponse>, Status> {
-        let response = query_client_connections(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_client_connections(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
     }
 
     async fn connection_client_state(
         &self,
         request: Request<QueryConnectionClientStateRequest>,
     ) -> Result<Response<QueryConnectionClientStateResponse>, Status> {
-        let response = query_connection_client_state(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_connection_client_state(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
     }
 
     async fn connection_consensus_state(
         &self,
         request: Request<QueryConnectionConsensusStateRequest>,
     ) -> Result<Response<QueryConnectionConsensusStateResponse>, Status> {
-        let response = query_connection_consensus_state(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_connection_consensus_state(&self.ibc_context, &request.try_into_domain()?)?
+            .into_proto()
     }
 
     async fn connection_params(
         &self,
         request: Request<QueryConnectionParamsRequest>,
     ) -> Result<Response<QueryConnectionParamsResponse>, Status> {
-        let response = query_connection_params(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_connection_params(&self.ibc_context, &request.into_domain())?.into_proto()
     }
 }

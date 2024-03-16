@@ -68,3 +68,5 @@ extern crate alloc;
 
 pub mod core;
 pub mod error;
+pub mod types;
+pub mod utils;
