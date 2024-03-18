@@ -99,7 +99,7 @@ ibc-proto = { version = "0.42.2", default-features = false }
 tendermint                       = { version = "0.34.0", default-features = false }
 tendermint-light-client          = { version = "0.34.0", default-features = false }
 tendermint-light-client-verifier = { version = "0.34.0", default-features = false }
-tendermint-proto                 = { version = "0.34.0", default-features = false }
+tendermint-proto                 = { version = "0.35.0", default-features = false }
 tendermint-rpc                   = { version = "0.34.0", default-features = false }
 tendermint-testgen               = { version = "0.34.0", default-features = false }
 
