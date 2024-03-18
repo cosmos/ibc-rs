@@ -48,7 +48,7 @@ pub struct QueryConnectionsRequest {
 impl From<RawQueryConnectionsRequest> for QueryConnectionsRequest {
     fn from(request: RawQueryConnectionsRequest) -> Self {
         Self {
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         }
     }
 }
@@ -146,7 +146,7 @@ impl TryFrom<RawQueryConnectionChannelsRequest> for QueryConnectionChannelsReque
     fn try_from(request: RawQueryConnectionChannelsRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             connection_id: request.connection.parse()?,
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         })
     }
 }
@@ -155,7 +155,7 @@ impl From<QueryConnectionChannelsRequest> for RawQueryConnectionChannelsRequest 
     fn from(request: QueryConnectionChannelsRequest) -> Self {
         Self {
             connection: request.connection_id.to_string(),
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         }
     }
 }

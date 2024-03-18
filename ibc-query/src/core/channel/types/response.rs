@@ -130,7 +130,7 @@ impl From<QueryChannelsResponse> for RawQueryChannelsResponse {
         Self {
             channels: response.channels.into_iter().map(Into::into).collect(),
             height: Some(response.query_height.into()),
-            pagination: response.pagination.map(|pagination| pagination.into()),
+            pagination: response.pagination.map(Into::into),
         }
     }
 }
@@ -185,7 +185,7 @@ impl From<QueryConnectionChannelsResponse> for RawQueryConnectionChannelsRespons
         Self {
             channels: response.channels.into_iter().map(Into::into).collect(),
             height: Some(response.query_height.into()),
-            pagination: response.pagination.map(|pagination| pagination.into()),
+            pagination: response.pagination.map(Into::into),
         }
     }
 }
@@ -399,7 +399,7 @@ impl From<QueryPacketCommitmentsResponse> for RawQueryPacketCommitmentsResponse 
         Self {
             commitments: response.commitments.into_iter().map(Into::into).collect(),
             height: Some(response.height.into()),
-            pagination: response.pagination.map(|pagination| pagination.into()),
+            pagination: response.pagination.map(Into::into),
         }
     }
 }
@@ -557,7 +557,7 @@ impl From<QueryPacketAcknowledgementsResponse> for RawQueryPacketAcknowledgement
                 .map(Into::into)
                 .collect(),
             height: Some(response.height.into()),
-            pagination: response.pagination.map(|pagination| pagination.into()),
+            pagination: response.pagination.map(Into::into),
         }
     }
 }

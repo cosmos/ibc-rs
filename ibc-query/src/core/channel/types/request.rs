@@ -56,7 +56,7 @@ pub struct QueryChannelsRequest {
 impl From<RawQueryChannelsRequest> for QueryChannelsRequest {
     fn from(request: RawQueryChannelsRequest) -> Self {
         Self {
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         }
     }
 }
@@ -77,7 +77,7 @@ impl TryFrom<RawQueryConnectionChannelsRequest> for QueryConnectionChannelsReque
     fn try_from(request: RawQueryConnectionChannelsRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             connection_id: request.connection.parse()?,
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         })
     }
 }
@@ -173,7 +173,7 @@ impl TryFrom<RawQueryPacketCommitmentsRequest> for QueryPacketCommitmentsRequest
         Ok(Self {
             port_id: request.port_id.parse()?,
             channel_id: request.channel_id.parse()?,
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         })
     }
 }
@@ -183,7 +183,7 @@ impl From<QueryPacketCommitmentsRequest> for RawQueryPacketCommitmentsRequest {
         Self {
             port_id: request.port_id.to_string(),
             channel_id: request.channel_id.to_string(),
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         }
     }
 }
@@ -262,7 +262,7 @@ impl TryFrom<RawQueryPacketAcknowledgementsRequest> for QueryPacketAcknowledgeme
                 .into_iter()
                 .map(Sequence::from)
                 .collect(),
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         })
     }
 }
@@ -275,9 +275,9 @@ impl From<QueryPacketAcknowledgementsRequest> for RawQueryPacketAcknowledgements
             packet_commitment_sequences: request
                 .packet_commitment_sequences
                 .into_iter()
-                .map(|seq| seq.into())
+                .map(Into::into)
                 .collect(),
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         }
     }
 }
@@ -317,7 +317,7 @@ impl From<QueryUnreceivedPacketsRequest> for RawQueryUnreceivedPacketsRequest {
             packet_commitment_sequences: request
                 .packet_commitment_sequences
                 .into_iter()
-                .map(|seq| seq.into())
+                .map(Into::into)
                 .collect(),
         }
     }
@@ -358,7 +358,7 @@ impl From<QueryUnreceivedAcksRequest> for RawQueryUnreceivedAcksRequest {
             packet_ack_sequences: request
                 .packet_ack_sequences
                 .into_iter()
-                .map(|seq| seq.into())
+                .map(Into::into)
                 .collect(),
         }
     }

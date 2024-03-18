@@ -53,7 +53,7 @@ pub struct QueryClientStatesRequest {
 impl From<RawQueryClientStatesRequest> for QueryClientStatesRequest {
     fn from(request: RawQueryClientStatesRequest) -> Self {
         Self {
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         }
     }
 }
@@ -108,7 +108,7 @@ impl TryFrom<RawQueryConsensusStatesRequest> for QueryConsensusStatesRequest {
     fn try_from(request: RawQueryConsensusStatesRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             client_id: request.client_id.parse()?,
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         })
     }
 }
@@ -117,7 +117,7 @@ impl From<QueryConsensusStatesRequest> for RawQueryConsensusStatesRequest {
     fn from(request: QueryConsensusStatesRequest) -> Self {
         Self {
             client_id: request.client_id.to_string(),
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         }
     }
 }
@@ -140,7 +140,7 @@ impl TryFrom<RawQueryConsensusStateHeightsRequest> for QueryConsensusStateHeight
     fn try_from(request: RawQueryConsensusStateHeightsRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             client_id: request.client_id.parse()?,
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         })
     }
 }
@@ -149,7 +149,7 @@ impl From<QueryConsensusStateHeightsRequest> for RawQueryConsensusStateHeightsRe
     fn from(request: QueryConsensusStateHeightsRequest) -> Self {
         Self {
             client_id: request.client_id.to_string(),
-            pagination: request.pagination.map(|pagination| pagination.into()),
+            pagination: request.pagination.map(Into::into),
         }
     }
 }

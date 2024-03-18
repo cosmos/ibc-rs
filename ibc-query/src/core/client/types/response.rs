@@ -119,7 +119,7 @@ impl From<QueryClientStatesResponse> for RawQueryClientStatesResponse {
                 .into_iter()
                 .map(RawIdentifiedClientState::from)
                 .collect(),
-            pagination: response.pagination.map(|pagination| pagination.into()),
+            pagination: response.pagination.map(Into::into),
         }
     }
 }
@@ -302,7 +302,7 @@ impl From<QueryConsensusStatesResponse> for RawQueryConsensusStatesResponse {
                 .into_iter()
                 .map(RawConsensusStateWithHeight::from)
                 .collect(),
-            pagination: response.pagination.map(|pagination| pagination.into()),
+            pagination: response.pagination.map(Into::into),
         }
     }
 }
@@ -348,9 +348,9 @@ impl From<QueryConsensusStateHeightsResponse> for RawQueryConsensusStateHeightsR
             consensus_state_heights: response
                 .consensus_state_heights
                 .into_iter()
-                .map(|height| height.into())
+                .map(Into::into)
                 .collect(),
-            pagination: response.pagination.map(|pagination| pagination.into()),
+            pagination: response.pagination.map(Into::into),
         }
     }
 }
