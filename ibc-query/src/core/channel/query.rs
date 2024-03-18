@@ -44,8 +44,7 @@ where
         .get_proof(current_height, &Path::ChannelEnd(channel_end_path.clone()))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
-                "Proof not found for channel end path {:?}",
-                channel_end_path
+                "Proof not found for channel end path {channel_end_path:?}"
             ))
         })?;
 
@@ -194,8 +193,7 @@ where
         )
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
-                "Proof not found for client consensus state path: {:?}",
-                consensus_path
+                "Proof not found for client consensus state path: {consensus_path:?}"
             ))
         })?;
 
@@ -227,8 +225,7 @@ where
         .get_proof(current_height, &Path::Commitment(commitment_path.clone()))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
-                "Proof not found for packet commitment path: {:?}",
-                commitment_path
+                "Proof not found for packet commitment path: {commitment_path:?}"
             ))
         })?;
 
@@ -283,8 +280,7 @@ where
         .get_proof(current_height, &Path::Receipt(receipt_path.clone()))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
-                "Proof not found for packet receipt path: {:?}",
-                receipt_path
+                "Proof not found for packet receipt path: {receipt_path:?}"
             ))
         })?;
 
@@ -315,8 +311,7 @@ where
         .get_proof(current_height, &Path::Ack(acknowledgement_path.clone()))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
-                "Proof not found for packet acknowledgement path: {:?}",
-                acknowledgement_path
+                "Proof not found for packet acknowledgement path: {acknowledgement_path:?}"
             ))
         })?;
 
