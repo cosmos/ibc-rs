@@ -32,7 +32,7 @@ impl From<QueryError> for Status {
             QueryError::ContextError(e) => Status::internal(e.to_string()),
             QueryError::IdentifierError(e) => Status::internal(e.to_string()),
             QueryError::ProofNotFound { description } => Status::not_found(description),
-            QueryError::MissingField(description) => Status::not_found(description),
+            QueryError::MissingField(description) => Status::invalid_argument(description),
         }
     }
 }
