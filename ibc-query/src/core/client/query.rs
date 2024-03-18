@@ -89,8 +89,18 @@ where
 {
     let client_id = request.client_id.clone();
 
-    let (height, consensus_state) = match request.consensus_height {
-        None => ibc_ctx
+    let (height, consensus_state) = if let Some(height) = request.consensus_height {
+        let client_val_ctx = ibc_ctx.get_client_validation_context();
+
+        let consensus_state = client_val_ctx.consensus_state(&ClientConsensusStatePath::new(
+            client_id.clone(),
+            height.revision_number(),
+            height.revision_height(),
+        ))?;
+
+        (height, consensus_state)
+    } else {
+        ibc_ctx
             .consensus_states(&client_id)?
             .into_iter()
             .max_by_key(|(h, _)| *h)
@@ -98,19 +108,7 @@ where
                 QueryError::proof_not_found(format!(
                     "No consensus state found for client: {client_id:?}"
                 ))
-            })?,
-        Some(height) => {
-            let client_val_ctx = ibc_ctx.get_client_validation_context();
-
-            let consensus_state =
-                client_val_ctx.consensus_state(&ClientConsensusStatePath::new(
-                    client_id.clone(),
-                    height.revision_number(),
-                    height.revision_height(),
-                ))?;
-
-            (height, consensus_state)
-        }
+            })?
     };
 
     let current_height = ibc_ctx.host_height()?;
