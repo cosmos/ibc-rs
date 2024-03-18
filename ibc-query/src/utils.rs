@@ -28,13 +28,13 @@ where
     }
 }
 
-pub trait IntoProto<Raw>: Sized
+pub trait IntoResponse<Raw>: Sized
 where
     Self: Into<Raw>,
 {
-    fn into_proto(self) -> Result<Response<Raw>, Status> {
+    fn into_response(self) -> Result<Response<Raw>, Status> {
         Ok(Response::new(self.into()))
     }
 }
 
-impl<T, Raw> IntoProto<Raw> for T where T: Into<Raw> {}
+impl<T, Raw> IntoResponse<Raw> for T where T: Into<Raw> {}

@@ -26,7 +26,7 @@ use super::{
     query_upgraded_consensus_state,
 };
 use crate::core::context::QueryContext;
-use crate::utils::{IntoDomain, IntoProto, TryIntoDomain};
+use crate::utils::{IntoDomain, IntoResponse, TryIntoDomain};
 
 // TODO(rano): currently the services don't support pagination, so we return all the results.
 
@@ -72,42 +72,43 @@ where
         &self,
         request: Request<QueryClientStateRequest>,
     ) -> Result<Response<QueryClientStateResponse>, Status> {
-        query_client_state(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_client_state(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn client_states(
         &self,
         request: Request<QueryClientStatesRequest>,
     ) -> Result<Response<QueryClientStatesResponse>, Status> {
-        query_client_states(&self.ibc_context, &request.into_domain())?.into_proto()
+        query_client_states(&self.ibc_context, &request.into_domain())?.into_response()
     }
 
     async fn consensus_state(
         &self,
         request: Request<QueryConsensusStateRequest>,
     ) -> Result<Response<QueryConsensusStateResponse>, Status> {
-        query_consensus_state(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_consensus_state(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn consensus_states(
         &self,
         request: Request<QueryConsensusStatesRequest>,
     ) -> Result<Response<QueryConsensusStatesResponse>, Status> {
-        query_consensus_states(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_consensus_states(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn consensus_state_heights(
         &self,
         request: Request<QueryConsensusStateHeightsRequest>,
     ) -> Result<Response<QueryConsensusStateHeightsResponse>, Status> {
-        query_consensus_state_heights(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_consensus_state_heights(&self.ibc_context, &request.try_into_domain()?)?
+            .into_response()
     }
 
     async fn client_status(
         &self,
         request: Request<QueryClientStatusRequest>,
     ) -> Result<Response<QueryClientStatusResponse>, Status> {
-        query_client_status(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_client_status(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn client_params(
@@ -123,13 +124,14 @@ where
         &self,
         request: Request<QueryUpgradedClientStateRequest>,
     ) -> Result<Response<QueryUpgradedClientStateResponse>, Status> {
-        query_upgraded_client_state(&self.upgrade_context, &request.into_domain())?.into_proto()
+        query_upgraded_client_state(&self.upgrade_context, &request.into_domain())?.into_response()
     }
 
     async fn upgraded_consensus_state(
         &self,
         request: Request<QueryUpgradedConsensusStateRequest>,
     ) -> Result<Response<QueryUpgradedConsensusStateResponse>, Status> {
-        query_upgraded_consensus_state(&self.upgrade_context, &request.into_domain())?.into_proto()
+        query_upgraded_consensus_state(&self.upgrade_context, &request.into_domain())?
+            .into_response()
     }
 }

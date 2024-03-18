@@ -31,7 +31,7 @@ use super::{
     query_unreceived_packets,
 };
 use crate::core::context::QueryContext;
-use crate::utils::{IntoDomain, IntoProto, TryIntoDomain};
+use crate::utils::{IntoDomain, IntoResponse, TryIntoDomain};
 
 // TODO(rano): currently the services don't support pagination, so we return all the results.
 
@@ -67,63 +67,65 @@ where
         &self,
         request: Request<QueryChannelRequest>,
     ) -> Result<Response<QueryChannelResponse>, Status> {
-        query_channel(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_channel(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn channels(
         &self,
         request: Request<QueryChannelsRequest>,
     ) -> Result<Response<QueryChannelsResponse>, Status> {
-        query_channels(&self.ibc_context, &request.into_domain())?.into_proto()
+        query_channels(&self.ibc_context, &request.into_domain())?.into_response()
     }
 
     async fn connection_channels(
         &self,
         request: Request<QueryConnectionChannelsRequest>,
     ) -> Result<Response<QueryConnectionChannelsResponse>, Status> {
-        query_connection_channels(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_connection_channels(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn channel_client_state(
         &self,
         request: Request<QueryChannelClientStateRequest>,
     ) -> Result<Response<QueryChannelClientStateResponse>, Status> {
-        query_channel_client_state(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_channel_client_state(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn channel_consensus_state(
         &self,
         request: Request<QueryChannelConsensusStateRequest>,
     ) -> Result<Response<QueryChannelConsensusStateResponse>, Status> {
-        query_channel_consensus_state(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_channel_consensus_state(&self.ibc_context, &request.try_into_domain()?)?
+            .into_response()
     }
 
     async fn packet_commitment(
         &self,
         request: Request<QueryPacketCommitmentRequest>,
     ) -> Result<Response<QueryPacketCommitmentResponse>, Status> {
-        query_packet_commitment(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_packet_commitment(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn packet_commitments(
         &self,
         request: Request<QueryPacketCommitmentsRequest>,
     ) -> Result<Response<QueryPacketCommitmentsResponse>, Status> {
-        query_packet_commitments(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_packet_commitments(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn packet_receipt(
         &self,
         request: Request<QueryPacketReceiptRequest>,
     ) -> Result<Response<QueryPacketReceiptResponse>, Status> {
-        query_packet_receipt(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_packet_receipt(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn packet_acknowledgement(
         &self,
         request: Request<QueryPacketAcknowledgementRequest>,
     ) -> Result<Response<QueryPacketAcknowledgementResponse>, Status> {
-        query_packet_acknowledgement(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_packet_acknowledgement(&self.ibc_context, &request.try_into_domain()?)?
+            .into_response()
     }
 
     /// Returns all the acknowledgements if sequences is omitted.
@@ -131,7 +133,8 @@ where
         &self,
         request: Request<QueryPacketAcknowledgementsRequest>,
     ) -> Result<Response<QueryPacketAcknowledgementsResponse>, Status> {
-        query_packet_acknowledgements(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_packet_acknowledgements(&self.ibc_context, &request.try_into_domain()?)?
+            .into_response()
     }
 
     /// Returns all the unreceived packets if sequences is omitted.
@@ -139,7 +142,7 @@ where
         &self,
         request: Request<QueryUnreceivedPacketsRequest>,
     ) -> Result<Response<QueryUnreceivedPacketsResponse>, Status> {
-        query_unreceived_packets(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_unreceived_packets(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     /// Returns all the unreceived acknowledgements if sequences is omitted.
@@ -147,21 +150,21 @@ where
         &self,
         request: Request<QueryUnreceivedAcksRequest>,
     ) -> Result<Response<QueryUnreceivedAcksResponse>, Status> {
-        query_unreceived_acks(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_unreceived_acks(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn next_sequence_receive(
         &self,
         request: Request<QueryNextSequenceReceiveRequest>,
     ) -> Result<Response<QueryNextSequenceReceiveResponse>, Status> {
-        query_next_sequence_receive(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_next_sequence_receive(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn next_sequence_send(
         &self,
         request: Request<QueryNextSequenceSendRequest>,
     ) -> Result<Response<QueryNextSequenceSendResponse>, Status> {
-        query_next_sequence_send(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_next_sequence_send(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn upgrade_error(

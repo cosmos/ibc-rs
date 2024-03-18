@@ -21,7 +21,7 @@ use super::{
     query_connection_consensus_state, query_connection_params, query_connections,
 };
 use crate::core::context::QueryContext;
-use crate::utils::{IntoDomain, IntoProto, TryIntoDomain};
+use crate::utils::{IntoDomain, IntoResponse, TryIntoDomain};
 
 // TODO(rano): currently the services don't support pagination, so we return all the results.
 
@@ -59,28 +59,29 @@ where
         &self,
         request: Request<QueryConnectionRequest>,
     ) -> Result<Response<QueryConnectionResponse>, Status> {
-        query_connection(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_connection(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn connections(
         &self,
         request: Request<QueryConnectionsRequest>,
     ) -> Result<Response<QueryConnectionsResponse>, Status> {
-        query_connections(&self.ibc_context, &request.into_domain())?.into_proto()
+        query_connections(&self.ibc_context, &request.into_domain())?.into_response()
     }
 
     async fn client_connections(
         &self,
         request: Request<QueryClientConnectionsRequest>,
     ) -> Result<Response<QueryClientConnectionsResponse>, Status> {
-        query_client_connections(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_client_connections(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn connection_client_state(
         &self,
         request: Request<QueryConnectionClientStateRequest>,
     ) -> Result<Response<QueryConnectionClientStateResponse>, Status> {
-        query_connection_client_state(&self.ibc_context, &request.try_into_domain()?)?.into_proto()
+        query_connection_client_state(&self.ibc_context, &request.try_into_domain()?)?
+            .into_response()
     }
 
     async fn connection_consensus_state(
@@ -88,13 +89,13 @@ where
         request: Request<QueryConnectionConsensusStateRequest>,
     ) -> Result<Response<QueryConnectionConsensusStateResponse>, Status> {
         query_connection_consensus_state(&self.ibc_context, &request.try_into_domain()?)?
-            .into_proto()
+            .into_response()
     }
 
     async fn connection_params(
         &self,
         request: Request<QueryConnectionParamsRequest>,
     ) -> Result<Response<QueryConnectionParamsResponse>, Status> {
-        query_connection_params(&self.ibc_context, &request.into_domain())?.into_proto()
+        query_connection_params(&self.ibc_context, &request.into_domain())?.into_response()
     }
 }
