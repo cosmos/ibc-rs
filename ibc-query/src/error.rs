@@ -21,6 +21,12 @@ pub enum QueryError {
 }
 
 impl QueryError {
+    pub fn proof_not_found(description: impl ToString) -> Self {
+        QueryError::ProofNotFound {
+            description: description.to_string(),
+        }
+    }
+
     pub fn missing_field(description: impl ToString) -> Self {
         QueryError::MissingField(description.to_string())
     }
