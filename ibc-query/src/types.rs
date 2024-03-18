@@ -35,7 +35,7 @@ impl PageRequest {
         // See https://github.com/informalsystems/hermes/pull/2950#issuecomment-1373733744
 
         Self {
-            limit: u32::MAX as u64,
+            limit: u64::from(u32::MAX),
             ..Default::default()
         }
     }
