@@ -584,7 +584,7 @@ impl TryFrom<RawQueryUnreceivedAcksResponse> for QueryUnreceivedAcksResponse {
 
     fn try_from(value: RawQueryUnreceivedAcksResponse) -> Result<Self, Self::Error> {
         Ok(Self {
-            sequences: value.sequences.into_iter().map(Sequence::from).collect(),
+            sequences: value.sequences.into_iter().map(Into::into).collect(),
             height: value
                 .height
                 .ok_or_else(|| QueryError::missing_field("height"))?
@@ -624,7 +624,7 @@ impl TryFrom<RawQueryUnreceivedPacketsResponse> for QueryUnreceivedPacketsRespon
 
     fn try_from(value: RawQueryUnreceivedPacketsResponse) -> Result<Self, Self::Error> {
         Ok(Self {
-            sequences: value.sequences.into_iter().map(Sequence::from).collect(),
+            sequences: value.sequences.into_iter().map(Into::into).collect(),
             height: value
                 .height
                 .ok_or_else(|| QueryError::missing_field("height"))?
@@ -669,7 +669,7 @@ impl TryFrom<RawQueryNextSequenceReceiveResponse> for QueryNextSequenceReceiveRe
 
     fn try_from(value: RawQueryNextSequenceReceiveResponse) -> Result<Self, Self::Error> {
         Ok(Self {
-            next_sequence_receive: Sequence::from(value.next_sequence_receive),
+            next_sequence_receive: value.next_sequence_receive.into(),
             proof: value.proof,
             proof_height: value
                 .proof_height
@@ -717,7 +717,7 @@ impl TryFrom<RawQueryNextSequenceSendResponse> for QueryNextSequenceSendResponse
 
     fn try_from(value: RawQueryNextSequenceSendResponse) -> Result<Self, Self::Error> {
         Ok(Self {
-            next_sequence_send: Sequence::from(value.next_sequence_send),
+            next_sequence_send: value.next_sequence_send.into(),
             proof: value.proof,
             proof_height: value
                 .proof_height

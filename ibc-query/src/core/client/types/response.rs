@@ -114,11 +114,7 @@ impl TryFrom<RawQueryClientStatesResponse> for QueryClientStatesResponse {
 impl From<QueryClientStatesResponse> for RawQueryClientStatesResponse {
     fn from(response: QueryClientStatesResponse) -> Self {
         Self {
-            client_states: response
-                .client_states
-                .into_iter()
-                .map(RawIdentifiedClientState::from)
-                .collect(),
+            client_states: response.client_states.into_iter().map(Into::into).collect(),
             pagination: response.pagination.map(Into::into),
         }
     }
@@ -300,7 +296,7 @@ impl From<QueryConsensusStatesResponse> for RawQueryConsensusStatesResponse {
             consensus_states: response
                 .consensus_states
                 .into_iter()
-                .map(RawConsensusStateWithHeight::from)
+                .map(Into::into)
                 .collect(),
             pagination: response.pagination.map(Into::into),
         }

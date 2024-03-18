@@ -149,7 +149,7 @@ impl TryFrom<RawQueryPacketCommitmentRequest> for QueryPacketCommitmentRequest {
         Ok(Self {
             port_id: request.port_id.parse()?,
             channel_id: request.channel_id.parse()?,
-            sequence: Sequence::from(request.sequence),
+            sequence: request.sequence.into(),
             query_height: None,
         })
     }
@@ -207,7 +207,7 @@ impl TryFrom<RawQueryPacketReceiptRequest> for QueryPacketReceiptRequest {
         Ok(Self {
             port_id: request.port_id.parse()?,
             channel_id: request.channel_id.parse()?,
-            sequence: Sequence::from(request.sequence),
+            sequence: request.sequence.into(),
             query_height: None,
         })
     }
@@ -232,7 +232,7 @@ impl TryFrom<RawQueryPacketAcknowledgementRequest> for QueryPacketAcknowledgemen
         Ok(Self {
             port_id: request.port_id.parse()?,
             channel_id: request.channel_id.parse()?,
-            sequence: Sequence::from(request.sequence),
+            sequence: request.sequence.into(),
             query_height: None,
         })
     }
@@ -260,7 +260,7 @@ impl TryFrom<RawQueryPacketAcknowledgementsRequest> for QueryPacketAcknowledgeme
             packet_commitment_sequences: request
                 .packet_commitment_sequences
                 .into_iter()
-                .map(Sequence::from)
+                .map(Into::into)
                 .collect(),
             pagination: request.pagination.map(Into::into),
         })
@@ -303,7 +303,7 @@ impl TryFrom<RawQueryUnreceivedPacketsRequest> for QueryUnreceivedPacketsRequest
             packet_commitment_sequences: request
                 .packet_commitment_sequences
                 .into_iter()
-                .map(Sequence::from)
+                .map(Into::into)
                 .collect(),
         })
     }
@@ -344,7 +344,7 @@ impl TryFrom<RawQueryUnreceivedAcksRequest> for QueryUnreceivedAcksRequest {
             packet_ack_sequences: request
                 .packet_ack_sequences
                 .into_iter()
-                .map(Sequence::from)
+                .map(Into::into)
                 .collect(),
         })
     }

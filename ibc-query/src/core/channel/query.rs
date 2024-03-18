@@ -1,7 +1,6 @@
 //! Provides utility functions for querying IBC channel states.
 
 use ibc::core::client::context::ClientValidationContext;
-use ibc::core::host::types::identifiers::Sequence;
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, Path,
     ReceiptPath, SeqRecvPath, SeqSendPath,
@@ -340,7 +339,7 @@ where
         .packet_commitment_sequences
         .iter()
         .copied()
-        .map(Sequence::from);
+        .map(Into::into);
 
     let channel_end_path = ChannelEndPath::new(&request.port_id, &request.channel_id);
 
@@ -369,7 +368,7 @@ where
         .packet_commitment_sequences
         .iter()
         .copied()
-        .map(Sequence::from);
+        .map(Into::into);
 
     let channel_end_path = ChannelEndPath::new(&request.port_id, &request.channel_id);
 
@@ -389,11 +388,7 @@ pub fn query_unreceived_acks<I>(
 where
     I: QueryContext,
 {
-    let sequences = request
-        .packet_ack_sequences
-        .iter()
-        .copied()
-        .map(Sequence::from);
+    let sequences = request.packet_ack_sequences.iter().copied().map(Into::into);
 
     let channel_end_path = ChannelEndPath::new(&request.port_id, &request.channel_id);
 
