@@ -28,6 +28,6 @@ to the proto types for efficient integration.
   not support conversion into protos due to the absence of the `query_height`
   fields.
 
-- Currently `ibc-query` do not support pagination. If pagination is a
+- Currently `ibc-query` does not support pagination. If pagination is a
   requirement for your project, please open an issue and provide details about
   your usage.
