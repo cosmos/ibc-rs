@@ -80,13 +80,12 @@ impl TryFrom<RawQueryConsensusStateRequest> for QueryConsensusStateRequest {
     fn try_from(request: RawQueryConsensusStateRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             client_id: request.client_id.parse()?,
-            consensus_height: match request.latest_height {
-                true => None,
-                false => Some(Height::new(
+            consensus_height: (!request.latest_height)
+                .then_some(Height::new(
                     request.revision_number,
                     request.revision_height,
-                )?),
-            },
+                ))
+                .transpose()?,
             query_height: None,
         })
     }
