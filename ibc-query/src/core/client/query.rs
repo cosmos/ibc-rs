@@ -1,7 +1,5 @@
 //! Provides utility functions for querying IBC client states.
 
-use alloc::format;
-
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::error::ClientError;
@@ -10,7 +8,8 @@ use ibc::core::host::types::path::{
 };
 use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc::cosmos_host::upgrade_proposal::{UpgradeValidationContext, UpgradedConsensusStateRef};
-use ibc_proto::google::protobuf::Any;
+use ibc::primitives::prelude::format;
+use ibc::primitives::proto::Any;
 
 use super::{
     ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateResponse,
@@ -33,22 +32,21 @@ pub fn query_client_state<I>(
 where
     I: QueryContext,
 {
+    let client_id = request.client_id.clone();
+
     let client_val_ctx = ibc_ctx.get_client_validation_context();
 
-    let client_state = client_val_ctx.client_state(&request.client_id)?;
+    let client_state = client_val_ctx.client_state(&client_id)?;
 
     let current_height = ibc_ctx.host_height()?;
 
     let proof = ibc_ctx
         .get_proof(
             current_height,
-            &Path::ClientState(ClientStatePath::new(request.client_id.clone())),
+            &Path::ClientState(ClientStatePath::new(client_id.clone())),
         )
         .ok_or(QueryError::ProofNotFound {
-            description: format!(
-                "Proof not found for client state path: {:?}",
-                request.client_id
-            ),
+            description: format!("Proof not found for client state path: {client_id:?}"),
         })?;
 
     Ok(QueryClientStateResponse::new(
@@ -87,23 +85,22 @@ where
     I: QueryContext,
     ConsensusStateRef<I>: Into<Any>,
 {
+    let client_id = request.client_id.clone();
+
     let (height, consensus_state) = match request.consensus_height {
         None => ibc_ctx
-            .consensus_states(&request.client_id)?
+            .consensus_states(&client_id)?
             .into_iter()
             .max_by_key(|(h, _)| *h)
             .ok_or(QueryError::ProofNotFound {
-                description: format!(
-                    "No consensus state found for client: {:?}",
-                    request.client_id
-                ),
+                description: format!("No consensus state found for client: {client_id:?}"),
             })?,
         Some(height) => {
             let client_val_ctx = ibc_ctx.get_client_validation_context();
 
             let consensus_state =
                 client_val_ctx.consensus_state(&ClientConsensusStatePath::new(
-                    request.client_id.clone(),
+                    client_id.clone(),
                     height.revision_number(),
                     height.revision_height(),
                 ))?;
@@ -118,16 +115,13 @@ where
         .get_proof(
             current_height,
             &Path::ClientConsensusState(ClientConsensusStatePath::new(
-                request.client_id.clone(),
+                client_id.clone(),
                 height.revision_number(),
                 height.revision_height(),
             )),
         )
         .ok_or(QueryError::ProofNotFound {
-            description: format!(
-                "Proof not found for consensus state path: {:?}",
-                request.client_id
-            ),
+            description: format!("Proof not found for consensus state path: {client_id:?}"),
         })?;
 
     Ok(QueryConsensusStateResponse::new(

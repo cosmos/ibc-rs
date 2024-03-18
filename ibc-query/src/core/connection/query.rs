@@ -1,13 +1,12 @@
 //! Provides utility functions for querying IBC connection states.
 
-use alloc::format;
-
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::host::types::path::{
     ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
 use ibc::core::host::{ConsensusStateRef, ValidationContext};
-use ibc_proto::google::protobuf::Any;
+use ibc::primitives::prelude::format;
+use ibc::primitives::proto::Any;
 
 use super::{
     QueryClientConnectionsRequest, QueryClientConnectionsResponse,

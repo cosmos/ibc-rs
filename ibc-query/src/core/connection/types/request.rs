@@ -1,8 +1,6 @@
 //! Contains all the RPC method request domain types and their conversions to
 //! and from the corresponding gRPC proto types for the connection module.
 
-use alloc::string::ToString;
-
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::primitives::prelude::*;

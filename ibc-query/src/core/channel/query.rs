@@ -1,7 +1,5 @@
 //! Provides utility functions for querying IBC channel states.
 
-use alloc::format;
-
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::host::types::identifiers::Sequence;
 use ibc::core::host::types::path::{
@@ -9,6 +7,7 @@ use ibc::core::host::types::path::{
     ReceiptPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ConsensusStateRef, ValidationContext};
+use ibc::primitives::prelude::format;
 use ibc_proto::google::protobuf::Any;
 
 use super::{
