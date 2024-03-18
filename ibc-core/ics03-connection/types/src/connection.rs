@@ -30,6 +30,7 @@ use crate::version::Version;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct IdentifiedConnectionEnd {
     pub connection_id: ConnectionId,
@@ -100,6 +101,7 @@ impl From<IdentifiedConnectionEnd> for RawIdentifiedConnection {
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ConnectionEnd {
     pub state: State,
@@ -466,6 +468,7 @@ impl Counterparty {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum State {
     Uninitialized = 0isize,
