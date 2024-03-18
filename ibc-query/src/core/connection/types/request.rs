@@ -17,6 +17,26 @@ use ibc_proto::ibc::core::connection::v1::{
 use crate::error::QueryError;
 use crate::types::PageRequest;
 
+/// Defines the RPC method request type for querying a connection.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryConnectionRequest {
+    pub connection_id: ConnectionId,
+    pub query_height: Option<Height>,
+}
+
+impl TryFrom<RawQueryConnectionRequest> for QueryConnectionRequest {
+    type Error = QueryError;
+
+    fn try_from(request: RawQueryConnectionRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            connection_id: request.connection_id.parse()?,
+            query_height: None,
+        })
+    }
+}
+
 /// Defines the RPC method request type for querying connections.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -49,56 +69,6 @@ impl TryFrom<RawQueryClientConnectionsRequest> for QueryClientConnectionsRequest
         Ok(Self {
             client_id: request.client_id.parse()?,
         })
-    }
-}
-
-/// Defines the RPC method request type for querying a connection.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryConnectionRequest {
-    pub connection_id: ConnectionId,
-    pub query_height: Option<Height>,
-}
-
-impl TryFrom<RawQueryConnectionRequest> for QueryConnectionRequest {
-    type Error = QueryError;
-
-    fn try_from(request: RawQueryConnectionRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
-            connection_id: request.connection_id.parse()?,
-            query_height: None,
-        })
-    }
-}
-
-/// Defines the RPC method request type for querying the channels associated
-/// with a connection.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryConnectionChannelsRequest {
-    pub connection_id: ConnectionId,
-    pub pagination: Option<PageRequest>,
-}
-
-impl TryFrom<RawQueryConnectionChannelsRequest> for QueryConnectionChannelsRequest {
-    type Error = QueryError;
-
-    fn try_from(request: RawQueryConnectionChannelsRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
-            connection_id: request.connection.parse()?,
-            pagination: request.pagination.map(|pagination| pagination.into()),
-        })
-    }
-}
-
-impl From<QueryConnectionChannelsRequest> for RawQueryConnectionChannelsRequest {
-    fn from(request: QueryConnectionChannelsRequest) -> Self {
-        RawQueryConnectionChannelsRequest {
-            connection: request.connection_id.to_string(),
-            pagination: request.pagination.map(|pagination| pagination.into()),
-        }
     }
 }
 
@@ -157,5 +127,35 @@ pub struct QueryConnectionParamsRequest {
 impl From<RawQueryConnectionParamsRequest> for QueryConnectionParamsRequest {
     fn from(_request: RawQueryConnectionParamsRequest) -> Self {
         Self { query_height: None }
+    }
+}
+
+/// Defines the RPC method request type for querying the channels associated
+/// with a connection.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryConnectionChannelsRequest {
+    pub connection_id: ConnectionId,
+    pub pagination: Option<PageRequest>,
+}
+
+impl TryFrom<RawQueryConnectionChannelsRequest> for QueryConnectionChannelsRequest {
+    type Error = QueryError;
+
+    fn try_from(request: RawQueryConnectionChannelsRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            connection_id: request.connection.parse()?,
+            pagination: request.pagination.map(|pagination| pagination.into()),
+        })
+    }
+}
+
+impl From<QueryConnectionChannelsRequest> for RawQueryConnectionChannelsRequest {
+    fn from(request: QueryConnectionChannelsRequest) -> Self {
+        RawQueryConnectionChannelsRequest {
+            connection: request.connection_id.to_string(),
+            pagination: request.pagination.map(|pagination| pagination.into()),
+        }
     }
 }

@@ -61,6 +61,27 @@ impl From<RawQueryChannelsRequest> for QueryChannelsRequest {
     }
 }
 
+/// Defines the RPC method request type for querying all channels associated
+/// with a connection identifier
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryConnectionChannelsRequest {
+    pub connection_id: ConnectionId,
+    pub pagination: Option<PageRequest>,
+}
+
+impl TryFrom<RawQueryConnectionChannelsRequest> for QueryConnectionChannelsRequest {
+    type Error = QueryError;
+
+    fn try_from(request: RawQueryConnectionChannelsRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            connection_id: request.connection.parse()?,
+            pagination: request.pagination.map(|pagination| pagination.into()),
+        })
+    }
+}
+
 /// Defines the RPC method request type for querying the client state associated
 /// with a channel
 #[derive(Clone, Debug)]
@@ -105,27 +126,6 @@ impl TryFrom<RawQueryChannelConsensusStateRequest> for QueryChannelConsensusStat
             channel_id: request.channel_id.parse()?,
             consensus_height: Height::new(request.revision_number, request.revision_height)?,
             query_height: None,
-        })
-    }
-}
-
-/// Defines the RPC method request type for querying all channels associated
-/// with a connection identifier
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryConnectionChannelsRequest {
-    pub connection_id: ConnectionId,
-    pub pagination: Option<PageRequest>,
-}
-
-impl TryFrom<RawQueryConnectionChannelsRequest> for QueryConnectionChannelsRequest {
-    type Error = QueryError;
-
-    fn try_from(request: RawQueryConnectionChannelsRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
-            connection_id: request.connection.parse()?,
-            pagination: request.pagination.map(|pagination| pagination.into()),
         })
     }
 }
@@ -213,47 +213,6 @@ impl TryFrom<RawQueryPacketReceiptRequest> for QueryPacketReceiptRequest {
     }
 }
 
-/// Defines the RPC method request type for querying the unreceived packets
-/// associated with the specified channel
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryUnreceivedPacketsRequest {
-    pub port_id: PortId,
-    pub channel_id: ChannelId,
-    pub packet_commitment_sequences: Vec<Sequence>,
-}
-
-impl TryFrom<RawQueryUnreceivedPacketsRequest> for QueryUnreceivedPacketsRequest {
-    type Error = QueryError;
-
-    fn try_from(request: RawQueryUnreceivedPacketsRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
-            port_id: request.port_id.parse()?,
-            channel_id: request.channel_id.parse()?,
-            packet_commitment_sequences: request
-                .packet_commitment_sequences
-                .into_iter()
-                .map(Sequence::from)
-                .collect(),
-        })
-    }
-}
-
-impl From<QueryUnreceivedPacketsRequest> for RawQueryUnreceivedPacketsRequest {
-    fn from(request: QueryUnreceivedPacketsRequest) -> Self {
-        RawQueryUnreceivedPacketsRequest {
-            port_id: request.port_id.to_string(),
-            channel_id: request.channel_id.to_string(),
-            packet_commitment_sequences: request
-                .packet_commitment_sequences
-                .into_iter()
-                .map(|seq| seq.into())
-                .collect(),
-        }
-    }
-}
-
 /// Defines the RPC method request type for querying the packet acknowledgement
 /// associated with the specified channel and sequence number
 #[derive(Clone, Debug)]
@@ -319,6 +278,47 @@ impl From<QueryPacketAcknowledgementsRequest> for RawQueryPacketAcknowledgements
                 .map(|seq| seq.into())
                 .collect(),
             pagination: request.pagination.map(|pagination| pagination.into()),
+        }
+    }
+}
+
+/// Defines the RPC method request type for querying the unreceived packets
+/// associated with the specified channel
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryUnreceivedPacketsRequest {
+    pub port_id: PortId,
+    pub channel_id: ChannelId,
+    pub packet_commitment_sequences: Vec<Sequence>,
+}
+
+impl TryFrom<RawQueryUnreceivedPacketsRequest> for QueryUnreceivedPacketsRequest {
+    type Error = QueryError;
+
+    fn try_from(request: RawQueryUnreceivedPacketsRequest) -> Result<Self, Self::Error> {
+        Ok(Self {
+            port_id: request.port_id.parse()?,
+            channel_id: request.channel_id.parse()?,
+            packet_commitment_sequences: request
+                .packet_commitment_sequences
+                .into_iter()
+                .map(Sequence::from)
+                .collect(),
+        })
+    }
+}
+
+impl From<QueryUnreceivedPacketsRequest> for RawQueryUnreceivedPacketsRequest {
+    fn from(request: QueryUnreceivedPacketsRequest) -> Self {
+        RawQueryUnreceivedPacketsRequest {
+            port_id: request.port_id.to_string(),
+            channel_id: request.channel_id.to_string(),
+            packet_commitment_sequences: request
+                .packet_commitment_sequences
+                .into_iter()
+                .map(|seq| seq.into())
+                .collect(),
         }
     }
 }

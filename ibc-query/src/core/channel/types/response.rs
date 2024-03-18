@@ -92,6 +92,40 @@ impl From<QueryChannelsResponse> for RawQueryChannelsResponse {
     }
 }
 
+/// Defines the RPC method response type when querying a list of channels associated with a connection.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryConnectionChannelsResponse {
+    pub channels: Vec<IdentifiedChannelEnd>,
+    pub query_height: Height,
+    pub pagination: Option<PageResponse>,
+}
+
+impl QueryConnectionChannelsResponse {
+    pub fn new(
+        channels: Vec<IdentifiedChannelEnd>,
+        query_height: Height,
+        pagination: Option<PageResponse>,
+    ) -> Self {
+        Self {
+            channels,
+            query_height,
+            pagination,
+        }
+    }
+}
+
+impl From<QueryConnectionChannelsResponse> for RawQueryConnectionChannelsResponse {
+    fn from(response: QueryConnectionChannelsResponse) -> Self {
+        Self {
+            channels: response.channels.into_iter().map(Into::into).collect(),
+            height: Some(response.query_height.into()),
+            pagination: response.pagination.map(|pagination| pagination.into()),
+        }
+    }
+}
+
 /// Defines the RPC method response type when querying a channel client state.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -160,174 +194,6 @@ impl From<QueryChannelConsensusStateResponse> for RawQueryChannelConsensusStateR
             client_id: response.client_id.to_string(),
             proof: response.proof,
             proof_height: Some(response.proof_height.into()),
-        }
-    }
-}
-
-/// Defines the RPC method response type when querying a list of channels associated with a connection.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryConnectionChannelsResponse {
-    pub channels: Vec<IdentifiedChannelEnd>,
-    pub query_height: Height,
-    pub pagination: Option<PageResponse>,
-}
-
-impl QueryConnectionChannelsResponse {
-    pub fn new(
-        channels: Vec<IdentifiedChannelEnd>,
-        query_height: Height,
-        pagination: Option<PageResponse>,
-    ) -> Self {
-        Self {
-            channels,
-            query_height,
-            pagination,
-        }
-    }
-}
-
-impl From<QueryConnectionChannelsResponse> for RawQueryConnectionChannelsResponse {
-    fn from(response: QueryConnectionChannelsResponse) -> Self {
-        Self {
-            channels: response.channels.into_iter().map(Into::into).collect(),
-            height: Some(response.query_height.into()),
-            pagination: response.pagination.map(|pagination| pagination.into()),
-        }
-    }
-}
-
-/// Defines the RPC method response type when querying the next sequence to be received on a channel.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryNextSequenceReceiveResponse {
-    pub next_sequence_receive: Sequence,
-    pub proof: Proof,
-    pub proof_height: Height,
-}
-
-impl QueryNextSequenceReceiveResponse {
-    pub fn new(next_sequence_receive: Sequence, proof: Proof, proof_height: Height) -> Self {
-        Self {
-            next_sequence_receive,
-            proof,
-            proof_height,
-        }
-    }
-}
-
-impl From<QueryNextSequenceReceiveResponse> for RawQueryNextSequenceReceiveResponse {
-    fn from(response: QueryNextSequenceReceiveResponse) -> Self {
-        Self {
-            next_sequence_receive: response.next_sequence_receive.into(),
-            proof: response.proof,
-            proof_height: Some(response.proof_height.into()),
-        }
-    }
-}
-
-/// Defines the RPC method response type when querying the next sequence to be
-/// sent on a channel.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryNextSequenceSendResponse {
-    pub next_sequence_send: Sequence,
-    pub proof: Proof,
-    pub proof_height: Height,
-}
-
-impl QueryNextSequenceSendResponse {
-    pub fn new(next_sequence_send: Sequence, proof: Proof, proof_height: Height) -> Self {
-        Self {
-            next_sequence_send,
-            proof,
-            proof_height,
-        }
-    }
-}
-
-impl From<QueryNextSequenceSendResponse> for RawQueryNextSequenceSendResponse {
-    fn from(response: QueryNextSequenceSendResponse) -> Self {
-        Self {
-            next_sequence_send: response.next_sequence_send.into(),
-            proof: response.proof,
-            proof_height: Some(response.proof_height.into()),
-        }
-    }
-}
-
-/// Defines the RPC method response type when querying a packet acknowledgement.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryPacketAcknowledgementResponse {
-    pub acknowledgement: AcknowledgementCommitment,
-    pub proof: Proof,
-    pub proof_height: Height,
-}
-
-impl QueryPacketAcknowledgementResponse {
-    pub fn new(
-        acknowledgement: AcknowledgementCommitment,
-        proof: Proof,
-        proof_height: Height,
-    ) -> Self {
-        Self {
-            acknowledgement,
-            proof,
-            proof_height,
-        }
-    }
-}
-
-impl From<QueryPacketAcknowledgementResponse> for RawQueryPacketAcknowledgementResponse {
-    fn from(response: QueryPacketAcknowledgementResponse) -> Self {
-        Self {
-            acknowledgement: response.acknowledgement.into_vec(),
-            proof: response.proof,
-            proof_height: Some(response.proof_height.into()),
-        }
-    }
-}
-
-/// Defines the RPC method response type when querying a list of packet
-/// acknowledgements.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryPacketAcknowledgementsResponse {
-    pub acknowledgements: Vec<PacketState>,
-    pub height: Height,
-    pub pagination: Option<PageResponse>,
-}
-
-impl QueryPacketAcknowledgementsResponse {
-    pub fn new(
-        acknowledgements: Vec<PacketState>,
-        height: Height,
-        pagination: Option<PageResponse>,
-    ) -> Self {
-        Self {
-            acknowledgements,
-            height,
-            pagination,
-        }
-    }
-}
-
-impl From<QueryPacketAcknowledgementsResponse> for RawQueryPacketAcknowledgementsResponse {
-    fn from(response: QueryPacketAcknowledgementsResponse) -> Self {
-        Self {
-            acknowledgements: response
-                .acknowledgements
-                .into_iter()
-                .map(Into::into)
-                .collect(),
-            height: Some(response.height.into()),
-            pagination: response.pagination.map(|pagination| pagination.into()),
         }
     }
 }
@@ -426,6 +292,79 @@ impl From<QueryPacketReceiptResponse> for RawQueryPacketReceiptResponse {
     }
 }
 
+/// Defines the RPC method response type when querying a packet acknowledgement.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryPacketAcknowledgementResponse {
+    pub acknowledgement: AcknowledgementCommitment,
+    pub proof: Proof,
+    pub proof_height: Height,
+}
+
+impl QueryPacketAcknowledgementResponse {
+    pub fn new(
+        acknowledgement: AcknowledgementCommitment,
+        proof: Proof,
+        proof_height: Height,
+    ) -> Self {
+        Self {
+            acknowledgement,
+            proof,
+            proof_height,
+        }
+    }
+}
+
+impl From<QueryPacketAcknowledgementResponse> for RawQueryPacketAcknowledgementResponse {
+    fn from(response: QueryPacketAcknowledgementResponse) -> Self {
+        Self {
+            acknowledgement: response.acknowledgement.into_vec(),
+            proof: response.proof,
+            proof_height: Some(response.proof_height.into()),
+        }
+    }
+}
+
+/// Defines the RPC method response type when querying a list of packet
+/// acknowledgements.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryPacketAcknowledgementsResponse {
+    pub acknowledgements: Vec<PacketState>,
+    pub height: Height,
+    pub pagination: Option<PageResponse>,
+}
+
+impl QueryPacketAcknowledgementsResponse {
+    pub fn new(
+        acknowledgements: Vec<PacketState>,
+        height: Height,
+        pagination: Option<PageResponse>,
+    ) -> Self {
+        Self {
+            acknowledgements,
+            height,
+            pagination,
+        }
+    }
+}
+
+impl From<QueryPacketAcknowledgementsResponse> for RawQueryPacketAcknowledgementsResponse {
+    fn from(response: QueryPacketAcknowledgementsResponse) -> Self {
+        Self {
+            acknowledgements: response
+                .acknowledgements
+                .into_iter()
+                .map(Into::into)
+                .collect(),
+            height: Some(response.height.into()),
+            pagination: response.pagination.map(|pagination| pagination.into()),
+        }
+    }
+}
+
 /// Defines the RPC method response type when querying a list of unreceived acks.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -470,6 +409,67 @@ impl From<QueryUnreceivedPacketsResponse> for RawQueryUnreceivedPacketsResponse 
         Self {
             sequences: response.sequences.into_iter().map(Into::into).collect(),
             height: Some(response.height.into()),
+        }
+    }
+}
+
+/// Defines the RPC method response type when querying the next sequence to be received on a channel.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryNextSequenceReceiveResponse {
+    pub next_sequence_receive: Sequence,
+    pub proof: Proof,
+    pub proof_height: Height,
+}
+
+impl QueryNextSequenceReceiveResponse {
+    pub fn new(next_sequence_receive: Sequence, proof: Proof, proof_height: Height) -> Self {
+        Self {
+            next_sequence_receive,
+            proof,
+            proof_height,
+        }
+    }
+}
+
+impl From<QueryNextSequenceReceiveResponse> for RawQueryNextSequenceReceiveResponse {
+    fn from(response: QueryNextSequenceReceiveResponse) -> Self {
+        Self {
+            next_sequence_receive: response.next_sequence_receive.into(),
+            proof: response.proof,
+            proof_height: Some(response.proof_height.into()),
+        }
+    }
+}
+
+/// Defines the RPC method response type when querying the next sequence to be
+/// sent on a channel.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryNextSequenceSendResponse {
+    pub next_sequence_send: Sequence,
+    pub proof: Proof,
+    pub proof_height: Height,
+}
+
+impl QueryNextSequenceSendResponse {
+    pub fn new(next_sequence_send: Sequence, proof: Proof, proof_height: Height) -> Self {
+        Self {
+            next_sequence_send,
+            proof,
+            proof_height,
+        }
+    }
+}
+
+impl From<QueryNextSequenceSendResponse> for RawQueryNextSequenceSendResponse {
+    fn from(response: QueryNextSequenceSendResponse) -> Self {
+        Self {
+            next_sequence_send: response.next_sequence_send.into(),
+            proof: response.proof,
+            proof_height: Some(response.proof_height.into()),
         }
     }
 }

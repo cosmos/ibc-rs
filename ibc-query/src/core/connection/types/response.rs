@@ -48,6 +48,40 @@ impl From<QueryConnectionResponse> for RawQueryConnectionResponse {
     }
 }
 
+/// Defines the RPC method response type when querying all the existing connection ends.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryConnectionsResponse {
+    pub connections: Vec<IdentifiedConnectionEnd>,
+    pub query_height: Height,
+    pub pagination: Option<PageResponse>,
+}
+
+impl QueryConnectionsResponse {
+    pub fn new(
+        connections: Vec<IdentifiedConnectionEnd>,
+        query_height: Height,
+        pagination: Option<PageResponse>,
+    ) -> Self {
+        Self {
+            connections,
+            query_height,
+            pagination,
+        }
+    }
+}
+
+impl From<QueryConnectionsResponse> for RawQueryConnectionsResponse {
+    fn from(response: QueryConnectionsResponse) -> Self {
+        RawQueryConnectionsResponse {
+            connections: response.connections.into_iter().map(Into::into).collect(),
+            height: Some(response.query_height.into()),
+            pagination: response.pagination.map(Into::into),
+        }
+    }
+}
+
 /// Defines the RPC method response type when querying client state associated
 /// with a connection.
 #[derive(Clone, Debug)]
@@ -79,40 +113,6 @@ impl From<QueryConnectionClientStateResponse> for RawQueryConnectionClientStateR
             identified_client_state: Some(response.identified_client_state.into()),
             proof: response.proof,
             proof_height: Some(response.proof_height.into()),
-        }
-    }
-}
-
-/// Defines the RPC method response type when querying all the existing connection ends.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryConnectionsResponse {
-    pub connections: Vec<IdentifiedConnectionEnd>,
-    pub query_height: Height,
-    pub pagination: Option<PageResponse>,
-}
-
-impl QueryConnectionsResponse {
-    pub fn new(
-        connections: Vec<IdentifiedConnectionEnd>,
-        query_height: Height,
-        pagination: Option<PageResponse>,
-    ) -> Self {
-        Self {
-            connections,
-            query_height,
-            pagination,
-        }
-    }
-}
-
-impl From<QueryConnectionsResponse> for RawQueryConnectionsResponse {
-    fn from(response: QueryConnectionsResponse) -> Self {
-        RawQueryConnectionsResponse {
-            connections: response.connections.into_iter().map(Into::into).collect(),
-            height: Some(response.query_height.into()),
-            pagination: response.pagination.map(Into::into),
         }
     }
 }

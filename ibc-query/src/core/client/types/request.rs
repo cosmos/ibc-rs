@@ -92,41 +92,6 @@ impl TryFrom<RawQueryConsensusStateRequest> for QueryConsensusStateRequest {
     }
 }
 
-/// Defines the RPC method request type for querying the upgraded client state.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryUpgradedClientStateRequest {
-    /// Height at which the chain is scheduled to halt for upgrade
-    pub upgrade_height: Option<Height>,
-}
-
-impl From<RawUpgradedClientStateRequest> for QueryUpgradedClientStateRequest {
-    fn from(_request: RawUpgradedClientStateRequest) -> Self {
-        Self {
-            upgrade_height: None,
-        }
-    }
-}
-
-/// Defines the RPC method request type for querying the upgraded consensus
-/// state.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryUpgradedConsensusStateRequest {
-    /// Height at which the chain is scheduled to halt for upgrade.
-    pub upgrade_height: Option<Height>,
-}
-
-impl From<RawUpgradedConsensusStateRequest> for QueryUpgradedConsensusStateRequest {
-    fn from(_request: RawUpgradedConsensusStateRequest) -> Self {
-        Self {
-            upgrade_height: None,
-        }
-    }
-}
-
 /// Defines the RPC method request type for querying all consensus states.
 #[derive(Clone, Debug)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -229,5 +194,40 @@ pub struct QueryClientParamsRequest {
 impl From<RawQueryClientParamsRequest> for QueryClientParamsRequest {
     fn from(_request: RawQueryClientParamsRequest) -> Self {
         Self { query_height: None }
+    }
+}
+
+/// Defines the RPC method request type for querying the upgraded client state.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryUpgradedClientStateRequest {
+    /// Height at which the chain is scheduled to halt for upgrade
+    pub upgrade_height: Option<Height>,
+}
+
+impl From<RawUpgradedClientStateRequest> for QueryUpgradedClientStateRequest {
+    fn from(_request: RawUpgradedClientStateRequest) -> Self {
+        Self {
+            upgrade_height: None,
+        }
+    }
+}
+
+/// Defines the RPC method request type for querying the upgraded consensus
+/// state.
+#[derive(Clone, Debug)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+pub struct QueryUpgradedConsensusStateRequest {
+    /// Height at which the chain is scheduled to halt for upgrade.
+    pub upgrade_height: Option<Height>,
+}
+
+impl From<RawUpgradedConsensusStateRequest> for QueryUpgradedConsensusStateRequest {
+    fn from(_request: RawUpgradedConsensusStateRequest) -> Self {
+        Self {
+            upgrade_height: None,
+        }
     }
 }
