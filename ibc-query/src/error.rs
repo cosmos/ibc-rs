@@ -33,8 +33,8 @@ impl QueryError {
 impl From<QueryError> for Status {
     fn from(e: QueryError) -> Self {
         match e {
-            QueryError::ContextError(e) => Self::internal(e.to_string()),
-            QueryError::IdentifierError(e) => Self::internal(e.to_string()),
+            QueryError::ContextError(ctx_err) => Self::internal(ctx_err.to_string()),
+            QueryError::IdentifierError(id_err) => Self::internal(id_err.to_string()),
             QueryError::ProofNotFound(description) => Self::not_found(description),
             QueryError::MissingField(description) => Self::invalid_argument(description),
         }
