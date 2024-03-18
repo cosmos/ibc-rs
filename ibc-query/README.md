@@ -16,5 +16,18 @@ to the proto types for efficient integration.
 - Includes convenient `QueryContext` and `ProvableContext` traits that extend
   the capabilities of an implemented IBC module, enabling the retrieval of state
   from the chain.
-- Derives `serde` and `schema` for all the domain types to facilitate
-  (de)serialization of the domain types.
+- Derives `serde` and `schema` for all the domain types enabling easy
+  (de)serialization. This feature is particularly beneficial for JSON RPC
+  implementations.
+
+## Remarks
+
+- At present, the Protobuf representation of request types does not include
+  support for querying at a specific height. Consequently, the current state of
+  `ibc-query` allows conversion from protos as a compatible direction but does
+  not support conversion into protos due to the absence of the `query_height`
+  fields.
+
+- Currently `ibc-query` do not support pagination. If pagination is a
+  requirement for your project, please open an issue and provide details about
+  your usage.
