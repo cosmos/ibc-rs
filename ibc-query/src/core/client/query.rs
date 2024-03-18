@@ -103,7 +103,7 @@ where
         ibc_ctx
             .consensus_states(&client_id)?
             .into_iter()
-            .max_by_key(|(h, _)| *h)
+            .max_by_key(|&(h, _)| h)
             .ok_or_else(|| {
                 QueryError::proof_not_found(format!(
                     "No consensus state found for client: {client_id:?}"
