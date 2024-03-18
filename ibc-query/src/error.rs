@@ -21,11 +21,11 @@ pub enum QueryError {
 }
 
 impl QueryError {
-    pub fn proof_not_found(description: impl ToString) -> Self {
+    pub fn proof_not_found<T: ToString>(description: T) -> Self {
         Self::ProofNotFound(description.to_string())
     }
 
-    pub fn missing_field(description: impl ToString) -> Self {
+    pub fn missing_field<T: ToString>(description: T) -> Self {
         Self::MissingField(description.to_string())
     }
 }
