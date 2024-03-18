@@ -8,6 +8,7 @@ use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::{ClientId, Sequence};
 use ibc::core::primitives::proto::Any;
 use ibc::primitives::prelude::*;
+use ibc::primitives::proto::Protobuf;
 use ibc_proto::ibc::core::channel::v1::{
     QueryChannelClientStateResponse as RawQueryChannelClientStateResponse,
     QueryChannelConsensusStateResponse as RawQueryChannelConsensusStateResponse,
@@ -26,6 +27,7 @@ use ibc_proto::ibc::core::channel::v1::{
 };
 
 use crate::core::client::IdentifiedClientState;
+use crate::error::QueryError;
 use crate::types::{PageResponse, Proof};
 
 /// Defines the RPC method response type when querying a channel.
@@ -45,6 +47,26 @@ impl QueryChannelResponse {
             proof,
             proof_height,
         }
+    }
+}
+
+impl Protobuf<RawQueryChannelResponse> for QueryChannelResponse {}
+
+impl TryFrom<RawQueryChannelResponse> for QueryChannelResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryChannelResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            channel: value
+                .channel
+                .ok_or(QueryError::missing_field("channel"))?
+                .try_into()?,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
     }
 }
 
@@ -82,6 +104,27 @@ impl QueryChannelsResponse {
     }
 }
 
+impl Protobuf<RawQueryChannelsResponse> for QueryChannelsResponse {}
+
+impl TryFrom<RawQueryChannelsResponse> for QueryChannelsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryChannelsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            channels: value
+                .channels
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            query_height: value
+                .height
+                .ok_or(QueryError::missing_field("height"))?
+                .try_into()?,
+            pagination: value.pagination.map(Into::into),
+        })
+    }
+}
+
 impl From<QueryChannelsResponse> for RawQueryChannelsResponse {
     fn from(response: QueryChannelsResponse) -> Self {
         Self {
@@ -116,6 +159,27 @@ impl QueryConnectionChannelsResponse {
     }
 }
 
+impl Protobuf<RawQueryConnectionChannelsResponse> for QueryConnectionChannelsResponse {}
+
+impl TryFrom<RawQueryConnectionChannelsResponse> for QueryConnectionChannelsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryConnectionChannelsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            channels: value
+                .channels
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            query_height: value
+                .height
+                .ok_or(QueryError::missing_field("height"))?
+                .try_into()?,
+            pagination: value.pagination.map(Into::into),
+        })
+    }
+}
+
 impl From<QueryConnectionChannelsResponse> for RawQueryConnectionChannelsResponse {
     fn from(response: QueryConnectionChannelsResponse) -> Self {
         Self {
@@ -147,6 +211,26 @@ impl QueryChannelClientStateResponse {
             proof,
             proof_height,
         }
+    }
+}
+
+impl Protobuf<RawQueryChannelClientStateResponse> for QueryChannelClientStateResponse {}
+
+impl TryFrom<RawQueryChannelClientStateResponse> for QueryChannelClientStateResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryChannelClientStateResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            identified_client_state: value
+                .identified_client_state
+                .ok_or(QueryError::missing_field("identified_client_state"))?
+                .try_into()?,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
     }
 }
 
@@ -187,6 +271,26 @@ impl QueryChannelConsensusStateResponse {
     }
 }
 
+impl Protobuf<RawQueryChannelConsensusStateResponse> for QueryChannelConsensusStateResponse {}
+
+impl TryFrom<RawQueryChannelConsensusStateResponse> for QueryChannelConsensusStateResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryChannelConsensusStateResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            consensus_state: value
+                .consensus_state
+                .ok_or(QueryError::missing_field("consensus_state"))?,
+            client_id: value.client_id.parse()?,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
+    }
+}
+
 impl From<QueryChannelConsensusStateResponse> for RawQueryChannelConsensusStateResponse {
     fn from(response: QueryChannelConsensusStateResponse) -> Self {
         Self {
@@ -215,6 +319,23 @@ impl QueryPacketCommitmentResponse {
             proof,
             proof_height,
         }
+    }
+}
+
+impl Protobuf<RawQueryPacketCommitmentResponse> for QueryPacketCommitmentResponse {}
+
+impl TryFrom<RawQueryPacketCommitmentResponse> for QueryPacketCommitmentResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryPacketCommitmentResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            packet_commitment: value.commitment.into(),
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
     }
 }
 
@@ -252,6 +373,27 @@ impl QueryPacketCommitmentsResponse {
     }
 }
 
+impl Protobuf<RawQueryPacketCommitmentsResponse> for QueryPacketCommitmentsResponse {}
+
+impl TryFrom<RawQueryPacketCommitmentsResponse> for QueryPacketCommitmentsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryPacketCommitmentsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            commitments: value
+                .commitments
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            height: value
+                .height
+                .ok_or(QueryError::missing_field("height"))?
+                .try_into()?,
+            pagination: value.pagination.map(Into::into),
+        })
+    }
+}
+
 impl From<QueryPacketCommitmentsResponse> for RawQueryPacketCommitmentsResponse {
     fn from(response: QueryPacketCommitmentsResponse) -> Self {
         Self {
@@ -279,6 +421,23 @@ impl QueryPacketReceiptResponse {
             proof,
             proof_height,
         }
+    }
+}
+
+impl Protobuf<RawQueryPacketReceiptResponse> for QueryPacketReceiptResponse {}
+
+impl TryFrom<RawQueryPacketReceiptResponse> for QueryPacketReceiptResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryPacketReceiptResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            received: value.received,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
     }
 }
 
@@ -313,6 +472,23 @@ impl QueryPacketAcknowledgementResponse {
             proof,
             proof_height,
         }
+    }
+}
+
+impl Protobuf<RawQueryPacketAcknowledgementResponse> for QueryPacketAcknowledgementResponse {}
+
+impl TryFrom<RawQueryPacketAcknowledgementResponse> for QueryPacketAcknowledgementResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryPacketAcknowledgementResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            acknowledgement: value.acknowledgement.into(),
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
     }
 }
 
@@ -351,6 +527,27 @@ impl QueryPacketAcknowledgementsResponse {
     }
 }
 
+impl Protobuf<RawQueryPacketAcknowledgementsResponse> for QueryPacketAcknowledgementsResponse {}
+
+impl TryFrom<RawQueryPacketAcknowledgementsResponse> for QueryPacketAcknowledgementsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryPacketAcknowledgementsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            acknowledgements: value
+                .acknowledgements
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            height: value
+                .height
+                .ok_or(QueryError::missing_field("height"))?
+                .try_into()?,
+            pagination: value.pagination.map(Into::into),
+        })
+    }
+}
+
 impl From<QueryPacketAcknowledgementsResponse> for RawQueryPacketAcknowledgementsResponse {
     fn from(response: QueryPacketAcknowledgementsResponse) -> Self {
         Self {
@@ -380,6 +577,22 @@ impl QueryUnreceivedAcksResponse {
     }
 }
 
+impl Protobuf<RawQueryUnreceivedAcksResponse> for QueryUnreceivedAcksResponse {}
+
+impl TryFrom<RawQueryUnreceivedAcksResponse> for QueryUnreceivedAcksResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryUnreceivedAcksResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            sequences: value.sequences.into_iter().map(Sequence::from).collect(),
+            height: value
+                .height
+                .ok_or(QueryError::missing_field("height"))?
+                .try_into()?,
+        })
+    }
+}
+
 impl From<QueryUnreceivedAcksResponse> for RawQueryUnreceivedAcksResponse {
     fn from(response: QueryUnreceivedAcksResponse) -> Self {
         Self {
@@ -401,6 +614,22 @@ pub struct QueryUnreceivedPacketsResponse {
 impl QueryUnreceivedPacketsResponse {
     pub fn new(sequences: Vec<Sequence>, height: Height) -> Self {
         Self { sequences, height }
+    }
+}
+
+impl Protobuf<RawQueryUnreceivedPacketsResponse> for QueryUnreceivedPacketsResponse {}
+
+impl TryFrom<RawQueryUnreceivedPacketsResponse> for QueryUnreceivedPacketsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryUnreceivedPacketsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            sequences: value.sequences.into_iter().map(Sequence::from).collect(),
+            height: value
+                .height
+                .ok_or(QueryError::missing_field("height"))?
+                .try_into()?,
+        })
     }
 }
 
@@ -433,6 +662,23 @@ impl QueryNextSequenceReceiveResponse {
     }
 }
 
+impl Protobuf<RawQueryNextSequenceReceiveResponse> for QueryNextSequenceReceiveResponse {}
+
+impl TryFrom<RawQueryNextSequenceReceiveResponse> for QueryNextSequenceReceiveResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryNextSequenceReceiveResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            next_sequence_receive: Sequence::from(value.next_sequence_receive),
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
+    }
+}
+
 impl From<QueryNextSequenceReceiveResponse> for RawQueryNextSequenceReceiveResponse {
     fn from(response: QueryNextSequenceReceiveResponse) -> Self {
         Self {
@@ -461,6 +707,23 @@ impl QueryNextSequenceSendResponse {
             proof,
             proof_height,
         }
+    }
+}
+
+impl Protobuf<RawQueryNextSequenceSendResponse> for QueryNextSequenceSendResponse {}
+
+impl TryFrom<RawQueryNextSequenceSendResponse> for QueryNextSequenceSendResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryNextSequenceSendResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            next_sequence_send: Sequence::from(value.next_sequence_send),
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
     }
 }
 

@@ -1,4 +1,5 @@
 use core::fmt::{Debug, Display, Formatter};
+use core::str::FromStr;
 
 use ibc_primitives::prelude::*;
 
@@ -57,5 +58,21 @@ impl Status {
 impl Display for Status {
     fn fmt(&self, f: &mut Formatter<'_>) -> core::fmt::Result {
         write!(f, "{self:?}")
+    }
+}
+
+impl FromStr for Status {
+    type Err = ClientError;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "ACTIVE" => Ok(Status::Active),
+            "FROZEN" => Ok(Status::Frozen),
+            "EXPIRED" => Ok(Status::Expired),
+            "UNAUTHORIZED" => Ok(Status::Unauthorized),
+            _ => Err(ClientError::Other {
+                description: format!("invalid status string: {s}"),
+            }),
+        }
     }
 }

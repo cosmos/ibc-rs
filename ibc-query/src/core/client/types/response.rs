@@ -5,6 +5,7 @@ use ibc::core::client::types::{Height, Status};
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::proto::Any;
 use ibc::primitives::prelude::*;
+use ibc::primitives::proto::Protobuf;
 use ibc_proto::ibc::core::client::v1::{
     ConsensusStateWithHeight as RawConsensusStateWithHeight,
     IdentifiedClientState as RawIdentifiedClientState, Params as RawParams,
@@ -19,6 +20,7 @@ use ibc_proto::ibc::core::client::v1::{
     QueryUpgradedConsensusStateResponse as RawQueryUpgradedConsensusStateResponse,
 };
 
+use crate::error::QueryError;
 use crate::types::{PageResponse, Proof};
 
 #[derive(Clone, Debug)]
@@ -40,6 +42,25 @@ impl QueryClientStateResponse {
             proof,
             proof_height,
         }
+    }
+}
+
+impl Protobuf<RawQueryClientStateResponse> for QueryClientStateResponse {}
+
+impl TryFrom<RawQueryClientStateResponse> for QueryClientStateResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryClientStateResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            client_state: value
+                .client_state
+                .ok_or(QueryError::missing_field("client_state"))?,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
     }
 }
 
@@ -73,6 +94,23 @@ impl QueryClientStatesResponse {
     }
 }
 
+impl Protobuf<RawQueryClientStatesResponse> for QueryClientStatesResponse {}
+
+impl TryFrom<RawQueryClientStatesResponse> for QueryClientStatesResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryClientStatesResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            client_states: value
+                .client_states
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            pagination: value.pagination.map(Into::into),
+        })
+    }
+}
+
 impl From<QueryClientStatesResponse> for RawQueryClientStatesResponse {
     fn from(response: QueryClientStatesResponse) -> Self {
         Self {
@@ -100,6 +138,21 @@ impl IdentifiedClientState {
             client_id,
             client_state,
         }
+    }
+}
+
+impl Protobuf<RawIdentifiedClientState> for IdentifiedClientState {}
+
+impl TryFrom<RawIdentifiedClientState> for IdentifiedClientState {
+    type Error = QueryError;
+
+    fn try_from(value: RawIdentifiedClientState) -> Result<Self, Self::Error> {
+        Ok(Self {
+            client_id: value.client_id.parse()?,
+            client_state: value
+                .client_state
+                .ok_or(QueryError::missing_field("client_state"))?,
+        })
     }
 }
 
@@ -131,6 +184,25 @@ impl QueryConsensusStateResponse {
     }
 }
 
+impl Protobuf<RawQueryConsensusStateResponse> for QueryConsensusStateResponse {}
+
+impl TryFrom<RawQueryConsensusStateResponse> for QueryConsensusStateResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryConsensusStateResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            consensus_state: value
+                .consensus_state
+                .ok_or(QueryError::missing_field("consensus_state"))?,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
+    }
+}
+
 impl From<QueryConsensusStateResponse> for RawQueryConsensusStateResponse {
     fn from(response: QueryConsensusStateResponse) -> Self {
         Self {
@@ -155,6 +227,24 @@ impl ConsensusStateWithHeight {
             height,
             consensus_state,
         }
+    }
+}
+
+impl Protobuf<RawConsensusStateWithHeight> for ConsensusStateWithHeight {}
+
+impl TryFrom<RawConsensusStateWithHeight> for ConsensusStateWithHeight {
+    type Error = QueryError;
+
+    fn try_from(value: RawConsensusStateWithHeight) -> Result<Self, Self::Error> {
+        Ok(Self {
+            height: value
+                .height
+                .ok_or(QueryError::missing_field("height"))?
+                .try_into()?,
+            consensus_state: value
+                .consensus_state
+                .ok_or(QueryError::missing_field("consensus_state"))?,
+        })
     }
 }
 
@@ -184,6 +274,23 @@ impl QueryConsensusStatesResponse {
             consensus_states,
             pagination,
         }
+    }
+}
+
+impl Protobuf<RawQueryConsensusStatesResponse> for QueryConsensusStatesResponse {}
+
+impl TryFrom<RawQueryConsensusStatesResponse> for QueryConsensusStatesResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryConsensusStatesResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            consensus_states: value
+                .consensus_states
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            pagination: value.pagination.map(Into::into),
+        })
     }
 }
 
@@ -218,6 +325,23 @@ impl QueryConsensusStateHeightsResponse {
     }
 }
 
+impl Protobuf<RawQueryConsensusStateHeightsResponse> for QueryConsensusStateHeightsResponse {}
+
+impl TryFrom<RawQueryConsensusStateHeightsResponse> for QueryConsensusStateHeightsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryConsensusStateHeightsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            consensus_state_heights: value
+                .consensus_state_heights
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            pagination: value.pagination.map(Into::into),
+        })
+    }
+}
+
 impl From<QueryConsensusStateHeightsResponse> for RawQueryConsensusStateHeightsResponse {
     fn from(response: QueryConsensusStateHeightsResponse) -> Self {
         Self {
@@ -245,6 +369,18 @@ impl QueryClientStatusResponse {
     }
 }
 
+impl Protobuf<RawQueryClientStatusResponse> for QueryClientStatusResponse {}
+
+impl TryFrom<RawQueryClientStatusResponse> for QueryClientStatusResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryClientStatusResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            status: value.status.parse()?,
+        })
+    }
+}
+
 impl From<QueryClientStatusResponse> for RawQueryClientStatusResponse {
     fn from(response: QueryClientStatusResponse) -> Self {
         Self {
@@ -264,6 +400,24 @@ pub struct QueryClientParamsResponse {
 impl QueryClientParamsResponse {
     pub fn new(allowed_clients: Vec<ClientId>) -> Self {
         Self { allowed_clients }
+    }
+}
+
+impl Protobuf<RawQueryClientParamsResponse> for QueryClientParamsResponse {}
+
+impl TryFrom<RawQueryClientParamsResponse> for QueryClientParamsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryClientParamsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            allowed_clients: value
+                .params
+                .ok_or(QueryError::missing_field("params"))?
+                .allowed_clients
+                .into_iter()
+                .map(|id| id.parse())
+                .collect::<Result<_, _>>()?,
+        })
     }
 }
 
@@ -297,6 +451,20 @@ impl QueryUpgradedClientStateResponse {
     }
 }
 
+impl Protobuf<RawQueryUpgradedClientStateResponse> for QueryUpgradedClientStateResponse {}
+
+impl TryFrom<RawQueryUpgradedClientStateResponse> for QueryUpgradedClientStateResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryUpgradedClientStateResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            upgraded_client_state: value
+                .upgraded_client_state
+                .ok_or(QueryError::missing_field("upgraded_client_state"))?,
+        })
+    }
+}
+
 impl From<QueryUpgradedClientStateResponse> for RawQueryUpgradedClientStateResponse {
     fn from(response: QueryUpgradedClientStateResponse) -> Self {
         Self {
@@ -318,6 +486,20 @@ impl QueryUpgradedConsensusStateResponse {
         Self {
             upgraded_consensus_state,
         }
+    }
+}
+
+impl Protobuf<RawQueryUpgradedConsensusStateResponse> for QueryUpgradedConsensusStateResponse {}
+
+impl TryFrom<RawQueryUpgradedConsensusStateResponse> for QueryUpgradedConsensusStateResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryUpgradedConsensusStateResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            upgraded_consensus_state: value
+                .upgraded_consensus_state
+                .ok_or(QueryError::missing_field("upgraded_consensus_state"))?,
+        })
     }
 }
 

@@ -6,6 +6,7 @@ use ibc::core::connection::types::{ConnectionEnd, IdentifiedConnectionEnd};
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::primitives::proto::Any;
 use ibc::primitives::prelude::*;
+use ibc::primitives::proto::Protobuf;
 use ibc_proto::ibc::core::connection::v1::{
     Params as RawParams, QueryClientConnectionsResponse as RawQueryClientConnectionsResponse,
     QueryConnectionClientStateResponse as RawQueryConnectionClientStateResponse,
@@ -16,6 +17,7 @@ use ibc_proto::ibc::core::connection::v1::{
 };
 
 use crate::core::client::IdentifiedClientState;
+use crate::error::QueryError;
 use crate::types::{PageResponse, Proof};
 
 /// Defines the RPC method response type when querying a connection.
@@ -35,6 +37,26 @@ impl QueryConnectionResponse {
             proof,
             proof_height,
         }
+    }
+}
+
+impl Protobuf<RawQueryConnectionResponse> for QueryConnectionResponse {}
+
+impl TryFrom<RawQueryConnectionResponse> for QueryConnectionResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryConnectionResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            conn_end: value
+                .connection
+                .ok_or(QueryError::missing_field("connection"))?
+                .try_into()?,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
     }
 }
 
@@ -69,6 +91,27 @@ impl QueryConnectionsResponse {
             query_height,
             pagination,
         }
+    }
+}
+
+impl Protobuf<RawQueryConnectionsResponse> for QueryConnectionsResponse {}
+
+impl TryFrom<RawQueryConnectionsResponse> for QueryConnectionsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryConnectionsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            connections: value
+                .connections
+                .into_iter()
+                .map(TryInto::try_into)
+                .collect::<Result<_, _>>()?,
+            query_height: value
+                .height
+                .ok_or(QueryError::missing_field("height"))?
+                .try_into()?,
+            pagination: value.pagination.map(Into::into),
+        })
     }
 }
 
@@ -107,6 +150,26 @@ impl QueryConnectionClientStateResponse {
     }
 }
 
+impl Protobuf<RawQueryConnectionClientStateResponse> for QueryConnectionClientStateResponse {}
+
+impl TryFrom<RawQueryConnectionClientStateResponse> for QueryConnectionClientStateResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryConnectionClientStateResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            identified_client_state: value
+                .identified_client_state
+                .ok_or(QueryError::missing_field("identified_client_state"))?
+                .try_into()?,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
+    }
+}
+
 impl From<QueryConnectionClientStateResponse> for RawQueryConnectionClientStateResponse {
     fn from(response: QueryConnectionClientStateResponse) -> Self {
         Self {
@@ -135,6 +198,27 @@ impl QueryClientConnectionsResponse {
             proof,
             proof_height,
         }
+    }
+}
+
+impl Protobuf<RawQueryClientConnectionsResponse> for QueryClientConnectionsResponse {}
+
+impl TryFrom<RawQueryClientConnectionsResponse> for QueryClientConnectionsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryClientConnectionsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            connection_paths: value
+                .connection_paths
+                .into_iter()
+                .map(|id| id.parse())
+                .collect::<Result<_, _>>()?,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
     }
 }
 
@@ -180,6 +264,26 @@ impl QueryConnectionConsensusStateResponse {
     }
 }
 
+impl Protobuf<RawQueryConnectionConsensusStateResponse> for QueryConnectionConsensusStateResponse {}
+
+impl TryFrom<RawQueryConnectionConsensusStateResponse> for QueryConnectionConsensusStateResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryConnectionConsensusStateResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            consensus_state: value
+                .consensus_state
+                .ok_or(QueryError::missing_field("consensus_state"))?,
+            client_id: value.client_id.parse()?,
+            proof: value.proof,
+            proof_height: value
+                .proof_height
+                .ok_or(QueryError::missing_field("proof_height"))?
+                .try_into()?,
+        })
+    }
+}
+
 impl From<QueryConnectionConsensusStateResponse> for RawQueryConnectionConsensusStateResponse {
     fn from(response: QueryConnectionConsensusStateResponse) -> Self {
         Self {
@@ -203,6 +307,21 @@ impl QueryConnectionParamsResponse {
         Self {
             max_expected_time_per_block,
         }
+    }
+}
+
+impl Protobuf<RawQueryConnectionParamsResponse> for QueryConnectionParamsResponse {}
+
+impl TryFrom<RawQueryConnectionParamsResponse> for QueryConnectionParamsResponse {
+    type Error = QueryError;
+
+    fn try_from(value: RawQueryConnectionParamsResponse) -> Result<Self, Self::Error> {
+        Ok(Self {
+            max_expected_time_per_block: value
+                .params
+                .ok_or(QueryError::missing_field("params"))?
+                .max_expected_time_per_block,
+        })
     }
 }
 
