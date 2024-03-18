@@ -81,10 +81,7 @@ impl TryFrom<RawQueryConsensusStateRequest> for QueryConsensusStateRequest {
         Ok(Self {
             client_id: request.client_id.parse()?,
             consensus_height: (!request.latest_height)
-                .then_some(Height::new(
-                    request.revision_number,
-                    request.revision_height,
-                ))
+                .then(|| Height::new(request.revision_number, request.revision_height))
                 .transpose()?,
             query_height: None,
         })
