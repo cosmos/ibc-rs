@@ -49,12 +49,12 @@ impl TryFrom<RawQueryConnectionResponse> for QueryConnectionResponse {
         Ok(Self {
             conn_end: value
                 .connection
-                .ok_or(QueryError::missing_field("connection"))?
+                .ok_or_else(|| QueryError::missing_field("connection"))?
                 .try_into()?,
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -108,7 +108,7 @@ impl TryFrom<RawQueryConnectionsResponse> for QueryConnectionsResponse {
                 .collect::<Result<_, _>>()?,
             query_height: value
                 .height
-                .ok_or(QueryError::missing_field("height"))?
+                .ok_or_else(|| QueryError::missing_field("height"))?
                 .try_into()?,
             pagination: value.pagination.map(Into::into),
         })
@@ -159,12 +159,12 @@ impl TryFrom<RawQueryConnectionClientStateResponse> for QueryConnectionClientSta
         Ok(Self {
             identified_client_state: value
                 .identified_client_state
-                .ok_or(QueryError::missing_field("identified_client_state"))?
+                .ok_or_else(|| QueryError::missing_field("identified_client_state"))?
                 .try_into()?,
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -216,7 +216,7 @@ impl TryFrom<RawQueryClientConnectionsResponse> for QueryClientConnectionsRespon
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -273,12 +273,12 @@ impl TryFrom<RawQueryConnectionConsensusStateResponse> for QueryConnectionConsen
         Ok(Self {
             consensus_state: value
                 .consensus_state
-                .ok_or(QueryError::missing_field("consensus_state"))?,
+                .ok_or_else(|| QueryError::missing_field("consensus_state"))?,
             client_id: value.client_id.parse()?,
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -319,7 +319,7 @@ impl TryFrom<RawQueryConnectionParamsResponse> for QueryConnectionParamsResponse
         Ok(Self {
             max_expected_time_per_block: value
                 .params
-                .ok_or(QueryError::missing_field("params"))?
+                .ok_or_else(|| QueryError::missing_field("params"))?
                 .max_expected_time_per_block,
         })
     }

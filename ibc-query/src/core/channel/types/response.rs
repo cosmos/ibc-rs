@@ -59,12 +59,12 @@ impl TryFrom<RawQueryChannelResponse> for QueryChannelResponse {
         Ok(Self {
             channel: value
                 .channel
-                .ok_or(QueryError::missing_field("channel"))?
+                .ok_or_else(|| QueryError::missing_field("channel"))?
                 .try_into()?,
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -118,7 +118,7 @@ impl TryFrom<RawQueryChannelsResponse> for QueryChannelsResponse {
                 .collect::<Result<_, _>>()?,
             query_height: value
                 .height
-                .ok_or(QueryError::missing_field("height"))?
+                .ok_or_else(|| QueryError::missing_field("height"))?
                 .try_into()?,
             pagination: value.pagination.map(Into::into),
         })
@@ -173,7 +173,7 @@ impl TryFrom<RawQueryConnectionChannelsResponse> for QueryConnectionChannelsResp
                 .collect::<Result<_, _>>()?,
             query_height: value
                 .height
-                .ok_or(QueryError::missing_field("height"))?
+                .ok_or_else(|| QueryError::missing_field("height"))?
                 .try_into()?,
             pagination: value.pagination.map(Into::into),
         })
@@ -223,12 +223,12 @@ impl TryFrom<RawQueryChannelClientStateResponse> for QueryChannelClientStateResp
         Ok(Self {
             identified_client_state: value
                 .identified_client_state
-                .ok_or(QueryError::missing_field("identified_client_state"))?
+                .ok_or_else(|| QueryError::missing_field("identified_client_state"))?
                 .try_into()?,
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -280,12 +280,12 @@ impl TryFrom<RawQueryChannelConsensusStateResponse> for QueryChannelConsensusSta
         Ok(Self {
             consensus_state: value
                 .consensus_state
-                .ok_or(QueryError::missing_field("consensus_state"))?,
+                .ok_or_else(|| QueryError::missing_field("consensus_state"))?,
             client_id: value.client_id.parse()?,
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -333,7 +333,7 @@ impl TryFrom<RawQueryPacketCommitmentResponse> for QueryPacketCommitmentResponse
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -387,7 +387,7 @@ impl TryFrom<RawQueryPacketCommitmentsResponse> for QueryPacketCommitmentsRespon
                 .collect::<Result<_, _>>()?,
             height: value
                 .height
-                .ok_or(QueryError::missing_field("height"))?
+                .ok_or_else(|| QueryError::missing_field("height"))?
                 .try_into()?,
             pagination: value.pagination.map(Into::into),
         })
@@ -435,7 +435,7 @@ impl TryFrom<RawQueryPacketReceiptResponse> for QueryPacketReceiptResponse {
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -486,7 +486,7 @@ impl TryFrom<RawQueryPacketAcknowledgementResponse> for QueryPacketAcknowledgeme
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -541,7 +541,7 @@ impl TryFrom<RawQueryPacketAcknowledgementsResponse> for QueryPacketAcknowledgem
                 .collect::<Result<_, _>>()?,
             height: value
                 .height
-                .ok_or(QueryError::missing_field("height"))?
+                .ok_or_else(|| QueryError::missing_field("height"))?
                 .try_into()?,
             pagination: value.pagination.map(Into::into),
         })
@@ -587,7 +587,7 @@ impl TryFrom<RawQueryUnreceivedAcksResponse> for QueryUnreceivedAcksResponse {
             sequences: value.sequences.into_iter().map(Sequence::from).collect(),
             height: value
                 .height
-                .ok_or(QueryError::missing_field("height"))?
+                .ok_or_else(|| QueryError::missing_field("height"))?
                 .try_into()?,
         })
     }
@@ -627,7 +627,7 @@ impl TryFrom<RawQueryUnreceivedPacketsResponse> for QueryUnreceivedPacketsRespon
             sequences: value.sequences.into_iter().map(Sequence::from).collect(),
             height: value
                 .height
-                .ok_or(QueryError::missing_field("height"))?
+                .ok_or_else(|| QueryError::missing_field("height"))?
                 .try_into()?,
         })
     }
@@ -673,7 +673,7 @@ impl TryFrom<RawQueryNextSequenceReceiveResponse> for QueryNextSequenceReceiveRe
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -721,7 +721,7 @@ impl TryFrom<RawQueryNextSequenceSendResponse> for QueryNextSequenceSendResponse
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }

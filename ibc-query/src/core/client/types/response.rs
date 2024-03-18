@@ -54,11 +54,11 @@ impl TryFrom<RawQueryClientStateResponse> for QueryClientStateResponse {
         Ok(Self {
             client_state: value
                 .client_state
-                .ok_or(QueryError::missing_field("client_state"))?,
+                .ok_or_else(|| QueryError::missing_field("client_state"))?,
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -151,7 +151,7 @@ impl TryFrom<RawIdentifiedClientState> for IdentifiedClientState {
             client_id: value.client_id.parse()?,
             client_state: value
                 .client_state
-                .ok_or(QueryError::missing_field("client_state"))?,
+                .ok_or_else(|| QueryError::missing_field("client_state"))?,
         })
     }
 }
@@ -193,11 +193,11 @@ impl TryFrom<RawQueryConsensusStateResponse> for QueryConsensusStateResponse {
         Ok(Self {
             consensus_state: value
                 .consensus_state
-                .ok_or(QueryError::missing_field("consensus_state"))?,
+                .ok_or_else(|| QueryError::missing_field("consensus_state"))?,
             proof: value.proof,
             proof_height: value
                 .proof_height
-                .ok_or(QueryError::missing_field("proof_height"))?
+                .ok_or_else(|| QueryError::missing_field("proof_height"))?
                 .try_into()?,
         })
     }
@@ -239,11 +239,11 @@ impl TryFrom<RawConsensusStateWithHeight> for ConsensusStateWithHeight {
         Ok(Self {
             height: value
                 .height
-                .ok_or(QueryError::missing_field("height"))?
+                .ok_or_else(|| QueryError::missing_field("height"))?
                 .try_into()?,
             consensus_state: value
                 .consensus_state
-                .ok_or(QueryError::missing_field("consensus_state"))?,
+                .ok_or_else(|| QueryError::missing_field("consensus_state"))?,
         })
     }
 }
@@ -412,7 +412,7 @@ impl TryFrom<RawQueryClientParamsResponse> for QueryClientParamsResponse {
         Ok(Self {
             allowed_clients: value
                 .params
-                .ok_or(QueryError::missing_field("params"))?
+                .ok_or_else(|| QueryError::missing_field("params"))?
                 .allowed_clients
                 .into_iter()
                 .map(|id| id.parse())
@@ -460,7 +460,7 @@ impl TryFrom<RawQueryUpgradedClientStateResponse> for QueryUpgradedClientStateRe
         Ok(Self {
             upgraded_client_state: value
                 .upgraded_client_state
-                .ok_or(QueryError::missing_field("upgraded_client_state"))?,
+                .ok_or_else(|| QueryError::missing_field("upgraded_client_state"))?,
         })
     }
 }
@@ -498,7 +498,7 @@ impl TryFrom<RawQueryUpgradedConsensusStateResponse> for QueryUpgradedConsensusS
         Ok(Self {
             upgraded_consensus_state: value
                 .upgraded_consensus_state
-                .ok_or(QueryError::missing_field("upgraded_consensus_state"))?,
+                .ok_or_else(|| QueryError::missing_field("upgraded_consensus_state"))?,
         })
     }
 }

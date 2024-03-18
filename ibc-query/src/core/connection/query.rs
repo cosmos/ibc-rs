@@ -37,10 +37,12 @@ where
             current_height,
             &Path::Connection(ConnectionPath::new(&request.connection_id)),
         )
-        .ok_or(QueryError::proof_not_found(format!(
-            "Proof not found for connection path: {:?}",
-            request.connection_id
-        )))?;
+        .ok_or_else(|| {
+            QueryError::proof_not_found(format!(
+                "Proof not found for connection path: {:?}",
+                request.connection_id
+            ))
+        })?;
 
     Ok(QueryConnectionResponse::new(
         connection_end,
@@ -83,10 +85,12 @@ where
             current_height,
             &Path::ClientConnection(ClientConnectionPath::new(request.client_id.clone())),
         )
-        .ok_or(QueryError::proof_not_found(format!(
-            "Proof not found for client connection path: {:?}",
-            request.client_id
-        )))?;
+        .ok_or_else(|| {
+            QueryError::proof_not_found(format!(
+                "Proof not found for client connection path: {:?}",
+                request.client_id
+            ))
+        })?;
 
     Ok(QueryClientConnectionsResponse::new(
         connections,
@@ -116,10 +120,12 @@ where
             current_height,
             &Path::ClientState(ClientStatePath::new(connection_end.client_id().clone())),
         )
-        .ok_or(QueryError::proof_not_found(format!(
-            "Proof not found for client state path: {:?}",
-            connection_end.client_id()
-        )))?;
+        .ok_or_else(|| {
+            QueryError::proof_not_found(format!(
+                "Proof not found for client state path: {:?}",
+                connection_end.client_id()
+            ))
+        })?;
 
     Ok(QueryConnectionClientStateResponse::new(
         IdentifiedClientState::new(connection_end.client_id().clone(), client_state.into()),
@@ -153,10 +159,12 @@ where
 
     let proof = ibc_ctx
         .get_proof(current_height, &Path::ClientConsensusState(consensus_path))
-        .ok_or(QueryError::proof_not_found(format!(
-            "Proof not found for consensus state path: {:?}",
-            connection_end.client_id()
-        )))?;
+        .ok_or_else(|| {
+            QueryError::proof_not_found(format!(
+                "Proof not found for consensus state path: {:?}",
+                connection_end.client_id()
+            ))
+        })?;
 
     Ok(QueryConnectionConsensusStateResponse::new(
         consensus_state.into(),
