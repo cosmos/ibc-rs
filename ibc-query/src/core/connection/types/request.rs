@@ -153,7 +153,7 @@ impl TryFrom<RawQueryConnectionChannelsRequest> for QueryConnectionChannelsReque
 
 impl From<QueryConnectionChannelsRequest> for RawQueryConnectionChannelsRequest {
     fn from(request: QueryConnectionChannelsRequest) -> Self {
-        RawQueryConnectionChannelsRequest {
+        Self {
             connection: request.connection_id.to_string(),
             pagination: request.pagination.map(|pagination| pagination.into()),
         }

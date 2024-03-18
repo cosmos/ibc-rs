@@ -115,7 +115,7 @@ impl TryFrom<RawQueryConsensusStatesRequest> for QueryConsensusStatesRequest {
 
 impl From<QueryConsensusStatesRequest> for RawQueryConsensusStatesRequest {
     fn from(request: QueryConsensusStatesRequest) -> Self {
-        RawQueryConsensusStatesRequest {
+        Self {
             client_id: request.client_id.to_string(),
             pagination: request.pagination.map(|pagination| pagination.into()),
         }
@@ -147,7 +147,7 @@ impl TryFrom<RawQueryConsensusStateHeightsRequest> for QueryConsensusStateHeight
 
 impl From<QueryConsensusStateHeightsRequest> for RawQueryConsensusStateHeightsRequest {
     fn from(request: QueryConsensusStateHeightsRequest) -> Self {
-        RawQueryConsensusStateHeightsRequest {
+        Self {
             client_id: request.client_id.to_string(),
             pagination: request.pagination.map(|pagination| pagination.into()),
         }

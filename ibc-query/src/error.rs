@@ -22,57 +22,57 @@ pub enum QueryError {
 
 impl QueryError {
     pub fn proof_not_found(description: impl ToString) -> Self {
-        QueryError::ProofNotFound(description.to_string())
+        Self::ProofNotFound(description.to_string())
     }
 
     pub fn missing_field(description: impl ToString) -> Self {
-        QueryError::MissingField(description.to_string())
+        Self::MissingField(description.to_string())
     }
 }
 
 impl From<QueryError> for Status {
     fn from(e: QueryError) -> Self {
         match e {
-            QueryError::ContextError(e) => Status::internal(e.to_string()),
-            QueryError::IdentifierError(e) => Status::internal(e.to_string()),
-            QueryError::ProofNotFound(description) => Status::not_found(description),
-            QueryError::MissingField(description) => Status::invalid_argument(description),
+            QueryError::ContextError(e) => Self::internal(e.to_string()),
+            QueryError::IdentifierError(e) => Self::internal(e.to_string()),
+            QueryError::ProofNotFound(description) => Self::not_found(description),
+            QueryError::MissingField(description) => Self::invalid_argument(description),
         }
     }
 }
 
 impl From<ContextError> for QueryError {
     fn from(e: ContextError) -> Self {
-        QueryError::ContextError(e)
+        Self::ContextError(e)
     }
 }
 
 impl From<ClientError> for QueryError {
     fn from(e: ClientError) -> Self {
-        QueryError::ContextError(ContextError::ClientError(e))
+        Self::ContextError(ContextError::ClientError(e))
     }
 }
 
 impl From<ConnectionError> for QueryError {
     fn from(e: ConnectionError) -> Self {
-        QueryError::ContextError(ContextError::ConnectionError(e))
+        Self::ContextError(ContextError::ConnectionError(e))
     }
 }
 
 impl From<ChannelError> for QueryError {
     fn from(e: ChannelError) -> Self {
-        QueryError::ContextError(ContextError::ChannelError(e))
+        Self::ContextError(ContextError::ChannelError(e))
     }
 }
 
 impl From<PacketError> for QueryError {
     fn from(e: PacketError) -> Self {
-        QueryError::ContextError(ContextError::PacketError(e))
+        Self::ContextError(ContextError::PacketError(e))
     }
 }
 
 impl From<IdentifierError> for QueryError {
     fn from(e: IdentifierError) -> Self {
-        QueryError::IdentifierError(e)
+        Self::IdentifierError(e)
     }
 }

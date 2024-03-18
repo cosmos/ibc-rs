@@ -180,7 +180,7 @@ impl TryFrom<RawQueryPacketCommitmentsRequest> for QueryPacketCommitmentsRequest
 
 impl From<QueryPacketCommitmentsRequest> for RawQueryPacketCommitmentsRequest {
     fn from(request: QueryPacketCommitmentsRequest) -> Self {
-        RawQueryPacketCommitmentsRequest {
+        Self {
             port_id: request.port_id.to_string(),
             channel_id: request.channel_id.to_string(),
             pagination: request.pagination.map(|pagination| pagination.into()),
@@ -269,7 +269,7 @@ impl TryFrom<RawQueryPacketAcknowledgementsRequest> for QueryPacketAcknowledgeme
 
 impl From<QueryPacketAcknowledgementsRequest> for RawQueryPacketAcknowledgementsRequest {
     fn from(request: QueryPacketAcknowledgementsRequest) -> Self {
-        RawQueryPacketAcknowledgementsRequest {
+        Self {
             port_id: request.port_id.to_string(),
             channel_id: request.channel_id.to_string(),
             packet_commitment_sequences: request
@@ -311,7 +311,7 @@ impl TryFrom<RawQueryUnreceivedPacketsRequest> for QueryUnreceivedPacketsRequest
 
 impl From<QueryUnreceivedPacketsRequest> for RawQueryUnreceivedPacketsRequest {
     fn from(request: QueryUnreceivedPacketsRequest) -> Self {
-        RawQueryUnreceivedPacketsRequest {
+        Self {
             port_id: request.port_id.to_string(),
             channel_id: request.channel_id.to_string(),
             packet_commitment_sequences: request
@@ -352,7 +352,7 @@ impl TryFrom<RawQueryUnreceivedAcksRequest> for QueryUnreceivedAcksRequest {
 
 impl From<QueryUnreceivedAcksRequest> for RawQueryUnreceivedAcksRequest {
     fn from(request: QueryUnreceivedAcksRequest) -> Self {
-        RawQueryUnreceivedAcksRequest {
+        Self {
             port_id: request.port_id.to_string(),
             channel_id: request.channel_id.to_string(),
             packet_ack_sequences: request

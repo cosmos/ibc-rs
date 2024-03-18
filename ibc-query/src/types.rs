@@ -34,7 +34,7 @@ impl PageRequest {
         // Note: do not use u64::MAX as the limit, as it may have unintended consequences
         // See https://github.com/informalsystems/hermes/pull/2950#issuecomment-1373733744
 
-        PageRequest {
+        Self {
             limit: u32::MAX as u64,
             ..Default::default()
         }
@@ -43,7 +43,7 @@ impl PageRequest {
 
 impl From<PageRequest> for RawPageRequest {
     fn from(request: PageRequest) -> Self {
-        RawPageRequest {
+        Self {
             key: request.key,
             offset: request.offset,
             limit: request.limit,
@@ -55,7 +55,7 @@ impl From<PageRequest> for RawPageRequest {
 
 impl From<RawPageRequest> for PageRequest {
     fn from(request: RawPageRequest) -> Self {
-        PageRequest {
+        Self {
             key: request.key,
             offset: request.offset,
             limit: request.limit,
@@ -80,7 +80,7 @@ pub struct PageResponse {
 
 impl From<PageResponse> for RawPageResponse {
     fn from(response: PageResponse) -> Self {
-        RawPageResponse {
+        Self {
             next_key: response.next_key,
             total: response.total,
         }
@@ -89,7 +89,7 @@ impl From<PageResponse> for RawPageResponse {
 
 impl From<RawPageResponse> for PageResponse {
     fn from(response: RawPageResponse) -> Self {
-        PageResponse {
+        Self {
             next_key: response.next_key,
             total: response.total,
         }

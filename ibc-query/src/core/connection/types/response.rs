@@ -117,7 +117,7 @@ impl TryFrom<RawQueryConnectionsResponse> for QueryConnectionsResponse {
 
 impl From<QueryConnectionsResponse> for RawQueryConnectionsResponse {
     fn from(response: QueryConnectionsResponse) -> Self {
-        RawQueryConnectionsResponse {
+        Self {
             connections: response.connections.into_iter().map(Into::into).collect(),
             height: Some(response.query_height.into()),
             pagination: response.pagination.map(Into::into),
