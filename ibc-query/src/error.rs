@@ -14,17 +14,15 @@ pub enum QueryError {
     ContextError(ContextError),
     /// Identifier error: {0}
     IdentifierError(IdentifierError),
-    /// Proof not found: {description}
-    ProofNotFound { description: String },
+    /// Proof not found: {0}
+    ProofNotFound(String),
     /// Missing field: {0}
     MissingField(String),
 }
 
 impl QueryError {
     pub fn proof_not_found(description: impl ToString) -> Self {
-        QueryError::ProofNotFound {
-            description: description.to_string(),
-        }
+        QueryError::ProofNotFound(description.to_string())
     }
 
     pub fn missing_field(description: impl ToString) -> Self {
@@ -37,7 +35,7 @@ impl From<QueryError> for Status {
         match e {
             QueryError::ContextError(e) => Status::internal(e.to_string()),
             QueryError::IdentifierError(e) => Status::internal(e.to_string()),
-            QueryError::ProofNotFound { description } => Status::not_found(description),
+            QueryError::ProofNotFound(description) => Status::not_found(description),
             QueryError::MissingField(description) => Status::invalid_argument(description),
         }
     }
