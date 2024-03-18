@@ -31,11 +31,8 @@ pub struct PageRequest {
 
 impl PageRequest {
     pub fn all() -> Self {
-        // Note: do not use u64::MAX as the limit, as it may have unintended consequences
-        // See https://github.com/informalsystems/hermes/pull/2950#issuecomment-1373733744
-
         Self {
-            limit: u64::from(u32::MAX),
+            limit: u64::MAX,
             ..Default::default()
         }
     }
