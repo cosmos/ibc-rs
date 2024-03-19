@@ -138,6 +138,13 @@ where
             store: shared_store,
         }
     }
+
+    pub fn advance_height(&mut self, consensus_state: AnyConsensusState) {
+        let _block_hash = self.store.commit().expect("no error");
+        self.consensus_states
+            .lock()
+            .insert(self.store.current_height(), consensus_state);
+    }
 }
 
 impl<S> Default for MockIbcStore<S>
