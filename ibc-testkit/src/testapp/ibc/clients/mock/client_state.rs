@@ -100,7 +100,11 @@ impl From<MockClientState> for RawMockClientState {
     fn from(value: MockClientState) -> Self {
         Self {
             header: Some(value.header.into()),
-            trusting_period: value.trusting_period.as_nanos() as _,
+            trusting_period: value
+                .trusting_period
+                .as_nanos()
+                .try_into()
+                .expect("no overflow"),
             frozen: value.frozen,
         }
     }
