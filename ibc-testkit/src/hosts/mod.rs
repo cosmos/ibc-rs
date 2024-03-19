@@ -17,8 +17,8 @@ use crate::utils::year_2023;
 pub mod mock;
 pub mod tendermint;
 
-pub use mock::MockHost;
-pub use tendermint::TendermintHost;
+pub use crate::hosts::mock::MockHost;
+pub use crate::hosts::tendermint::TendermintHost;
 
 #[derive(Debug, TypedBuilder)]
 pub struct HostParams {
