@@ -9,6 +9,7 @@ use ibc::core::channel::types::channel::{ChannelEnd, IdentifiedChannelEnd};
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::channel::types::packet::{PacketState, Receipt};
+use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
@@ -66,11 +67,10 @@ where
         height: &Height,
     ) -> Result<Self::HostConsensusState, ContextError> {
         let consensus_states_binding = self.consensus_states.lock();
-        let consensus_state = consensus_states_binding
+        Ok(consensus_states_binding
             .get(&height.revision_height())
-            .ok_or(ClientError::MissingLocalConsensusState { height: *height })?;
-
-        Ok(consensus_state.clone())
+            .cloned()
+            .ok_or(ClientError::MissingLocalConsensusState { height: *height })?)
     }
 
     fn validate_self_client(
