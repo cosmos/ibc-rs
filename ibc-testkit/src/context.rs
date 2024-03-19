@@ -153,12 +153,13 @@ where
 
     pub fn generate_light_client(
         &self,
-        consensus_heights: Vec<Height>,
+        mut consensus_heights: Vec<Height>,
         client_params: &H::LightClientParams,
     ) -> LightClientState<H> {
         let client_height = if let Some(&height) = consensus_heights.last() {
             height
         } else {
+            consensus_heights.push(self.latest_height());
             self.latest_height()
         };
 
