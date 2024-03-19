@@ -56,7 +56,6 @@ where
 #[cfg(test)]
 mod tests {
     use ibc::clients::tendermint::types::client_type as tm_client_type;
-    use ibc::core::client::context::client_state::ClientStateCommon;
     use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
     use ibc::core::client::types::Height;
     use ibc::core::handler::types::msgs::MsgEnvelope;

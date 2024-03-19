@@ -9,7 +9,7 @@ use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ClientState as TmClientState, Header as TmHeader,
     Misbehaviour as TmMisbehaviour,
 };
-use ibc::core::client::context::client_state::{ClientStateCommon, ClientStateValidation};
+use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
 use ibc::core::client::types::proto::v1::Height as RawHeight;
