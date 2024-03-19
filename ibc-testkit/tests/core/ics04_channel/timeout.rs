@@ -13,6 +13,7 @@ use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::primitives::*;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
@@ -127,9 +128,7 @@ fn timeout_fail_no_channel(fixture: Fixture) {
     )
 }
 
-// TODO(rano): it seems it was passing for different reason before
 #[rstest]
-#[ignore]
 fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
     let Fixture {
         ctx,
@@ -138,12 +137,13 @@ fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
         chan_end_on_a_unordered,
         conn_end_on_a,
         packet_commitment,
+        client_id,
         ..
     } = fixture;
 
     let packet = msg.packet.clone();
 
-    let ctx = ctx
+    let mut ctx = ctx
         .with_channel(
             PortId::transfer(),
             ChannelId::zero(),
@@ -156,6 +156,16 @@ fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
             packet.seq_on_a,
             packet_commitment,
         );
+
+    let consensus_state_path = ClientConsensusStatePath::new(
+        client_id,
+        msg.proof_height_on_b.revision_number(),
+        msg.proof_height_on_b.revision_height(),
+    );
+
+    ctx.ibc_store
+        .delete_consensus_state(consensus_state_path)
+        .expect("consensus state exists");
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
