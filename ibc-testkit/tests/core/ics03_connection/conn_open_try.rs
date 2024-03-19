@@ -136,9 +136,7 @@ fn conn_open_try_height_advanced() {
     conn_open_try_validate(&fxt, Expect::Failure(None));
 }
 
-// TODO(rano): we are not pruning host states
 #[test]
-#[ignore]
 fn conn_open_try_height_old() {
     let fxt = conn_open_try_fixture(Ctx::WithClient, Msg::HeightOld);
     conn_open_try_validate(&fxt, Expect::Failure(None));
