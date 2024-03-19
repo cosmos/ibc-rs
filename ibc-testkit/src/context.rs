@@ -95,8 +95,30 @@ where
     }
 
     pub fn advance_block_up_to(mut self, target_height: Height) -> Self {
-        self.host.advance_block_up_to(target_height);
+        let latest_height = self.host.latest_height();
+        if target_height.revision_number() != latest_height.revision_number() {
+            panic!("Cannot advance history of the chain to a different revision number!")
+        } else if target_height.revision_height() < latest_height.revision_height() {
+            panic!("Cannot rewind history of the chain to a smaller revision height!")
+        } else {
+            // Repeatedly advance the host chain height till we hit the desired height
+            while self.host.latest_height().revision_height() < target_height.revision_height() {
+                self.advance_block()
+            }
+        }
         self
+    }
+
+    pub fn advance_with_block_params(&mut self, params: &H::BlockParams) {
+        self.host.advance_block(params);
+        let latest_block = self.host.latest_block();
+
+        self.ibc_store
+            .advance_height(latest_block.into_header().into_consensus_state().into());
+    }
+
+    pub fn advance_block(&mut self) {
+        self.advance_with_block_params(&Default::default())
     }
 
     pub fn latest_height(&self) -> Height {
@@ -302,7 +324,7 @@ where
     ) -> Result<(), RelayerError> {
         dispatch(&mut self.ibc_store, router, msg).map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
-        self.host.advance_block();
+        self.advance_block();
         Ok(())
     }
 
