@@ -243,7 +243,7 @@ impl From<TendermintHeader> for Header {
 
 impl From<TendermintHeader> for ConsensusState {
     fn from(header: TendermintHeader) -> Self {
-        Self::from(header.0.signed_header.header)
+        header.0.signed_header.header.into()
     }
 }
 
