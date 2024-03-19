@@ -89,8 +89,8 @@ fn fixture() -> Fixture {
         msg,
         packet_commitment,
         conn_end_on_a,
-        chan_end_on_a_unordered,
         chan_end_on_a_ordered,
+        chan_end_on_a_unordered,
     }
 }
 
