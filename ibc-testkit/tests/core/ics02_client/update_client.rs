@@ -236,13 +236,15 @@ fn test_consensus_state_pruning() {
 
     let mut router = MockRouter::new_with_transfer();
 
+    let start_host_timestamp = ctx.ibc_store.host_timestamp().unwrap();
+
     // Move the chain forward by 2 blocks to pass the trusting period.
     for _ in 1..=2 {
         let signer = dummy_account_id();
 
         let update_height = ctx.latest_height();
 
-        ctx.host.advance_block();
+        ctx.advance_block();
 
         let block = ctx.host_block(&update_height).unwrap().clone();
         let mut block = block.into_header();
@@ -261,10 +263,6 @@ fn test_consensus_state_pruning() {
         let _ = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     }
 
-    let ibc_ctx = ctx.ibc_store;
-
-    let start_host_timestamp = ibc_ctx.host_timestamp().unwrap();
-
     // Check that latest expired consensus state is pruned.
     let expired_height = Height::new(1, 1).unwrap();
     let client_cons_state_path = ClientConsensusStatePath::new(
@@ -272,10 +270,14 @@ fn test_consensus_state_pruning() {
         expired_height.revision_number(),
         expired_height.revision_height(),
     );
-    assert!(ibc_ctx
+    assert!(ctx
+        .ibc_store
         .client_update_meta(&client_id, &expired_height)
         .is_err());
-    assert!(ibc_ctx.consensus_state(&client_cons_state_path).is_err());
+    assert!(ctx
+        .ibc_store
+        .consensus_state(&client_cons_state_path)
+        .is_err());
 
     // Check that latest valid consensus state exists.
     let earliest_valid_height = Height::new(1, 2).unwrap();
@@ -285,12 +287,16 @@ fn test_consensus_state_pruning() {
         earliest_valid_height.revision_height(),
     );
 
-    assert!(ibc_ctx
+    assert!(ctx
+        .ibc_store
         .client_update_meta(&client_id, &earliest_valid_height)
         .is_ok());
-    assert!(ibc_ctx.consensus_state(&client_cons_state_path).is_ok());
+    assert!(ctx
+        .ibc_store
+        .consensus_state(&client_cons_state_path)
+        .is_ok());
 
-    let end_host_timestamp = ibc_ctx.host_timestamp().unwrap();
+    let end_host_timestamp = ctx.ibc_store.host_timestamp().unwrap();
 
     assert_eq!(
         end_host_timestamp,
@@ -1377,7 +1383,7 @@ fn test_expired_client() {
     while ctx.ibc_store.host_timestamp().expect("no error")
         < (timestamp + trusting_period).expect("no error")
     {
-        ctx.host.advance_block();
+        ctx.advance_block();
     }
 
     let client_state = ctx.ibc_store.client_state(&client_id).unwrap();
@@ -1428,11 +1434,11 @@ fn test_client_update_max_clock_drift() {
     while ctx_b.ibc_store.host_timestamp().expect("no error")
         < (ctx_a.ibc_store.host_timestamp().expect("no error") + max_clock_drift).expect("no error")
     {
-        ctx_b.host.advance_block();
+        ctx_b.advance_block();
     }
 
     // include current block
-    ctx_b.host.advance_block();
+    ctx_b.advance_block();
 
     let update_height = ctx_b.latest_height();
 
