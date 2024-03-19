@@ -190,7 +190,7 @@ where
 
         let client_state = self
             .host
-            .generate_client_state(client_height, client_params);
+            .generate_client_state(&client_height, client_params);
 
         let consensus_states = consensus_heights
             .into_iter()

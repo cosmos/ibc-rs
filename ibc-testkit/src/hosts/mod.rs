@@ -57,9 +57,7 @@ pub trait TestHost: Debug + Sized {
     /// The chain identifier of the host.
     fn chain_id(&self) -> &ChainId;
 
-    fn block_time(&self) -> Duration {
-        Duration::from_secs(DEFAULT_BLOCK_TIME_SECS)
-    }
+    fn block_time(&self) -> Duration;
 
     fn is_empty(&self) -> bool;
     fn genesis_timestamp(&self) -> Timestamp;
@@ -120,7 +118,7 @@ pub trait TestHost: Debug + Sized {
     /// Generate a client state using the block at the given height and the provided parameters.
     fn generate_client_state(
         &self,
-        latest_height: Height,
+        latest_height: &Height,
         params: &Self::LightClientParams,
     ) -> Self::ClientState;
 }
@@ -130,16 +128,16 @@ pub trait TestBlock: Clone + Debug {
     /// The type of header can be extracted from the block.
     type Header: TestHeader + From<Self>;
 
-    /// Extract the header from the block.
-    fn into_header(self) -> Self::Header {
-        self.into()
-    }
-
     /// The height of the block.
     fn height(&self) -> Height;
 
     /// The timestamp of the block.
     fn timestamp(&self) -> Timestamp;
+
+    /// Extract the header from the block.
+    fn into_header(self) -> Self::Header {
+        self.into()
+    }
 }
 
 /// TestHeader is a trait that defines the interface for a header produced by a host blockchain.

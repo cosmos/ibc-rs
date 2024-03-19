@@ -46,6 +46,10 @@ impl TestHost for MockHost {
         &self.chain_id
     }
 
+    fn block_time(&self) -> Duration {
+        self.block_time
+    }
+
     fn is_empty(&self) -> bool {
         self.history.is_empty()
     }
@@ -92,10 +96,10 @@ impl TestHost for MockHost {
 
     fn generate_client_state(
         &self,
-        latest_height: Height,
+        latest_height: &Height,
         _: &Self::LightClientParams,
     ) -> Self::ClientState {
-        MockClientState::new(self.get_block(&latest_height).expect("height exists"))
+        MockClientState::new(self.get_block(latest_height).expect("height exists"))
     }
 }
 

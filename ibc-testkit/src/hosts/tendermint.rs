@@ -59,6 +59,10 @@ impl TestHost for TendermintHost {
         &self.chain_id
     }
 
+    fn block_time(&self) -> Duration {
+        self.block_time
+    }
+
     fn is_empty(&self) -> bool {
         self.history.is_empty()
     }
@@ -114,13 +118,13 @@ impl TestHost for TendermintHost {
 
     fn generate_client_state(
         &self,
-        latest_height: Height,
+        latest_height: &Height,
         params: &Self::LightClientParams,
     ) -> Self::ClientState {
         let client_state: ClientState = ClientStateConfig::builder()
             .chain_id(self.chain_id().clone())
             .latest_height(
-                self.get_block(&latest_height)
+                self.get_block(latest_height)
                     .expect("block exists")
                     .height(),
             )
