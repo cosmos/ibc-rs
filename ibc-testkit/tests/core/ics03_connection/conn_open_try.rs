@@ -28,13 +28,10 @@ enum Msg {
 }
 
 fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConnectionOpenTry> {
-    let max_history_size = 5;
+    let retained_history_size = 5;
     let client_cons_state_height = 10;
     let host_chain_height = Height::new(0, 35).unwrap();
-    let pruned_height = host_chain_height
-        .sub(max_history_size + 1)
-        .unwrap()
-        .revision_height();
+    let pruned_height = host_chain_height.sub(retained_history_size + 1).unwrap();
 
     let msg = match msg_variant {
         Msg::Default => dummy_msg_conn_open_try(
@@ -45,7 +42,9 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
             client_cons_state_height,
             host_chain_height.increment().revision_height(),
         ),
-        Msg::HeightOld => dummy_msg_conn_open_try(client_cons_state_height, pruned_height),
+        Msg::HeightOld => {
+            dummy_msg_conn_open_try(client_cons_state_height, pruned_height.revision_height())
+        }
         Msg::ProofHeightMissing => dummy_msg_conn_open_try(
             client_cons_state_height - 1,
             host_chain_height.revision_height(),
@@ -68,6 +67,8 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
                 .ibc_store
         }
     };
+
+    ctx.prune_consensus_states_till(&pruned_height);
     Fixture { ctx, msg }
 }
 
