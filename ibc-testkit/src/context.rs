@@ -132,19 +132,14 @@ where
     }
 
     pub fn latest_timestamp(&self) -> Timestamp {
-        self.host_block(&self.latest_height())
-            .expect("Never fails")
-            .timestamp()
+        self.host.latest_block().timestamp()
     }
 
     pub fn timestamp_at(&self, height: Height) -> Timestamp {
-        let n_blocks = self
-            .host
-            .blocks_since(height)
-            .expect("less or equal height");
-        self.latest_timestamp()
-            .sub(self.host.block_time() * (n_blocks as u32))
-            .expect("Never fails")
+        self.host
+            .get_block(&height)
+            .expect("block exists")
+            .timestamp()
     }
 
     pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
