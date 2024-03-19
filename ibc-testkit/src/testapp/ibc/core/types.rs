@@ -81,7 +81,7 @@ where
     /// A typed-store for packet ack
     pub packet_ack_store: BinStore<SharedStore<S>, AckPath, AcknowledgementCommitment>,
     /// Map of host consensus states
-    pub consensus_states: Arc<Mutex<BTreeMap<u64, MockConsensusState>>>,
+    pub consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
     /// IBC Events
     pub events: Arc<Mutex<Vec<IbcEvent>>>,
     /// message logs

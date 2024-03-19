@@ -31,6 +31,22 @@ pub enum AnyClientState {
     Mock(MockClientState),
 }
 
+impl AnyClientState {
+    pub fn latest_height(&self) -> Height {
+        match self {
+            Self::Tendermint(cs) => cs.inner().latest_height,
+            Self::Mock(cs) => cs.latest_height(),
+        }
+    }
+
+    pub fn is_frozen(&self) -> bool {
+        match self {
+            Self::Tendermint(cs) => cs.inner().is_frozen(),
+            Self::Mock(cs) => cs.is_frozen(),
+        }
+    }
+}
+
 impl Protobuf<Any> for AnyClientState {}
 
 impl TryFrom<Any> for AnyClientState {

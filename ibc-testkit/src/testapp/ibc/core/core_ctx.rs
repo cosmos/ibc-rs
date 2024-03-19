@@ -29,16 +29,15 @@ use ibc::primitives::ToVec;
 use ibc_query::core::context::{ProvableContext, QueryContext};
 
 use super::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
-use crate::testapp::ibc::clients::mock::client_state::MockClientState;
-use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
+use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 
 impl<S> ValidationContext for MockIbcStore<S>
 where
     S: ProvableStore + Debug,
 {
     type V = Self;
-    type HostClientState = MockClientState;
-    type HostConsensusState = MockConsensusState;
+    type HostClientState = AnyClientState;
+    type HostConsensusState = AnyConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
         Ok(Height::new(0, self.store.current_height())?)
