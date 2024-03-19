@@ -417,7 +417,7 @@ fn routing_module_and_keepers() {
 
     for test in tests {
         let res = match test.msg.clone() {
-            TestMsg::Ics26(msg) => dispatch(&mut ctx.ibc_store, &mut router, msg).map(|_| ()),
+            TestMsg::Ics26(msg) => dispatch(&mut ctx.ibc_store, &mut router, msg),
             TestMsg::Ics20(msg) => send_transfer(&mut ctx.ibc_store, &mut DummyTransferModule, msg)
                 .map_err(|e: TokenTransferError| ChannelError::AppModule {
                     description: e.to_string(),
