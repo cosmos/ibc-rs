@@ -337,28 +337,43 @@ where
 
 #[cfg(test)]
 mod tests {
+    use ibc::core::client::context::consensus_state::ConsensusState;
     use ibc::core::host::types::identifiers::ChainId;
 
     use super::*;
-    use crate::hosts::{MockHost, TendermintHost};
+    use crate::hosts::{HostConsensusState, MockHost, TendermintHost};
+    use crate::testapp::ibc::core::types::DefaultIbcStore;
 
     #[test]
     fn test_history_manipulation_mock() {
-        pub struct Test<H: TestHost> {
+        pub struct Test<H: TestHost>
+        where
+            H: TestHost,
+            HostConsensusState<H>: ConsensusState,
+            HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+        {
             name: String,
             ctx: MockContext<H>,
         }
 
-        fn run_tests<H: TestHost>(sub_title: &str) {
+        fn run_tests<H>(sub_title: &str)
+        where
+            H: TestHost,
+            HostConsensusState<H>: ConsensusState,
+            HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+        {
             let cv = 1; // The version to use for all chains.
             let mock_chain_id = ChainId::new(&format!("mockgaia-{cv}")).unwrap();
+
+            // TODO(rano): these tests are redundant as we don't use max_history_size anymore
+            // we advance the block till latest_height, starting from Height(1)
+            // Note: for large latest_height, the Context building will be slower
 
             let tests: Vec<Test<H>> = vec![
                 Test {
                     name: "Empty history, small pruning window".to_string(),
                     ctx: MockContextConfig::builder()
                         .host_id(mock_chain_id.clone())
-                        .max_history_size(2)
                         .latest_height(Height::new(cv, 1).expect("Never fails"))
                         .build(),
                 },
@@ -366,7 +381,6 @@ mod tests {
                     name: "Large pruning window".to_string(),
                     ctx: MockContextConfig::builder()
                         .host_id(mock_chain_id.clone())
-                        .max_history_size(30)
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
                         .build(),
                 },
@@ -374,7 +388,6 @@ mod tests {
                     name: "Small pruning window".to_string(),
                     ctx: MockContextConfig::builder()
                         .host_id(mock_chain_id.clone())
-                        .max_history_size(3)
                         .latest_height(Height::new(cv, 30).expect("Never fails"))
                         .build(),
                 },
@@ -382,7 +395,6 @@ mod tests {
                     name: "Small pruning window, small starting height".to_string(),
                     ctx: MockContextConfig::builder()
                         .host_id(mock_chain_id.clone())
-                        .max_history_size(3)
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
                         .build(),
                 },
@@ -390,7 +402,6 @@ mod tests {
                     name: "Large pruning window, large starting height".to_string(),
                     ctx: MockContextConfig::builder()
                         .host_id(mock_chain_id.clone())
-                        .max_history_size(50)
                         .latest_height(Height::new(cv, 2000).expect("Never fails"))
                         .build(),
                 },
