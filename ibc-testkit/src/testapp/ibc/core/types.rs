@@ -3,11 +3,12 @@
 use alloc::sync::Arc;
 use core::fmt::Debug;
 
-use basecoin_store::context::ProvableStore;
-use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore, SharedStore};
+use basecoin_store::context::{ProvableStore, Store};
+use basecoin_store::impls::SharedStore;
 use basecoin_store::types::{BinStore, JsonStore, ProtobufStore, TypedSet, TypedStore};
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
+use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::handler::types::events::IbcEvent;
@@ -29,8 +30,8 @@ use typed_builder::TypedBuilder;
 
 use crate::context::{MockContext, MockStore};
 use crate::fixtures::core::context::MockContextConfig;
-use crate::hosts::{TestBlock, TestHeader, TestHost};
-use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
+use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
+use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
@@ -413,6 +414,7 @@ pub struct LightClientState<H: TestHost> {
 impl<H> Default for LightClientState<H>
 where
     H: TestHost,
+    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     fn default() -> Self {
         let context = MockContext::<H>::default();
@@ -423,6 +425,7 @@ where
 impl<H> LightClientState<H>
 where
     H: TestHost,
+    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     pub fn with_latest_height(height: Height) -> Self {
         let context = MockContextConfig::builder()
@@ -434,7 +437,11 @@ where
 
 #[derive(TypedBuilder)]
 #[builder(builder_method(name = init), build_method(into))]
-pub struct LightClientBuilder<'a, H: TestHost> {
+pub struct LightClientBuilder<'a, H>
+where
+    H: TestHost,
+    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+{
     context: &'a MockContext<H>,
     #[builder(default, setter(into))]
     consensus_heights: Vec<Height>,
@@ -445,6 +452,7 @@ pub struct LightClientBuilder<'a, H: TestHost> {
 impl<'a, H> From<LightClientBuilder<'a, H>> for LightClientState<H>
 where
     H: TestHost,
+    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     fn from(builder: LightClientBuilder<'a, H>) -> Self {
         let LightClientBuilder {

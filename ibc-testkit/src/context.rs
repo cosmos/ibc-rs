@@ -1,11 +1,11 @@
 use core::fmt::Debug;
-use core::ops::Sub;
 use core::time::Duration;
 
 use basecoin_store::context::ProvableStore;
 use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore};
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::PacketCommitment;
+use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
@@ -25,7 +25,7 @@ use typed_builder::TypedBuilder;
 
 use super::testapp::ibc::core::types::{LightClientState, MockIbcStore};
 use crate::fixtures::core::context::MockContextConfig;
-use crate::hosts::{TestBlock, TestHeader, TestHost};
+use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 
@@ -35,6 +35,7 @@ pub struct MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
     H: TestHost,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     /// The type of host chain underlying this mock context.
     pub host: H,
@@ -69,6 +70,7 @@ impl<S, H> Default for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug + Default,
     H: TestHost,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     fn default() -> Self {
         MockContextConfig::builder().build()
@@ -81,6 +83,7 @@ impl<S, H> MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
     H: TestHost,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     pub fn ibc_store(&self) -> &MockIbcStore<S> {
         &self.ibc_store

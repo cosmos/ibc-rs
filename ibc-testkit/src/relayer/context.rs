@@ -2,6 +2,7 @@ use alloc::fmt::Debug;
 
 use basecoin_store::context::ProvableStore;
 use ibc::clients::tendermint::context::ValidationContext;
+use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
 use ibc::core::handler::types::error::ContextError;
@@ -10,8 +11,9 @@ use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 
 use crate::context::MockGenericContext;
-use crate::hosts::TestHost;
+use crate::hosts::{HostClientState, TestHost};
 use crate::testapp::ibc::clients::AnyClientState;
+use crate::testapp::ibc::core::types::MockIbcStore;
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
 /// relay packets between chains. This trait comprises the dependencies towards a single chain.
 /// Most of the functions in this represent wrappers over the ABCI interface.
@@ -33,6 +35,7 @@ impl<S, H> RelayerContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
     H: TestHost,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     fn query_latest_height(&self) -> Result<Height, ContextError> {
         self.ibc_store.host_height()
