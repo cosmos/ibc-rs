@@ -8,15 +8,27 @@ use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
+use typed_builder::TypedBuilder;
 
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::DEFAULT_BLOCK_TIME_SECS;
+use crate::utils::year_2023;
 
 pub mod mock;
 pub mod tendermint;
 
 pub use mock::MockHost;
 pub use tendermint::TendermintHost;
+
+#[derive(Debug, TypedBuilder)]
+pub struct HostParams {
+    #[builder(default = ChainId::new("mockgaia-0").expect("Never fails"))]
+    pub chain_id: ChainId,
+    #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
+    pub block_time: Duration,
+    #[builder(default = year_2023())]
+    pub genesis_timestamp: Timestamp,
+}
 
 /// TestHost is a trait that defines the interface for a host blockchain.
 pub trait TestHost: Debug + Sized {
