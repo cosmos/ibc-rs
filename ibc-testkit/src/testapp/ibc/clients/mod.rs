@@ -11,6 +11,7 @@ use ibc::clients::tendermint::types::{
     TENDERMINT_CLIENT_STATE_TYPE_URL, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
 use ibc::core::client::types::error::ClientError;
+use ibc::core::client::types::Height;
 use ibc::core::primitives::prelude::*;
 use ibc::derive::{ClientState, ConsensusState};
 use ibc::primitives::proto::{Any, Protobuf};
@@ -91,8 +92,6 @@ pub enum AnyConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),
 }
-
-impl Protobuf<Any> for AnyConsensusState {}
 
 impl TryFrom<Any> for AnyConsensusState {
     type Error = ClientError;
