@@ -18,7 +18,7 @@ pub struct MockConsensusState {
 
 impl MockConsensusState {
     pub fn new(header: MockHeader) -> Self {
-        MockConsensusState {
+        Self {
             header,
             root: CommitmentRoot::from(vec![0]),
         }
@@ -46,7 +46,7 @@ impl TryFrom<RawMockConsensusState> for MockConsensusState {
 
 impl From<MockConsensusState> for RawMockConsensusState {
     fn from(value: MockConsensusState) -> Self {
-        RawMockConsensusState {
+        Self {
             header: Some(value.header.into()),
         }
     }
@@ -78,7 +78,7 @@ impl TryFrom<Any> for MockConsensusState {
 
 impl From<MockConsensusState> for Any {
     fn from(consensus_state: MockConsensusState) -> Self {
-        Any {
+        Self {
             type_url: MOCK_CONSENSUS_STATE_TYPE_URL.to_string(),
             value: Protobuf::<RawMockConsensusState>::encode_vec(consensus_state),
         }

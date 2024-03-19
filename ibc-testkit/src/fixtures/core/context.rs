@@ -71,7 +71,7 @@ where
                 .build(),
         );
 
-        let mut context = MockGenericContext {
+        let mut context = Self {
             ibc_store: MockIbcStore::new(host.chain_id().revision_number(), Default::default()),
             host,
         };

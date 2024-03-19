@@ -77,13 +77,13 @@ impl From<AnyClientState> for Any {
 
 impl From<ClientStateType> for AnyClientState {
     fn from(client_state: ClientStateType) -> Self {
-        AnyClientState::Tendermint(client_state.into())
+        Self::Tendermint(client_state.into())
     }
 }
 
 impl From<ConsensusStateType> for AnyConsensusState {
     fn from(consensus_state: ConsensusStateType) -> Self {
-        AnyConsensusState::Tendermint(consensus_state.into())
+        Self::Tendermint(consensus_state.into())
     }
 }
 

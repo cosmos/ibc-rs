@@ -42,7 +42,7 @@ impl TryFrom<RawMockHeader> for MockHeader {
     type Error = ClientError;
 
     fn try_from(raw: RawMockHeader) -> Result<Self, Self::Error> {
-        Ok(MockHeader {
+        Ok(Self {
             height: raw
                 .height
                 .ok_or(ClientError::Other {
@@ -60,7 +60,7 @@ impl TryFrom<RawMockHeader> for MockHeader {
 
 impl From<MockHeader> for RawMockHeader {
     fn from(value: MockHeader) -> Self {
-        RawMockHeader {
+        Self {
             height: Some(value.height.into()),
             timestamp: value.timestamp.nanoseconds(),
         }
@@ -112,7 +112,7 @@ impl TryFrom<Any> for MockHeader {
 
 impl From<MockHeader> for Any {
     fn from(header: MockHeader) -> Self {
-        Any {
+        Self {
             type_url: MOCK_HEADER_TYPE_URL.to_string(),
             value: Protobuf::<RawMockHeader>::encode_vec(header),
         }

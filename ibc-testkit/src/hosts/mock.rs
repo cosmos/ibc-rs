@@ -99,7 +99,7 @@ impl TestHost for MockHost {
 }
 
 impl TestBlock for MockHeader {
-    type Header = MockHeader;
+    type Header = Self;
 
     fn height(&self) -> Height {
         self.height
@@ -112,7 +112,7 @@ impl TestBlock for MockHeader {
 
 impl From<MockHeader> for MockConsensusState {
     fn from(block: MockHeader) -> Self {
-        MockConsensusState::new(block)
+        Self::new(block)
     }
 }
 

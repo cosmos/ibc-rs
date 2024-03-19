@@ -100,7 +100,7 @@ impl TryFrom<ClientStateConfig> for TmClientState {
             config.allow_update,
         )?;
 
-        Ok(TmClientState::from(client_state))
+        Ok(Self::from(client_state))
     }
 }
 
