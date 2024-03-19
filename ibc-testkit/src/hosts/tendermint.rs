@@ -1,8 +1,6 @@
 use alloc::collections::VecDeque;
-use alloc::sync::Arc;
 use core::str::FromStr;
 use core::time::Duration;
-use std::sync::Mutex;
 
 use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState;
@@ -33,7 +31,7 @@ pub struct TendermintHost {
     pub genesis_timestamp: Timestamp,
 
     /// The chain of blocks underlying this context.
-    pub history: Arc<Mutex<VecDeque<TendermintBlock>>>,
+    pub history: VecDeque<TendermintBlock>,
 }
 
 impl TestHost for TendermintHost {
@@ -53,7 +51,7 @@ impl TestHost for TendermintHost {
             chain_id,
             block_time,
             genesis_timestamp,
-            history: Arc::new(Mutex::new(VecDeque::new())),
+            history: VecDeque::new(),
         }
     }
 
@@ -62,7 +60,7 @@ impl TestHost for TendermintHost {
     }
 
     fn is_empty(&self) -> bool {
-        self.history.lock().expect("lock").is_empty()
+        self.history.is_empty()
     }
 
     fn genesis_timestamp(&self) -> Timestamp {
@@ -70,32 +68,23 @@ impl TestHost for TendermintHost {
     }
 
     fn latest_block(&self) -> Self::Block {
-        self.history
-            .lock()
-            .expect("lock")
-            .back()
-            .cloned()
-            .expect("Never fails")
+        self.history.back().cloned().expect("Never fails")
     }
 
     fn get_block(&self, target_height: &Height) -> Option<Self::Block> {
         self.history
-            .lock()
-            .expect("lock")
             .get(target_height.revision_height() as usize - 1)
             .cloned() // indexed from 1
     }
 
-    fn push_block(&self, block: Self::Block) {
-        self.history.lock().expect("lock").push_back(block);
+    fn push_block(&mut self, block: Self::Block) {
+        self.history.push_back(block);
     }
 
-    fn prune_block_till(&self, height: &Height) {
-        let mut history = self.history.lock().expect("lock");
-
-        while let Some(block) = history.front() {
+    fn prune_block_till(&mut self, height: &Height) {
+        while let Some(block) = self.history.front() {
             if &block.height() <= height {
-                history.pop_front();
+                self.history.pop_front();
             } else {
                 break;
             }

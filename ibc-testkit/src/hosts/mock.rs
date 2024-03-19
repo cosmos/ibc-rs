@@ -1,7 +1,5 @@
 use alloc::collections::VecDeque;
-use alloc::sync::Arc;
 use core::time::Duration;
-use std::sync::Mutex;
 
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
@@ -19,7 +17,7 @@ pub struct MockHost {
     pub genesis_timestamp: Timestamp,
 
     /// The chain of blocks underlying this context.
-    history: Arc<Mutex<VecDeque<MockHeader>>>,
+    history: VecDeque<MockHeader>,
 }
 
 impl TestHost for MockHost {
@@ -40,7 +38,7 @@ impl TestHost for MockHost {
             block_time,
             genesis_timestamp,
 
-            history: Arc::new(Mutex::new(VecDeque::new())),
+            history: VecDeque::new(),
         }
     }
 
@@ -49,7 +47,7 @@ impl TestHost for MockHost {
     }
 
     fn is_empty(&self) -> bool {
-        self.history.lock().expect("lock").is_empty()
+        self.history.is_empty()
     }
 
     fn genesis_timestamp(&self) -> Timestamp {
@@ -57,32 +55,23 @@ impl TestHost for MockHost {
     }
 
     fn latest_block(&self) -> Self::Block {
-        self.history
-            .lock()
-            .expect("lock")
-            .back()
-            .copied()
-            .expect("Never fails")
+        self.history.back().copied().expect("Never fails")
     }
 
     fn get_block(&self, target_height: &Height) -> Option<Self::Block> {
         self.history
-            .lock()
-            .expect("lock")
             .get(target_height.revision_height() as usize - 1)
             .copied() // indexed from 1
     }
 
-    fn push_block(&self, block: Self::Block) {
-        self.history.lock().expect("lock").push_back(block);
+    fn push_block(&mut self, block: Self::Block) {
+        self.history.push_back(block);
     }
 
-    fn prune_block_till(&self, height: &Height) {
-        let mut history = self.history.lock().expect("lock");
-
-        while let Some(block) = history.front() {
+    fn prune_block_till(&mut self, height: &Height) {
+        while let Some(block) = self.history.front() {
             if &block.height() <= height {
-                history.pop_front();
+                self.history.pop_front();
             } else {
                 break;
             }
