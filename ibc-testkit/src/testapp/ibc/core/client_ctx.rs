@@ -240,7 +240,7 @@ where
         client_state: Self::ClientStateRef,
     ) -> Result<(), ContextError> {
         self.client_state_store
-            .set(client_state_path.clone(), client_state)
+            .set(client_state_path, client_state)
             .map_err(|_| ClientError::Other {
                 description: "Client state store error".to_string(),
             })?;
@@ -284,7 +284,7 @@ where
         );
         self.client_processed_times.delete(client_update_time_path);
         let client_update_height_path = ClientUpdateHeightPath::new(
-            client_id.clone(),
+            client_id,
             height.revision_number(),
             height.revision_height(),
         );
@@ -314,7 +314,7 @@ where
                 description: "store update error".into(),
             })?;
         let client_update_height_path = ClientUpdateHeightPath::new(
-            client_id.clone(),
+            client_id,
             height.revision_number(),
             height.revision_height(),
         );

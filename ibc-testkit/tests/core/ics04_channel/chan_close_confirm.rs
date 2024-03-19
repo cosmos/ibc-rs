@@ -62,7 +62,7 @@ fn test_chan_close_confirm_validate() {
         .with_connection(conn_id, conn_end)
         .with_channel(
             msg_chan_close_confirm.port_id_on_b.clone(),
-            msg_chan_close_confirm.chan_id_on_b.clone(),
+            msg_chan_close_confirm.chan_id_on_b,
             chan_end,
         );
 
@@ -119,7 +119,7 @@ fn test_chan_close_confirm_execute() {
         .with_connection(conn_id, conn_end)
         .with_channel(
             msg_chan_close_confirm.port_id_on_b.clone(),
-            msg_chan_close_confirm.chan_id_on_b.clone(),
+            msg_chan_close_confirm.chan_id_on_b,
             chan_end,
         );
 

@@ -62,7 +62,7 @@ fn test_chan_close_init_validate() {
             .with_connection(conn_id, conn_end)
             .with_channel(
                 msg_chan_close_init.port_id_on_a.clone(),
-                msg_chan_close_init.chan_id_on_a.clone(),
+                msg_chan_close_init.chan_id_on_a,
                 chan_end,
             )
     };
@@ -120,7 +120,7 @@ fn test_chan_close_init_execute() {
             .with_connection(conn_id, conn_end)
             .with_channel(
                 msg_chan_close_init.port_id_on_a.clone(),
-                msg_chan_close_init.chan_id_on_a.clone(),
+                msg_chan_close_init.chan_id_on_a,
                 chan_end,
             )
     };

@@ -136,7 +136,7 @@ fn chan_open_ack_execute_happy_path(fixture: Fixture) {
             chan_end_on_a,
         );
 
-    let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg.clone()));
+    let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
     let res = execute(&mut context.ibc_store, &mut router, msg_envelope);
 

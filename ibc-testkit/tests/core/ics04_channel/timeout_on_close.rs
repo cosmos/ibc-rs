@@ -67,7 +67,7 @@ fn fixture() -> Fixture {
         ConnectionState::Open,
         default_client_id.clone(),
         ConnectionCounterparty::new(
-            default_client_id.clone(),
+            default_client_id,
             Some(ConnectionId::zero()),
             CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),

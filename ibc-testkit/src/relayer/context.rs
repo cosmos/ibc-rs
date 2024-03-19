@@ -136,12 +136,12 @@ mod tests {
 
         // Create two mock contexts, one for each chain.
         let mut ctx_a = MockContextConfig::builder()
-            .host_id(chain_id_a.clone())
+            .host_id(chain_id_a)
             .latest_height(chain_a_start_height)
             .build::<MockContext<MockHost>>();
 
         let mut ctx_b = MockContextConfig::builder()
-            .host_id(chain_id_b.clone())
+            .host_id(chain_id_b)
             .latest_height(chain_b_start_height)
             .latest_timestamp(ctx_a.timestamp_at(chain_a_start_height.decrement().unwrap())) // chain B is running slower than chain A
             .build::<MockContext<TendermintHost>>();

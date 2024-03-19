@@ -33,7 +33,7 @@ enum Msg {
 fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConnectionOpenInit> {
     let msg_default = dummy_msg_conn_open_init();
     let msg = match msg_variant {
-        Msg::Default => msg_default.clone(),
+        Msg::Default => msg_default,
         Msg::NoVersion => msg_conn_open_with_version(msg_default, None),
         Msg::BadVersion => {
             msg_conn_open_with_version(msg_default, Some("random identifier 424242"))

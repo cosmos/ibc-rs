@@ -195,7 +195,7 @@ fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
     .unwrap();
     let context = context
         .with_light_client(
-            &client_id_on_b.clone(),
+            &client_id_on_b,
             LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)

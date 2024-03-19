@@ -218,7 +218,7 @@ fn test_consensus_state_pruning() {
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx = MockContextConfig::builder()
-        .host_id(chain_id.clone())
+        .host_id(chain_id)
         .latest_height(client_height)
         .latest_timestamp(Timestamp::now())
         .build::<MockContext<TendermintHost>>()
@@ -351,7 +351,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
 
     let signer = dummy_account_id();
 
-    let block = ctx_b.host_block(&update_height).unwrap().clone();
+    let block = ctx_b.host_block(&update_height).unwrap();
     let mut block = block.into_header();
     block.set_trusted_height(client_height);
 
@@ -418,7 +418,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host_id(chain_id_b)
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
@@ -440,11 +440,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
 
     let signer = dummy_account_id();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
@@ -518,7 +514,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host_id(chain_id_b)
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
@@ -562,11 +558,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
         trusted_next_validator_set.hash()
     );
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     // set the trusted height to height-20
     block.set_trusted_height(client_height);
@@ -626,7 +618,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host_id(chain_id_b)
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
@@ -655,11 +647,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .next_validators
         .clone();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     block.set_trusted_height(client_height);
     block.set_trusted_next_validators_set(trusted_next_validator_set);
@@ -669,9 +657,9 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         client_message: block.into(),
         signer,
     };
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope);
 
     assert!(res.is_err());
 }
@@ -721,7 +709,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host_id(chain_id_b)
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
@@ -743,11 +731,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
 
     let signer = dummy_account_id();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
@@ -818,7 +802,7 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host_id(chain_id_b)
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
@@ -840,11 +824,7 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
 
     let signer = dummy_account_id();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
@@ -861,9 +841,9 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
         client_message: block.into(),
         signer,
     };
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope);
 
     assert!(res.is_err());
 }
@@ -896,7 +876,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
 
     let signer = dummy_account_id();
 
-    let block = ctx_b.host_block(&update_height).unwrap().clone();
+    let block = ctx_b.host_block(&update_height).unwrap();
     let mut block = block.into_header();
     let trusted_height = client_height.clone().sub(1).unwrap();
     block.set_trusted_height(trusted_height);
@@ -956,7 +936,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
     let signer = dummy_account_id();
 
-    let block = ctx_b.host_block(&client_height).unwrap().clone();
+    let block = ctx_b.host_block(&client_height).unwrap();
     let mut block = block.into_header();
 
     // Update the trusted height of the header to point to the previous height
@@ -1077,7 +1057,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
 
     let msg = MsgUpdateClient {
         client_id,
-        client_message: block_ref.clone().into_header().into(),
+        client_message: block_ref.into_header().into(),
         signer,
     };
 
@@ -1239,7 +1219,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
 
     // Get chain-B's header at `misbehaviour_height`
     let header1: TmHeader = {
-        let block = ctx_b.host_block(&misbehaviour_height).unwrap().clone();
+        let block = ctx_b.host_block(&misbehaviour_height).unwrap();
         let mut block = block.into_header();
         block.set_trusted_height(client_height);
         block.into()
@@ -1407,7 +1387,7 @@ fn test_client_update_max_clock_drift() {
     let max_clock_drift = Duration::from_secs(64);
 
     let mut ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host_id(chain_id_b)
         .latest_height(client_height)
         .latest_timestamp(timestamp)
         .build::<MockContext<TendermintHost>>();
@@ -1444,7 +1424,7 @@ fn test_client_update_max_clock_drift() {
 
     let signer = dummy_account_id();
 
-    let block = ctx_b.host_block(&update_height).unwrap().clone();
+    let block = ctx_b.host_block(&update_height).unwrap();
     let mut block = block.into_header();
     block.set_trusted_height(client_height);
 

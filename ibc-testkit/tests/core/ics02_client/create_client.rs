@@ -114,9 +114,9 @@ fn test_invalid_frozen_tm_client_creation() {
         signer,
     );
 
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx, &router, msg_envelope);
 
     assert!(matches!(
         res,

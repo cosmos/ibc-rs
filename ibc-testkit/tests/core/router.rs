@@ -169,7 +169,7 @@ fn routing_module_and_keepers() {
         .build();
 
     let msg_transfer_no_timeout_or_timestamp = MsgTransferConfig::builder()
-        .packet_data(packet_data.clone())
+        .packet_data(packet_data)
         .timeout_timestamp_on_b(Timestamp::from_nanoseconds(0).unwrap())
         .build();
 

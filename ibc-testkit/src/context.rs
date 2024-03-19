@@ -401,7 +401,7 @@ mod tests {
                 Test {
                     name: "Large pruning window, large starting height".to_string(),
                     ctx: MockContextConfig::builder()
-                        .host_id(mock_chain_id.clone())
+                        .host_id(mock_chain_id)
                         .latest_height(Height::new(cv, 2000).expect("Never fails"))
                         .build(),
                 },
