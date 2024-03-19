@@ -33,10 +33,10 @@ pub struct HostParams {
 /// TestHost is a trait that defines the interface for a host blockchain.
 pub trait TestHost: Debug + Sized {
     /// The type of block produced by the host.
-    type Block: TestBlock;
+    type Block: TestBlock + Debug;
 
     /// The type of client state produced by the host.
-    type ClientState: Into<AnyClientState>;
+    type ClientState: Into<AnyClientState> + Debug;
 
     /// The type of block parameters to produce a block
     type BlockParams: Debug + Default;
@@ -44,8 +44,8 @@ pub trait TestHost: Debug + Sized {
     /// The type of light client parameters to produce a light client state
     type LightClientParams: Debug + Default;
 
-    /// Create a new host with the given chain identifier.
-    fn with_chain_id(chain_id: ChainId) -> Self;
+    /// Build a new host with the given parameters.
+    fn build(params: HostParams) -> Self;
 
     /// The chain identifier of the host.
     fn chain_id(&self) -> &ChainId;
@@ -54,94 +54,49 @@ pub trait TestHost: Debug + Sized {
         Duration::from_secs(DEFAULT_BLOCK_TIME_SECS)
     }
 
-    fn history(&self) -> Vec<Self::Block>;
-
-    /// Accessor for a block of the local (host) chain. Returns `None` if the
-    /// block at the requested height does not exist.
-    fn get_block(&self, target_height: &Height) -> Option<Self::Block> {
-        let target = target_height.revision_height();
-        let latest = self.latest_height().revision_height();
-
-        let history = self.history();
-
-        // Check that the block is not too advanced, nor has it been pruned.
-        if (target > latest) || (target <= latest - history.len() as u64) {
-            None // Block for requested height does not exist in history.
-        } else {
-            let host_block = history[history.len() + target as usize - latest as usize - 1].clone();
-            Some(host_block)
-        }
-    }
+    fn is_empty(&self) -> bool;
+    fn genesis_timestamp(&self) -> Timestamp;
+    fn latest_block(&self) -> Self::Block;
+    fn get_block(&self, target_height: &Height) -> Option<Self::Block>;
+    fn push_block(&self, block: Self::Block);
 
     fn latest_height(&self) -> Height {
-        self.history()
-            .last()
-            .map(|block| block.height())
-            .expect("Never fails")
+        self.latest_block().height()
     }
 
     /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
-    fn advance_block(&mut self) {
-        let history = self.history();
+    fn advance_block(&mut self, params: &Self::BlockParams) {
+        let (height, timestamp) = if self.is_empty() {
+            (1, self.genesis_timestamp())
+        } else {
+            let latest_block = self.latest_block();
 
-        let latest_block = history.last().expect("Never fails");
+            (
+                TestBlock::height(&latest_block)
+                    .increment()
+                    .revision_height(),
+                TestBlock::timestamp(&latest_block)
+                    .add(self.block_time())
+                    .expect("Never fails"),
+            )
+        };
 
-        let new_block = self.generate_block(
-            latest_block.height().increment().revision_height(),
-            latest_block
-                .timestamp()
-                .add(self.block_time())
-                .expect("Never fails"),
-            &Self::BlockParams::default(),
-        );
+        let new_block = self.generate_block(height, timestamp, params);
 
         // History is not full yet.
-        self.history().push(new_block);
+        self.push_block(new_block);
     }
 
-    fn advance_block_up_to(&mut self, target_height: Height) {
-        let latest_height = self.latest_height();
-        if target_height.revision_number() != latest_height.revision_number() {
-            panic!("Cannot advance history of the chain to a different revision number!")
-        } else if target_height.revision_height() < latest_height.revision_height() {
-            panic!("Cannot rewind history of the chain to a smaller revision height!")
-        } else {
-            // Repeatedly advance the host chain height till we hit the desired height
-            while self.latest_height().revision_height() < target_height.revision_height() {
-                self.advance_block()
-            }
-        }
-    }
-
-    fn blocks_since(&self, old: Height) -> Option<u64> {
-        let latest = self.latest_height();
-
-        (latest.revision_number() == old.revision_number()
-            && latest.revision_height() >= old.revision_height())
-        .then(|| latest.revision_height() - old.revision_height())
-    }
-
-    /// Validates this context. Should be called after the context is mutated by a test.
     fn validate(&self) -> Result<(), String> {
-        let history = self.history();
-
-        // Check the content of the history.
-        if !history.is_empty() {
-            // Get the highest block.
-            let lh = &history[history.len() - 1];
-            // Check latest is properly updated with highest header height.
-            if lh.height() != self.latest_height() {
-                return Err("latest height is not updated".to_string());
-            }
-        }
-
         // Check that headers in the history are in sequential order.
-        for i in 1..history.len() {
-            let ph = &history[i - 1];
-            let h = &history[i];
-            if ph.height().increment() != h.height() {
-                return Err("headers in history not sequential".to_string());
+        let latest_height = self.latest_height();
+        let mut current_height = Height::min(latest_height.revision_number());
+
+        while current_height <= latest_height {
+            if current_height != self.get_block(&current_height).expect("no error").height() {
+                return Err("block height does not match".to_owned());
             }
+            current_height = current_height.increment();
         }
         Ok(())
     }
@@ -182,7 +137,7 @@ pub trait TestBlock: Clone + Debug {
 /// TestHeader is a trait that defines the interface for a header produced by a host blockchain.
 pub trait TestHeader: Clone + Debug + Into<Any> {
     /// The type of consensus state can be extracted from the header.
-    type ConsensusState: ConsensusState + Into<AnyConsensusState> + From<Self>;
+    type ConsensusState: ConsensusState + Into<AnyConsensusState> + From<Self> + Clone + Debug;
 
     /// The height of the block, as recorded in the header.
     fn height(&self) -> Height;
