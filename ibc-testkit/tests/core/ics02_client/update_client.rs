@@ -28,7 +28,7 @@ use ibc_testkit::context::{MockClientConfig, MockContext};
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::tendermint::BlockParams;
-use ibc_testkit::hosts::{MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
+use ibc_testkit::hosts::{HostParams, MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
 };
@@ -142,7 +142,7 @@ fn test_update_client_with_prev_header() {
         target_height: Height,
         trusted_height: Height,
     ) -> MsgEnvelope {
-        let mut tm_block = TendermintHost::with_chain_id(chain_id)
+        let mut tm_block = TendermintHost::build(HostParams::builder().chain_id(chain_id).build())
             .generate_block(
                 target_height.revision_height(),
                 Timestamp::now(),
@@ -1247,13 +1247,14 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
 
     // Generate an equivocal header for chain-B at `misbehaviour_height`
     let header2 = {
-        let mut tm_block = TendermintHost::with_chain_id(chain_id_b)
-            .generate_block(
-                misbehaviour_height.revision_height(),
-                Timestamp::now(),
-                &Default::default(),
-            )
-            .into_header();
+        let mut tm_block =
+            TendermintHost::build(HostParams::builder().chain_id(chain_id_b).build())
+                .generate_block(
+                    misbehaviour_height.revision_height(),
+                    Timestamp::now(),
+                    &Default::default(),
+                )
+                .into_header();
         tm_block.set_trusted_height(client_height);
         tm_block.into()
     };
@@ -1298,13 +1299,14 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
 
     // Generate `header1` for chain-B
     let header1 = {
-        let mut tm_block = TendermintHost::with_chain_id(chain_id_b.clone())
-            .generate_block(
-                misbehaviour_height.revision_height(),
-                Timestamp::now(),
-                &Default::default(),
-            )
-            .into_header();
+        let mut tm_block =
+            TendermintHost::build(HostParams::builder().chain_id(chain_id_b.clone()).build())
+                .generate_block(
+                    misbehaviour_height.revision_height(),
+                    Timestamp::now(),
+                    &Default::default(),
+                )
+                .into_header();
         tm_block.set_trusted_height(client_height);
         tm_block
     };
@@ -1314,13 +1316,14 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let header2 = {
         let timestamp =
             Timestamp::from_nanoseconds(Timestamp::now().nanoseconds() + 1_000_000_000).unwrap();
-        let mut tm_block = TendermintHost::with_chain_id(chain_id_b)
-            .generate_block(
-                misbehaviour_height.revision_height(),
-                timestamp,
-                &Default::default(),
-            )
-            .into_header();
+        let mut tm_block =
+            TendermintHost::build(HostParams::builder().chain_id(chain_id_b).build())
+                .generate_block(
+                    misbehaviour_height.revision_height(),
+                    timestamp,
+                    &Default::default(),
+                )
+                .into_header();
         tm_block.set_trusted_height(client_height);
         tm_block
     };
