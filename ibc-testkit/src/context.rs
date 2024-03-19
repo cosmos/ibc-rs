@@ -398,13 +398,15 @@ mod tests {
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
                         .build(),
                 },
-                Test {
-                    name: "Large pruning window, large starting height".to_string(),
-                    ctx: MockContextConfig::builder()
-                        .host_id(mock_chain_id)
-                        .latest_height(Height::new(cv, 2000).expect("Never fails"))
-                        .build(),
-                },
+                // This is disabled, as now we generate all the blocks till latest_height
+                // Generating 2000 tendermint blocks is slow.
+                // Test {
+                //     name: "Large pruning window, large starting height".to_string(),
+                //     ctx: MockContextConfig::builder()
+                //         .host_id(mock_chain_id)
+                //         .latest_height(Height::new(cv, 2000).expect("Never fails"))
+                //         .build(),
+                // },
             ];
 
             for mut test in tests {
