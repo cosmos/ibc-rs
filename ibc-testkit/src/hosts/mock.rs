@@ -1,5 +1,5 @@
+use alloc::collections::VecDeque;
 use alloc::sync::Arc;
-use alloc::vec::Vec;
 use core::time::Duration;
 use std::sync::Mutex;
 
@@ -19,7 +19,7 @@ pub struct MockHost {
     pub genesis_timestamp: Timestamp,
 
     /// The chain of blocks underlying this context.
-    history: Arc<Mutex<Vec<MockHeader>>>,
+    history: Arc<Mutex<VecDeque<MockHeader>>>,
 }
 
 impl TestHost for MockHost {
@@ -40,7 +40,7 @@ impl TestHost for MockHost {
             block_time,
             genesis_timestamp,
 
-            history: Arc::new(Mutex::new(Vec::new())),
+            history: Arc::new(Mutex::new(VecDeque::new())),
         }
     }
 
@@ -60,7 +60,7 @@ impl TestHost for MockHost {
         self.history
             .lock()
             .expect("lock")
-            .last()
+            .back()
             .copied()
             .expect("Never fails")
     }
@@ -74,7 +74,19 @@ impl TestHost for MockHost {
     }
 
     fn push_block(&self, block: Self::Block) {
-        self.history.lock().expect("lock").push(block);
+        self.history.lock().expect("lock").push_back(block);
+    }
+
+    fn prune_block_till(&self, height: &Height) {
+        let mut history = self.history.lock().expect("lock");
+
+        while let Some(block) = history.front() {
+            if &block.height() <= height {
+                history.pop_front();
+            } else {
+                break;
+            }
+        }
     }
 
     fn generate_block(

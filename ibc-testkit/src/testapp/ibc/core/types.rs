@@ -146,6 +146,12 @@ where
             .lock()
             .insert(self.store.current_height(), consensus_state);
     }
+
+    pub fn prune_consensus_states_till(&self, height: &Height) {
+        assert!(height.revision_number() == *self.revision_number.lock());
+        let mut history = self.consensus_states.lock();
+        history.retain(|h, _| h > &height.revision_height());
+    }
 }
 
 impl<S> Default for MockIbcStore<S>

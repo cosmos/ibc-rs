@@ -66,6 +66,7 @@ pub trait TestHost: Debug + Sized {
     fn latest_block(&self) -> Self::Block;
     fn get_block(&self, target_height: &Height) -> Option<Self::Block>;
     fn push_block(&self, block: Self::Block);
+    fn prune_block_till(&self, height: &Height);
 
     fn latest_height(&self) -> Height {
         self.latest_block().height()

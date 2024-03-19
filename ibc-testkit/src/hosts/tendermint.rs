@@ -1,3 +1,4 @@
+use alloc::collections::VecDeque;
 use alloc::sync::Arc;
 use core::str::FromStr;
 use core::time::Duration;
@@ -32,7 +33,7 @@ pub struct TendermintHost {
     pub genesis_timestamp: Timestamp,
 
     /// The chain of blocks underlying this context.
-    pub history: Arc<Mutex<Vec<TendermintBlock>>>,
+    pub history: Arc<Mutex<VecDeque<TendermintBlock>>>,
 }
 
 impl TestHost for TendermintHost {
@@ -52,7 +53,7 @@ impl TestHost for TendermintHost {
             chain_id,
             block_time,
             genesis_timestamp,
-            history: Arc::new(Mutex::new(Vec::new())),
+            history: Arc::new(Mutex::new(VecDeque::new())),
         }
     }
 
@@ -72,7 +73,7 @@ impl TestHost for TendermintHost {
         self.history
             .lock()
             .expect("lock")
-            .last()
+            .back()
             .cloned()
             .expect("Never fails")
     }
@@ -86,7 +87,19 @@ impl TestHost for TendermintHost {
     }
 
     fn push_block(&self, block: Self::Block) {
-        self.history.lock().expect("lock").push(block);
+        self.history.lock().expect("lock").push_back(block);
+    }
+
+    fn prune_block_till(&self, height: &Height) {
+        let mut history = self.history.lock().expect("lock");
+
+        while let Some(block) = history.front() {
+            if &block.height() <= height {
+                history.pop_front();
+            } else {
+                break;
+            }
+        }
     }
 
     fn generate_block(

@@ -124,6 +124,11 @@ where
         self.advance_with_block_params(&Default::default())
     }
 
+    pub fn prune_block_till(&mut self, height: &Height) {
+        self.host.prune_block_till(height);
+        self.ibc_store.prune_consensus_states_till(height);
+    }
+
     pub fn latest_height(&self) -> Height {
         let latest_ibc_height = self.ibc_store.host_height().expect("Never fails");
         let latest_host_height = self.host.latest_height();
