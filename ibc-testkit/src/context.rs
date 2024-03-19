@@ -409,7 +409,7 @@ mod tests {
                 let current_height = test.ctx.latest_height();
 
                 // After advancing the chain's height, the context should still be valid.
-                test.ctx.host.advance_block();
+                test.ctx.advance_block();
                 assert!(
                     test.ctx.host.validate().is_ok(),
                     "failed in test [{}] {} while validating context {:?}",
