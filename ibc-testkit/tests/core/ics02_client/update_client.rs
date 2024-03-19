@@ -221,7 +221,6 @@ fn test_consensus_state_pruning() {
         .host_id(chain_id.clone())
         .latest_height(client_height)
         .latest_timestamp(Timestamp::now())
-        .max_history_size(u64::MAX)
         .build::<MockContext<TendermintHost>>()
         .with_light_client(
             &client_id,
@@ -415,7 +414,6 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     let ctx_b = MockContextConfig::builder()
         .host_id(chain_id_b.clone())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
@@ -516,7 +514,6 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
     let ctx_b = MockContextConfig::builder()
         .host_id(chain_id_b.clone())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
@@ -625,7 +622,6 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     let ctx_b = MockContextConfig::builder()
         .host_id(chain_id_b.clone())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
@@ -721,7 +717,6 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
     let ctx_b = MockContextConfig::builder()
         .host_id(chain_id_b.clone())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
@@ -819,7 +814,6 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
     let ctx_b = MockContextConfig::builder()
         .host_id(chain_id_b.clone())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
@@ -1410,7 +1404,6 @@ fn test_client_update_max_clock_drift() {
         .host_id(chain_id_b.clone())
         .latest_height(client_height)
         .latest_timestamp(timestamp)
-        .max_history_size(u64::MAX)
         .build::<MockContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
