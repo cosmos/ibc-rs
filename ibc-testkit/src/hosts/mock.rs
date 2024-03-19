@@ -61,7 +61,7 @@ impl TestHost for MockHost {
             .lock()
             .expect("lock")
             .last()
-            .cloned()
+            .copied()
             .expect("Never fails")
     }
 
@@ -70,7 +70,7 @@ impl TestHost for MockHost {
             .lock()
             .expect("lock")
             .get(target_height.revision_height() as usize - 1)
-            .cloned() // indexed from 1
+            .copied() // indexed from 1
     }
 
     fn push_block(&self, block: Self::Block) {
