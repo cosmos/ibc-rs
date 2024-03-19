@@ -1,4 +1,4 @@
 mod context;
 mod types;
 
-pub use types::*;
+pub use self::types::*;

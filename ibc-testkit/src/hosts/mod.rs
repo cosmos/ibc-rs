@@ -1,3 +1,6 @@
+pub mod mock;
+pub mod tendermint;
+
 use core::fmt::Debug;
 use core::ops::Add;
 use core::time::Duration;
@@ -10,15 +13,11 @@ use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
 use typed_builder::TypedBuilder;
 
+pub use self::mock::MockHost;
+pub use self::tendermint::TendermintHost;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::DEFAULT_BLOCK_TIME_SECS;
 use crate::utils::year_2023;
-
-pub mod mock;
-pub mod tendermint;
-
-pub use crate::hosts::mock::MockHost;
-pub use crate::hosts::tendermint::TendermintHost;
 
 #[derive(Debug, TypedBuilder)]
 pub struct HostParams {
