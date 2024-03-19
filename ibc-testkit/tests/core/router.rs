@@ -1,4 +1,4 @@
-use std::ops::Add;
+use core::ops::Add;
 
 use ibc::apps::transfer::handler::send_transfer;
 use ibc::apps::transfer::types::error::TokenTransferError;
