@@ -1,22 +1,24 @@
 use alloc::sync::Arc;
 use alloc::vec::Vec;
+use core::time::Duration;
 use std::sync::Mutex;
 
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::Timestamp;
 
-use super::{TestBlock, TestHeader, TestHost};
+use super::{HostParams, TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 
 #[derive(Debug)]
 pub struct MockHost {
-    chain_id: ChainId,
+    pub chain_id: ChainId,
+    pub block_time: Duration,
+    pub genesis_timestamp: Timestamp,
 
-    /// The chain of blocks underlying this context. A vector of size up to `max_history_size`
-    /// blocks, ascending order by their height (latest block is on the last position).
+    /// The chain of blocks underlying this context.
     history: Arc<Mutex<Vec<MockHeader>>>,
 }
 
@@ -26,9 +28,18 @@ impl TestHost for MockHost {
     type LightClientParams = ();
     type ClientState = MockClientState;
 
-    fn with_chain_id(chain_id: ChainId) -> Self {
+    fn build(params: HostParams) -> Self {
+        let HostParams {
+            chain_id,
+            block_time,
+            genesis_timestamp,
+        } = params;
+
         Self {
             chain_id,
+            block_time,
+            genesis_timestamp,
+
             history: Arc::new(Mutex::new(Vec::new())),
         }
     }
@@ -37,8 +48,33 @@ impl TestHost for MockHost {
         &self.chain_id
     }
 
-    fn history(&self) -> Vec<Self::Block> {
-        self.history.lock().expect("lock").clone()
+    fn is_empty(&self) -> bool {
+        self.history.lock().expect("lock").is_empty()
+    }
+
+    fn genesis_timestamp(&self) -> Timestamp {
+        self.genesis_timestamp
+    }
+
+    fn latest_block(&self) -> Self::Block {
+        self.history
+            .lock()
+            .expect("lock")
+            .last()
+            .cloned()
+            .expect("Never fails")
+    }
+
+    fn get_block(&self, target_height: &Height) -> Option<Self::Block> {
+        self.history
+            .lock()
+            .expect("lock")
+            .get(target_height.revision_height() as usize - 1)
+            .cloned() // indexed from 1
+    }
+
+    fn push_block(&self, block: Self::Block) {
+        self.history.lock().expect("lock").push(block);
     }
 
     fn generate_block(
