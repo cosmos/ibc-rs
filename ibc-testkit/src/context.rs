@@ -43,7 +43,8 @@ where
     pub ibc_store: MockIbcStore<S>,
 }
 
-pub type MockContext<H> = MockGenericContext<RevertibleStore<GrowingStore<InMemoryStore>>, H>;
+pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
+pub type MockContext<H> = MockGenericContext<MockStore, H>;
 
 #[derive(Debug, TypedBuilder)]
 pub struct MockClientConfig {

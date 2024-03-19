@@ -27,14 +27,14 @@ use ibc_proto::ibc::core::connection::v1::ConnectionEnd as RawConnectionEnd;
 use parking_lot::Mutex;
 use typed_builder::TypedBuilder;
 
-use crate::context::MockContext;
+use crate::context::{MockContext, MockStore};
 use crate::fixtures::core::context::MockContextConfig;
 use crate::hosts::{TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
-pub type DefaultIbcStore = MockIbcStore<RevertibleStore<GrowingStore<InMemoryStore>>>;
+pub type DefaultIbcStore = MockIbcStore<MockStore>;
 
 /// An object that stores all IBC related data.
 #[derive(Debug)]
