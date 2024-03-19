@@ -30,6 +30,13 @@ pub struct HostParams {
     pub genesis_timestamp: Timestamp,
 }
 
+pub type HostClientState<H> = <H as TestHost>::ClientState;
+pub type HostBlock<H> = <H as TestHost>::Block;
+pub type HostBlockParams<H> = <H as TestHost>::BlockParams;
+pub type HostLightClientParams<H> = <H as TestHost>::LightClientParams;
+pub type HostHeader<H> = <HostBlock<H> as TestBlock>::Header;
+pub type HostConsensusState<H> = <HostHeader<H> as TestHeader>::ConsensusState;
+
 /// TestHost is a trait that defines the interface for a host blockchain.
 pub trait TestHost: Debug + Sized {
     /// The type of block produced by the host.
