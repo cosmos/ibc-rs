@@ -1,5 +1,6 @@
 use alloc::sync::Arc;
 use core::str::FromStr;
+use core::time::Duration;
 use std::sync::Mutex;
 
 use ibc::clients::tendermint::client_state::ClientState;
@@ -20,26 +21,18 @@ use tendermint_testgen::{
     Validator as TestgenValidator,
 };
 
-use super::{TestBlock, TestHeader, TestHost};
 use crate::context::MockClientConfig;
 use crate::fixtures::clients::tendermint::ClientStateConfig;
+use crate::hosts::{HostParams, TestBlock, TestHeader, TestHost};
 
 #[derive(Debug)]
 pub struct TendermintHost {
     pub chain_id: ChainId,
+    pub block_time: Duration,
+    pub genesis_timestamp: Timestamp,
 
-    /// The chain of blocks underlying this context. A vector of size up to `max_history_size`
-    /// blocks, ascending order by their height (latest block is on the last position).
+    /// The chain of blocks underlying this context.
     pub history: Arc<Mutex<Vec<TendermintBlock>>>,
-}
-
-impl TendermintHost {
-    pub fn new(chain_id: ChainId) -> Self {
-        Self {
-            chain_id,
-            history: Arc::new(Mutex::new(Vec::new())),
-        }
-    }
 }
 
 impl TestHost for TendermintHost {
@@ -48,16 +41,52 @@ impl TestHost for TendermintHost {
     type LightClientParams = MockClientConfig;
     type ClientState = ClientState;
 
-    fn with_chain_id(chain_id: ChainId) -> Self {
-        Self::new(chain_id)
+    fn build(params: HostParams) -> Self {
+        let HostParams {
+            chain_id,
+            block_time,
+            genesis_timestamp,
+        } = params;
+
+        Self {
+            chain_id,
+            block_time,
+            genesis_timestamp,
+            history: Arc::new(Mutex::new(Vec::new())),
+        }
     }
 
     fn chain_id(&self) -> &ChainId {
         &self.chain_id
     }
 
-    fn history(&self) -> Vec<Self::Block> {
-        self.history.lock().expect("lock").clone()
+    fn is_empty(&self) -> bool {
+        self.history.lock().expect("lock").is_empty()
+    }
+
+    fn genesis_timestamp(&self) -> Timestamp {
+        self.genesis_timestamp
+    }
+
+    fn latest_block(&self) -> Self::Block {
+        self.history
+            .lock()
+            .expect("lock")
+            .last()
+            .cloned()
+            .expect("Never fails")
+    }
+
+    fn get_block(&self, target_height: &Height) -> Option<Self::Block> {
+        self.history
+            .lock()
+            .expect("lock")
+            .get(target_height.revision_height() as usize - 1)
+            .cloned() // indexed from 1
+    }
+
+    fn push_block(&self, block: Self::Block) {
+        self.history.lock().expect("lock").push(block);
     }
 
     fn generate_block(
@@ -88,7 +117,11 @@ impl TestHost for TendermintHost {
     ) -> Self::ClientState {
         let client_state: ClientState = ClientStateConfig::builder()
             .chain_id(self.chain_id().clone())
-            .latest_height(latest_height)
+            .latest_height(
+                self.get_block(&latest_height)
+                    .expect("block exists")
+                    .height(),
+            )
             .trusting_period(params.trusting_period)
             .max_clock_drift(params.max_clock_drift)
             .unbonding_period(params.unbonding_period)
