@@ -68,7 +68,7 @@ where
         self.consensus_state_store
             .get_keys(&path)
             .into_iter()
-            .flat_map(|path| {
+            .filter_map(|path| {
                 if let Ok(Path::ClientConsensusState(consensus_path)) = path.try_into() {
                     Some(consensus_path)
                 } else {

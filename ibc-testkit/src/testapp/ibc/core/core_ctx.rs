@@ -324,7 +324,7 @@ where
         self.consensus_state_store
             .get_keys(&path)
             .into_iter()
-            .flat_map(|path| {
+            .filter_map(|path| {
                 if let Ok(Path::ClientConsensusState(consensus_path)) = path.try_into() {
                     Some(consensus_path)
                 } else {
@@ -361,7 +361,7 @@ where
         self.consensus_state_store
             .get_keys(&path)
             .into_iter()
-            .flat_map(|path| {
+            .filter_map(|path| {
                 if let Ok(Path::ClientConsensusState(consensus_path)) = path.try_into() {
                     Some(consensus_path)
                 } else {
@@ -384,7 +384,7 @@ where
         self.connection_end_store
             .get_keys(&path)
             .into_iter()
-            .flat_map(|path| {
+            .filter_map(|path| {
                 if let Ok(Path::Connection(connection_path)) = path.try_into() {
                     Some(connection_path)
                 } else {
@@ -426,7 +426,7 @@ where
         self.channel_end_store
             .get_keys(&path)
             .into_iter()
-            .flat_map(|path| {
+            .filter_map(|path| {
                 if let Ok(Path::ChannelEnd(channel_path)) = path.try_into() {
                     Some(channel_path)
                 } else {
@@ -467,7 +467,7 @@ where
         self.packet_commitment_store
             .get_keys(&path)
             .into_iter()
-            .flat_map(|path| {
+            .filter_map(|path| {
                 if let Ok(Path::Commitment(commitment_path)) = path.try_into() {
                     Some(commitment_path)
                 } else {
@@ -512,7 +512,7 @@ where
             self.packet_ack_store
                 .get_keys(&ack_path_prefix)
                 .into_iter()
-                .flat_map(|path| {
+                .filter_map(|path| {
                     if let Ok(Path::Ack(ack_path)) = path.try_into() {
                         Some(ack_path)
                     } else {
@@ -590,7 +590,7 @@ where
             self.packet_commitment_store
                 .get_keys(&commitment_path_prefix)
                 .into_iter()
-                .flat_map(|path| {
+                .filter_map(|path| {
                     if let Ok(Path::Commitment(commitment_path)) = path.try_into() {
                         Some(commitment_path)
                     } else {
