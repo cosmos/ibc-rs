@@ -40,7 +40,10 @@ where
     type HostConsensusState = AnyConsensusState;
 
     fn host_height(&self) -> Result<Height, ContextError> {
-        Ok(Height::new(0, self.store.current_height())?)
+        Ok(Height::new(
+            *self.revision_number.lock(),
+            self.store.current_height(),
+        )?)
     }
 
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {

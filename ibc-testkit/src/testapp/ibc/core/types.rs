@@ -42,6 +42,9 @@ pub struct MockIbcStore<S>
 where
     S: ProvableStore + Debug,
 {
+    /// chain revision number,
+    pub revision_number: Arc<Mutex<u64>>,
+
     /// Handle to store instance.
     /// The module is guaranteed exclusive access to all paths in the store key-space.
     pub store: SharedStore<S>,
@@ -92,7 +95,7 @@ impl<S> MockIbcStore<S>
 where
     S: ProvableStore + Debug,
 {
-    pub fn new(store: S) -> Self {
+    pub fn new(revision_number: u64, store: S) -> Self {
         let shared_store = SharedStore::new(store);
 
         let mut client_counter = TypedStore::new(shared_store.clone());
@@ -112,6 +115,7 @@ where
             .expect("no error");
 
         Self {
+            revision_number: Arc::new(Mutex::new(revision_number)),
             client_counter,
             conn_counter,
             channel_counter,
@@ -141,7 +145,10 @@ where
     S: ProvableStore + Debug + Default,
 {
     fn default() -> Self {
-        Self::new(S::default())
+        // Note: this creates a MockIbcStore which has MockConsensusState as Host ConsensusState
+        let mut ibc_store = Self::new(0, S::default());
+        ibc_store.advance_height(MockHeader::default().into_consensus_state().into());
+        ibc_store
     }
 }
 
