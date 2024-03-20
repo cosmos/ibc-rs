@@ -55,14 +55,13 @@ where
                 * u32::try_from(params.latest_height.revision_height() - 1).expect("no overflow")))
         .expect("no underflow");
 
+        let ibc_store =
+            MockIbcStore::new(params.latest_height.revision_number(), Default::default());
+
         let mut context = Self {
-            main_store: Default::default(),
-            ibc_commitment_prefix: b"ibc".to_vec().try_into().expect("valid commitment prefix"),
-            ibc_store: MockIbcStore::new(
-                params.latest_height.revision_number(),
-                Default::default(),
-            ),
             host: params.host,
+            main_store: Default::default(),
+            ibc_store,
         };
 
         // store is a height 0; no block

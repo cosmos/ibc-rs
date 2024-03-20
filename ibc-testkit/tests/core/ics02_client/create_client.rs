@@ -192,7 +192,7 @@ fn test_tm_create_client_proof_verification_ok() {
     // correct value verification
     tm_client_state
         .verify_membership(
-            &ctx_tm.ibc_commitment_prefix,
+            &ctx_tm.ibc_store().commitment_prefix(),
             &proof,
             &root,
             next_client_seq_path.clone().into(),
@@ -204,7 +204,7 @@ fn test_tm_create_client_proof_verification_ok() {
     assert!(matches!(
         tm_client_state
             .verify_membership(
-                &ctx_tm.ibc_commitment_prefix,
+                &ctx_tm.ibc_store().commitment_prefix(),
                 &proof,
                 &root,
                 next_client_seq_path.into(),
