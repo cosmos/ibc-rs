@@ -1,6 +1,7 @@
 use core::str::FromStr;
 use core::time::Duration;
 
+use basecoin_store::avl::get_proof_spec as basecoin_proof_spec;
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::error::{Error as ClientError, Error};
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
@@ -75,7 +76,7 @@ pub struct ClientStateConfig {
     pub unbonding_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
     pub max_clock_drift: Duration,
-    #[builder(default = ProofSpecs::cosmos())]
+    #[builder(default = vec![basecoin_proof_spec()].into())]
     pub proof_specs: ProofSpecs,
     #[builder(default)]
     pub upgrade_path: Vec<String>,
