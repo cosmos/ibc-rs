@@ -15,6 +15,7 @@ use ibc::core::commitment_types::specs::ProofSpecs;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use tendermint::block::Header as TmHeader;
+use typed_builder::TypedBuilder;
 
 /// Returns a dummy tendermint `ClientState` by given `frozen_height`, for testing purposes only!
 pub fn dummy_tm_client_state_from_raw(frozen_height: RawHeight) -> Result<TmClientState, Error> {
@@ -64,9 +65,8 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
     }
 }
 
-#[derive(typed_builder::TypedBuilder, Debug)]
+#[derive(TypedBuilder, Debug)]
 pub struct ClientStateConfig {
-    pub chain_id: ChainId,
     #[builder(default = TrustThreshold::ONE_THIRD)]
     pub trust_level: TrustThreshold,
     #[builder(default = Duration::from_secs(64000))]
@@ -74,8 +74,7 @@ pub struct ClientStateConfig {
     #[builder(default = Duration::from_secs(128_000))]
     pub unbonding_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
-    max_clock_drift: Duration,
-    pub latest_height: Height,
+    pub max_clock_drift: Duration,
     #[builder(default = ProofSpecs::cosmos())]
     pub proof_specs: ProofSpecs,
     #[builder(default)]
@@ -84,23 +83,30 @@ pub struct ClientStateConfig {
     allow_update: AllowUpdate,
 }
 
-impl TryFrom<ClientStateConfig> for TmClientState {
-    type Error = ClientError;
+impl Default for ClientStateConfig {
+    fn default() -> Self {
+        Self::builder().build()
+    }
+}
 
-    fn try_from(config: ClientStateConfig) -> Result<Self, Self::Error> {
-        let client_state = ClientStateType::new(
-            config.chain_id,
-            config.trust_level,
-            config.trusting_period,
-            config.unbonding_period,
-            config.max_clock_drift,
-            config.latest_height,
-            config.proof_specs,
-            config.upgrade_path,
-            config.allow_update,
-        )?;
-
-        Ok(client_state.into())
+impl ClientStateConfig {
+    pub fn into_client_state(
+        self,
+        chain_id: ChainId,
+        latest_height: Height,
+    ) -> Result<TmClientState, ClientError> {
+        Ok(ClientStateType::new(
+            chain_id,
+            self.trust_level,
+            self.trusting_period,
+            self.unbonding_period,
+            self.max_clock_drift,
+            latest_height,
+            self.proof_specs,
+            self.upgrade_path,
+            self.allow_update,
+        )?
+        .into())
     }
 }
 
