@@ -68,7 +68,7 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
         }
     };
 
-    ctx.prune_consensus_states_till(&pruned_height);
+    ctx.prune_host_consensus_states_till(&pruned_height);
     Fixture { ctx, msg }
 }
 

@@ -144,6 +144,7 @@ fn test_update_client_with_prev_header() {
     ) -> MsgEnvelope {
         let mut tm_block = TendermintHost::build(HostParams::builder().chain_id(chain_id).build())
             .generate_block(
+                Vec::new(),
                 target_height.revision_height(),
                 Timestamp::now(),
                 &Default::default(),
@@ -1230,6 +1231,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
         let mut tm_block =
             TendermintHost::build(HostParams::builder().chain_id(chain_id_b).build())
                 .generate_block(
+                    Vec::new(),
                     misbehaviour_height.revision_height(),
                     Timestamp::now(),
                     &Default::default(),
@@ -1282,6 +1284,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
         let mut tm_block =
             TendermintHost::build(HostParams::builder().chain_id(chain_id_b.clone()).build())
                 .generate_block(
+                    Vec::new(),
                     misbehaviour_height.revision_height(),
                     Timestamp::now(),
                     &Default::default(),
@@ -1299,6 +1302,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
         let mut tm_block =
             TendermintHost::build(HostParams::builder().chain_id(chain_id_b).build())
                 .generate_block(
+                    Vec::new(),
                     misbehaviour_height.revision_height(),
                     timestamp,
                     &Default::default(),
