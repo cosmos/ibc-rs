@@ -133,6 +133,7 @@ impl TestHost for TendermintHost {
             .trusting_period(params.trusting_period)
             .max_clock_drift(params.max_clock_drift)
             .unbonding_period(params.unbonding_period)
+            .proof_specs(params.proof_specs.clone())
             .build()
             .try_into()
             .expect("never fails");
