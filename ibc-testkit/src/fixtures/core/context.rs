@@ -72,6 +72,8 @@ where
         );
 
         let mut context = Self {
+            main_store: Default::default(),
+            ibc_commitment_prefix: b"ibc".to_vec().try_into().expect("valid commitment prefix"),
             ibc_store: MockIbcStore::new(host.chain_id().revision_number(), Default::default()),
             host,
         };

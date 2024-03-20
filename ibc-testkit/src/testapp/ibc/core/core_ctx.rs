@@ -13,6 +13,7 @@ use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
+use ibc::core::commitment_types::merkle::MerkleProof;
 use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::{ConnectionEnd, IdentifiedConnectionEnd};
 use ibc::core::handler::types::error::ContextError;
@@ -27,6 +28,7 @@ use ibc::core::host::{ClientStateRef, ConsensusStateRef, ExecutionContext, Valid
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::{Signer, Timestamp};
 use ibc::primitives::ToVec;
+use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_query::core::context::{ProvableContext, QueryContext};
 
 use super::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
@@ -275,6 +277,18 @@ where
     fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>> {
         self.store
             .get_proof(height.revision_height().into(), &path.to_string().into())
+            .map(|path_proof| {
+                let ibc_commitment_proof = self
+                    .ibc_commiment_proofs
+                    .lock()
+                    .get(&height.revision_height())
+                    .expect("proof exists")
+                    .clone();
+
+                RawMerkleProof::from(MerkleProof {
+                    proofs: vec![path_proof, ibc_commitment_proof],
+                })
+            })
             .map(|p| p.to_vec())
     }
 }

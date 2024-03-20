@@ -25,6 +25,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::Channel as RawChannelEnd;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::core::connection::v1::ConnectionEnd as RawConnectionEnd;
+use ibc_proto::ics23::CommitmentProof;
 use parking_lot::Mutex;
 use typed_builder::TypedBuilder;
 
@@ -86,6 +87,8 @@ where
     pub packet_ack_store: BinStore<SharedStore<S>, AckPath, AcknowledgementCommitment>,
     /// Map of host consensus states
     pub host_consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
+    /// Map of older ibc commitment proofs
+    pub ibc_commiment_proofs: Arc<Mutex<BTreeMap<u64, CommitmentProof>>>,
     /// IBC Events
     pub events: Arc<Mutex<Vec<IbcEvent>>>,
     /// message logs
@@ -123,6 +126,7 @@ where
             client_processed_times: TypedStore::new(shared_store.clone()),
             client_processed_heights: TypedStore::new(shared_store.clone()),
             host_consensus_states: Arc::new(Mutex::new(Default::default())),
+            ibc_commiment_proofs: Arc::new(Mutex::new(Default::default())),
             client_state_store: TypedStore::new(shared_store.clone()),
             consensus_state_store: TypedStore::new(shared_store.clone()),
             connection_end_store: TypedStore::new(shared_store.clone()),
@@ -144,16 +148,22 @@ where
         self.store.commit()
     }
 
-    pub fn store_host_consensus_state(&mut self, consensus_state: AnyConsensusState) {
+    pub fn store_host_consensus_state(&mut self, height: u64, consensus_state: AnyConsensusState) {
         self.host_consensus_states
             .lock()
-            .insert(self.store.current_height(), consensus_state);
+            .insert(height, consensus_state);
+    }
+
+    pub fn store_ibc_commitment_proof(&mut self, height: u64, proof: CommitmentProof) {
+        self.ibc_commiment_proofs.lock().insert(height, proof);
     }
 
     pub fn prune_host_consensus_states_till(&self, height: &Height) {
         assert!(height.revision_number() == *self.revision_number.lock());
         let mut history = self.host_consensus_states.lock();
         history.retain(|h, _| h > &height.revision_height());
+        let mut commitment_proofs = self.ibc_commiment_proofs.lock();
+        commitment_proofs.retain(|h, _| h > &height.revision_height());
     }
 }
 
@@ -164,8 +174,15 @@ where
     fn default() -> Self {
         // Note: this creates a MockIbcStore which has MockConsensusState as Host ConsensusState
         let mut ibc_store = Self::new(0, S::default());
-        ibc_store.commit().expect("no error");
-        ibc_store.store_host_consensus_state(MockHeader::default().into_consensus_state().into());
+        ibc_store.store.commit().expect("no error");
+        ibc_store.store_host_consensus_state(
+            ibc_store.store.current_height(),
+            MockHeader::default().into_consensus_state().into(),
+        );
+        ibc_store.store_ibc_commitment_proof(
+            ibc_store.store.current_height(),
+            CommitmentProof::default(),
+        );
         ibc_store
     }
 }
