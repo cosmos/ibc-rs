@@ -20,7 +20,6 @@ use tendermint_testgen::{
 };
 use typed_builder::TypedBuilder;
 
-use crate::context::MockClientConfig;
 use crate::fixtures::clients::tendermint::ClientStateConfig;
 use crate::hosts::{TestBlock, TestHeader, TestHost};
 
@@ -42,9 +41,9 @@ impl Default for TendermintHost {
 
 impl TestHost for TendermintHost {
     type Block = TendermintBlock;
-    type ClientState = ClientState;
     type BlockParams = BlockParams;
-    type LightClientParams = MockClientConfig;
+    type LightClientParams = ClientStateConfig;
+    type ClientState = ClientState;
 
     fn history(&self) -> &VecDeque<Self::Block> {
         &self.history
@@ -92,19 +91,18 @@ impl TestHost for TendermintHost {
         latest_height: &Height,
         params: &Self::LightClientParams,
     ) -> Self::ClientState {
-        let client_state: ClientState = ClientStateConfig::builder()
-            .chain_id(self.chain_id.clone())
-            .latest_height(
-                self.get_block(latest_height)
-                    .expect("block exists")
-                    .height(),
-            )
+        let client_state = ClientStateConfig::builder()
             .trusting_period(params.trusting_period)
             .max_clock_drift(params.max_clock_drift)
             .unbonding_period(params.unbonding_period)
             .proof_specs(params.proof_specs.clone())
             .build()
-            .try_into()
+            .into_client_state(
+                self.chain_id.clone(),
+                self.get_block(latest_height)
+                    .expect("block exists")
+                    .height(),
+            )
             .expect("never fails");
 
         client_state.inner().validate().expect("never fails");
