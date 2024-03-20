@@ -1,7 +1,5 @@
 use core::fmt::Debug;
-use core::time::Duration;
 
-use basecoin_store::avl::get_proof_spec as basecoin_proof_spec;
 use basecoin_store::context::ProvableStore;
 use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore};
 use ibc::core::channel::types::channel::ChannelEnd;
@@ -9,7 +7,6 @@ use ibc::core::channel::types::commitment::PacketCommitment;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
-use ibc::core::commitment_types::specs::ProofSpecs;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
 use ibc::core::handler::types::events::IbcEvent;
@@ -23,7 +20,6 @@ use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::core::router::router::Router;
 use ibc::primitives::prelude::*;
 use ibc::primitives::Timestamp;
-use typed_builder::TypedBuilder;
 
 use super::testapp::ibc::core::types::{LightClientState, MockIbcStore};
 use crate::fixtures::core::context::MockContextConfig;
@@ -49,24 +45,6 @@ where
 
 pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
 pub type MockContext<H> = MockGenericContext<MockStore, H>;
-
-#[derive(Debug, TypedBuilder)]
-pub struct MockClientConfig {
-    #[builder(default = Duration::from_secs(64000))]
-    pub trusting_period: Duration,
-    #[builder(default = Duration::from_millis(3000))]
-    pub max_clock_drift: Duration,
-    #[builder(default = Duration::from_secs(128_000))]
-    pub unbonding_period: Duration,
-    #[builder(default = vec![basecoin_proof_spec()].into())]
-    pub proof_specs: ProofSpecs,
-}
-
-impl Default for MockClientConfig {
-    fn default() -> Self {
-        Self::builder().build()
-    }
-}
 
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
