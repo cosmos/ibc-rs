@@ -24,7 +24,8 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
-use ibc_testkit::context::{MockClientConfig, MockContext};
+use ibc_testkit::context::MockContext;
+use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::tendermint::BlockParams;
@@ -234,7 +235,7 @@ fn test_consensus_state_pruning() {
             LightClientBuilder::init()
                 .context(&ctx_b)
                 .params(
-                    MockClientConfig::builder()
+                    ClientStateConfig::builder()
                         .trusting_period(Duration::from_secs(3))
                         .build(),
                 )
@@ -1422,7 +1423,7 @@ fn test_expired_client() {
             LightClientBuilder::init()
                 .context(&ctx_b)
                 .params(
-                    MockClientConfig::builder()
+                    ClientStateConfig::builder()
                         .trusting_period(trusting_period)
                         .build(),
                 )
@@ -1475,7 +1476,7 @@ fn test_client_update_max_clock_drift() {
             LightClientBuilder::init()
                 .context(&ctx_b)
                 .params(
-                    MockClientConfig::builder()
+                    ClientStateConfig::builder()
                         .max_clock_drift(max_clock_drift)
                         .build(),
                 )
