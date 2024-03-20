@@ -71,12 +71,10 @@ where
                 .build(),
         );
 
-        let ibc_store = MockIbcStore::new(host.chain_id().revision_number(), Default::default());
-
         let mut context = Self {
-            host,
             main_store: Default::default(),
-            ibc_store,
+            ibc_store: MockIbcStore::new(host.chain_id().revision_number(), Default::default()),
+            host,
         };
 
         // store is a height 0; no block
