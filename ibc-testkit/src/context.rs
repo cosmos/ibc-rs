@@ -1,4 +1,5 @@
 use core::fmt::Debug;
+use core::time::Duration;
 
 use basecoin_store::context::ProvableStore;
 use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore};
@@ -103,55 +104,29 @@ where
     }
 
     pub fn generate_genesis_block(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
-        // commit store
-        let app_hash = self.ibc_store.commit().expect("no error");
-
-        // generate and push genesis block
-        let genesis_block = self.host.generate_block(app_hash, 1, genesis_time, params);
-        self.host.push_block(genesis_block);
-
-        // store it in ibc context as host consensus state
-        self.ibc_store.store_host_consensus_state(
-            1,
-            self.host
-                .latest_block()
-                .into_header()
-                .into_consensus_state()
-                .into(),
-        );
-    }
-
-    pub fn advance_with_block_params(&mut self, block_time: Duration, params: &H::BlockParams) {
-        // commit store
-        let ibc_store_commitment = self.ibc_store.commit().expect("no error");
-
-        // commit ibc store commitment in main store
-        self.main_store
-            .set(
-                self.ibc_commitment_prefix
-                    .as_bytes()
-                    .try_into()
-                    .expect("valid utf8 prefix"),
-                ibc_store_commitment,
-            )
-            .expect("no error");
+        self.end_block();
 
         // commit main store
         let main_store_commitment = self.main_store.commit().expect("no error");
 
-        // generate a new block
-        self.host
-            .advance_block(main_store_commitment, block_time, params);
-
-        // store it in ibc context as host consensus state
-        self.ibc_store.store_host_consensus_state(
-            self.host.latest_height().revision_height(),
+        // generate a genesis block
+        let genesis_block =
             self.host
-                .latest_block()
-                .into_header()
-                .into_consensus_state()
-                .into(),
-        );
+                .generate_block(main_store_commitment, 1, genesis_time, params);
+
+        // push the genesis block to the host
+        self.host.push_block(genesis_block);
+
+        self.begin_block();
+    }
+
+    pub fn begin_block(&mut self) {
+        let consensus_state = self
+            .host
+            .latest_block()
+            .into_header()
+            .into_consensus_state()
+            .into();
 
         let ibc_commitment_proof = self
             .main_store
@@ -165,11 +140,41 @@ where
             )
             .expect("no error");
 
-        // store ibc commitment prefix
-        self.ibc_store.store_ibc_commitment_proof(
+        self.ibc_store.begin_block(
             self.host.latest_height().revision_height(),
+            consensus_state,
             ibc_commitment_proof,
         );
+    }
+
+    pub fn end_block(&mut self) {
+        // commit ibc store
+        let ibc_store_commitment = self.ibc_store.end_block().expect("no error");
+
+        // commit ibc store commitment in main store
+        self.main_store
+            .set(
+                self.ibc_commitment_prefix
+                    .as_bytes()
+                    .try_into()
+                    .expect("valid utf8 prefix"),
+                ibc_store_commitment,
+            )
+            .expect("no error");
+    }
+
+    pub fn produce_block(&mut self, block_time: Duration, params: &H::BlockParams) {
+        // commit main store
+        let main_store_commitment = self.main_store.commit().expect("no error");
+        // generate a new block
+        self.host
+            .advance_block(main_store_commitment, block_time, params);
+    }
+
+    pub fn advance_with_block_params(&mut self, block_time: Duration, params: &H::BlockParams) {
+        self.end_block();
+        self.produce_block(block_time, params);
+        self.begin_block();
     }
 
     pub fn advance_block(&mut self) {
