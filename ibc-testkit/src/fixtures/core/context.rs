@@ -1,7 +1,7 @@
 use alloc::fmt::Debug;
 use core::time::Duration;
 
-use basecoin_store::context::{ProvableStore, Store};
+use basecoin_store::context::ProvableStore;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
@@ -90,8 +90,7 @@ where
         );
 
         for block_params in params.block_params_history {
-            context.host.advance_block(&block_params);
-            let _genesis_hash = context.ibc_store.store.commit().expect("no error");
+            context.advance_with_block_params(&block_params);
         }
 
         assert_eq!(

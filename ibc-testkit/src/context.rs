@@ -113,11 +113,22 @@ where
     }
 
     pub fn advance_with_block_params(&mut self, params: &H::BlockParams) {
-        self.host.advance_block(params);
-        let latest_block = self.host.latest_block();
+        // TODO(rano): we need to commit method, to calculate the hashes
 
-        self.ibc_store
-            .advance_height(latest_block.into_header().into_consensus_state().into());
+        // commit store
+        let app_hash = self.ibc_store.commit().expect("no error");
+
+        // generate a new block
+        self.host.advance_block(app_hash, params);
+
+        // store it in ibc context as host consensus state
+        self.ibc_store.store_host_consensus_state(
+            self.host
+                .latest_block()
+                .into_header()
+                .into_consensus_state()
+                .into(),
+        );
     }
 
     pub fn advance_block(&mut self) {

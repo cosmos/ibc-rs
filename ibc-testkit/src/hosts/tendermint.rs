@@ -97,6 +97,7 @@ impl TestHost for TendermintHost {
 
     fn generate_block(
         &self,
+        commitment_root: Vec<u8>,
         height: u64,
         timestamp: Timestamp,
         params: &Self::BlockParams,
@@ -104,6 +105,7 @@ impl TestHost for TendermintHost {
         TendermintBlock(
             TestgenLightBlock::new_default_with_header(
                 TestgenHeader::new(&params.validators)
+                    .app_hash(commitment_root.try_into().expect("infallible"))
                     .height(height)
                     .chain_id(self.chain_id().as_str())
                     .next_validators(&params.next_validators)

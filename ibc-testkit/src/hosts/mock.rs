@@ -1,4 +1,5 @@
 use alloc::collections::VecDeque;
+use alloc::vec::Vec;
 use core::time::Duration;
 
 use ibc::core::client::types::Height;
@@ -84,6 +85,7 @@ impl TestHost for MockHost {
 
     fn generate_block(
         &self,
+        _: Vec<u8>,
         height: u64,
         timestamp: Timestamp,
         _: &Self::BlockParams,

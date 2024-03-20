@@ -70,7 +70,7 @@ pub trait TestHost: Debug + Sized {
     }
 
     /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
-    fn advance_block(&mut self, params: &Self::BlockParams) {
+    fn advance_block(&mut self, commitment_root: Vec<u8>, params: &Self::BlockParams) {
         let (height, timestamp) = if self.is_empty() {
             (1, self.genesis_timestamp())
         } else {
@@ -86,7 +86,7 @@ pub trait TestHost: Debug + Sized {
             )
         };
 
-        let new_block = self.generate_block(height, timestamp, params);
+        let new_block = self.generate_block(commitment_root, height, timestamp, params);
 
         // History is not full yet.
         self.push_block(new_block);
@@ -109,6 +109,7 @@ pub trait TestHost: Debug + Sized {
     /// Generate a block at the given height and timestamp, using the provided parameters.
     fn generate_block(
         &self,
+        commitment_root: Vec<u8>,
         height: u64,
         timestamp: Timestamp,
         params: &Self::BlockParams,

@@ -140,8 +140,11 @@ where
         }
     }
 
-    pub fn advance_height(&mut self, consensus_state: AnyConsensusState) {
-        let _block_hash = self.store.commit().expect("no error");
+    pub fn commit(&mut self) -> Result<Vec<u8>, <SharedStore<S> as Store>::Error> {
+        self.store.commit()
+    }
+
+    pub fn store_host_consensus_state(&mut self, consensus_state: AnyConsensusState) {
         self.consensus_states
             .lock()
             .insert(self.store.current_height(), consensus_state);
@@ -161,7 +164,8 @@ where
     fn default() -> Self {
         // Note: this creates a MockIbcStore which has MockConsensusState as Host ConsensusState
         let mut ibc_store = Self::new(0, S::default());
-        ibc_store.advance_height(MockHeader::default().into_consensus_state().into());
+        ibc_store.commit().expect("no error");
+        ibc_store.store_host_consensus_state(MockHeader::default().into_consensus_state().into());
         ibc_store
     }
 }
