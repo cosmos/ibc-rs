@@ -1,4 +1,3 @@
-use basecoin_store::context::ProvableStore;
 use basecoin_store::impls::InMemoryStore;
 use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ConsensusState as TmConsensusState,
@@ -9,14 +8,13 @@ use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::error::CommitmentError;
-use ibc::core::commitment_types::merkle::MerkleProof;
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChainId, ClientId};
 use ibc::core::host::types::path::{ClientConsensusStatePath, NextClientSequencePath};
 use ibc::core::host::{ClientStateRef, ValidationContext};
-use ibc_proto::ibc::core::commitment::v1::MerklePath;
+use ibc_query::core::context::ProvableContext;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
@@ -137,10 +135,11 @@ fn test_invalid_frozen_tm_client_creation() {
 #[test]
 fn test_tm_create_client_proof_verification_ok() {
     let client_id = ClientId::new("07-tendermint", 0).expect("no error");
+    let client_height = Height::new(0, 10).expect("no error");
 
     let ctx_tm = MockContextConfig::builder()
         .host_id(ChainId::new("tendermint-0").unwrap())
-        .latest_height(Height::new(0, 10).expect("no error"))
+        .latest_height(client_height)
         .build::<MockContext<TendermintHost>>();
 
     let ctx_mk = MockContext::<MockHost>::default().with_light_client(
@@ -150,21 +149,25 @@ fn test_tm_create_client_proof_verification_ok() {
 
     let client_validation_ctx_mk = ctx_mk.ibc_store().get_client_validation_context();
 
-    let consensus_state_path = ClientConsensusStatePath::new(client_id.clone(), 0, 10);
-
-    let (
-        AnyClientState::Tendermint(tm_client_state),
-        AnyConsensusState::Tendermint(tm_consensus_state),
-    ) = (
-        client_validation_ctx_mk
-            .client_state(&client_id)
-            .expect("client state exists"),
-        client_validation_ctx_mk
-            .consensus_state(&consensus_state_path)
-            .expect("consensus_state exists"),
-    )
+    let (AnyClientState::Tendermint(tm_client_state),) = (client_validation_ctx_mk
+        .client_state(&client_id)
+        .expect("client state exists"),)
     else {
-        panic!("client and consensus state are not valid")
+        panic!("client state is not valid")
+    };
+
+    let latest_client_height = tm_client_state.latest_height();
+    let consensus_state_path = ClientConsensusStatePath::new(
+        client_id.clone(),
+        latest_client_height.revision_number(),
+        latest_client_height.revision_height(),
+    );
+
+    let AnyConsensusState::Tendermint(tm_consensus_state) = client_validation_ctx_mk
+        .consensus_state(&consensus_state_path)
+        .expect("consensus_state exists")
+    else {
+        panic!("consensus state is not valid")
     };
 
     let next_client_seq_path = NextClientSequencePath;
@@ -179,45 +182,35 @@ fn test_tm_create_client_proof_verification_ok() {
 
     let proof = ctx_tm
         .ibc_store()
-        .store
-        .get_proof(
-            ctx_tm.latest_height().revision_height().into(),
-            &next_client_seq_path.to_string().into(),
-        )
-        .expect("proof exists");
+        .get_proof(ctx_tm.latest_height(), &next_client_seq_path.clone().into())
+        .expect("proof exists")
+        .try_into()
+        .expect("value merkle proof");
 
     let root = tm_consensus_state.inner().root();
 
-    let merkle_path = MerklePath {
-        key_path: vec![next_client_seq_path.to_string()],
-    };
-
-    let merkle_proof = MerkleProof {
-        proofs: vec![proof],
-    };
-
-    // with correct value
-    merkle_proof
+    // correct value verification
+    tm_client_state
         .verify_membership(
-            &tm_client_state.inner().proof_specs,
-            root.clone().into(),
-            merkle_path.clone(),
+            &ctx_tm.ibc_commitment_prefix,
+            &proof,
+            &root,
+            next_client_seq_path.clone().into(),
             serde_json::to_vec(&next_client_seq_value).expect("valid json serialization"),
-            0,
         )
-        .expect("proof verification is successful");
+        .expect("successful proof verification");
 
-    // with incorrect value
+    // incorrect value verification
     assert!(matches!(
-        merkle_proof
+        tm_client_state
             .verify_membership(
-                &tm_client_state.inner().proof_specs,
-                root.into(),
-                merkle_path,
-                serde_json::to_vec(&1).expect("valid json serialization"),
-                0,
+                &ctx_tm.ibc_commitment_prefix,
+                &proof,
+                &root,
+                next_client_seq_path.into(),
+                serde_json::to_vec(&(next_client_seq_value + 1)).expect("valid json serialization"),
             )
             .expect_err("proof verification fails"),
-        CommitmentError::VerificationFailure
+        ClientError::Ics23Verification(CommitmentError::VerificationFailure)
     ));
 }
