@@ -101,38 +101,13 @@ where
         self
     }
 
-    pub fn advance_with_block_params(&mut self, params: &H::BlockParams) {
-        // TODO(rano): we need to commit method, to calculate the hashes
-
-        // commit store
-        let ibc_store_commitment = self.ibc_store.commit().expect("no error");
-
-        // commit ibc store commitment in main store
-        self.main_store
-            .set(
-                self.ibc_commitment_prefix
-                    .as_bytes()
-                    .try_into()
-                    .expect("valid utf8 prefix"),
-                ibc_store_commitment,
-            )
-            .expect("no error");
-
-        // commit main store
-        let main_store_commitment = self.main_store.commit().expect("no error");
-
-        // generate a new block
-        self.host.advance_block(main_store_commitment, params);
-
-        // store it in ibc context as host consensus state
-        self.ibc_store.store_host_consensus_state(
-            self.host.latest_height().revision_height(),
-            self.host
-                .latest_block()
-                .into_header()
-                .into_consensus_state()
-                .into(),
-        );
+    pub fn begin_block(&mut self) {
+        let consensus_state = self
+            .host
+            .latest_block()
+            .into_header()
+            .into_consensus_state()
+            .into();
 
         let ibc_commitment_proof = self
             .main_store
@@ -146,11 +121,40 @@ where
             )
             .expect("no error");
 
-        // store ibc commitment prefix
-        self.ibc_store.store_ibc_commitment_proof(
+        self.ibc_store.begin_block(
             self.host.latest_height().revision_height(),
+            consensus_state,
             ibc_commitment_proof,
         );
+    }
+
+    pub fn end_block(&mut self) {
+        // commit ibc store
+        let ibc_store_commitment = self.ibc_store.end_block().expect("no error");
+
+        // commit ibc store commitment in main store
+        self.main_store
+            .set(
+                self.ibc_commitment_prefix
+                    .as_bytes()
+                    .try_into()
+                    .expect("valid utf8 prefix"),
+                ibc_store_commitment,
+            )
+            .expect("no error");
+    }
+
+    pub fn produce_block(&mut self, params: &H::BlockParams) {
+        // commit main store
+        let main_store_commitment = self.main_store.commit().expect("no error");
+        // generate a new block
+        self.host.advance_block(main_store_commitment, params);
+    }
+
+    pub fn advance_with_block_params(&mut self, params: &H::BlockParams) {
+        self.end_block();
+        self.produce_block(params);
+        self.begin_block();
     }
 
     pub fn advance_block(&mut self) {

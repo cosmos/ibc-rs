@@ -144,18 +144,29 @@ where
         }
     }
 
-    pub fn commit(&mut self) -> Result<Vec<u8>, <SharedStore<S> as Store>::Error> {
-        self.store.commit()
-    }
-
-    pub fn store_host_consensus_state(&mut self, height: u64, consensus_state: AnyConsensusState) {
+    fn store_host_consensus_state(&mut self, height: u64, consensus_state: AnyConsensusState) {
         self.host_consensus_states
             .lock()
             .insert(height, consensus_state);
     }
 
-    pub fn store_ibc_commitment_proof(&mut self, height: u64, proof: CommitmentProof) {
+    fn store_ibc_commitment_proof(&mut self, height: u64, proof: CommitmentProof) {
         self.ibc_commiment_proofs.lock().insert(height, proof);
+    }
+
+    pub fn begin_block(
+        &mut self,
+        height: u64,
+        consensus_state: AnyConsensusState,
+        proof: CommitmentProof,
+    ) {
+        assert_eq!(self.store.current_height(), height);
+        self.store_host_consensus_state(height, consensus_state);
+        self.store_ibc_commitment_proof(height, proof);
+    }
+
+    pub fn end_block(&mut self) -> Result<Vec<u8>, <SharedStore<S> as Store>::Error> {
+        self.store.commit()
     }
 
     pub fn prune_host_consensus_states_till(&self, height: &Height) {
