@@ -66,7 +66,7 @@ where
         &self,
         height: &Height,
     ) -> Result<Self::HostConsensusState, ContextError> {
-        let consensus_states_binding = self.consensus_states.lock();
+        let consensus_states_binding = self.host_consensus_states.lock();
         Ok(consensus_states_binding
             .get(&height.revision_height())
             .cloned()

@@ -85,7 +85,7 @@ where
     /// A typed-store for packet ack
     pub packet_ack_store: BinStore<SharedStore<S>, AckPath, AcknowledgementCommitment>,
     /// Map of host consensus states
-    pub consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
+    pub host_consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
     /// IBC Events
     pub events: Arc<Mutex<Vec<IbcEvent>>>,
     /// message logs
@@ -122,7 +122,7 @@ where
             channel_counter,
             client_processed_times: TypedStore::new(shared_store.clone()),
             client_processed_heights: TypedStore::new(shared_store.clone()),
-            consensus_states: Arc::new(Mutex::new(Default::default())),
+            host_consensus_states: Arc::new(Mutex::new(Default::default())),
             client_state_store: TypedStore::new(shared_store.clone()),
             consensus_state_store: TypedStore::new(shared_store.clone()),
             connection_end_store: TypedStore::new(shared_store.clone()),
@@ -145,14 +145,14 @@ where
     }
 
     pub fn store_host_consensus_state(&mut self, consensus_state: AnyConsensusState) {
-        self.consensus_states
+        self.host_consensus_states
             .lock()
             .insert(self.store.current_height(), consensus_state);
     }
 
-    pub fn prune_consensus_states_till(&self, height: &Height) {
+    pub fn prune_host_consensus_states_till(&self, height: &Height) {
         assert!(height.revision_number() == *self.revision_number.lock());
-        let mut history = self.consensus_states.lock();
+        let mut history = self.host_consensus_states.lock();
         history.retain(|h, _| h > &height.revision_height());
     }
 }

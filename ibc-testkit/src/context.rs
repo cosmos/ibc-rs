@@ -137,7 +137,7 @@ where
 
     pub fn prune_block_till(&mut self, height: &Height) {
         self.host.prune_block_till(height);
-        self.ibc_store.prune_consensus_states_till(height);
+        self.ibc_store.prune_host_consensus_states_till(height);
     }
 
     pub fn latest_height(&self) -> Height {
