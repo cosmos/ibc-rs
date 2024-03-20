@@ -7,6 +7,7 @@ use ibc::core::channel::types::commitment::PacketCommitment;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
+use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
 use ibc::core::handler::types::events::IbcEvent;
@@ -36,8 +37,14 @@ where
     H: TestHost,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
+    /// The main store of the context.
+    pub main_store: S,
+
     /// The type of host chain underlying this mock context.
     pub host: H,
+
+    /// CommitmentPrefix of the ibc store
+    pub ibc_commitment_prefix: CommitmentPrefix,
 
     /// An object that stores all IBC related data.
     pub ibc_store: MockIbcStore<S>,
@@ -105,6 +112,7 @@ where
 
         // store it in ibc context as host consensus state
         self.ibc_store.store_host_consensus_state(
+            1,
             self.host
                 .latest_block()
                 .into_header()
@@ -115,18 +123,52 @@ where
 
     pub fn advance_with_block_params(&mut self, block_time: Duration, params: &H::BlockParams) {
         // commit store
-        let app_hash = self.ibc_store.commit().expect("no error");
+        let ibc_store_commitment = self.ibc_store.commit().expect("no error");
+
+        // commit ibc store commitment in main store
+        self.main_store
+            .set(
+                self.ibc_commitment_prefix
+                    .as_bytes()
+                    .try_into()
+                    .expect("valid utf8 prefix"),
+                ibc_store_commitment,
+            )
+            .expect("no error");
+
+        // commit main store
+        let main_store_commitment = self.main_store.commit().expect("no error");
 
         // generate a new block
-        self.host.advance_block(app_hash, block_time, params);
+        self.host
+            .advance_block(main_store_commitment, block_time, params);
 
         // store it in ibc context as host consensus state
         self.ibc_store.store_host_consensus_state(
+            self.host.latest_height().revision_height(),
             self.host
                 .latest_block()
                 .into_header()
                 .into_consensus_state()
                 .into(),
+        );
+
+        let ibc_commitment_proof = self
+            .main_store
+            .get_proof(
+                self.host.latest_height().revision_height().into(),
+                &self
+                    .ibc_commitment_prefix
+                    .as_bytes()
+                    .try_into()
+                    .expect("valid utf8 prefix"),
+            )
+            .expect("no error");
+
+        // store ibc commitment prefix
+        self.ibc_store.store_ibc_commitment_proof(
+            self.host.latest_height().revision_height(),
+            ibc_commitment_proof,
         );
     }
 

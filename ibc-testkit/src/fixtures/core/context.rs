@@ -56,6 +56,8 @@ where
         .expect("no underflow");
 
         let mut context = Self {
+            main_store: Default::default(),
+            ibc_commitment_prefix: b"ibc".to_vec().try_into().expect("valid commitment prefix"),
             ibc_store: MockIbcStore::new(
                 params.latest_height.revision_number(),
                 Default::default(),
