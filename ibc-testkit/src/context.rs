@@ -7,7 +7,6 @@ use ibc::core::channel::types::commitment::PacketCommitment;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
-use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
 use ibc::core::handler::types::events::IbcEvent;
@@ -41,9 +40,6 @@ where
 
     /// The type of host chain underlying this mock context.
     pub host: H,
-
-    /// CommitmentPrefix of the ibc store
-    pub ibc_commitment_prefix: CommitmentPrefix,
 
     /// An object that stores all IBC related data.
     pub ibc_store: MockIbcStore<S>,
@@ -114,7 +110,8 @@ where
             .get_proof(
                 self.host.latest_height().revision_height().into(),
                 &self
-                    .ibc_commitment_prefix
+                    .ibc_store
+                    .commitment_prefix()
                     .as_bytes()
                     .try_into()
                     .expect("valid utf8 prefix"),
@@ -135,7 +132,8 @@ where
         // commit ibc store commitment in main store
         self.main_store
             .set(
-                self.ibc_commitment_prefix
+                self.ibc_store
+                    .commitment_prefix()
                     .as_bytes()
                     .try_into()
                     .expect("valid utf8 prefix"),
