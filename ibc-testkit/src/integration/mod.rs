@@ -127,8 +127,8 @@ where
             &mut self.router_b,
             &mut self.ctx_a,
             &mut self.router_a,
-            client_id_on_a,
             client_id_on_b,
+            client_id_on_a,
             signer,
         )
     }
