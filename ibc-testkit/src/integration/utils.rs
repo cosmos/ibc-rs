@@ -24,6 +24,9 @@ use crate::hosts::{HostClientState, TestBlock, TestHost};
 use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, LightClientState};
 
+/// Implements relayer methods for a pair of hosts
+/// Note that, all the implementations are in one direction, from A to B
+/// For the methods in opposite direction, use `TypedRelayer::<B, A>` instead of TypedRelayer::<A, B>`
 #[derive(Debug, Default)]
 pub struct TypedRelayer<A, B>(PhantomData<A>, PhantomData<B>)
 where
