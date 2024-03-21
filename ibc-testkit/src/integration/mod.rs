@@ -178,10 +178,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::hosts::TendermintHost;
+    use crate::hosts::{MockHost, TendermintHost};
 
     #[test]
-    fn tendermint_integration_test() {
+    fn integration_test_for_all() {
+        integration_test_between_host_pair::<MockHost, MockHost>();
+        integration_test_between_host_pair::<MockHost, TendermintHost>();
+        integration_test_between_host_pair::<TendermintHost, MockHost>();
         integration_test_between_host_pair::<TendermintHost, TendermintHost>();
     }
 }
