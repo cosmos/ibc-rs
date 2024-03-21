@@ -124,7 +124,7 @@ pub trait TestHost: Default + Debug + Sized {
 /// TestBlock is a trait that defines the interface for a block produced by a host blockchain.
 pub trait TestBlock: Clone + Debug {
     /// The type of header can be extracted from the block.
-    type Header: TestHeader + From<Self>;
+    type Header: TestHeader;
 
     /// The height of the block.
     fn height(&self) -> Height;
@@ -133,8 +133,11 @@ pub trait TestBlock: Clone + Debug {
     fn timestamp(&self) -> Timestamp;
 
     /// Extract the header from the block.
+    fn into_header_with_previous_block(self, previous_block: &Self) -> Self::Header;
+
     fn into_header(self) -> Self::Header {
-        self.into()
+        let prev_block = self.clone();
+        self.into_header_with_previous_block(&prev_block)
     }
 }
 

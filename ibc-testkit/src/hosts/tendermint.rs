@@ -136,6 +136,13 @@ impl TestBlock for TendermintBlock {
     fn timestamp(&self) -> Timestamp {
         self.0.signed_header.header.time.into()
     }
+
+    fn into_header_with_previous_block(self, previous_block: &Self) -> Self::Header {
+        let mut header = TendermintHeader::from(self);
+        header.set_trusted_height(previous_block.height());
+        header.set_trusted_next_validators_set(previous_block.inner().validators.clone());
+        header
+    }
 }
 
 #[derive(Debug, TypedBuilder)]
