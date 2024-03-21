@@ -1,6 +1,6 @@
 use alloc::string::String;
 use core::marker::PhantomData;
-use std::time::Duration;
+use core::time::Duration;
 
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
