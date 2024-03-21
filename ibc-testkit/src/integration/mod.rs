@@ -170,9 +170,9 @@ where
     assert_eq!(conn_id_on_a, ConnectionId::new(1));
     assert_eq!(conn_id_on_b, ConnectionId::new(1));
 
-    // channel
-
-    // channel/packet timeout
+    // channel/packet integration; test timeouts
+    // TODO(rano): test channel and packet messages require a module
+    // create integration with ics-20 module
 }
 
 #[cfg(test)]
