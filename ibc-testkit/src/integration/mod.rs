@@ -134,7 +134,7 @@ where
     }
 }
 
-pub fn integration_test_between_host_pair<A, B>()
+pub fn ibc_integration_test<A, B>()
 where
     A: TestHost,
     B: TestHost,
@@ -181,10 +181,10 @@ mod tests {
     use crate::hosts::{MockHost, TendermintHost};
 
     #[test]
-    fn integration_test_for_all() {
-        integration_test_between_host_pair::<MockHost, MockHost>();
-        integration_test_between_host_pair::<MockHost, TendermintHost>();
-        integration_test_between_host_pair::<TendermintHost, MockHost>();
-        integration_test_between_host_pair::<TendermintHost, TendermintHost>();
+    fn ibc_integration_test_for_all_pairs() {
+        ibc_integration_test::<MockHost, MockHost>();
+        ibc_integration_test::<MockHost, TendermintHost>();
+        ibc_integration_test::<TendermintHost, MockHost>();
+        ibc_integration_test::<TendermintHost, TendermintHost>();
     }
 }
