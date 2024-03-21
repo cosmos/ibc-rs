@@ -18,6 +18,7 @@ extern crate std;
 pub mod context;
 pub mod fixtures;
 pub mod hosts;
+pub mod integration;
 pub mod relayer;
 pub mod testapp;
 pub mod utils;
