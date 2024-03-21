@@ -164,7 +164,7 @@ where
     assert_eq!(conn_id_on_b, ConnectionId::new(0));
 
     // connection from B to A
-    let (conn_id_on_a, conn_id_on_b) =
+    let (conn_id_on_b, conn_id_on_a) =
         relayer.create_connection_on_b(client_id_on_b, client_id_on_a, signer);
 
     assert_eq!(conn_id_on_a, ConnectionId::new(1));
