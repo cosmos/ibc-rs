@@ -4,7 +4,6 @@
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::primitives::prelude::*;
-use ibc_proto::ibc::core::channel::v1::QueryConnectionChannelsRequest as RawQueryConnectionChannelsRequest;
 use ibc_proto::ibc::core::connection::v1::{
     QueryClientConnectionsRequest as RawQueryClientConnectionsRequest,
     QueryConnectionClientStateRequest as RawQueryConnectionClientStateRequest,
@@ -127,35 +126,5 @@ pub struct QueryConnectionParamsRequest {
 impl From<RawQueryConnectionParamsRequest> for QueryConnectionParamsRequest {
     fn from(_request: RawQueryConnectionParamsRequest) -> Self {
         Self { query_height: None }
-    }
-}
-
-/// Defines the RPC method request type for querying the channels associated
-/// with a connection.
-#[derive(Clone, Debug)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-pub struct QueryConnectionChannelsRequest {
-    pub connection_id: ConnectionId,
-    pub pagination: Option<PageRequest>,
-}
-
-impl TryFrom<RawQueryConnectionChannelsRequest> for QueryConnectionChannelsRequest {
-    type Error = QueryError;
-
-    fn try_from(request: RawQueryConnectionChannelsRequest) -> Result<Self, Self::Error> {
-        Ok(Self {
-            connection_id: request.connection.parse()?,
-            pagination: request.pagination.map(Into::into),
-        })
-    }
-}
-
-impl From<QueryConnectionChannelsRequest> for RawQueryConnectionChannelsRequest {
-    fn from(request: QueryConnectionChannelsRequest) -> Self {
-        Self {
-            connection: request.connection_id.to_string(),
-            pagination: request.pagination.map(Into::into),
-        }
     }
 }
