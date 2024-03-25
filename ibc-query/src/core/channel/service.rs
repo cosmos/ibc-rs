@@ -8,7 +8,8 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::query_server::Query as ChannelQuery;
 use ibc_proto::ibc::core::channel::v1::{
     QueryChannelClientStateRequest, QueryChannelClientStateResponse,
-    QueryChannelConsensusStateRequest, QueryChannelConsensusStateResponse, QueryChannelRequest,
+    QueryChannelConsensusStateRequest, QueryChannelConsensusStateResponse,
+    QueryChannelParamsRequest, QueryChannelParamsResponse, QueryChannelRequest,
     QueryChannelResponse, QueryChannelsRequest, QueryChannelsResponse,
     QueryConnectionChannelsRequest, QueryConnectionChannelsResponse,
     QueryNextSequenceReceiveRequest, QueryNextSequenceReceiveResponse,
@@ -18,6 +19,7 @@ use ibc_proto::ibc::core::channel::v1::{
     QueryPacketCommitmentResponse, QueryPacketCommitmentsRequest, QueryPacketCommitmentsResponse,
     QueryPacketReceiptRequest, QueryPacketReceiptResponse, QueryUnreceivedAcksRequest,
     QueryUnreceivedAcksResponse, QueryUnreceivedPacketsRequest, QueryUnreceivedPacketsResponse,
+    QueryUpgradeErrorRequest, QueryUpgradeErrorResponse, QueryUpgradeRequest, QueryUpgradeResponse,
 };
 use tonic::{Request, Response, Status};
 
@@ -29,6 +31,7 @@ use super::{
     query_unreceived_packets,
 };
 use crate::core::context::QueryContext;
+use crate::utils::{IntoDomain, IntoResponse, TryIntoDomain};
 
 // TODO(rano): currently the services don't support pagination, so we return all the results.
 
@@ -64,81 +67,65 @@ where
         &self,
         request: Request<QueryChannelRequest>,
     ) -> Result<Response<QueryChannelResponse>, Status> {
-        let response = query_channel(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_channel(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn channels(
         &self,
         request: Request<QueryChannelsRequest>,
     ) -> Result<Response<QueryChannelsResponse>, Status> {
-        let response = query_channels(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_channels(&self.ibc_context, &request.into_domain())?.into_response()
     }
 
     async fn connection_channels(
         &self,
         request: Request<QueryConnectionChannelsRequest>,
     ) -> Result<Response<QueryConnectionChannelsResponse>, Status> {
-        let response = query_connection_channels(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_connection_channels(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn channel_client_state(
         &self,
         request: Request<QueryChannelClientStateRequest>,
     ) -> Result<Response<QueryChannelClientStateResponse>, Status> {
-        let response = query_channel_client_state(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_channel_client_state(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn channel_consensus_state(
         &self,
         request: Request<QueryChannelConsensusStateRequest>,
     ) -> Result<Response<QueryChannelConsensusStateResponse>, Status> {
-        let response = query_channel_consensus_state(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_channel_consensus_state(&self.ibc_context, &request.try_into_domain()?)?
+            .into_response()
     }
 
     async fn packet_commitment(
         &self,
         request: Request<QueryPacketCommitmentRequest>,
     ) -> Result<Response<QueryPacketCommitmentResponse>, Status> {
-        let response = query_packet_commitment(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_packet_commitment(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn packet_commitments(
         &self,
         request: Request<QueryPacketCommitmentsRequest>,
     ) -> Result<Response<QueryPacketCommitmentsResponse>, Status> {
-        let response = query_packet_commitments(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_packet_commitments(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn packet_receipt(
         &self,
         request: Request<QueryPacketReceiptRequest>,
     ) -> Result<Response<QueryPacketReceiptResponse>, Status> {
-        let response = query_packet_receipt(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_packet_receipt(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn packet_acknowledgement(
         &self,
         request: Request<QueryPacketAcknowledgementRequest>,
     ) -> Result<Response<QueryPacketAcknowledgementResponse>, Status> {
-        let response = query_packet_acknowledgement(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_packet_acknowledgement(&self.ibc_context, &request.try_into_domain()?)?
+            .into_response()
     }
 
     /// Returns all the acknowledgements if sequences is omitted.
@@ -146,9 +133,8 @@ where
         &self,
         request: Request<QueryPacketAcknowledgementsRequest>,
     ) -> Result<Response<QueryPacketAcknowledgementsResponse>, Status> {
-        let response = query_packet_acknowledgements(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_packet_acknowledgements(&self.ibc_context, &request.try_into_domain()?)?
+            .into_response()
     }
 
     /// Returns all the unreceived packets if sequences is omitted.
@@ -156,9 +142,7 @@ where
         &self,
         request: Request<QueryUnreceivedPacketsRequest>,
     ) -> Result<Response<QueryUnreceivedPacketsResponse>, Status> {
-        let response = query_unreceived_packets(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_unreceived_packets(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     /// Returns all the unreceived acknowledgements if sequences is omitted.
@@ -166,26 +150,47 @@ where
         &self,
         request: Request<QueryUnreceivedAcksRequest>,
     ) -> Result<Response<QueryUnreceivedAcksResponse>, Status> {
-        let response = query_unreceived_acks(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_unreceived_acks(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn next_sequence_receive(
         &self,
         request: Request<QueryNextSequenceReceiveRequest>,
     ) -> Result<Response<QueryNextSequenceReceiveResponse>, Status> {
-        let response = query_next_sequence_receive(&self.ibc_context, request.get_ref())?;
-
-        Ok(Response::new(response))
+        query_next_sequence_receive(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
     async fn next_sequence_send(
         &self,
         request: Request<QueryNextSequenceSendRequest>,
     ) -> Result<Response<QueryNextSequenceSendResponse>, Status> {
-        let response = query_next_sequence_send(&self.ibc_context, request.get_ref())?;
+        query_next_sequence_send(&self.ibc_context, &request.try_into_domain()?)?.into_response()
+    }
 
-        Ok(Response::new(response))
+    async fn upgrade_error(
+        &self,
+        _request: Request<QueryUpgradeErrorRequest>,
+    ) -> Result<Response<QueryUpgradeErrorResponse>, Status> {
+        Err(Status::unimplemented(
+            "Querying UpgradeError is not supported yet",
+        ))
+    }
+
+    async fn upgrade(
+        &self,
+        _request: Request<QueryUpgradeRequest>,
+    ) -> Result<Response<QueryUpgradeResponse>, Status> {
+        Err(Status::unimplemented(
+            "Querying Upgrade is not supported yet",
+        ))
+    }
+
+    async fn channel_params(
+        &self,
+        _request: Request<QueryChannelParamsRequest>,
+    ) -> Result<Response<QueryChannelParamsResponse>, Status> {
+        Err(Status::unimplemented(
+            "Querying ChannelParams is not supported yet",
+        ))
     }
 }

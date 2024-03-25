@@ -17,6 +17,7 @@ pub fn dummy_raw_msg_timeout_on_close(height: u64, timeout_timestamp: u64) -> Ra
         }),
         next_sequence_recv: 1,
         signer: dummy_bech32_account(),
+        counterparty_upgrade_sequence: 0,
     }
 }
 

@@ -17,6 +17,7 @@ pub fn dummy_raw_msg_chan_close_confirm(proof_height: u64) -> RawMsgChannelClose
             revision_height: proof_height,
         }),
         signer: dummy_bech32_account(),
+        counterparty_upgrade_sequence: 0,
     }
 }
 

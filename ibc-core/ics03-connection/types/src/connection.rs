@@ -1,7 +1,6 @@
 //! Defines the types that define a connection
 
 use core::fmt::{Display, Error as FmtError, Formatter};
-use core::str::FromStr;
 use core::time::Duration;
 use core::u64;
 
@@ -9,7 +8,6 @@ use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentPrefix;
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::ZERO_DURATION;
 use ibc_proto::ibc::core::connection::v1::{
     ConnectionEnd as RawConnectionEnd, Counterparty as RawCounterparty,
     IdentifiedConnection as RawIdentifiedConnection,
@@ -32,6 +30,7 @@ use crate::version::Version;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct IdentifiedConnectionEnd {
     pub connection_id: ConnectionId,
@@ -102,6 +101,7 @@ impl From<IdentifiedConnectionEnd> for RawIdentifiedConnection {
     derive(parity_scale_codec::Encode, parity_scale_codec::Decode,)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 pub struct ConnectionEnd {
     pub state: State,
@@ -207,20 +207,6 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
     type Error = ConnectionError;
     fn try_from(value: RawConnectionEnd) -> Result<Self, Self::Error> {
         let state = value.state.try_into()?;
-
-        if state == State::Uninitialized {
-            return ConnectionEnd::new(
-                State::Uninitialized,
-                ClientId::from_str("07-tendermint-0").expect("should not fail"),
-                Counterparty::new(
-                    ClientId::from_str("07-tendermint-0").expect("should not fail"),
-                    None,
-                    CommitmentPrefix::empty(),
-                ),
-                Vec::new(),
-                ZERO_DURATION,
-            );
-        }
 
         if value.client_id.is_empty() {
             return Err(ConnectionError::EmptyProtoConnectionEnd);
@@ -482,6 +468,7 @@ impl Counterparty {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Hash)]
 pub enum State {
     Uninitialized = 0isize,
