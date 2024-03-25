@@ -23,7 +23,7 @@ use crate::context::{
 impl<V> ClientStateValidation<V> for ClientState
 where
     V: TmValidationContext,
-    V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
@@ -81,7 +81,7 @@ pub fn verify_client_message<V>(
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
-    V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     match client_message.type_url.as_str() {
@@ -137,7 +137,7 @@ pub fn check_for_misbehaviour<V>(
 ) -> Result<bool, ClientError>
 where
     V: TmValidationContext,
-    V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     match client_message.type_url.as_str() {
@@ -165,7 +165,7 @@ pub fn status<V>(
 ) -> Result<Status, ClientError>
 where
     V: TmValidationContext,
-    V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     if client_state.is_frozen() {
@@ -214,7 +214,7 @@ pub fn check_substitute<V>(
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
-    V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     let subject = ClientStateType {
@@ -229,7 +229,7 @@ where
         ..subject_client_state.clone()
     };
 
-    let substitute_client_state = TryInto::<ClientStateType>::try_into(substitute_client_state)?;
+    let substitute_client_state = ClientStateType::try_from(substitute_client_state)?;
 
     let substitute = ClientStateType {
         latest_height: Height::new(0, 1).expect("Panic while creating a Height { 0, 1 }"),

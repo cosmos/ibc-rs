@@ -19,7 +19,7 @@ impl<E> ClientStateExecution<E> for ClientState
 where
     E: TmExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
     fn initialise(
@@ -96,7 +96,7 @@ pub fn initialise<E>(
 where
     E: TmExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
     let host_timestamp = TmValidationContext::host_timestamp(ctx)?;
@@ -142,7 +142,7 @@ pub fn update_state<E>(
 where
     E: TmExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
     let header = TmHeader::try_from(header)?;
@@ -210,7 +210,7 @@ pub fn update_on_misbehaviour<E>(
 where
     E: TmExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
     // NOTE: frozen height is  set to `Height {revision_height: 0,
@@ -244,7 +244,7 @@ pub fn update_on_upgrade<E>(
 where
     E: TmExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
     let mut upgraded_tm_client_state = ClientState::try_from(upgraded_client_state)?;
@@ -325,7 +325,7 @@ pub fn prune_oldest_consensus_state<E>(
 where
     E: ClientExecutionContext + TmValidationContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
     let mut heights = ctx.consensus_state_heights(client_id)?;
@@ -388,10 +388,10 @@ pub fn update_on_recovery<E>(
 where
     E: TmExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
+    // E::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
-    let substitute_client_state = TryInto::<ClientStateType>::try_into(substitute_client_state)?;
+    let substitute_client_state = ClientStateType::try_from(substitute_client_state)?;
 
     let ClientStateType {
         chain_id,
