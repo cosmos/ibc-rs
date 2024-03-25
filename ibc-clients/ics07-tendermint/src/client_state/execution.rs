@@ -369,11 +369,11 @@ where
 }
 
 /// Update the `client_state`'s ID, trusting period, latest height, processed height,
-/// and processed time metadata values to those values given by a verified substitute
+/// and processed time metadata values to those values provided by a verified substitute
 /// client state in response to a successful client recovery.
 ///
 /// Note that unlike the `update_on_upgrade` function, `update_on_recovery` assumes
-/// that client being updated has already been re-initialised such that it's original
+/// that the client being updated has already been re-initialised such that its original
 /// client and consensus states have been overwritten to their new states.
 ///
 /// This function is typically implemented as part of the [`ClientStateExecution`]
