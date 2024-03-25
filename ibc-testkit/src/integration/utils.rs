@@ -768,4 +768,52 @@ where
 
         (chan_id_on_a, chan_id_on_b)
     }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn close_channel_on_a(
+        ctx_a: &mut MockContext<A>,
+        router_a: &mut MockRouter,
+        ctx_b: &mut MockContext<B>,
+        router_b: &mut MockRouter,
+        client_id_on_a: ClientId,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+        client_id_on_b: ClientId,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) {
+        TypedRelayer::<A, B>::channel_close_init_on_a(
+            ctx_a,
+            router_a,
+            chan_id_on_a.clone(),
+            port_id_on_a.clone(),
+            signer.clone(),
+        );
+
+        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+            ctx_b,
+            router_b,
+            ctx_a,
+            client_id_on_b,
+            signer.clone(),
+        );
+
+        TypedRelayer::<A, B>::channel_close_confirm_on_b(
+            ctx_b,
+            router_b,
+            ctx_a,
+            chan_id_on_b,
+            port_id_on_b,
+            signer.clone(),
+        );
+
+        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+            ctx_a,
+            router_a,
+            ctx_b,
+            client_id_on_a,
+            signer,
+        );
+    }
 }

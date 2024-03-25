@@ -184,6 +184,60 @@ where
             signer,
         )
     }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn close_channel_on_a(
+        &mut self,
+        client_id_on_a: ClientId,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+        client_id_on_b: ClientId,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+
+        signer: Signer,
+    ) {
+        TypedRelayer::<A, B>::close_channel_on_a(
+            &mut self.ctx_a,
+            &mut self.router_a,
+            &mut self.ctx_b,
+            &mut self.router_b,
+            client_id_on_a,
+            chan_id_on_a,
+            port_id_on_a,
+            client_id_on_b,
+            chan_id_on_b,
+            port_id_on_b,
+            signer,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn close_channel_on_b(
+        &mut self,
+        client_id_on_b: ClientId,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        client_id_on_a: ClientId,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+
+        signer: Signer,
+    ) {
+        TypedRelayer::<B, A>::close_channel_on_a(
+            &mut self.ctx_b,
+            &mut self.router_b,
+            &mut self.ctx_a,
+            &mut self.router_a,
+            client_id_on_b,
+            chan_id_on_b,
+            port_id_on_b,
+            client_id_on_a,
+            chan_id_on_a,
+            port_id_on_a,
+            signer,
+        )
+    }
 }
 
 pub fn ibc_integration_test<A, B>()
@@ -229,7 +283,7 @@ where
     assert_eq!(conn_id_on_a, ConnectionId::new(1));
     assert_eq!(conn_id_on_b, ConnectionId::new(1));
 
-    let (chan_end_on_a, chan_end_on_b) = relayer.create_channel_on_a(
+    let (chan_id_on_a, chan_id_on_b) = relayer.create_channel_on_a(
         client_id_on_a.clone(),
         conn_id_on_a.clone(),
         PortId::transfer(),
@@ -239,21 +293,33 @@ where
         signer.clone(),
     );
 
-    assert_eq!(chan_end_on_a, ChannelId::new(0));
-    assert_eq!(chan_end_on_b, ChannelId::new(0));
+    assert_eq!(chan_id_on_a, ChannelId::new(0));
+    assert_eq!(chan_id_on_b, ChannelId::new(0));
 
-    let (chan_end_on_b, chan_end_on_a) = relayer.create_channel_on_b(
-        client_id_on_b,
-        conn_id_on_b,
+    relayer.close_channel_on_a(
+        client_id_on_a.clone(),
+        chan_id_on_a.clone(),
         PortId::transfer(),
-        client_id_on_a,
-        conn_id_on_a,
+        client_id_on_b.clone(),
+        chan_id_on_b.clone(),
         PortId::transfer(),
-        signer,
+        signer.clone(),
     );
 
-    assert_eq!(chan_end_on_a, ChannelId::new(1));
-    assert_eq!(chan_end_on_b, ChannelId::new(1));
+    let (chan_id_on_b, chan_id_on_a) = relayer.create_channel_on_b(
+        client_id_on_b.clone(),
+        conn_id_on_b,
+        PortId::transfer(),
+        client_id_on_a.clone(),
+        conn_id_on_a,
+        PortId::transfer(),
+        signer.clone(),
+    );
+
+    assert_eq!(chan_id_on_a, ChannelId::new(1));
+    assert_eq!(chan_id_on_b, ChannelId::new(1));
+
+    // TODO(rano): add steps for packets
 }
 
 #[cfg(test)]
