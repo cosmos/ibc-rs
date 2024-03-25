@@ -442,11 +442,16 @@ where
         let substitute_client_state =
             TryInto::<ClientStateType>::try_into(substitute_client_state)?;
 
-        let ClientStateType { latest_height, .. } = substitute_client_state;
+        let ClientStateType {
+            latest_height,
+            trusting_period,
+            ..
+        } = substitute_client_state;
 
         let new_mock_client_state = MockClientState {
-            frozen_height: None,
+            frozen: false,
             header: self.header,
+            trusting_period,
         };
 
         let host_timestamp = ctx.host_timestamp()?;
