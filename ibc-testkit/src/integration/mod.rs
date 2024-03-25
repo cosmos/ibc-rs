@@ -1,5 +1,7 @@
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::host::types::path::ChannelEndPath;
+use ibc::core::host::ValidationContext;
 use ibc::primitives::Signer;
 
 use self::utils::TypedRelayer;
@@ -133,17 +135,30 @@ where
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn create_channel_on_a(
         &mut self,
-        client_id_on_a: ClientId,
         conn_id_on_a: ConnectionId,
         port_id_on_a: PortId,
-        client_id_on_b: ClientId,
         conn_id_on_b: ConnectionId,
         port_id_on_b: PortId,
         signer: Signer,
     ) -> (ChannelId, ChannelId) {
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
         TypedRelayer::<A, B>::create_channel_on_a(
             &mut self.ctx_a,
             &mut self.router_a,
@@ -162,14 +177,28 @@ where
     #[allow(clippy::too_many_arguments)]
     pub fn create_channel_on_b(
         &mut self,
-        client_id_on_b: ClientId,
         conn_id_on_b: ConnectionId,
         port_id_on_b: PortId,
-        client_id_on_a: ClientId,
         conn_id_on_a: ConnectionId,
         port_id_on_a: PortId,
         signer: Signer,
     ) -> (ChannelId, ChannelId) {
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
         TypedRelayer::<B, A>::create_channel_on_a(
             &mut self.ctx_b,
             &mut self.router_b,
@@ -188,15 +217,45 @@ where
     #[allow(clippy::too_many_arguments)]
     pub fn close_channel_on_a(
         &mut self,
-        client_id_on_a: ClientId,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
-        client_id_on_b: ClientId,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
 
         signer: Signer,
     ) {
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_a, &chan_id_on_a))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_b, &chan_id_on_b))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
         TypedRelayer::<A, B>::close_channel_on_a(
             &mut self.ctx_a,
             &mut self.router_a,
@@ -215,15 +274,45 @@ where
     #[allow(clippy::too_many_arguments)]
     pub fn close_channel_on_b(
         &mut self,
-        client_id_on_b: ClientId,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
-        client_id_on_a: ClientId,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
 
         signer: Signer,
     ) {
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_b, &chan_id_on_b))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_a, &chan_id_on_a))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
         TypedRelayer::<B, A>::close_channel_on_a(
             &mut self.ctx_b,
             &mut self.router_b,
@@ -284,10 +373,8 @@ where
     assert_eq!(conn_id_on_b, ConnectionId::new(1));
 
     let (chan_id_on_a, chan_id_on_b) = relayer.create_channel_on_a(
-        client_id_on_a.clone(),
         conn_id_on_a.clone(),
         PortId::transfer(),
-        client_id_on_b.clone(),
         conn_id_on_b.clone(),
         PortId::transfer(),
         signer.clone(),
@@ -297,20 +384,16 @@ where
     assert_eq!(chan_id_on_b, ChannelId::new(0));
 
     relayer.close_channel_on_a(
-        client_id_on_a.clone(),
         chan_id_on_a.clone(),
         PortId::transfer(),
-        client_id_on_b.clone(),
         chan_id_on_b.clone(),
         PortId::transfer(),
         signer.clone(),
     );
 
     let (chan_id_on_b, chan_id_on_a) = relayer.create_channel_on_b(
-        client_id_on_b.clone(),
         conn_id_on_b,
         PortId::transfer(),
-        client_id_on_a.clone(),
         conn_id_on_a,
         PortId::transfer(),
         signer.clone(),
