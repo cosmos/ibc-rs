@@ -2,6 +2,12 @@ use alloc::string::String;
 use core::marker::PhantomData;
 use core::time::Duration;
 
+use ibc::core::channel::types::channel::Order;
+use ibc::core::channel::types::msgs::{
+    ChannelMsg, MsgChannelCloseConfirm, MsgChannelCloseInit, MsgChannelOpenAck,
+    MsgChannelOpenConfirm, MsgChannelOpenInit, MsgChannelOpenTry,
+};
+use ibc::core::channel::types::Version as ChannelVersion;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient, MsgUpdateClient};
@@ -9,12 +15,14 @@ use ibc::core::connection::types::msgs::{
     ConnectionMsg, MsgConnectionOpenAck, MsgConnectionOpenConfirm, MsgConnectionOpenInit,
     MsgConnectionOpenTry,
 };
-use ibc::core::connection::types::version::Version;
+use ibc::core::connection::types::version::Version as ConnectionVersion;
 use ibc::core::connection::types::Counterparty as ConnectionCounterParty;
 use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
-use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath};
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::host::types::path::{
+    ChannelEndPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
+};
 use ibc::core::host::ValidationContext;
 use ibc::primitives::Signer;
 use ibc_query::core::context::ProvableContext;
@@ -244,7 +252,7 @@ where
             client_id_on_b: client_id_on_b.clone(),
             client_state_of_b_on_a: client_state_of_b_on_a.into(),
             counterparty: counterparty_a,
-            versions_on_a: Version::compatibles(),
+            versions_on_a: ConnectionVersion::compatibles(),
             proof_conn_end_on_a,
             proof_client_state_of_b_on_a,
             proof_consensus_state_of_b_on_a,
@@ -330,7 +338,7 @@ where
             proof_consensus_state_of_a_on_b,
             proofs_height_on_b,
             consensus_height_of_a_on_b,
-            version: Version::compatibles()[0].clone(),
+            version: ConnectionVersion::compatibles()[0].clone(),
             signer: signer.clone(),
             proof_consensus_state_of_a: None,
         }));
@@ -459,5 +467,305 @@ where
         );
 
         (conn_id_on_a, conn_id_on_b)
+    }
+
+    pub fn channel_open_init_on_a(
+        ctx_a: &mut MockContext<A>,
+        router_a: &mut MockRouter,
+        conn_id_on_a: ConnectionId,
+        port_id_on_a: PortId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) -> ChannelId {
+        let msg_for_a = MsgEnvelope::Channel(ChannelMsg::OpenInit(MsgChannelOpenInit {
+            port_id_on_a,
+            connection_hops_on_a: [conn_id_on_a].to_vec(),
+            port_id_on_b,
+            ordering: Order::Unordered,
+            signer,
+            version_proposal: ChannelVersion::empty(),
+        }));
+
+        ctx_a.deliver(router_a, msg_for_a).expect("success");
+
+        let Some(IbcEvent::OpenInitChannel(open_init_channel_event)) =
+            ctx_a.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+
+        open_init_channel_event.chan_id_on_a().clone()
+    }
+
+    pub fn channel_open_try_on_b(
+        ctx_b: &mut MockContext<B>,
+        router_b: &mut MockRouter,
+        ctx_a: &MockContext<A>,
+        conn_id_on_b: ConnectionId,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+        signer: Signer,
+    ) -> ChannelId {
+        let proof_height_on_a = ctx_a.latest_height();
+
+        let proof_chan_end_on_a = ctx_a
+            .ibc_store()
+            .get_proof(
+                proof_height_on_a,
+                &ChannelEndPath::new(&port_id_on_a, &chan_id_on_a).into(),
+            )
+            .expect("connection end exists")
+            .try_into()
+            .expect("value merkle proof");
+
+        #[allow(deprecated)]
+        let msg_for_b = MsgEnvelope::Channel(ChannelMsg::OpenTry(MsgChannelOpenTry {
+            port_id_on_b: PortId::transfer(),
+            connection_hops_on_b: [conn_id_on_b].to_vec(),
+            port_id_on_a: PortId::transfer(),
+            chan_id_on_a,
+            version_supported_on_a: ChannelVersion::empty(),
+            proof_chan_end_on_a,
+            proof_height_on_a,
+            ordering: Order::Unordered,
+            signer,
+
+            version_proposal: ChannelVersion::empty(),
+        }));
+
+        ctx_b.deliver(router_b, msg_for_b).expect("success");
+
+        let Some(IbcEvent::OpenTryChannel(open_try_channel_event)) =
+            ctx_b.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+
+        open_try_channel_event.chan_id_on_b().clone()
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn channel_open_ack_on_a(
+        ctx_a: &mut MockContext<A>,
+        router_a: &mut MockRouter,
+        ctx_b: &MockContext<B>,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) {
+        let proof_height_on_b = ctx_b.latest_height();
+
+        let proof_chan_end_on_b = ctx_b
+            .ibc_store()
+            .get_proof(
+                proof_height_on_b,
+                &ChannelEndPath::new(&port_id_on_b, &chan_id_on_b).into(),
+            )
+            .expect("connection end exists")
+            .try_into()
+            .expect("value merkle proof");
+
+        let msg_for_a = MsgEnvelope::Channel(ChannelMsg::OpenAck(MsgChannelOpenAck {
+            port_id_on_a,
+            chan_id_on_a,
+            chan_id_on_b,
+            version_on_b: ChannelVersion::empty(),
+            proof_chan_end_on_b,
+            proof_height_on_b,
+            signer,
+        }));
+
+        ctx_a.deliver(router_a, msg_for_a).expect("success");
+
+        let Some(IbcEvent::OpenAckChannel(_)) = ctx_a.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+    }
+
+    pub fn channel_open_confirm_on_b(
+        ctx_b: &mut MockContext<B>,
+        router_b: &mut MockRouter,
+        ctx_a: &MockContext<A>,
+        chan_id_on_a: ChannelId,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) {
+        let proof_height_on_a = ctx_a.latest_height();
+
+        let proof_chan_end_on_a = ctx_a
+            .ibc_store()
+            .get_proof(
+                proof_height_on_a,
+                &ChannelEndPath::new(&PortId::transfer(), &chan_id_on_a).into(),
+            )
+            .expect("connection end exists")
+            .try_into()
+            .expect("value merkle proof");
+
+        let msg_for_b = MsgEnvelope::Channel(ChannelMsg::OpenConfirm(MsgChannelOpenConfirm {
+            port_id_on_b,
+            chan_id_on_b,
+            proof_chan_end_on_a,
+            proof_height_on_a,
+            signer,
+        }));
+
+        ctx_b.deliver(router_b, msg_for_b).expect("success");
+
+        let Some(IbcEvent::OpenConfirmChannel(_)) = ctx_b.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+    }
+
+    pub fn channel_close_init_on_a(
+        ctx_a: &mut MockContext<A>,
+        router_a: &mut MockRouter,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+        signer: Signer,
+    ) {
+        let msg_for_a = MsgEnvelope::Channel(ChannelMsg::CloseInit(MsgChannelCloseInit {
+            port_id_on_a,
+            chan_id_on_a,
+            signer,
+        }));
+
+        ctx_a.deliver(router_a, msg_for_a).expect("success");
+
+        let Some(IbcEvent::CloseInitChannel(_)) = ctx_a.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+    }
+
+    pub fn channel_close_confirm_on_b(
+        ctx_b: &mut MockContext<B>,
+        router_b: &mut MockRouter,
+        ctx_a: &MockContext<A>,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) {
+        let proof_height_on_a = ctx_a.latest_height();
+
+        let proof_chan_end_on_a = ctx_a
+            .ibc_store()
+            .get_proof(
+                proof_height_on_a,
+                &ChannelEndPath::new(&PortId::transfer(), &chan_id_on_b).into(),
+            )
+            .expect("connection end exists")
+            .try_into()
+            .expect("value merkle proof");
+
+        let msg_for_b = MsgEnvelope::Channel(ChannelMsg::CloseConfirm(MsgChannelCloseConfirm {
+            port_id_on_b,
+            chan_id_on_b,
+            proof_chan_end_on_a,
+            proof_height_on_a,
+            signer,
+        }));
+
+        ctx_b.deliver(router_b, msg_for_b).expect("success");
+
+        let Some(IbcEvent::CloseConfirmChannel(_)) =
+            ctx_b.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_channel_on_a(
+        ctx_a: &mut MockContext<A>,
+        router_a: &mut MockRouter,
+        ctx_b: &mut MockContext<B>,
+        router_b: &mut MockRouter,
+        client_id_on_a: ClientId,
+        conn_id_on_a: ConnectionId,
+        port_id_on_a: PortId,
+        client_id_on_b: ClientId,
+        conn_id_on_b: ConnectionId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) -> (ChannelId, ChannelId) {
+        let chan_id_on_a = TypedRelayer::<A, B>::channel_open_init_on_a(
+            ctx_a,
+            router_a,
+            conn_id_on_a.clone(),
+            port_id_on_a.clone(),
+            port_id_on_b.clone(),
+            signer.clone(),
+        );
+
+        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+            ctx_b,
+            router_b,
+            ctx_a,
+            client_id_on_b.clone(),
+            signer.clone(),
+        );
+
+        let chan_id_on_b = TypedRelayer::<A, B>::channel_open_try_on_b(
+            ctx_b,
+            router_b,
+            ctx_a,
+            conn_id_on_b.clone(),
+            chan_id_on_a.clone(),
+            port_id_on_a.clone(),
+            signer.clone(),
+        );
+
+        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+            ctx_a,
+            router_a,
+            ctx_b,
+            client_id_on_a.clone(),
+            signer.clone(),
+        );
+
+        TypedRelayer::<A, B>::channel_open_ack_on_a(
+            ctx_a,
+            router_a,
+            ctx_b,
+            chan_id_on_a.clone(),
+            port_id_on_a.clone(),
+            chan_id_on_b.clone(),
+            port_id_on_b.clone(),
+            signer.clone(),
+        );
+
+        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+            ctx_b,
+            router_b,
+            ctx_a,
+            client_id_on_b.clone(),
+            signer.clone(),
+        );
+
+        TypedRelayer::<A, B>::channel_open_confirm_on_b(
+            ctx_b,
+            router_b,
+            ctx_a,
+            chan_id_on_a.clone(),
+            chan_id_on_b.clone(),
+            port_id_on_b,
+            signer.clone(),
+        );
+
+        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+            ctx_a,
+            router_a,
+            ctx_b,
+            client_id_on_a,
+            signer,
+        );
+
+        (chan_id_on_a, chan_id_on_b)
     }
 }
