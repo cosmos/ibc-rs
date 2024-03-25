@@ -1,5 +1,5 @@
 use ibc::core::client::context::client_state::ClientStateValidation;
-use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::primitives::Signer;
 
 use self::utils::TypedRelayer;
@@ -129,6 +129,58 @@ where
             &mut self.router_a,
             client_id_on_b,
             client_id_on_a,
+            signer,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_channel_on_a(
+        &mut self,
+        client_id_on_a: ClientId,
+        conn_id_on_a: ConnectionId,
+        port_id_on_a: PortId,
+        client_id_on_b: ClientId,
+        conn_id_on_b: ConnectionId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) -> (ChannelId, ChannelId) {
+        TypedRelayer::<A, B>::create_channel_on_a(
+            &mut self.ctx_a,
+            &mut self.router_a,
+            &mut self.ctx_b,
+            &mut self.router_b,
+            client_id_on_a,
+            conn_id_on_a,
+            port_id_on_a,
+            client_id_on_b,
+            conn_id_on_b,
+            port_id_on_b,
+            signer,
+        )
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn create_channel_on_b(
+        &mut self,
+        client_id_on_b: ClientId,
+        conn_id_on_b: ConnectionId,
+        port_id_on_b: PortId,
+        client_id_on_a: ClientId,
+        conn_id_on_a: ConnectionId,
+        port_id_on_a: PortId,
+        signer: Signer,
+    ) -> (ChannelId, ChannelId) {
+        TypedRelayer::<B, A>::create_channel_on_a(
+            &mut self.ctx_b,
+            &mut self.router_b,
+            &mut self.ctx_a,
+            &mut self.router_a,
+            client_id_on_b,
+            conn_id_on_b,
+            port_id_on_b,
+            client_id_on_a,
+            conn_id_on_a,
+            port_id_on_a,
             signer,
         )
     }
