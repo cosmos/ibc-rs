@@ -198,8 +198,12 @@ where
 
     let signer = dummy_account_id();
 
-    let mut relayer =
-        RelayerContext::new(ctx_a, MockRouter::default(), ctx_b, MockRouter::default());
+    let mut relayer = RelayerContext::new(
+        ctx_a,
+        MockRouter::new_with_transfer(),
+        ctx_b,
+        MockRouter::new_with_transfer(),
+    );
 
     // client creation
     let client_id_on_a = relayer.create_client_on_a(signer.clone());
@@ -216,15 +220,40 @@ where
     assert_eq!(conn_id_on_b, ConnectionId::new(0));
 
     // connection from B to A
-    let (conn_id_on_b, conn_id_on_a) =
-        relayer.create_connection_on_b(client_id_on_b, client_id_on_a, signer);
+    let (conn_id_on_b, conn_id_on_a) = relayer.create_connection_on_b(
+        client_id_on_b.clone(),
+        client_id_on_a.clone(),
+        signer.clone(),
+    );
 
     assert_eq!(conn_id_on_a, ConnectionId::new(1));
     assert_eq!(conn_id_on_b, ConnectionId::new(1));
 
-    // channel/packet integration; test timeouts
-    // TODO(rano): test channel and packet messages require a module
-    // create integration with ics-20 module
+    let (chan_end_on_a, chan_end_on_b) = relayer.create_channel_on_a(
+        client_id_on_a.clone(),
+        conn_id_on_a.clone(),
+        PortId::transfer(),
+        client_id_on_b.clone(),
+        conn_id_on_b.clone(),
+        PortId::transfer(),
+        signer.clone(),
+    );
+
+    assert_eq!(chan_end_on_a, ChannelId::new(0));
+    assert_eq!(chan_end_on_b, ChannelId::new(0));
+
+    let (chan_end_on_b, chan_end_on_a) = relayer.create_channel_on_b(
+        client_id_on_b,
+        conn_id_on_b,
+        PortId::transfer(),
+        client_id_on_a,
+        conn_id_on_a,
+        PortId::transfer(),
+        signer,
+    );
+
+    assert_eq!(chan_end_on_a, ChannelId::new(1));
+    assert_eq!(chan_end_on_b, ChannelId::new(1));
 }
 
 #[cfg(test)]
