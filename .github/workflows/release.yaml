@@ -48,6 +48,8 @@ jobs:
       - name: Publish crates
         run: yes | make release
         env:
+          # https://doc.rust-lang.org/cargo/commands/cargo-publish.html#options
+          # argument for `--token` is specified with this environment variable
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
 
   gh-release:
