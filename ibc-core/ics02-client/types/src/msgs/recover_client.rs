@@ -13,7 +13,11 @@ pub const RECOVER_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgRecoverClient"
 /// Defines the message used to recover a frozen or expired client.
 ///
 /// Note that a frozen or expired client can only be recovered by passing
-/// a governance proposal.
+/// a governance proposal. For this reason, ibc-rs does not export dispatching
+/// a `MsgRecoverClient` via the `dispatch` function. In other words, the
+/// client recovery functionality is not part of ibc-rs's public API. The
+/// intended usage of this message type is to be integrated with hosts'
+/// governance modules, not to be called directly via `dispatch`.
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

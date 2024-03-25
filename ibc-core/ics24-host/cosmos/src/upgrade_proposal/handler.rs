@@ -7,12 +7,12 @@ use tendermint::abci::Event as TmEvent;
 use super::UpgradedClientStateRef;
 use crate::upgrade_proposal::{UpgradeClientProposal, UpgradeExecutionContext, UpgradeProposal};
 
-/// Handles an upgrade client proposal
+/// Executes an upgrade client proposal.
 ///
 /// It clears both IBC client and consensus states if a previous plan was set.
 /// Then it will schedule an upgrade and finally set the upgraded client state
 /// in upgrade store.
-pub fn upgrade_client_proposal_handler<Ctx>(
+pub fn execute_upgrade_client_proposal<Ctx>(
     ctx: &mut Ctx,
     proposal: UpgradeProposal,
 ) -> Result<TmEvent, UpgradeClientError>
