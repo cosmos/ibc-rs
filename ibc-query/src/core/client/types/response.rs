@@ -165,9 +165,9 @@ impl From<IdentifiedClientState> for RawIdentifiedClientState {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConsensusStateResponse {
-    consensus_state: Any,
-    proof: Proof,
-    proof_height: Height,
+    pub consensus_state: Any,
+    pub proof: Proof,
+    pub proof_height: Height,
 }
 
 impl QueryConsensusStateResponse {
@@ -213,8 +213,8 @@ impl From<QueryConsensusStateResponse> for RawQueryConsensusStateResponse {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct ConsensusStateWithHeight {
-    height: Height,
-    consensus_state: Any,
+    pub height: Height,
+    pub consensus_state: Any,
 }
 
 impl ConsensusStateWithHeight {
@@ -257,8 +257,8 @@ impl From<ConsensusStateWithHeight> for RawConsensusStateWithHeight {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConsensusStatesResponse {
-    consensus_states: Vec<ConsensusStateWithHeight>,
-    pagination: Option<PageResponse>,
+    pub consensus_states: Vec<ConsensusStateWithHeight>,
+    pub pagination: Option<PageResponse>,
 }
 
 impl QueryConsensusStatesResponse {
@@ -308,8 +308,8 @@ impl From<QueryConsensusStatesResponse> for RawQueryConsensusStatesResponse {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryConsensusStateHeightsResponse {
-    consensus_state_heights: Vec<Height>,
-    pagination: Option<PageResponse>,
+    pub consensus_state_heights: Vec<Height>,
+    pub pagination: Option<PageResponse>,
 }
 
 impl QueryConsensusStateHeightsResponse {
@@ -356,7 +356,7 @@ impl From<QueryConsensusStateHeightsResponse> for RawQueryConsensusStateHeightsR
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientStatusResponse {
-    status: Status,
+    pub status: Status,
 }
 
 impl QueryClientStatusResponse {
@@ -390,7 +390,7 @@ impl From<QueryClientStatusResponse> for RawQueryClientStatusResponse {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientParamsResponse {
-    allowed_clients: Vec<ClientId>,
+    pub allowed_clients: Vec<ClientId>,
 }
 
 impl QueryClientParamsResponse {
@@ -436,7 +436,7 @@ impl From<QueryClientParamsResponse> for RawQueryClientParamsResponse {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedClientStateResponse {
-    upgraded_client_state: Any,
+    pub upgraded_client_state: Any,
 }
 
 impl QueryUpgradedClientStateResponse {
@@ -474,7 +474,7 @@ impl From<QueryUpgradedClientStateResponse> for RawQueryUpgradedClientStateRespo
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedConsensusStateResponse {
-    upgraded_consensus_state: Any,
+    pub upgraded_consensus_state: Any,
 }
 
 impl QueryUpgradedConsensusStateResponse {
