@@ -9,19 +9,37 @@ repository   = { workspace = true }
 readme       = "README.md"
 keywords     = ["blockchain", "cosmos", "ibc", "rpc", "grpc"]
 description  = """
-    Maintained by `ibc-rs`, contains essential IBC query methods and
-    gRPC query service implementations for the IBC core.
+    Maintained by `ibc-rs`, contains essential IBC query types, utility functions and
+    gRPC service implementations for the IBC core.
 """
 
 [dependencies]
 # external dependencies
 displaydoc = { version = "0.2", default-features = false }
-tonic = "0.10"
+schemars   = { workspace = true , optional = true }
+serde      = { workspace = true, optional = true }
+tonic      = "0.10"
 
 # ibc dependencies
-ibc = { workspace = true }
+ibc       = { workspace = true }
 ibc-proto = { workspace = true, features = ["server"] }
 
 [features]
 default = ["std"]
-std = ["ibc-proto/std", "ibc/std"]
+std = [
+    "ibc/std",
+    "ibc-proto/std",
+]
+serde = [
+    "dep:serde",
+    "ibc/serde",
+    "ibc-proto/serde",
+]
+schema = [
+    "dep:schemars",
+    "ibc/schema",
+    "ibc-proto/json-schema",
+    "serde",
+    "std",
+]
+
