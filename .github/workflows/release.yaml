@@ -36,7 +36,6 @@ jobs:
 
   publish:
     if: github.ref_type == 'tag'
-    needs: publish-check
     name: Publish to crates.io
     runs-on: ubuntu-latest
     steps:
@@ -56,7 +55,6 @@ jobs:
   gh-release:
     if: github.ref_type == 'tag'
     needs:
-      - publish-check
       - publish
     name: Create GitHub release
     runs-on: ubuntu-latest
