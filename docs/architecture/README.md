@@ -34,5 +34,5 @@ To suggest an ADR, please make use of the [ADR template](./adr-template.md) prov
 | [005](./adr-005-handlers-redesign.md)                   | Handlers validation and execution separation | Accepted |
 | [006](./adr-006-upgrade-client-implementation.md)       | Chain and client upgradability               | Accepted |
 | [007](./adr-007-light-client-contexts.md)               | Light client contexts                        | Accepted |
-| [008](./adr-008-restructure-ibc-crate.md)               | Restructure `ibc` crate                      | Proposed |
-| [010](./adr-010-enable-standalone-ics02-integration.md) | Enable standalone `ics-02` integration       | Proposed |
+| [008](./adr-008-restructure-ibc-crate.md)               | Restructure `ibc` crate                      | Accepted |
+| [010](./adr-010-enable-standalone-ics02-integration.md) | Enable standalone `ics-02` integration       | Accepted |
