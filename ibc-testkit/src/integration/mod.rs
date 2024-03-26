@@ -1,13 +1,23 @@
+use core::str::FromStr;
+
+use ibc::apps::transfer::handler::send_transfer;
+use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
+use ibc::apps::transfer::types::packet::PacketData;
+use ibc::apps::transfer::types::PrefixedCoin;
+use ibc::core::channel::types::packet::Packet;
+use ibc::core::channel::types::timeout::TimeoutHeight;
 use ibc::core::client::context::client_state::ClientStateValidation;
+use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::types::path::ChannelEndPath;
 use ibc::core::host::ValidationContext;
-use ibc::primitives::Signer;
+use ibc::primitives::{Signer, Timestamp};
 
 use self::utils::TypedRelayer;
 use crate::context::MockContext;
 use crate::fixtures::core::signer::dummy_account_id;
 use crate::hosts::{HostClientState, TestHost};
+use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
@@ -327,6 +337,57 @@ where
             signer,
         )
     }
+
+    pub fn send_packet_on_a(&mut self, packet: Packet, signer: Signer) {
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_a,
+                &packet.chan_id_on_a,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_b,
+                &packet.chan_id_on_b,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedRelayer::<A, B>::send_packet_on_a(
+            &mut self.ctx_a,
+            &mut self.router_a,
+            &mut self.ctx_b,
+            &mut self.router_b,
+            packet,
+            client_id_on_a,
+            client_id_on_b,
+            signer,
+        )
+    }
 }
 
 pub fn ibc_integration_test<A, B>()
@@ -402,7 +463,58 @@ where
     assert_eq!(chan_id_on_a, ChannelId::new(1));
     assert_eq!(chan_id_on_b, ChannelId::new(1));
 
-    // TODO(rano): add steps for packets
+    // module packets
+
+    let packet_data = PacketData {
+        token: PrefixedCoin::from_str("1000uibc").expect("valid prefixed coin"),
+        sender: signer.clone(),
+        receiver: signer.clone(),
+        memo: "sample memo".into(),
+    };
+
+    let msg = MsgTransfer {
+        port_id_on_a: PortId::transfer(),
+        chan_id_on_a: chan_id_on_a.clone(),
+        packet_data,
+        timeout_height_on_b: TimeoutHeight::Never,
+        timeout_timestamp_on_b: Timestamp::none(),
+    };
+
+    send_transfer(
+        relayer.get_ctx_a_mut().ibc_store_mut(),
+        &mut DummyTransferModule,
+        msg,
+    )
+    .expect("successfully created send_packet");
+
+    // send_packet wasn't committed, hence produce a block
+    relayer.get_ctx_a_mut().advance_block();
+
+    let Some(IbcEvent::SendPacket(send_packet_event)) = relayer
+        .get_ctx_a()
+        .ibc_store()
+        .events
+        .lock()
+        .iter()
+        .rev()
+        .nth(2)
+        .cloned()
+    else {
+        panic!("unexpected event")
+    };
+
+    let packet = Packet {
+        port_id_on_a: send_packet_event.port_id_on_a().clone(),
+        chan_id_on_a: send_packet_event.chan_id_on_a().clone(),
+        seq_on_a: *send_packet_event.seq_on_a(),
+        data: send_packet_event.packet_data().to_vec(),
+        timeout_height_on_b: *send_packet_event.timeout_height_on_b(),
+        timeout_timestamp_on_b: *send_packet_event.timeout_timestamp_on_b(),
+        port_id_on_b: send_packet_event.port_id_on_b().clone(),
+        chan_id_on_b: send_packet_event.chan_id_on_b().clone(),
+    };
+
+    relayer.send_packet_on_a(packet, signer);
 }
 
 #[cfg(test)]
