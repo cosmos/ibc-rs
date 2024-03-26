@@ -59,7 +59,7 @@ you to update everyone else on what you're working on and find opportunities to
 collaborate.
 
 Please join the [Google group](https://groups.google.com/g/ibc-community) to
-receive a calendar invitation to the biweekly Tuesday meetings.
+receive a calendar invitation to the monthly meetings.
 
 ## Versioning
 
