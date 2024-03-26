@@ -25,7 +25,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath,
-    ConnectionPath, ReceiptPath, SeqRecvPath,
+    ConnectionPath, ReceiptPath,
 };
 use ibc::core::host::ValidationContext;
 use ibc::primitives::Signer;
@@ -870,18 +870,13 @@ where
     ) {
         let proof_height_on_b = ctx_b.latest_height();
 
-        // let sequence = ctx_b
-        //     .ibc_store()
-        //     .get_next_sequence_ack(&SeqAckPath::new(&port_id_on_b, &chan_id_on_b))
-        //     .expect("sequence exists");
-
         let proof_acked_on_b = ctx_b
             .ibc_store()
             .get_proof(
                 proof_height_on_b,
                 &AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a).into(),
             )
-            .expect("connection end exists")
+            .expect("acknowledgement proof exists")
             .try_into()
             .expect("value merkle proof");
 
@@ -910,11 +905,6 @@ where
     ) {
         let proof_height_on_b = ctx_b.latest_height();
 
-        // let next_seq_recv_on_b = ctx_b
-        //     .ibc_store()
-        //     .get_next_sequence_recv(&SeqRecvPath::new(&port_id_on_b, &chan_id_on_b))
-        //     .expect("sequence exists");
-
         let proof_unreceived_on_b = ctx_b
             .ibc_store()
             .get_proof(
@@ -922,7 +912,7 @@ where
                 &ReceiptPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a)
                     .into(),
             )
-            .expect("connection end exists")
+            .expect("non-membership receipt proof exists")
             .try_into()
             .expect("value merkle proof");
 
@@ -953,18 +943,13 @@ where
     ) {
         let proof_height_on_b = ctx_b.latest_height();
 
-        let next_seq_recv_on_b = ctx_b
-            .ibc_store()
-            .get_next_sequence_recv(&SeqRecvPath::new(&port_id_on_b, &chan_id_on_b))
-            .expect("sequence exists");
-
         let proof_unreceived_on_b = ctx_b
             .ibc_store()
             .get_proof(
                 proof_height_on_b,
-                &ReceiptPath::new(&port_id_on_b, &chan_id_on_b, next_seq_recv_on_b).into(),
+                &ReceiptPath::new(&port_id_on_b, &chan_id_on_b, packet.seq_on_a).into(),
             )
-            .expect("connection end exists")
+            .expect("non-membership receipt proof")
             .try_into()
             .expect("value merkle proof");
 
@@ -974,13 +959,13 @@ where
                 proof_height_on_b,
                 &ChannelEndPath::new(&port_id_on_b, &chan_id_on_b).into(),
             )
-            .expect("connection end exists")
+            .expect("channel end data exists")
             .try_into()
             .expect("value merkle proof");
 
         let msg_for_a = MsgEnvelope::Packet(PacketMsg::TimeoutOnClose(MsgTimeoutOnClose {
+            next_seq_recv_on_b: packet.seq_on_a,
             packet,
-            next_seq_recv_on_b,
             proof_unreceived_on_b,
             proof_close_on_b,
             proof_height_on_b,
