@@ -54,8 +54,7 @@ jobs:
 
   gh-release:
     if: github.ref_type == 'tag'
-    needs:
-      - publish
+    needs: publish
     name: Create GitHub release
     runs-on: ubuntu-latest
     permissions:
