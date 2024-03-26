@@ -52,13 +52,14 @@ community contributions!
 
 ## Community calls
 
-We run monthly community calls to update the community with current our
-direction and gather feedback on what to work on next. The community calls are
-also a platform for you to update everyone else with what you're working on, and
-find opportunities to collaborate.
+The IBC-rs community calls are now part of the IBC Core community calls. During
+these calls, we update the community on our current direction and gather
+feedback on what to work on next. The community calls are also a platform for
+you to update everyone else on what you're working on and find opportunities to
+collaborate.
 
-Please join the [Google group](https://groups.google.com/g/ibc-rs-community) to
-receive a calendar invitation for the monthly meeting.
+Please join the [Google group](https://groups.google.com/g/ibc-community) to
+receive a calendar invitation to the biweekly Tuesday meetings.
 
 ## Versioning
 
