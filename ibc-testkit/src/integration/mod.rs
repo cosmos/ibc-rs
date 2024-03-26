@@ -433,6 +433,7 @@ where
     assert_eq!(conn_id_on_a, ConnectionId::new(1));
     assert_eq!(conn_id_on_b, ConnectionId::new(1));
 
+    // channel from A to B
     let (chan_id_on_a, chan_id_on_b) = relayer.create_channel_on_a(
         conn_id_on_a.clone(),
         PortId::transfer(),
@@ -444,6 +445,7 @@ where
     assert_eq!(chan_id_on_a, ChannelId::new(0));
     assert_eq!(chan_id_on_b, ChannelId::new(0));
 
+    // close the channel from A to B
     relayer.close_channel_on_a(
         chan_id_on_a.clone(),
         PortId::transfer(),
@@ -452,6 +454,7 @@ where
         signer.clone(),
     );
 
+    // channel from B to A
     let (chan_id_on_b, chan_id_on_a) = relayer.create_channel_on_b(
         conn_id_on_b,
         PortId::transfer(),
@@ -463,8 +466,9 @@ where
     assert_eq!(chan_id_on_a, ChannelId::new(1));
     assert_eq!(chan_id_on_b, ChannelId::new(1));
 
-    // module packets
+    // send packet from A to B
 
+    // generate packet for DummyTransferModule
     let packet_data = PacketData {
         token: PrefixedCoin::from_str("1000uibc").expect("valid prefixed coin"),
         sender: signer.clone(),
@@ -472,6 +476,7 @@ where
         memo: "sample memo".into(),
     };
 
+    // packet with ibc metadata
     let msg = MsgTransfer {
         port_id_on_a: PortId::transfer(),
         chan_id_on_a: chan_id_on_a.clone(),
@@ -480,6 +485,7 @@ where
         timeout_timestamp_on_b: Timestamp::none(),
     };
 
+    // module creates the send_packet
     send_transfer(
         relayer.get_ctx_a_mut().ibc_store_mut(),
         &mut DummyTransferModule,
@@ -490,6 +496,7 @@ where
     // send_packet wasn't committed, hence produce a block
     relayer.get_ctx_a_mut().advance_block();
 
+    // retrieve the send_packet event
     let Some(IbcEvent::SendPacket(send_packet_event)) = relayer
         .get_ctx_a()
         .ibc_store()
@@ -503,6 +510,7 @@ where
         panic!("unexpected event")
     };
 
+    // create the IBC packet type
     let packet = Packet {
         port_id_on_a: send_packet_event.port_id_on_a().clone(),
         chan_id_on_a: send_packet_event.chan_id_on_a().clone(),
@@ -514,6 +522,7 @@ where
         chan_id_on_b: send_packet_event.chan_id_on_b().clone(),
     };
 
+    // continue packet relay starting from recv_packet at B
     relayer.send_packet_on_a(packet, signer);
 }
 
