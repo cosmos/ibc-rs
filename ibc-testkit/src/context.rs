@@ -76,6 +76,10 @@ where
         &self.ibc_store
     }
 
+    pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S> {
+        &mut self.ibc_store
+    }
+
     pub fn host_block(&self, target_height: &Height) -> Option<H::Block> {
         self.host.get_block(target_height)
     }
