@@ -2,11 +2,14 @@ use alloc::string::String;
 use core::marker::PhantomData;
 use core::time::Duration;
 
+use ibc::core::channel::types::acknowledgement::Acknowledgement;
 use ibc::core::channel::types::channel::Order;
 use ibc::core::channel::types::msgs::{
-    ChannelMsg, MsgChannelCloseConfirm, MsgChannelCloseInit, MsgChannelOpenAck,
-    MsgChannelOpenConfirm, MsgChannelOpenInit, MsgChannelOpenTry,
+    ChannelMsg, MsgAcknowledgement, MsgChannelCloseConfirm, MsgChannelCloseInit, MsgChannelOpenAck,
+    MsgChannelOpenConfirm, MsgChannelOpenInit, MsgChannelOpenTry, MsgRecvPacket, MsgTimeout,
+    MsgTimeoutOnClose, PacketMsg,
 };
+use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::Version as ChannelVersion;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
@@ -21,7 +24,8 @@ use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath,
+    ConnectionPath, ReceiptPath, SeqRecvPath,
 };
 use ibc::core::host::ValidationContext;
 use ibc::primitives::Signer;
@@ -814,6 +818,235 @@ where
             ctx_b,
             client_id_on_a,
             signer,
+        );
+    }
+
+    pub fn packet_recv_on_b(
+        ctx_b: &mut MockContext<B>,
+        router_b: &mut MockRouter,
+        ctx_a: &MockContext<A>,
+        packet: Packet,
+        signer: Signer,
+    ) -> Acknowledgement {
+        let proof_height_on_a = ctx_a.latest_height();
+
+        let proof_commitment_on_a = ctx_a
+            .ibc_store()
+            .get_proof(
+                proof_height_on_a,
+                &CommitmentPath::new(&packet.port_id_on_a, &packet.chan_id_on_a, packet.seq_on_a)
+                    .into(),
+            )
+            .expect("commitment proof exists")
+            .try_into()
+            .expect("value merkle proof");
+
+        let msg_for_b = MsgEnvelope::Packet(PacketMsg::Recv(MsgRecvPacket {
+            packet,
+            proof_commitment_on_a,
+            proof_height_on_a,
+            signer,
+        }));
+
+        ctx_b.deliver(router_b, msg_for_b).expect("success");
+
+        let Some(IbcEvent::WriteAcknowledgement(write_ack_event)) =
+            ctx_b.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+
+        write_ack_event.acknowledgement().clone()
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn packet_ack_on_a(
+        ctx_a: &mut MockContext<A>,
+        router_a: &mut MockRouter,
+        ctx_b: &MockContext<B>,
+        packet: Packet,
+        acknowledgement: Acknowledgement,
+        signer: Signer,
+    ) {
+        let proof_height_on_b = ctx_b.latest_height();
+
+        // let sequence = ctx_b
+        //     .ibc_store()
+        //     .get_next_sequence_ack(&SeqAckPath::new(&port_id_on_b, &chan_id_on_b))
+        //     .expect("sequence exists");
+
+        let proof_acked_on_b = ctx_b
+            .ibc_store()
+            .get_proof(
+                proof_height_on_b,
+                &AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a).into(),
+            )
+            .expect("connection end exists")
+            .try_into()
+            .expect("value merkle proof");
+
+        let msg_for_a = MsgEnvelope::Packet(PacketMsg::Ack(MsgAcknowledgement {
+            packet,
+            acknowledgement,
+            proof_acked_on_b,
+            proof_height_on_b,
+            signer,
+        }));
+
+        ctx_a.deliver(router_a, msg_for_a).expect("success");
+
+        let Some(IbcEvent::AcknowledgePacket(_)) = ctx_a.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+    }
+
+    pub fn packet_timeout_on_a(
+        ctx_a: &mut MockContext<A>,
+        router_a: &mut MockRouter,
+        ctx_b: &MockContext<B>,
+        packet: Packet,
+        signer: Signer,
+    ) {
+        let proof_height_on_b = ctx_b.latest_height();
+
+        // let next_seq_recv_on_b = ctx_b
+        //     .ibc_store()
+        //     .get_next_sequence_recv(&SeqRecvPath::new(&port_id_on_b, &chan_id_on_b))
+        //     .expect("sequence exists");
+
+        let proof_unreceived_on_b = ctx_b
+            .ibc_store()
+            .get_proof(
+                proof_height_on_b,
+                &ReceiptPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a)
+                    .into(),
+            )
+            .expect("connection end exists")
+            .try_into()
+            .expect("value merkle proof");
+
+        let msg_for_a = MsgEnvelope::Packet(PacketMsg::Timeout(MsgTimeout {
+            next_seq_recv_on_b: packet.seq_on_a,
+            packet,
+            proof_unreceived_on_b,
+            proof_height_on_b,
+            signer,
+        }));
+
+        ctx_a.deliver(router_a, msg_for_a).expect("success");
+
+        let Some(IbcEvent::TimeoutPacket(_)) = ctx_a.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+    }
+
+    pub fn packet_timeout_on_close_on_a(
+        ctx_a: &mut MockContext<A>,
+        router_a: &mut MockRouter,
+        ctx_b: &MockContext<B>,
+        packet: Packet,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) {
+        let proof_height_on_b = ctx_b.latest_height();
+
+        let next_seq_recv_on_b = ctx_b
+            .ibc_store()
+            .get_next_sequence_recv(&SeqRecvPath::new(&port_id_on_b, &chan_id_on_b))
+            .expect("sequence exists");
+
+        let proof_unreceived_on_b = ctx_b
+            .ibc_store()
+            .get_proof(
+                proof_height_on_b,
+                &ReceiptPath::new(&port_id_on_b, &chan_id_on_b, next_seq_recv_on_b).into(),
+            )
+            .expect("connection end exists")
+            .try_into()
+            .expect("value merkle proof");
+
+        let proof_close_on_b = ctx_b
+            .ibc_store()
+            .get_proof(
+                proof_height_on_b,
+                &ChannelEndPath::new(&port_id_on_b, &chan_id_on_b).into(),
+            )
+            .expect("connection end exists")
+            .try_into()
+            .expect("value merkle proof");
+
+        let msg_for_a = MsgEnvelope::Packet(PacketMsg::TimeoutOnClose(MsgTimeoutOnClose {
+            packet,
+            next_seq_recv_on_b,
+            proof_unreceived_on_b,
+            proof_close_on_b,
+            proof_height_on_b,
+            signer,
+        }));
+
+        ctx_a.deliver(router_a, msg_for_a).expect("success");
+
+        let Some(IbcEvent::ChannelClosed(_)) = ctx_a.ibc_store().events.lock().last().cloned()
+        else {
+            panic!("unexpected event")
+        };
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    pub fn send_packet_on_a(
+        ctx_a: &mut MockContext<A>,
+        router_a: &mut MockRouter,
+        ctx_b: &mut MockContext<B>,
+        router_b: &mut MockRouter,
+        packet: Packet,
+        client_id_on_a: ClientId,
+        client_id_on_b: ClientId,
+        signer: Signer,
+    ) {
+        // packet is passed from module
+
+        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+            ctx_b,
+            router_b,
+            ctx_a,
+            client_id_on_b.clone(),
+            signer.clone(),
+        );
+
+        let acknowledgement = TypedRelayer::<A, B>::packet_recv_on_b(
+            ctx_b,
+            router_b,
+            ctx_a,
+            packet.clone(),
+            signer.clone(),
+        );
+
+        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+            ctx_a,
+            router_a,
+            ctx_b,
+            client_id_on_a,
+            signer.clone(),
+        );
+
+        TypedRelayer::<A, B>::packet_ack_on_a(
+            ctx_a,
+            router_a,
+            ctx_b,
+            packet,
+            acknowledgement,
+            signer.clone(),
+        );
+
+        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+            ctx_b,
+            router_b,
+            ctx_a,
+            client_id_on_b,
+            signer.clone(),
         );
     }
 }
