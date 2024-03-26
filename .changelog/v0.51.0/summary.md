@@ -4,7 +4,7 @@ In addition, this version fixes a bug where the consensus state is incorrectly s
 
 Furthermore, a set of new host keys is added. This makes `ibc-rs` more consistent with the storage access of `ibc-go`. Also, access to client update information is merged into a single method; instead of individual details.
 
-This release updates the `ibc-proto-rs` dependency to `v0.42.2`. This takes account of the updated `MsgUpdateClient` and deprecates `MsgSubmitMisbehaviour`.
+This release updates the `ibc-proto-rs` dependency to `v0.42.2`. This takes account of the updated `MsgUpdateClient` and deprecates `MsgSubmitMisbehaviour`. Also, `ibc-derive` dependency is updated to `v0.6.1`.
 
 Finally, the minimum supported Rust version is corrected and updated to `1.71.1`.
 
