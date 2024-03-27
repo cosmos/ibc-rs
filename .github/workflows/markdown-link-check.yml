@@ -17,3 +17,4 @@ jobs:
         with:
           config-file: ".github/markdown-link-check.json"
           use-quiet-mode: "yes"
+          folder-path: ${{ github.event_name == 'pull_request' && 'docs' || '.' }}
