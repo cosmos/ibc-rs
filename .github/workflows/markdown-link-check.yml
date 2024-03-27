@@ -17,4 +17,3 @@ jobs:
         with:
           config-file: ".github/markdown-link-check.json"
           use-quiet-mode: "yes"
-          use-verbose-mode: "yes"
