@@ -131,7 +131,7 @@ is entirely handled.
 
 1. Upgrade chain through governance
    1. Create a 02-client
-      [UpgradeProposal](https://github.com/cosmos/ibc-go/blob/main/docs/ibc/proto-docs.md#upgradeproposal)
+      [UpgradeProposal](https://github.com/cosmos/ibc-go/blob/main/docs/docs/01-ibc/09-proto-docs.md#upgradeproposal)
       with an `UpgradePlan` and a new IBC `ClientState` in the
       `UpgradedClientState` field with the following remarks:
         * The `UpgradePlan` must specify an upgrade height only (no upgrade
@@ -419,9 +419,9 @@ Accepted
 ## References
 
 * [How to Upgrade IBC Chains and their
-  Clients](https://github.com/cosmos/ibc-go/blob/main/docs/ibc/upgrades/quick-guide.md)
+  Clients](https://github.com/cosmos/ibc-go/blob/main/docs/docs/01-ibc/05-upgrades/01-quick-guide.md)
 * [IBC Client Developer Guide to
-  Upgrades](https://github.com/cosmos/ibc-go/blob/main/docs/ibc/upgrades/developer-guide.md)
+  Upgrades](https://github.com/cosmos/ibc-go/blob/main/docs/docs/01-ibc/05-upgrades/02-developer-guide.md)
 * [cosmos/ibc-go/Issue 445: IBC upgrade plan
   summary](https://github.com/cosmos/ibc/issues/445)
 * [cosmos/cosmos-sdk/PR 7367: Upgrade
