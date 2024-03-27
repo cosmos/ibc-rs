@@ -162,7 +162,7 @@ the release process as well.
 
 ## **Status**
 
-Proposed
+Accepted
 
 ## **Consequences**
 
