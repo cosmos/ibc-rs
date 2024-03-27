@@ -3,7 +3,12 @@ name: Check Markdown links
 on:
   schedule:
     - cron: "0 0 * * *"
-
+  push:
+    paths:
+      - "**.md"
+  pull_request:
+    paths:
+      - "**.md"
   workflow_dispatch:
 
 jobs:
