@@ -384,14 +384,13 @@ where
     E::ClientStateRef: From<ClientStateType>,
     E::ConsensusStateRef: ConsensusStateConverter,
 {
-    let substitute_client_state = ClientStateType::try_from(substitute_client_state)?;
+    let substitute_client_state = ClientState::try_from(substitute_client_state)?
+        .inner()
+        .clone();
 
-    let ClientStateType {
-        chain_id,
-        trusting_period,
-        latest_height,
-        ..
-    } = substitute_client_state;
+    let chain_id = substitute_client_state.chain_id;
+    let trusting_period = substitute_client_state.trusting_period;
+    let latest_height = substitute_client_state.latest_height;
 
     let new_client_state = ClientStateType {
         chain_id,
