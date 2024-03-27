@@ -25,6 +25,9 @@ on:
       - ibc-clients/**
       - ibc-primitives/**
       - ibc-derive/**
+  merge_group:
+    types: [checks_requested]
+
 jobs:
   cw-check:
     runs-on: ubuntu-20.04
