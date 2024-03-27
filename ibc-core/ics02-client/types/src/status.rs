@@ -47,18 +47,22 @@ impl Status {
     }
 
     /// Checks whether the status is active; returns `Err` if not.
-    pub fn verify_is_active(self) -> Result<(), ClientError> {
+    pub fn verify_is_active(&self) -> Result<(), ClientError> {
         match self {
             Self::Active => Ok(()),
-            status => Err(ClientError::ClientNotActive { status }),
+            status => Err(ClientError::ClientNotActive {
+                status: status.clone(),
+            }),
         }
     }
 
     /// Checks whether the client is either frozen or expired; returns `Err` if not.
-    pub fn verify_is_inactive(self) -> Result<(), ClientError> {
+    pub fn verify_is_inactive(&self) -> Result<(), ClientError> {
         match self {
             Self::Frozen | Self::Expired => Ok(()),
-            status => Err(ClientError::ClientNotInactive { status }),
+            status => Err(ClientError::ClientNotInactive {
+                status: status.clone(),
+            }),
         }
     }
 }
