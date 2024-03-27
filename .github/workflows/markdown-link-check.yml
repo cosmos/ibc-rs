@@ -2,7 +2,7 @@ name: Check Markdown links
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *" # At 00:00
   push:
     paths:
       - "**.md"
