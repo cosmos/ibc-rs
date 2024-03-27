@@ -1427,7 +1427,7 @@ This is a major release, which implemented [ADR 4](https://github.com/cosmos/ibc
 
 - Delete packet commitment instead of acknowledgement in acknowledgePacket
   [#1573](https://github.com/informalsystems/ibc-rs/issues/1573)
-- Set the `counterparty_channel_id` correctly to fix ICS04 [`chanOpenAck` handler verification](https://github.com/informalsystems/ibc-rs/blob/master/modules/src/core/ics04_channel/handler/chan_open_ack.rs)
+- Set the `counterparty_channel_id` correctly to fix ICS04 [`chanOpenAck` handler verification](https://github.com/informalsystems/ibc-rs/blob/v0.10.0/modules/src/core/ics04_channel/handler/chan_open_ack.rs)
   ([#1649](https://github.com/informalsystems/ibc-rs/issues/1649))
 - Add missing assertion for non-zero trust-level in Tendermint client initialization.
   ([#1697](https://github.com/informalsystems/ibc-rs/issues/1697))
@@ -1454,7 +1454,7 @@ This is a major release, which implemented [ADR 4](https://github.com/cosmos/ibc
 - Set the connection counterparty in the ICS 003 [`connOpenAck` handler][conn-open-ack-handler]
   ([#1532](https://github.com/informalsystems/ibc-rs/issues/1532))
 
-[conn-open-ack-handler]: https://github.com/informalsystems/ibc-rs/blob/master/modules/src/core/ics03_connection/handler/conn_open_ack.rs
+[conn-open-ack-handler]: https://github.com/informalsystems/ibc-rs/blob/v0.9.0/modules/src/core/ics03_connection/handler/conn_open_ack.rs
 
 ### IMPROVEMENTS
 
