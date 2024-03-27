@@ -4,12 +4,8 @@ on:
   schedule:
     - cron: "0 0 * * *" # At 00:00
   push:
-    paths:
-      - "**.md"
+    branches: main
   pull_request:
-    paths:
-      - "**.md"
-  workflow_dispatch:
 
 jobs:
   md-link-check:
