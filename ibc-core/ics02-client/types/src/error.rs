@@ -25,7 +25,7 @@ pub enum ClientError {
     ClientStateNotFound { client_id: ClientId },
     /// client state already exists: `{client_id}`
     ClientStateAlreadyExists { client_id: ClientId },
-    /// Substitute client height `{substitute_height}` must be greater than subject client height `{subject_height}` during client recovery
+    /// Substitute client height `{substitute_height}` is not greater than subject client height `{subject_height}` during client recovery
     ClientRecoveryHeightMismatch {
         subject_height: Height,
         substitute_height: Height,
