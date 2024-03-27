@@ -59,30 +59,38 @@ pub trait TestHost: Debug + Sized {
     /// The chain identifier of the host.
     fn chain_id(&self) -> &ChainId;
 
+    /// The block production time of the host.
     fn block_time(&self) -> Duration;
 
+    /// The genesis timestamp of the host.
     fn genesis_timestamp(&self) -> Timestamp;
 
+    /// Returns true if the host chain has no blocks.
     fn is_empty(&self) -> bool {
         self.history().is_empty()
     }
 
+    /// The latest height of the host chain.
     fn latest_height(&self) -> Height {
         self.latest_block().height()
     }
 
+    /// The latest block of the host chain.
     fn latest_block(&self) -> Self::Block {
         self.history().back().cloned().expect("no error")
     }
 
+    /// Get the block at the given height.
     fn get_block(&self, target_height: &Height) -> Option<Self::Block> {
         self.history()
             .get(target_height.revision_height() as usize - 1)
             .cloned() // indexed from 1
     }
 
+    /// Add a block to the host chain.
     fn push_block(&mut self, block: Self::Block);
 
+    /// Prune blocks until the given height.
     fn prune_block_till(&mut self, height: &Height);
 
     /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
