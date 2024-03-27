@@ -211,35 +211,39 @@ where
     V: TmValidationContext,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
-    let subject = ClientStateType {
-        latest_height: Height::new(0, 1).expect("Panic while creating a Height { 0, 1 }"),
-        frozen_height: None,
-        trusting_period: Duration::ZERO,
-        chain_id: ChainId::new("").expect("Panic while creating an empty chain ID"),
-        allow_update: AllowUpdate {
-            after_expiry: true,
-            after_misbehaviour: true,
-        },
-        ..subject_client_state.clone()
-    };
+    let ClientStateType {
+        latest_height: _,
+        frozen_height: _,
+        trusting_period: _,
+        chain_id: _,
+        allow_update: _,
+        trust_level: subject_trust_level,
+        unbonding_period: subject_unbonding_period,
+        max_clock_drift: subject_max_clock_drift,
+        proof_specs: subject_proof_specs,
+        upgrade_path: subject_upgrade_path,
+    } = subject_client_state.clone();
 
     let substitute_client_state = ClientStateType::try_from(substitute_client_state)?;
 
-    let substitute = ClientStateType {
-        latest_height: Height::new(0, 1).expect("Panic while creating a Height { 0, 1 }"),
-        frozen_height: None,
-        trusting_period: Duration::ZERO,
-        chain_id: ChainId::new("").expect("Panic while creating an empty chain ID"),
-        allow_update: AllowUpdate {
-            after_expiry: true,
-            after_misbehaviour: true,
-        },
-        ..substitute_client_state.clone()
-    };
+    let ClientStateType {
+        latest_height: _,
+        frozen_height: _,
+        trusting_period: _,
+        chain_id: _,
+        allow_update: _,
+        trust_level: substitute_trust_level,
+        unbonding_period: substitute_unbonding_period,
+        max_clock_drift: substitute_max_clock_drift,
+        proof_specs: substitute_proof_specs,
+        upgrade_path: substitute_upgrade_path,
+    } = substitute_client_state;
 
-    if subject != substitute {
-        return Err(ClientError::ClientRecoveryStateMismatch);
-    }
-
-    Ok(())
+    (subject_trust_level == substitute_trust_level
+        && subject_unbonding_period == substitute_unbonding_period
+        && subject_max_clock_drift == substitute_max_clock_drift
+        && subject_proof_specs == substitute_proof_specs
+        && subject_upgrade_path == substitute_upgrade_path)
+        .then_some(())
+        .ok_or(ClientError::ClientRecoveryStateMismatch)
 }
