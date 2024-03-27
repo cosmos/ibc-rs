@@ -1,13 +1,11 @@
-use core::time::Duration;
-
 use ibc_client_tendermint_types::{
-    AllowUpdate, ClientState as ClientStateType, Header as TmHeader,
-    Misbehaviour as TmMisbehaviour, TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
+    ClientState as ClientStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
+    TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
 use ibc_core_client::context::client_state::ClientStateValidation;
 use ibc_core_client::types::error::ClientError;
-use ibc_core_client::types::{Height, Status};
-use ibc_core_host::types::identifiers::{ChainId, ClientId};
+use ibc_core_client::types::Status;
+use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
