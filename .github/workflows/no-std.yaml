@@ -29,6 +29,9 @@ on:
       - ibc-clients/**
       - ibc-primitives/**
       - ibc-derive/**
+  merge_group:
+    types: [checks_requested]
+
 jobs:
   check-no-std-panic-conflict:
     name: Check no_std panic conflict

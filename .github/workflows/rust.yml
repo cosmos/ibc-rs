@@ -29,6 +29,8 @@ on:
       - ibc-query/**
       - ibc-testkit/**
       - ibc-derive/**
+  merge_group:
+    types: [checks_requested]
 
 env:
   CARGO_INCREMENTAL: 0
