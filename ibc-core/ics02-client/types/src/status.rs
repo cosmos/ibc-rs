@@ -19,7 +19,7 @@ pub enum UpdateKind {
 }
 
 /// Represents the status of a client
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Copy)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub enum Status {
@@ -50,9 +50,7 @@ impl Status {
     pub fn verify_is_active(&self) -> Result<(), ClientError> {
         match self {
             Self::Active => Ok(()),
-            status => Err(ClientError::ClientNotActive {
-                status: status.clone(),
-            }),
+            &status => Err(ClientError::ClientNotActive { status }),
         }
     }
 
@@ -60,9 +58,7 @@ impl Status {
     pub fn verify_is_inactive(&self) -> Result<(), ClientError> {
         match self {
             Self::Frozen | Self::Expired => Ok(()),
-            status => Err(ClientError::ClientNotInactive {
-                status: status.clone(),
-            }),
+            &status => Err(ClientError::ClientNotInactive { status }),
         }
     }
 }
