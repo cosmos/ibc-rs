@@ -17,7 +17,6 @@ use crate::utils::year_2023;
 /// Configuration of the `MockContext` type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
 #[builder(build_method(into))]
-#[allow(dead_code)]
 pub struct MockContextConfig<H>
 where
     H: TestHost,

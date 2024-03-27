@@ -23,9 +23,9 @@ pub struct MockHost {
 
 impl TestHost for MockHost {
     type Block = MockHeader;
+    type ClientState = MockClientState;
     type BlockParams = ();
     type LightClientParams = ();
-    type ClientState = MockClientState;
 
     fn build(params: HostParams) -> Self {
         let HostParams {
@@ -43,6 +43,10 @@ impl TestHost for MockHost {
         }
     }
 
+    fn history(&self) -> &VecDeque<Self::Block> {
+        &self.history
+    }
+
     fn chain_id(&self) -> &ChainId {
         &self.chain_id
     }
@@ -51,24 +55,9 @@ impl TestHost for MockHost {
         self.block_time
     }
 
-    fn is_empty(&self) -> bool {
-        self.history.is_empty()
-    }
-
     fn genesis_timestamp(&self) -> Timestamp {
         self.genesis_timestamp
     }
-
-    fn latest_block(&self) -> Self::Block {
-        self.history.back().copied().expect("Never fails")
-    }
-
-    fn get_block(&self, target_height: &Height) -> Option<Self::Block> {
-        self.history
-            .get(target_height.revision_height() as usize - 1)
-            .copied() // indexed from 1
-    }
-
     fn push_block(&mut self, block: Self::Block) {
         self.history.push_back(block);
     }
