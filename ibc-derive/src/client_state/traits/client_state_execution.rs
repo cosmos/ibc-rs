@@ -62,8 +62,6 @@ pub(crate) fn impl_ClientStateExecution(
     let HostClientState = client_state_enum_name;
     let E = &opts.client_execution_context.clone().into_token_stream();
 
-    let _ClientExecutionContext = imports.client_execution_context();
-
     // The `impl` block quote based on whether the context includes generics.
     let Impl = opts.client_execution_context.impl_ts();
 

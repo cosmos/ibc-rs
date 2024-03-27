@@ -56,8 +56,6 @@ pub(crate) fn impl_ClientStateValidation(
     let HostClientState = client_state_enum_name;
     let V = opts.client_validation_context.clone().into_token_stream();
 
-    let _ClientValidationContext = imports.client_validation_context();
-
     // The `impl` block quote based on whether the context includes generics.
     let Impl = opts.client_validation_context.impl_ts();
 
