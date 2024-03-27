@@ -439,18 +439,19 @@ where
         subject_client_id: &ClientId,
         substitute_client_state: Any,
     ) -> Result<(), ClientError> {
-        let substitute_client_state =
-            TryInto::<ClientStateType>::try_into(substitute_client_state)?;
+        let substitute_client_state = MockClientState::try_from(substitute_client_state)?;
 
-        let ClientStateType {
-            latest_height,
+        let latest_height = substitute_client_state.latest_height();
+
+        let MockClientState {
+            header,
             trusting_period,
             ..
         } = substitute_client_state;
 
         let new_mock_client_state = MockClientState {
             frozen: false,
-            header: self.header,
+            header,
             trusting_period,
         };
 
