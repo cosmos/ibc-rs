@@ -20,7 +20,7 @@ justify the chain-wide logic behind upgrading light clients, list requisites for
 validation and execution steps, determine the boundary between basic and
 upgrade-specific validations by an IBC handler, and explain Tendermint's upgrade
 client implementation within the
-[ics07_tendermint](../../ibc/src/clients/ics07_tendermint).
+[ics07_tendermint](../../ibc-clients/ics07-tendermint).
 
 ## Decision
 
@@ -41,9 +41,9 @@ we will explain how we have implemented this rationale in IBC-rs.
 * There **MUST** be a proof verification process to check upgraded client and
   consensus states against the host chain's state.
 * Chain upgrades **MUST NOT** result in changing
-  [ClientState](../../ibc/src/core/ics02_client/client_state.rs#ClientState)
+  [ClientState](../../ibc-core/ics02-client/context/src/client_state.rs#ClientState)
   or
-  [ConsensusState](../../ibc/src/core/ics02_client/consensus_state.rs#ConsensusState)
+  [ConsensusState](../../ibc-core/ics02-client/context/src/consensus_state.rs#ConsensusState)
   implementations
 * It is **UP TO** the chain's architecture how upgraded client and consensus
   states are committed, either through decentralized approaches, like governance
@@ -104,9 +104,9 @@ supported by `IBC-rs`:
    recommended that chains reduce the unbonding period.
 7. (P) Changing the Tendermint LightClient algorithm: Changes to the light
    client algorithm that do not change the
-   [ClientState](../../ibc/src/clients/ics07_tendermint/client_state.rs#ClientState)
+   [ClientState](../../ibc-clients/ics07-tendermint/src/client_state.rs#ClientState)
    or
-   [ConsensusState](../../ibc/src/clients/ics07_tendermint/consensus_state.rs#ConsensusState)
+   [ConsensusState](../../ibc-clients/ics07-tendermint/src/consensus_state.rs#ConsensusState)
    struct abstraction may be supported, provided that the counterparty is also
    upgraded to support the new light client algorithm. Changes that require
    updating the `ClientState` and `ConsensusState` structs themselves are
@@ -206,7 +206,7 @@ validations (SV) and lastly execution (E) steps as follows:
 
 Whenever the IBC handler receives an `MsgUpgradeClient`, it dispatches the
 decoded message to the router and triggers the
-[process](../../ibc/src/core/ics02_client/handler/upgrade_client.rs#process)
+[process](../../ibc-core/ics02-client/src/handler/upgrade_client.rs#process)
 function of `upgrade_client` handler, which would go through the steps outlined
 in 3rd section of [Upgrade Process Step-by-Step](#upgrade-process-step-by-step).
 Just note that the `process` function will be rendered into `validate` and
@@ -425,7 +425,7 @@ Accepted
 * [cosmos/ibc-go/Issue 445: IBC upgrade plan
   summary](https://github.com/cosmos/ibc/issues/445)
 * [cosmos/cosmos-sdk/PR 7367: Upgrade
-  Client](https://github.com/cosmos/cosmos-sdk/åpull/7367)
+  Client](https://github.com/cosmos/cosmos-sdk/pull/7367)
 * [cosmos/ibc-go/Issue 2501: Create importable workflow for chains to run
   upgrade tests](https://github.com/cosmos/ibc-go/issues/2501)
 * [Hermes relayer documentation: Client
