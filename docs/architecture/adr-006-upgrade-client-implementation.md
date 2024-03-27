@@ -41,9 +41,9 @@ we will explain how we have implemented this rationale in IBC-rs.
 * There **MUST** be a proof verification process to check upgraded client and
   consensus states against the host chain's state.
 * Chain upgrades **MUST NOT** result in changing
-  [ClientState](../../ibc-core/ics02-client/context/src/client_state.rs#ClientState)
+  [ClientState](../../ibc-core/ics02-client/context/src/client_state.rs)
   or
-  [ConsensusState](../../ibc-core/ics02-client/context/src/consensus_state.rs#ConsensusState)
+  [ConsensusState](../../ibc-core/ics02-client/context/src/consensus_state.rs)
   implementations
 * It is **UP TO** the chain's architecture how upgraded client and consensus
   states are committed, either through decentralized approaches, like governance
@@ -104,9 +104,9 @@ supported by `IBC-rs`:
    recommended that chains reduce the unbonding period.
 7. (P) Changing the Tendermint LightClient algorithm: Changes to the light
    client algorithm that do not change the
-   [ClientState](../../ibc-clients/ics07-tendermint/src/client_state.rs#ClientState)
+   [ClientState](../../ibc-clients/ics07-tendermint/src/client_state.rs)
    or
-   [ConsensusState](../../ibc-clients/ics07-tendermint/src/consensus_state.rs#ConsensusState)
+   [ConsensusState](../../ibc-clients/ics07-tendermint/src/consensus_state.rs)
    struct abstraction may be supported, provided that the counterparty is also
    upgraded to support the new light client algorithm. Changes that require
    updating the `ClientState` and `ConsensusState` structs themselves are
@@ -206,7 +206,7 @@ validations (SV) and lastly execution (E) steps as follows:
 
 Whenever the IBC handler receives an `MsgUpgradeClient`, it dispatches the
 decoded message to the router and triggers the
-[process](../../ibc-core/ics02-client/src/handler/upgrade_client.rs#process)
+[process](../../ibc-core/ics02-client/src/handler/upgrade_client.rs)
 function of `upgrade_client` handler, which would go through the steps outlined
 in 3rd section of [Upgrade Process Step-by-Step](#upgrade-process-step-by-step).
 Just note that the `process` function will be rendered into `validate` and
