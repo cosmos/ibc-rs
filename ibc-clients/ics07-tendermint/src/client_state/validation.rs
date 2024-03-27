@@ -23,7 +23,6 @@ use crate::context::{
 impl<V> ClientStateValidation<V> for ClientState
 where
     V: TmValidationContext,
-    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
@@ -81,7 +80,6 @@ pub fn verify_client_message<V>(
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
-    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     match client_message.type_url.as_str() {
@@ -137,7 +135,6 @@ pub fn check_for_misbehaviour<V>(
 ) -> Result<bool, ClientError>
 where
     V: TmValidationContext,
-    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     match client_message.type_url.as_str() {
@@ -165,7 +162,6 @@ pub fn status<V>(
 ) -> Result<Status, ClientError>
 where
     V: TmValidationContext,
-    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     if client_state.is_frozen() {
@@ -214,7 +210,6 @@ pub fn check_substitute<V>(
 ) -> Result<(), ClientError>
 where
     V: TmValidationContext,
-    // V::ClientStateRef: TryInto<ClientStateType, Error = ClientError>,
     V::ConsensusStateRef: ConsensusStateConverter,
 {
     let subject = ClientStateType {
