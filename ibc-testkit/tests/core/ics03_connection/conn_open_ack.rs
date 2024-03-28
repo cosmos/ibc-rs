@@ -62,7 +62,13 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
 
     let ctx_default = MockContext::<MockHost>::default();
     let ctx_new = MockContextConfig::builder()
-        .host_id(ChainId::new(&format!("mockgaia-{}", latest_height.revision_number())).unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(
+                    ChainId::new(&format!("mockgaia-{}", latest_height.revision_number())).unwrap(),
+                )
+                .build(),
+        )
         .latest_height(latest_height)
         .build::<MockContext<MockHost>>();
     let ctx = match ctx {
