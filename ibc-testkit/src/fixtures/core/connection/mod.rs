@@ -3,15 +3,16 @@ mod conn_open_confirm;
 mod conn_open_init;
 mod conn_open_try;
 
-pub use conn_open_ack::*;
-pub use conn_open_confirm::*;
-pub use conn_open_init::*;
-pub use conn_open_try::*;
 use ibc::core::commitment_types::proto::v1::MerklePrefix;
 use ibc::core::connection::types::proto::v1::Counterparty as RawCounterparty;
 use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::primitives::prelude::*;
 use typed_builder::TypedBuilder;
+
+pub use self::conn_open_ack::*;
+pub use self::conn_open_confirm::*;
+pub use self::conn_open_init::*;
+pub use self::conn_open_try::*;
 
 #[derive(TypedBuilder, Debug)]
 #[builder(build_method(into = RawCounterparty))]

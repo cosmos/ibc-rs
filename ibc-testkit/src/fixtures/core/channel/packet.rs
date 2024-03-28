@@ -31,7 +31,7 @@ pub struct PacketConfig {
 
 impl From<PacketConfig> for Packet {
     fn from(config: PacketConfig) -> Self {
-        Packet {
+        Self {
             seq_on_a: config.seq_on_a,
             port_id_on_a: config.port_id_on_a,
             chan_id_on_a: config.chan_id_on_a,

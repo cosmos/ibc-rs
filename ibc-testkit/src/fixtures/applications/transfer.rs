@@ -26,7 +26,7 @@ pub struct MsgTransferConfig {
 
 impl From<MsgTransferConfig> for MsgTransfer {
     fn from(config: MsgTransferConfig) -> Self {
-        MsgTransfer {
+        Self {
             port_id_on_a: config.port_id_on_a,
             chan_id_on_a: config.chan_id_on_a,
             packet_data: config.packet_data,
@@ -67,7 +67,7 @@ pub struct PacketDataConfig {
 
 impl From<PacketDataConfig> for PacketData {
     fn from(config: PacketDataConfig) -> Self {
-        PacketData {
+        Self {
             token: config.token,
             sender: config.sender,
             receiver: config.receiver,

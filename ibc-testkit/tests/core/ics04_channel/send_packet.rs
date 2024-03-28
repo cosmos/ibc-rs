@@ -14,9 +14,10 @@ use ibc::core::connection::types::{
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
 use ibc_testkit::hosts::MockHost;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use test_log::test;
 
 #[test]
@@ -43,7 +44,7 @@ fn send_packet_processing() {
         ConnectionState::Open,
         default_client_id.clone(),
         ConnectionCounterparty::new(
-            default_client_id.clone(),
+            default_client_id,
             Some(ConnectionId::zero()),
             CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
@@ -147,7 +148,7 @@ fn send_packet_processing() {
     .collect();
 
     for mut test in tests {
-        let res = send_packet(&mut test.ctx, test.packet.clone());
+        let res = send_packet(&mut test.ctx.ibc_store, test.packet.clone());
         // Additionally check the events and the output objects in the result.
         match res {
             Ok(()) => {

@@ -6,8 +6,7 @@ use alloc::fmt::Debug;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::primitives::prelude::*;
 
-use crate::hosts::MockHost;
-use crate::testapp::ibc::core::types::MockContext;
+use crate::testapp::ibc::core::types::DefaultIbcStore;
 pub enum Expect {
     Success,
     Failure(Option<ContextError>),
@@ -15,7 +14,7 @@ pub enum Expect {
 
 #[derive(Debug)]
 pub struct Fixture<M: Debug> {
-    pub ctx: MockContext<MockHost>,
+    pub ctx: DefaultIbcStore,
     pub msg: M,
 }
 

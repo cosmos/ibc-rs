@@ -1,13 +1,15 @@
+use core::fmt::Debug;
 use core::str::FromStr;
 use core::time::Duration;
 
+use basecoin_store::context::ProvableStore;
 use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
 use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ClientState as TmClientState, Header as TmHeader,
     Misbehaviour as TmMisbehaviour,
 };
-use ibc::core::client::context::client_state::{ClientStateCommon, ClientStateValidation};
+use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
 use ibc::core::client::types::proto::v1::Height as RawHeight;
@@ -22,6 +24,7 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
+use ibc_testkit::context::{MockClientConfig, MockContext};
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::tendermint::BlockParams;
@@ -33,10 +36,7 @@ use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
 use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{
-    LightClientBuilder, LightClientState, MockClientConfig, MockContext,
-};
-use ibc_testkit::testapp::ibc::utils::blocks_since;
+use ibc_testkit::testapp::ibc::core::types::{LightClientBuilder, LightClientState, MockIbcStore};
 use rstest::*;
 use tendermint_testgen::Validator as TestgenValidator;
 
@@ -97,16 +97,16 @@ fn test_update_client_ok(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx.ibc_store, &router, msg_envelope.clone());
 
     assert!(res.is_ok(), "validation happy path");
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok(), "execution happy path");
 
     assert_eq!(
-        ctx.client_state(&msg.client_id).unwrap(),
+        ctx.ibc_store.client_state(&msg.client_id).unwrap(),
         MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into()
     );
 }
@@ -123,14 +123,21 @@ fn test_update_client_with_prev_header() {
     let height_2 = Height::new(0, 44).unwrap();
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host(
+            TendermintHost::builder()
+                .chain_id(chain_id_b.clone())
+                .build(),
+        )
         .latest_height(latest_height)
         .build::<MockContext<TendermintHost>>();
 
-    let mut ctx = MockContext::<MockHost>::default().with_light_client(
-        &client_id,
-        LightClientBuilder::init().context(&ctx_b).build(),
-    );
+    let mut ctx = MockContext::<MockHost>::default()
+        .with_light_client(
+            &client_id,
+            LightClientBuilder::init().context(&ctx_b).build(),
+        )
+        .ibc_store;
+
     let mut router = MockRouter::new_with_transfer();
 
     fn build_msg_from_header(
@@ -139,8 +146,11 @@ fn test_update_client_with_prev_header() {
         target_height: Height,
         trusted_height: Height,
     ) -> MsgEnvelope {
-        let mut tm_block = TendermintHost::with_chain_id(chain_id)
+        let mut tm_block = TendermintHost::builder()
+            .chain_id(chain_id)
+            .build()
             .generate_block(
+                Vec::new(),
                 target_height.revision_height(),
                 Timestamp::now(),
                 &Default::default(),
@@ -210,15 +220,14 @@ fn test_consensus_state_pruning() {
     let client_id = tm_client_type().build_client_id(0);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id.clone())
+        .host(TendermintHost::builder().chain_id(chain_id.clone()).build())
         .latest_height(client_height)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx = MockContextConfig::builder()
-        .host_id(chain_id.clone())
+        .host(TendermintHost::builder().chain_id(chain_id).build())
         .latest_height(client_height)
         .latest_timestamp(Timestamp::now())
-        .max_history_size(u64::MAX)
         .build::<MockContext<TendermintHost>>()
         .with_light_client(
             &client_id,
@@ -234,7 +243,7 @@ fn test_consensus_state_pruning() {
 
     let mut router = MockRouter::new_with_transfer();
 
-    let start_host_timestamp = ctx.host_timestamp().unwrap();
+    let start_host_timestamp = ctx.ibc_store.host_timestamp().unwrap();
 
     // Move the chain forward by 2 blocks to pass the trusting period.
     for _ in 1..=2 {
@@ -242,7 +251,7 @@ fn test_consensus_state_pruning() {
 
         let update_height = ctx.latest_height();
 
-        ctx.advance_host_chain_height();
+        ctx.advance_block();
 
         let block = ctx.host_block(&update_height).unwrap().clone();
         let mut block = block.into_header();
@@ -257,8 +266,8 @@ fn test_consensus_state_pruning() {
 
         let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-        let _ = validate(&ctx, &router, msg_envelope.clone());
-        let _ = execute(&mut ctx, &mut router, msg_envelope);
+        let _ = validate(&ctx.ibc_store, &router, msg_envelope.clone());
+        let _ = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     }
 
     // Check that latest expired consensus state is pruned.
@@ -268,8 +277,14 @@ fn test_consensus_state_pruning() {
         expired_height.revision_number(),
         expired_height.revision_height(),
     );
-    assert!(ctx.client_update_meta(&client_id, &expired_height).is_err());
-    assert!(ctx.consensus_state(&client_cons_state_path).is_err());
+    assert!(ctx
+        .ibc_store
+        .client_update_meta(&client_id, &expired_height)
+        .is_err());
+    assert!(ctx
+        .ibc_store
+        .consensus_state(&client_cons_state_path)
+        .is_err());
 
     // Check that latest valid consensus state exists.
     let earliest_valid_height = Height::new(1, 2).unwrap();
@@ -280,11 +295,15 @@ fn test_consensus_state_pruning() {
     );
 
     assert!(ctx
+        .ibc_store
         .client_update_meta(&client_id, &earliest_valid_height)
         .is_ok());
-    assert!(ctx.consensus_state(&client_cons_state_path).is_ok());
+    assert!(ctx
+        .ibc_store
+        .consensus_state(&client_cons_state_path)
+        .is_ok());
 
-    let end_host_timestamp = ctx.host_timestamp().unwrap();
+    let end_host_timestamp = ctx.ibc_store.host_timestamp().unwrap();
 
     assert_eq!(
         end_host_timestamp,
@@ -306,7 +325,7 @@ fn test_update_nonexisting_client(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(res.is_err());
 }
@@ -319,12 +338,16 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b)
+        .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -339,7 +362,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
 
     let signer = dummy_account_id();
 
-    let block = ctx_b.host_block(&update_height).unwrap().clone();
+    let block = ctx_b.host_block(&update_height).unwrap();
     let mut block = block.into_header();
     block.set_trusted_height(client_height);
 
@@ -351,16 +374,16 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx.ibc_store, &router, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx.client_state(&msg.client_id).unwrap();
+    let client_state = ctx.ibc_store.client_state(&msg.client_id).unwrap();
 
     assert!(client_state
-        .status(&ctx, &msg.client_id)
+        .status(&ctx.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
 
@@ -406,14 +429,17 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx_a = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -429,11 +455,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
 
     let signer = dummy_account_id();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
@@ -453,15 +475,15 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx_a.client_state(&msg.client_id).unwrap();
+    let client_state = ctx_a.ibc_store.client_state(&msg.client_id).unwrap();
     assert!(client_state
-        .status(&ctx_a, &msg.client_id)
+        .status(&ctx_a.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
     assert_eq!(client_state.latest_height(), latest_header_height);
@@ -507,14 +529,17 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -552,11 +577,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
         trusted_next_validator_set.hash()
     );
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     // set the trusted height to height-20
     block.set_trusted_height(client_height);
@@ -571,7 +592,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router, msg_envelope);
+    let res = validate(&ctx_a.ibc_store, &router, msg_envelope);
 
     assert!(res.is_err());
 }
@@ -616,14 +637,17 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -646,11 +670,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .next_validators
         .clone();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     block.set_trusted_height(client_height);
     block.set_trusted_next_validators_set(trusted_next_validator_set);
@@ -660,9 +680,9 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         client_message: block.into(),
         signer,
     };
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope);
 
     assert!(res.is_err());
 }
@@ -712,14 +732,17 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx_a = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -735,11 +758,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
 
     let signer = dummy_account_id();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
@@ -759,15 +778,15 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx_a.client_state(&msg.client_id).unwrap();
+    let client_state = ctx_a.ibc_store.client_state(&msg.client_id).unwrap();
     assert!(client_state
-        .status(&ctx_a, &msg.client_id)
+        .status(&ctx_a.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
     assert_eq!(client_state.latest_height(), latest_header_height);
@@ -810,14 +829,17 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
     assert_eq!(update_height.revision_height(), 22);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
-        .max_history_size(block_params.len() as u64)
         .block_params_history(block_params)
         .build::<MockContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -833,11 +855,7 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
 
     let signer = dummy_account_id();
 
-    let mut block = ctx_b
-        .host_block(&update_height)
-        .unwrap()
-        .clone()
-        .into_header();
+    let mut block = ctx_b.host_block(&update_height).unwrap().into_header();
 
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
@@ -854,9 +872,9 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
         client_message: block.into(),
         signer,
     };
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope);
 
     assert!(res.is_err());
 }
@@ -869,12 +887,16 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b)
+        .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -889,7 +911,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
 
     let signer = dummy_account_id();
 
-    let block = ctx_b.host_block(&update_height).unwrap().clone();
+    let block = ctx_b.host_block(&update_height).unwrap();
     let mut block = block.into_header();
     let trusted_height = client_height.clone().sub(1).unwrap();
     block.set_trusted_height(trusted_height);
@@ -903,16 +925,16 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx.ibc_store, &router, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx.client_state(&msg.client_id).unwrap();
+    let client_state = ctx.ibc_store.client_state(&msg.client_id).unwrap();
 
     assert!(client_state
-        .status(&ctx, &msg.client_id)
+        .status(&ctx.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
 
@@ -929,13 +951,12 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
     let start_height = Height::new(1, 11).unwrap();
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(ctx_b_chain_id)
+        .host(TendermintHost::builder().chain_id(ctx_b_chain_id).build())
         .latest_height(client_height)
-        .max_history_size(blocks_since(client_height, start_height).expect("no error") + 1)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx_a = MockContextConfig::builder()
-        .host_id(ctx_a_chain_id)
+        .host(MockHost::builder().chain_id(ctx_a_chain_id).build())
         .latest_height(start_height)
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -950,7 +971,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
     let signer = dummy_account_id();
 
-    let block = ctx_b.host_block(&client_height).unwrap().clone();
+    let block = ctx_b.host_block(&client_height).unwrap();
     let mut block = block.into_header();
 
     // Update the trusted height of the header to point to the previous height
@@ -1026,19 +1047,18 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok(), "result: {res:?}");
 
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok(), "result: {res:?}");
 
-    let client_state = ctx_a.client_state(&msg.client_id).unwrap();
+    let client_state = ctx_a.ibc_store.client_state(&msg.client_id).unwrap();
     assert!(client_state
-        .status(&ctx_a, &msg.client_id)
+        .status(&ctx_a.ibc_store, &msg.client_id)
         .unwrap()
         .is_active());
     assert_eq!(client_state.latest_height(), latest_header_height);
-    assert_eq!(client_state, ctx_a.latest_client_states(&msg.client_id));
 }
 
 #[rstest]
@@ -1051,12 +1071,20 @@ fn test_update_synthetic_tendermint_client_lower_height() {
     let chain_start_height = Height::new(1, 11).unwrap();
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaB-1").unwrap())
+        .host(
+            TendermintHost::builder()
+                .chain_id(ChainId::new("mockgaiaB-1").unwrap())
+                .build(),
+        )
         .latest_height(client_height)
         .build::<MockContext<TendermintHost>>();
 
     let ctx = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(chain_start_height)
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -1072,13 +1100,13 @@ fn test_update_synthetic_tendermint_client_lower_height() {
 
     let msg = MsgUpdateClient {
         client_id,
-        client_message: block_ref.clone().into_header().into(),
+        client_message: block_ref.into_header().into(),
         signer,
     };
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
 }
 
@@ -1102,7 +1130,7 @@ fn test_update_client_events(fixture: Fixture) {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     assert!(res.is_ok());
 
     let ibc_events = ctx.get_events();
@@ -1123,8 +1151,8 @@ fn test_update_client_events(fixture: Fixture) {
     assert_eq!(update_client_event.header(), &header.to_vec());
 }
 
-fn ensure_misbehaviour<H: TestHost>(
-    ctx: &MockContext<H>,
+fn ensure_misbehaviour<S: ProvableStore + Debug>(
+    ctx: &MockIbcStore<S>,
     client_id: &ClientId,
     client_type: &ClientType,
 ) {
@@ -1134,7 +1162,7 @@ fn ensure_misbehaviour<H: TestHost>(
     assert!(status.is_frozen(), "client_state status: {status}");
 
     // check events
-    let ibc_events = ctx.get_events();
+    let ibc_events = ctx.events.lock();
     assert_eq!(ibc_events.len(), 2);
     assert!(matches!(
         ibc_events[0],
@@ -1161,13 +1189,13 @@ fn test_misbehaviour_client_ok(fixture: Fixture) {
     let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let msg_envelope = msg_update_client(&client_id);
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx.ibc_store, &router, msg_envelope.clone());
     assert!(res.is_ok());
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
     assert!(res.is_ok());
 
-    ensure_misbehaviour(&ctx, &client_id, &mock_client_type());
+    ensure_misbehaviour(&ctx.ibc_store, &client_id, &mock_client_type());
 }
 
 #[rstest]
@@ -1182,7 +1210,7 @@ fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
         &client_id,
         LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
 }
 
@@ -1198,7 +1226,7 @@ fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
         &client_id,
         LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
 }
 
@@ -1213,13 +1241,21 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
 
     // Create a mock context for chain-B
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host(
+            TendermintHost::builder()
+                .chain_id(chain_id_b.clone())
+                .build(),
+        )
         .latest_height(misbehaviour_height)
         .build::<MockContext<TendermintHost>>();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
     let mut ctx_a = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -1234,7 +1270,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
 
     // Get chain-B's header at `misbehaviour_height`
     let header1: TmHeader = {
-        let block = ctx_b.host_block(&misbehaviour_height).unwrap().clone();
+        let block = ctx_b.host_block(&misbehaviour_height).unwrap();
         let mut block = block.into_header();
         block.set_trusted_height(client_height);
         block.into()
@@ -1242,8 +1278,11 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
 
     // Generate an equivocal header for chain-B at `misbehaviour_height`
     let header2 = {
-        let mut tm_block = TendermintHost::with_chain_id(chain_id_b)
+        let mut tm_block = TendermintHost::builder()
+            .chain_id(chain_id_b)
+            .build()
             .generate_block(
+                Vec::new(),
                 misbehaviour_height.revision_height(),
                 Timestamp::now(),
                 &Default::default(),
@@ -1260,11 +1299,11 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
     };
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok());
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok());
-    ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
+    ensure_misbehaviour(&ctx_a.ibc_store, &client_id, &tm_client_type());
 }
 
 #[rstest]
@@ -1275,13 +1314,21 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host(
+            TendermintHost::builder()
+                .chain_id(chain_id_b.clone())
+                .build(),
+        )
         .latest_height(client_height)
         .build::<MockContext<TendermintHost>>();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
     let mut ctx_a = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .build::<MockContext<MockHost>>()
         .with_light_client(
@@ -1293,8 +1340,11 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
 
     // Generate `header1` for chain-B
     let header1 = {
-        let mut tm_block = TendermintHost::with_chain_id(chain_id_b.clone())
+        let mut tm_block = TendermintHost::builder()
+            .chain_id(chain_id_b.clone())
+            .build()
             .generate_block(
+                Vec::new(),
                 misbehaviour_height.revision_height(),
                 Timestamp::now(),
                 &Default::default(),
@@ -1309,8 +1359,11 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let header2 = {
         let timestamp =
             Timestamp::from_nanoseconds(Timestamp::now().nanoseconds() + 1_000_000_000).unwrap();
-        let mut tm_block = TendermintHost::with_chain_id(chain_id_b)
+        let mut tm_block = TendermintHost::builder()
+            .chain_id(chain_id_b)
+            .build()
             .generate_block(
+                Vec::new(),
                 misbehaviour_height.revision_height(),
                 timestamp,
                 &Default::default(),
@@ -1329,11 +1382,11 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope.clone());
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope.clone());
     assert!(res.is_ok());
-    let res = execute(&mut ctx_a, &mut router_a, msg_envelope);
+    let res = execute(&mut ctx_a.ibc_store, &mut router_a, msg_envelope);
     assert!(res.is_ok());
-    ensure_misbehaviour(&ctx_a, &client_id, &tm_client_type());
+    ensure_misbehaviour(&ctx_a.ibc_store, &client_id, &tm_client_type());
 }
 
 #[rstest]
@@ -1350,13 +1403,17 @@ fn test_expired_client() {
     let trusting_period = Duration::from_secs(64);
 
     let ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b)
+        .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(client_height)
         .latest_timestamp(timestamp)
         .build::<MockContext<TendermintHost>>();
 
     let mut ctx = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
         .build::<MockContext<MockHost>>()
@@ -1372,14 +1429,18 @@ fn test_expired_client() {
                 .build(),
         );
 
-    while ctx.host_timestamp().expect("no error") < (timestamp + trusting_period).expect("no error")
+    while ctx.ibc_store.host_timestamp().expect("no error")
+        < (timestamp + trusting_period).expect("no error")
     {
-        ctx.advance_host_chain_height();
+        ctx.advance_block();
     }
 
-    let client_state = ctx.client_state(&client_id).unwrap();
+    let client_state = ctx.ibc_store.client_state(&client_id).unwrap();
 
-    assert!(client_state.status(&ctx, &client_id).unwrap().is_expired());
+    assert!(client_state
+        .status(&ctx.ibc_store, &client_id)
+        .unwrap()
+        .is_expired());
 }
 
 #[rstest]
@@ -1395,14 +1456,17 @@ fn test_client_update_max_clock_drift() {
     let max_clock_drift = Duration::from_secs(64);
 
     let mut ctx_b = MockContextConfig::builder()
-        .host_id(chain_id_b.clone())
+        .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(client_height)
         .latest_timestamp(timestamp)
-        .max_history_size(u64::MAX)
         .build::<MockContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
-        .host_id(ChainId::new("mockgaiaA-1").unwrap())
+        .host(
+            MockHost::builder()
+                .chain_id(ChainId::new("mockgaiaA-1").unwrap())
+                .build(),
+        )
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
         .build::<MockContext<MockHost>>()
@@ -1420,20 +1484,20 @@ fn test_client_update_max_clock_drift() {
 
     let router_a = MockRouter::new_with_transfer();
 
-    while ctx_b.host_timestamp().expect("no error")
-        < (ctx_a.host_timestamp().expect("no error") + max_clock_drift).expect("no error")
+    while ctx_b.ibc_store.host_timestamp().expect("no error")
+        < (ctx_a.ibc_store.host_timestamp().expect("no error") + max_clock_drift).expect("no error")
     {
-        ctx_b.advance_host_chain_height();
+        ctx_b.advance_block();
     }
 
     // include current block
-    ctx_b.advance_host_chain_height();
+    ctx_b.advance_block();
 
     let update_height = ctx_b.latest_height();
 
     let signer = dummy_account_id();
 
-    let block = ctx_b.host_block(&update_height).unwrap().clone();
+    let block = ctx_b.host_block(&update_height).unwrap();
     let mut block = block.into_header();
     block.set_trusted_height(client_height);
 
@@ -1454,6 +1518,6 @@ fn test_client_update_max_clock_drift() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx_a, &router_a, msg_envelope);
+    let res = validate(&ctx_a.ibc_store, &router_a, msg_envelope);
     assert!(res.is_err());
 }

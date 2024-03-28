@@ -11,12 +11,13 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_close_init;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 
 #[test]
 fn test_chan_close_init_validate() {
@@ -51,7 +52,7 @@ fn test_chan_close_init_validate() {
 
     let context = {
         let default_context = MockContext::<MockHost>::default();
-        let client_consensus_state_height = default_context.host_height().unwrap();
+        let client_consensus_state_height = default_context.ibc_store.host_height().unwrap();
 
         default_context
             .with_light_client(
@@ -61,14 +62,14 @@ fn test_chan_close_init_validate() {
             .with_connection(conn_id, conn_end)
             .with_channel(
                 msg_chan_close_init.port_id_on_a.clone(),
-                msg_chan_close_init.chan_id_on_a.clone(),
+                msg_chan_close_init.chan_id_on_a,
                 chan_end,
             )
     };
 
     let router = MockRouter::new_with_transfer();
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),
@@ -109,7 +110,7 @@ fn test_chan_close_init_execute() {
 
     let mut context = {
         let default_context = MockContext::<MockHost>::default();
-        let client_consensus_state_height = default_context.host_height().unwrap();
+        let client_consensus_state_height = default_context.ibc_store.host_height().unwrap();
 
         default_context
             .with_light_client(
@@ -119,14 +120,14 @@ fn test_chan_close_init_execute() {
             .with_connection(conn_id, conn_end)
             .with_channel(
                 msg_chan_close_init.port_id_on_a.clone(),
-                msg_chan_close_init.chan_id_on_a.clone(),
+                msg_chan_close_init.chan_id_on_a,
                 chan_end,
             )
     };
 
     let mut router = MockRouter::new_with_transfer();
 
-    let res = execute(&mut context, &mut router, msg_envelope);
+    let res = execute(&mut context.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok(), "Execution happy path");
 

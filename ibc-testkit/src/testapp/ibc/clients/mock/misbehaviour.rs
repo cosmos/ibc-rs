@@ -38,7 +38,7 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
 
 impl From<Misbehaviour> for RawMisbehaviour {
     fn from(value: Misbehaviour) -> Self {
-        RawMisbehaviour {
+        Self {
             client_id: value.client_id.to_string(),
             header1: Some(value.header1.into()),
             header2: Some(value.header2.into()),
@@ -70,7 +70,7 @@ impl TryFrom<Any> for Misbehaviour {
 
 impl From<Misbehaviour> for Any {
     fn from(misbehaviour: Misbehaviour) -> Self {
-        Any {
+        Self {
             type_url: MOCK_MISBEHAVIOUR_TYPE_URL.to_string(),
             value: Protobuf::<RawMisbehaviour>::encode_vec(misbehaviour),
         }
