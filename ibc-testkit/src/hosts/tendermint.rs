@@ -1,6 +1,5 @@
 use alloc::collections::VecDeque;
 use core::str::FromStr;
-use core::time::Duration;
 
 use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState;
@@ -19,19 +18,26 @@ use tendermint_testgen::{
     Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
     Validator as TestgenValidator,
 };
+use typed_builder::TypedBuilder;
 
 use crate::context::MockClientConfig;
 use crate::fixtures::clients::tendermint::ClientStateConfig;
-use crate::hosts::{HostParams, TestBlock, TestHeader, TestHost};
+use crate::hosts::{TestBlock, TestHeader, TestHost};
 
-#[derive(Debug)]
+#[derive(TypedBuilder, Debug)]
 pub struct TendermintHost {
+    /// Unique identifier for the chain.
+    #[builder(default = ChainId::new("mock-0").expect("Never fails"))]
     pub chain_id: ChainId,
-    pub block_time: Duration,
-    pub genesis_timestamp: Timestamp,
-
     /// The chain of blocks underlying this context.
+    #[builder(default)]
     pub history: VecDeque<TendermintBlock>,
+}
+
+impl Default for TendermintHost {
+    fn default() -> Self {
+        Self::builder().build()
+    }
 }
 
 impl TestHost for TendermintHost {
@@ -40,35 +46,8 @@ impl TestHost for TendermintHost {
     type BlockParams = BlockParams;
     type LightClientParams = MockClientConfig;
 
-    fn build(params: HostParams) -> Self {
-        let HostParams {
-            chain_id,
-            block_time,
-            genesis_timestamp,
-        } = params;
-
-        Self {
-            chain_id,
-            block_time,
-            genesis_timestamp,
-            history: VecDeque::new(),
-        }
-    }
-
     fn history(&self) -> &VecDeque<Self::Block> {
         &self.history
-    }
-
-    fn chain_id(&self) -> &ChainId {
-        &self.chain_id
-    }
-
-    fn block_time(&self) -> Duration {
-        self.block_time
-    }
-
-    fn genesis_timestamp(&self) -> Timestamp {
-        self.genesis_timestamp
     }
 
     fn push_block(&mut self, block: Self::Block) {
@@ -97,7 +76,7 @@ impl TestHost for TendermintHost {
                 TestgenHeader::new(&params.validators)
                     .app_hash(commitment_root.try_into().expect("infallible"))
                     .height(height)
-                    .chain_id(self.chain_id().as_str())
+                    .chain_id(self.chain_id.as_str())
                     .next_validators(&params.next_validators)
                     .time(timestamp.into_tm_time().expect("Never fails")),
             )
@@ -114,7 +93,7 @@ impl TestHost for TendermintHost {
         params: &Self::LightClientParams,
     ) -> Self::ClientState {
         let client_state: ClientState = ClientStateConfig::builder()
-            .chain_id(self.chain_id().clone())
+            .chain_id(self.chain_id.clone())
             .latest_height(
                 self.get_block(latest_height)
                     .expect("block exists")
@@ -161,7 +140,7 @@ impl TestBlock for TendermintBlock {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, TypedBuilder)]
 pub struct BlockParams {
     pub validators: Vec<TestgenValidator>,
     pub next_validators: Vec<TestgenValidator>,
@@ -171,9 +150,11 @@ impl BlockParams {
     pub fn from_validator_history(validator_history: Vec<Vec<TestgenValidator>>) -> Vec<Self> {
         validator_history
             .windows(2)
-            .map(|vals| Self {
-                validators: vals[0].clone(),
-                next_validators: vals[1].clone(),
+            .map(|vals| {
+                Self::builder()
+                    .validators(vals[0].clone())
+                    .next_validators(vals[1].clone())
+                    .build()
             })
             .collect()
     }
@@ -181,15 +162,16 @@ impl BlockParams {
 
 impl Default for BlockParams {
     fn default() -> Self {
-        let validators = vec![
-            TestgenValidator::new("1").voting_power(50),
-            TestgenValidator::new("2").voting_power(50),
-        ];
-
-        Self {
-            validators: validators.clone(),
-            next_validators: validators,
-        }
+        Self::builder()
+            .validators(vec![
+                TestgenValidator::new("1").voting_power(50),
+                TestgenValidator::new("2").voting_power(50),
+            ])
+            .next_validators(vec![
+                TestgenValidator::new("1").voting_power(50),
+                TestgenValidator::new("2").voting_power(50),
+            ])
+            .build()
     }
 }
 

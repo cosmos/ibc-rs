@@ -1,24 +1,30 @@
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
-use core::time::Duration;
 
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::Timestamp;
+use typed_builder::TypedBuilder;
 
-use super::{HostParams, TestBlock, TestHeader, TestHost};
+use super::{TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 
-#[derive(Debug)]
+#[derive(TypedBuilder, Debug)]
 pub struct MockHost {
+    /// Unique identifier for the chain.
+    #[builder(default = ChainId::new("mock-0").expect("Never fails"))]
     pub chain_id: ChainId,
-    pub block_time: Duration,
-    pub genesis_timestamp: Timestamp,
-
     /// The chain of blocks underlying this context.
-    history: VecDeque<MockHeader>,
+    #[builder(default)]
+    pub history: VecDeque<MockHeader>,
+}
+
+impl Default for MockHost {
+    fn default() -> Self {
+        Self::builder().build()
+    }
 }
 
 impl TestHost for MockHost {
@@ -27,37 +33,10 @@ impl TestHost for MockHost {
     type BlockParams = ();
     type LightClientParams = ();
 
-    fn build(params: HostParams) -> Self {
-        let HostParams {
-            chain_id,
-            block_time,
-            genesis_timestamp,
-        } = params;
-
-        Self {
-            chain_id,
-            block_time,
-            genesis_timestamp,
-
-            history: VecDeque::new(),
-        }
-    }
-
     fn history(&self) -> &VecDeque<Self::Block> {
         &self.history
     }
 
-    fn chain_id(&self) -> &ChainId {
-        &self.chain_id
-    }
-
-    fn block_time(&self) -> Duration {
-        self.block_time
-    }
-
-    fn genesis_timestamp(&self) -> Timestamp {
-        self.genesis_timestamp
-    }
     fn push_block(&mut self, block: Self::Block) {
         self.history.push_back(block);
     }
@@ -80,7 +59,7 @@ impl TestHost for MockHost {
         _: &Self::BlockParams,
     ) -> Self::Block {
         MockHeader {
-            height: Height::new(self.chain_id().revision_number(), height).expect("Never fails"),
+            height: Height::new(self.chain_id.revision_number(), height).expect("Never fails"),
             timestamp,
         }
     }
