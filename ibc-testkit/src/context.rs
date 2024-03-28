@@ -30,6 +30,7 @@ use crate::fixtures::core::context::MockContextConfig;
 use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
+use crate::testapp::ibc::core::types::DEFAULT_BLOCK_TIME_SECS;
 
 /// A context implementing the dependencies necessary for testing any IBC module.
 #[derive(Debug)]
@@ -116,14 +117,30 @@ where
         self
     }
 
-    pub fn advance_with_block_params(&mut self, params: &H::BlockParams) {
-        // TODO(rano): we need to commit method, to calculate the hashes
+    pub fn generate_genesis_block(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
+        // commit store
+        let app_hash = self.ibc_store.commit().expect("no error");
 
+        // generate and push genesis block
+        let genesis_block = self.host.generate_block(app_hash, 1, genesis_time, params);
+        self.host.push_block(genesis_block);
+
+        // store it in ibc context as host consensus state
+        self.ibc_store.store_host_consensus_state(
+            self.host
+                .latest_block()
+                .into_header()
+                .into_consensus_state()
+                .into(),
+        );
+    }
+
+    pub fn advance_with_block_params(&mut self, block_time: Duration, params: &H::BlockParams) {
         // commit store
         let app_hash = self.ibc_store.commit().expect("no error");
 
         // generate a new block
-        self.host.advance_block(app_hash, params);
+        self.host.advance_block(app_hash, block_time, params);
 
         // store it in ibc context as host consensus state
         self.ibc_store.store_host_consensus_state(
@@ -136,7 +153,10 @@ where
     }
 
     pub fn advance_block(&mut self) {
-        self.advance_with_block_params(&Default::default())
+        self.advance_with_block_params(
+            Duration::from_secs(DEFAULT_BLOCK_TIME_SECS),
+            &Default::default(),
+        )
     }
 
     pub fn prune_block_till(&mut self, height: &Height) {
