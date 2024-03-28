@@ -1,7 +1,6 @@
 //! Defines the client error type
 
 use displaydoc::Display;
-// use ibc::core::ContextError;
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_host_types::identifiers::{ClientId, ClientType};
@@ -20,10 +19,19 @@ pub enum ClientError {
     ClientFrozen { description: String },
     /// client is not active. Status=`{status}`
     ClientNotActive { status: Status },
+    /// client is not frozen or expired. Status=`{status}`
+    ClientNotInactive { status: Status },
     /// client state not found: `{client_id}`
     ClientStateNotFound { client_id: ClientId },
     /// client state already exists: `{client_id}`
     ClientStateAlreadyExists { client_id: ClientId },
+    /// Substitute client height `{substitute_height}` is not greater than subject client height `{subject_height}` during client recovery
+    ClientRecoveryHeightMismatch {
+        subject_height: Height,
+        substitute_height: Height,
+    },
+    /// Subject and substitute client state mismatch during client recovery
+    ClientRecoveryStateMismatch,
     /// consensus state not found at: `{client_id}` at height `{height}`
     ConsensusStateNotFound { client_id: ClientId, height: Height },
     /// Processed time or height for the client `{client_id}` at height `{height}` not found
@@ -50,6 +58,8 @@ pub enum ClientError {
     MissingRawConsensusState,
     /// invalid client id in the update client message: `{0}`
     InvalidMsgUpdateClientId(IdentifierError),
+    /// invalid client id in recover client message: `{0}`
+    InvalidMsgRecoverClientId(IdentifierError),
     /// invalid client identifier error: `{0}`
     InvalidClientIdentifier(IdentifierError),
     /// invalid raw header error: `{reason}`

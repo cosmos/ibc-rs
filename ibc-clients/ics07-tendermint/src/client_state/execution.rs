@@ -63,6 +63,22 @@ where
             upgraded_consensus_state,
         )
     }
+
+    fn update_on_recovery(
+        &self,
+        ctx: &mut E,
+        subject_client_id: &ClientId,
+        substitute_client_state: Any,
+    ) -> Result<(), ClientError> {
+        let subject_client_state = self.inner().clone();
+
+        update_on_recovery(
+            subject_client_state,
+            ctx,
+            subject_client_id,
+            substitute_client_state,
+        )
+    }
 }
 
 /// Seed the host store with initial client and consensus states.
@@ -208,7 +224,8 @@ where
     Ok(())
 }
 
-/// Commit the new client state and consensus state to the store.
+/// Commit the new client state and consensus state to the store upon a
+/// successful client upgrade.
 ///
 /// Note that this function is typically implemented as part of the
 /// [`ClientStateExecution`] trait, but has been made a standalone function
@@ -341,6 +358,62 @@ where
         ctx.delete_consensus_state(client_consensus_state_path)?;
         ctx.delete_update_meta(client_id.clone(), height)?;
     }
+
+    Ok(())
+}
+
+/// Update the `client_state`'s ID, trusting period, latest height, processed height,
+/// and processed time metadata values to those values provided by a verified substitute
+/// client state in response to a successful client recovery.
+///
+/// Note that unlike the `update_on_upgrade` function, `update_on_recovery` assumes
+/// that the client being updated has already been re-initialised such that its original
+/// client and consensus states have been overwritten to their new states.
+///
+/// This function is typically implemented as part of the [`ClientStateExecution`]
+/// trait, but has been made standalone in order to enable greater flexibility
+/// of the ClientState APIs.
+pub fn update_on_recovery<E>(
+    subject_client_state: ClientStateType,
+    ctx: &mut E,
+    subject_client_id: &ClientId,
+    substitute_client_state: Any,
+) -> Result<(), ClientError>
+where
+    E: TmExecutionContext,
+    E::ClientStateRef: From<ClientStateType>,
+    E::ConsensusStateRef: ConsensusStateConverter,
+{
+    let substitute_client_state = ClientState::try_from(substitute_client_state)?
+        .inner()
+        .clone();
+
+    let chain_id = substitute_client_state.chain_id;
+    let trusting_period = substitute_client_state.trusting_period;
+    let latest_height = substitute_client_state.latest_height;
+
+    let new_client_state = ClientStateType {
+        chain_id,
+        trusting_period,
+        latest_height,
+        frozen_height: None,
+        ..subject_client_state
+    };
+
+    let host_timestamp = E::host_timestamp(ctx)?;
+    let host_height = E::host_height(ctx)?;
+
+    ctx.store_client_state(
+        ClientStatePath::new(subject_client_id.clone()),
+        new_client_state.into(),
+    )?;
+
+    ctx.store_update_meta(
+        subject_client_id.clone(),
+        latest_height,
+        host_timestamp,
+        host_height,
+    )?;
 
     Ok(())
 }

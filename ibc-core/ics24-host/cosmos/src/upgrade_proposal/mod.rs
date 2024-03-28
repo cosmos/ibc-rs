@@ -8,6 +8,6 @@ mod proposal;
 
 pub use context::*;
 pub use events::{UpgradeChain, UpgradeClientProposal};
-pub use handler::upgrade_client_proposal_handler;
+pub use handler::execute_upgrade_client_proposal;
 pub use plan::Plan;
-pub use proposal::UpgradeProposal;
+pub use proposal::*;

@@ -311,6 +311,10 @@ where
 
         Ok(Status::Active)
     }
+
+    fn check_substitute(&self, _ctx: &V, _substitute_client_state: Any) -> Result<(), ClientError> {
+        Ok(())
+    }
 }
 
 impl<E> ClientStateExecution<E> for MockClientState
@@ -426,6 +430,39 @@ where
         )?;
 
         Ok(latest_height)
+    }
+
+    fn update_on_recovery(
+        &self,
+        ctx: &mut E,
+        subject_client_id: &ClientId,
+        substitute_client_state: Any,
+    ) -> Result<(), ClientError> {
+        let substitute_client_state = MockClientState::try_from(substitute_client_state)?;
+
+        let latest_height = substitute_client_state.latest_height();
+
+        let new_mock_client_state = MockClientState {
+            frozen: false,
+            ..substitute_client_state
+        };
+
+        let host_timestamp = ctx.host_timestamp()?;
+        let host_height = ctx.host_height()?;
+
+        ctx.store_client_state(
+            ClientStatePath::new(subject_client_id.clone()),
+            new_mock_client_state.into(),
+        )?;
+
+        ctx.store_update_meta(
+            subject_client_id.clone(),
+            latest_height,
+            host_timestamp,
+            host_height,
+        )?;
+
+        Ok(())
     }
 }
 

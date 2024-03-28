@@ -8,6 +8,8 @@ use ibc_proto::Protobuf;
 
 use super::Plan;
 
+pub const UPGRADE_PROPOSAL_TYPE_URL: &str = "/ibc.core.client.v1.UpgradeProposal";
+
 /// Defines a governance proposal of type `Content` that enables the initiation
 /// of an IBC breaking upgrade and specifies the new client state that should be
 /// utilized following the upgrade.
