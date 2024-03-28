@@ -38,7 +38,7 @@ pub type HostHeader<H> = <HostBlock<H> as TestBlock>::Header;
 pub type HostConsensusState<H> = <HostHeader<H> as TestHeader>::ConsensusState;
 
 /// TestHost is a trait that defines the interface for a host blockchain.
-pub trait TestHost: Debug + Sized {
+pub trait TestHost: Default + Debug + Sized {
     /// The type of block produced by the host.
     type Block: TestBlock;
 
@@ -51,19 +51,8 @@ pub trait TestHost: Debug + Sized {
     /// The type of light client parameters to produce a light client state
     type LightClientParams: Debug + Default;
 
-    /// Build a new host with the given parameters.
-    fn build(params: HostParams) -> Self;
-
+    /// The history of blocks produced by the host chain.
     fn history(&self) -> &VecDeque<Self::Block>;
-
-    /// The chain identifier of the host.
-    fn chain_id(&self) -> &ChainId;
-
-    /// The block production time of the host.
-    fn block_time(&self) -> Duration;
-
-    /// The genesis timestamp of the host.
-    fn genesis_timestamp(&self) -> Timestamp;
 
     /// Returns true if the host chain has no blocks.
     fn is_empty(&self) -> bool {
@@ -94,21 +83,20 @@ pub trait TestHost: Debug + Sized {
     fn prune_block_till(&mut self, height: &Height);
 
     /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
-    fn advance_block(&mut self, commitment_root: Vec<u8>, params: &Self::BlockParams) {
-        let (height, timestamp) = if self.is_empty() {
-            (1, self.genesis_timestamp())
-        } else {
-            let latest_block = self.latest_block();
+    fn advance_block(
+        &mut self,
+        commitment_root: Vec<u8>,
+        block_time: Duration,
+        params: &Self::BlockParams,
+    ) {
+        let latest_block = self.latest_block();
 
-            (
-                TestBlock::height(&latest_block)
-                    .increment()
-                    .revision_height(),
-                TestBlock::timestamp(&latest_block)
-                    .add(self.block_time())
-                    .expect("Never fails"),
-            )
-        };
+        let height = TestBlock::height(&latest_block)
+            .increment()
+            .revision_height();
+        let timestamp = TestBlock::timestamp(&latest_block)
+            .add(block_time)
+            .expect("Never fails");
 
         let new_block = self.generate_block(commitment_root, height, timestamp, params);
 
