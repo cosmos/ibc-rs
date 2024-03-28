@@ -4,13 +4,12 @@ use core::time::Duration;
 use basecoin_store::context::ProvableStore;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::types::Height;
-use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use typed_builder::TypedBuilder;
 
 use crate::context::MockGenericContext;
-use crate::hosts::{HostClientState, HostParams, TestBlock, TestHost};
+use crate::hosts::{HostClientState, TestBlock, TestHost};
 use crate::testapp::ibc::core::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 use crate::utils::year_2023;
 
@@ -21,8 +20,8 @@ pub struct MockContextConfig<H>
 where
     H: TestHost,
 {
-    #[builder(default = ChainId::new("mockgaia-0").expect("Never fails"))]
-    host_id: ChainId,
+    #[builder(default)]
+    pub host: H,
 
     #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
     block_time: Duration,
@@ -50,34 +49,23 @@ where
             "The chain must have a non-zero revision_height"
         );
 
-        assert_eq!(
-            params.host_id.revision_number(),
-            params.latest_height.revision_number(),
-            "The version in the chain identifier must match the version in the latest height"
-        );
-
         // timestamp at height 1
         let genesis_timestamp = (params.latest_timestamp
             - (params.block_time
                 * u32::try_from(params.latest_height.revision_height() - 1).expect("no overflow")))
         .expect("no underflow");
 
-        let host = H::build(
-            HostParams::builder()
-                .chain_id(params.host_id)
-                .block_time(params.block_time)
-                .genesis_timestamp(genesis_timestamp)
-                .build(),
-        );
-
         let mut context = Self {
-            ibc_store: MockIbcStore::new(host.chain_id().revision_number(), Default::default()),
-            host,
+            ibc_store: MockIbcStore::new(
+                params.latest_height.revision_number(),
+                Default::default(),
+            ),
+            host: params.host,
         };
 
         // store is a height 0; no block
 
-        context.advance_block();
+        context.generate_genesis_block(genesis_timestamp, &Default::default());
 
         // store is a height 1; one block
 
@@ -89,7 +77,7 @@ where
         );
 
         for block_params in params.block_params_history {
-            context.advance_with_block_params(&block_params);
+            context.advance_with_block_params(params.block_time, &block_params);
         }
 
         assert_eq!(
