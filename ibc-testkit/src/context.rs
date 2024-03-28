@@ -378,7 +378,6 @@ where
 #[cfg(test)]
 mod tests {
     use ibc::core::client::context::consensus_state::ConsensusState;
-    use ibc::core::host::types::identifiers::ChainId;
 
     use super::*;
     use crate::hosts::{HostConsensusState, MockHost, TendermintHost};
@@ -402,8 +401,7 @@ mod tests {
             HostConsensusState<H>: ConsensusState,
             HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
         {
-            let cv = 1; // The version to use for all chains.
-            let mock_chain_id = ChainId::new(&format!("mockgaia-{cv}")).unwrap();
+            let cv = 0; // The version to use for all chains.
 
             // TODO(rano): these tests are redundant as we don't use max_history_size anymore
             // we advance the block till latest_height, starting from Height(1)
@@ -413,28 +411,24 @@ mod tests {
                 Test {
                     name: "Empty history, small pruning window".to_string(),
                     ctx: MockContextConfig::builder()
-                        .host_id(mock_chain_id.clone())
                         .latest_height(Height::new(cv, 1).expect("Never fails"))
                         .build(),
                 },
                 Test {
                     name: "Large pruning window".to_string(),
                     ctx: MockContextConfig::builder()
-                        .host_id(mock_chain_id.clone())
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
                         .build(),
                 },
                 Test {
                     name: "Small pruning window".to_string(),
                     ctx: MockContextConfig::builder()
-                        .host_id(mock_chain_id.clone())
                         .latest_height(Height::new(cv, 30).expect("Never fails"))
                         .build(),
                 },
                 Test {
                     name: "Small pruning window, small starting height".to_string(),
                     ctx: MockContextConfig::builder()
-                        .host_id(mock_chain_id.clone())
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
                         .build(),
                 },
@@ -443,7 +437,6 @@ mod tests {
                 // Test {
                 //     name: "Large pruning window, large starting height".to_string(),
                 //     ctx: MockContextConfig::builder()
-                //         .host_id(mock_chain_id)
                 //         .latest_height(Height::new(cv, 2000).expect("Never fails"))
                 //         .build(),
                 // },
