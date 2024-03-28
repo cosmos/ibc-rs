@@ -32,6 +32,7 @@ pub enum ClientMsg {
     UpdateClient(MsgUpdateClient),
     Misbehaviour(MsgSubmitMisbehaviour),
     UpgradeClient(MsgUpgradeClient),
+    RecoverClient(MsgRecoverClient),
 }
 
 pub enum MsgUpdateOrMisbehaviour {

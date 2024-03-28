@@ -9,7 +9,7 @@ use ibc_core_channel::handler::{
 use ibc_core_channel::types::msgs::{
     channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
 };
-use ibc_core_client::handler::{create_client, update_client, upgrade_client};
+use ibc_core_client::handler::{create_client, recover_client, update_client, upgrade_client};
 use ibc_core_client::types::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
 use ibc_core_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
@@ -56,6 +56,7 @@ where
                 update_client::validate(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
             }
             ClientMsg::UpgradeClient(msg) => upgrade_client::validate(ctx, msg),
+            ClientMsg::RecoverClient(msg) => recover_client::validate(ctx, msg),
         },
         MsgEnvelope::Connection(msg) => match msg {
             ConnectionMsg::OpenInit(msg) => conn_open_init::validate(ctx, msg),
@@ -127,6 +128,7 @@ where
                 update_client::execute(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
             }
             ClientMsg::UpgradeClient(msg) => upgrade_client::execute(ctx, msg),
+            ClientMsg::RecoverClient(msg) => recover_client::execute(ctx, msg),
         },
         MsgEnvelope::Connection(msg) => match msg {
             ConnectionMsg::OpenInit(msg) => conn_open_init::execute(ctx, msg),
