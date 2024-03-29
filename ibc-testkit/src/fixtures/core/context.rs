@@ -22,7 +22,7 @@ where
     H: TestHost,
 {
     #[builder(default)]
-    pub host: H,
+    host: H,
 
     #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
     block_time: Duration,
@@ -58,12 +58,12 @@ where
 
         let mut context = Self {
             main_store: Default::default(),
+            host: params.host,
             ibc_store: MockIbcStore::new(
                 params.latest_height.revision_number(),
                 Default::default(),
             ),
             ibc_router: MockRouter::new_with_transfer(),
-            host: params.host,
         };
 
         // store is a height 0; no block
