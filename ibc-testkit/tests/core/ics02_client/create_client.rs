@@ -11,7 +11,7 @@ use ibc::core::commitment_types::error::CommitmentError;
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::msgs::MsgEnvelope;
-use ibc::core::host::types::identifiers::{ChainId, ClientId};
+use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::{ClientConsensusStatePath, NextClientSequencePath};
 use ibc::core::host::{ClientStateRef, ValidationContext};
 use ibc_query::core::context::ProvableContext;
@@ -138,7 +138,6 @@ fn test_tm_create_client_proof_verification_ok() {
     let client_height = Height::new(0, 10).expect("no error");
 
     let ctx_tm = MockContextConfig::builder()
-        .host_id(ChainId::new("tendermint-0").unwrap())
         .latest_height(client_height)
         .build::<MockContext<TendermintHost>>();
 
