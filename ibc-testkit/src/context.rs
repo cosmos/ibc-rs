@@ -384,7 +384,7 @@ mod tests {
     use crate::testapp::ibc::core::types::DefaultIbcStore;
 
     #[test]
-    fn test_history_manipulation_mock() {
+    fn test_mock_history_validation() {
         pub struct Test<H: TestHost>
         where
             H: TestHost,
@@ -402,10 +402,6 @@ mod tests {
             HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
         {
             let cv = 0; // The version to use for all chains.
-
-            // TODO(rano): these tests are redundant as we don't use max_history_size anymore
-            // we advance the block till latest_height, starting from Height(1)
-            // Note: for large latest_height, the Context building will be slower
 
             let tests: Vec<Test<H>> = vec![
                 Test {
@@ -433,7 +429,7 @@ mod tests {
                         .build(),
                 },
                 // This is disabled, as now we generate all the blocks till latest_height
-                // Generating 2000 tendermint blocks is slow.
+                // Generating 2000 Tendermint blocks is slow.
                 // Test {
                 //     name: "Large pruning window, large starting height".to_string(),
                 //     ctx: MockContextConfig::builder()
