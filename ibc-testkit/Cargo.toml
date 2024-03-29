@@ -31,8 +31,8 @@ typed-builder     = { version = "0.18.0" }
 # ibc dependencies
 ibc       = { workspace = true, features = ["std"] }
 ibc-proto = { workspace = true }
-ibc-query = { version = "0.50.0", path = "../ibc-query" }
-basecoin-store = { git = "https://github.com/informalsystems/basecoin-rs", rev = "dc3b43a" }
+ibc-query = { version = "0.51.0", path = "../ibc-query" }
+basecoin-store = { git = "https://github.com/informalsystems/basecoin-rs", rev = "ce0d6c7" }
 
 # cosmos dependencies
 tendermint         = { workspace = true }

@@ -29,6 +29,7 @@ use crate::Version;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct IdentifiedChannelEnd {
     pub port_id: PortId,
@@ -52,12 +53,17 @@ impl TryFrom<RawIdentifiedChannel> for IdentifiedChannelEnd {
     type Error = ChannelError;
 
     fn try_from(value: RawIdentifiedChannel) -> Result<Self, Self::Error> {
+        if value.upgrade_sequence != 0 {
+            return Err(ChannelError::UnsupportedChannelUpgradeSequence);
+        }
+
         let raw_channel_end = RawChannel {
             state: value.state,
             ordering: value.ordering,
             counterparty: value.counterparty,
             connection_hops: value.connection_hops,
             version: value.version,
+            upgrade_sequence: value.upgrade_sequence,
         };
 
         Ok(IdentifiedChannelEnd {
@@ -83,6 +89,7 @@ impl From<IdentifiedChannelEnd> for RawIdentifiedChannel {
             version: value.channel_end.version.to_string(),
             port_id: value.port_id.to_string(),
             channel_id: value.channel_id.to_string(),
+            upgrade_sequence: 0,
         }
     }
 }
@@ -101,6 +108,7 @@ impl From<IdentifiedChannelEnd> for RawIdentifiedChannel {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ChannelEnd {
     pub state: State,
@@ -161,6 +169,7 @@ impl From<ChannelEnd> for RawChannel {
                 .map(|v| v.as_str().to_string())
                 .collect(),
             version: value.version.to_string(),
+            upgrade_sequence: 0,
         }
     }
 }
@@ -342,6 +351,7 @@ pub(crate) fn verify_connection_hops_length(
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Counterparty {
     pub port_id: PortId,
@@ -507,6 +517,7 @@ impl FromStr for Order {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum State {
     Uninitialized = 0isize,

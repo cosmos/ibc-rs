@@ -1,29 +1,26 @@
 //! Provides utility functions for querying IBC client states.
 
-use alloc::format;
-use core::str::FromStr;
-
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::error::ClientError;
-use ibc::core::client::types::Height;
-use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::{
     ClientConsensusStatePath, ClientStatePath, Path, UpgradeClientPath,
 };
 use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc::cosmos_host::upgrade_proposal::{UpgradeValidationContext, UpgradedConsensusStateRef};
-use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::core::client::v1::{
-    ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateRequest,
-    QueryClientStateResponse, QueryClientStatesRequest, QueryClientStatesResponse,
-    QueryClientStatusRequest, QueryClientStatusResponse, QueryConsensusStateHeightsRequest,
+use ibc::primitives::prelude::format;
+use ibc::primitives::proto::Any;
+
+use super::{
+    ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateResponse,
+    QueryClientStatesRequest, QueryClientStatesResponse, QueryClientStatusRequest,
+    QueryClientStatusResponse, QueryConsensusStateHeightsRequest,
     QueryConsensusStateHeightsResponse, QueryConsensusStateRequest, QueryConsensusStateResponse,
     QueryConsensusStatesRequest, QueryConsensusStatesResponse, QueryUpgradedClientStateRequest,
     QueryUpgradedClientStateResponse, QueryUpgradedConsensusStateRequest,
     QueryUpgradedConsensusStateResponse,
 };
-
+use crate::core::client::QueryClientStateRequest;
 use crate::core::context::QueryContext;
 use crate::error::QueryError;
 
@@ -35,7 +32,7 @@ pub fn query_client_state<I>(
 where
     I: QueryContext,
 {
-    let client_id = ClientId::from_str(request.client_id.as_str())?;
+    let client_id = request.client_id.clone();
 
     let client_val_ctx = ibc_ctx.get_client_validation_context();
 
@@ -48,15 +45,17 @@ where
             current_height,
             &Path::ClientState(ClientStatePath::new(client_id.clone())),
         )
-        .ok_or(QueryError::ProofNotFound {
-            description: format!("Proof not found for client state path: {client_id:?}"),
+        .ok_or_else(|| {
+            QueryError::proof_not_found(format!(
+                "Proof not found for client state path: {client_id:?}"
+            ))
         })?;
 
-    Ok(QueryClientStateResponse {
-        client_state: Some(client_state.into()),
+    Ok(QueryClientStateResponse::new(
+        client_state.into(),
         proof,
-        proof_height: Some(current_height.into()),
-    })
+        current_height,
+    ))
 }
 
 /// Queries for all the existing client states.
@@ -69,17 +68,14 @@ where
 {
     let client_states = ibc_ctx.client_states()?;
 
-    Ok(QueryClientStatesResponse {
-        client_states: client_states
+    Ok(QueryClientStatesResponse::new(
+        client_states
             .into_iter()
-            .map(|(id, state)| IdentifiedClientState {
-                client_id: id.into(),
-                client_state: Some(state.into()),
-            })
+            .map(|(id, state)| IdentifiedClientState::new(id, state.into()))
             .collect(),
         // no support for pagination yet
-        pagination: None,
-    })
+        None,
+    ))
 }
 
 /// Queries for the consensus state of a given client id and height.
@@ -91,19 +87,9 @@ where
     I: QueryContext,
     ConsensusStateRef<I>: Into<Any>,
 {
-    let client_id = ClientId::from_str(request.client_id.as_str())?;
+    let client_id = request.client_id.clone();
 
-    let (height, consensus_state) = if request.latest_height {
-        ibc_ctx
-            .consensus_states(&client_id)?
-            .into_iter()
-            .max_by_key(|(h, _)| *h)
-            .ok_or(QueryError::ProofNotFound {
-                description: format!("No consensus state found for client: {client_id:?}"),
-            })?
-    } else {
-        let height = Height::new(request.revision_number, request.revision_height)?;
-
+    let (height, consensus_state) = if let Some(height) = request.consensus_height {
         let client_val_ctx = ibc_ctx.get_client_validation_context();
 
         let consensus_state = client_val_ctx.consensus_state(&ClientConsensusStatePath::new(
@@ -113,6 +99,16 @@ where
         ))?;
 
         (height, consensus_state)
+    } else {
+        ibc_ctx
+            .consensus_states(&client_id)?
+            .into_iter()
+            .max_by_key(|&(h, _)| h)
+            .ok_or_else(|| {
+                QueryError::proof_not_found(format!(
+                    "No consensus state found for client: {client_id:?}"
+                ))
+            })?
     };
 
     let current_height = ibc_ctx.host_height()?;
@@ -126,15 +122,17 @@ where
                 height.revision_height(),
             )),
         )
-        .ok_or(QueryError::ProofNotFound {
-            description: format!("Proof not found for consensus state path: {client_id:?}"),
+        .ok_or_else(|| {
+            QueryError::proof_not_found(format!(
+                "Proof not found for consensus state path: {client_id:?}"
+            ))
         })?;
 
-    Ok(QueryConsensusStateResponse {
-        consensus_state: Some(consensus_state.into()),
+    Ok(QueryConsensusStateResponse::new(
+        consensus_state.into(),
         proof,
-        proof_height: Some(current_height.into()),
-    })
+        current_height,
+    ))
 }
 
 /// Queries for all the consensus states of a given client id.
@@ -146,21 +144,16 @@ where
     I: QueryContext,
     ConsensusStateRef<I>: Into<Any>,
 {
-    let client_id = ClientId::from_str(request.client_id.as_str())?;
+    let consensus_states = ibc_ctx.consensus_states(&request.client_id)?;
 
-    let consensus_states = ibc_ctx.consensus_states(&client_id)?;
-
-    Ok(QueryConsensusStatesResponse {
-        consensus_states: consensus_states
+    Ok(QueryConsensusStatesResponse::new(
+        consensus_states
             .into_iter()
-            .map(|(height, state)| ConsensusStateWithHeight {
-                height: Some(height.into()),
-                consensus_state: Some(state.into()),
-            })
+            .map(|(height, state)| ConsensusStateWithHeight::new(height, state.into()))
             .collect(),
-        // no support for pagination yet
-        pagination: None,
-    })
+        // no support for pagination yet,
+        None,
+    ))
 }
 
 /// Queries for the heights of all the consensus states of a given client id.
@@ -171,18 +164,13 @@ pub fn query_consensus_state_heights<I>(
 where
     I: QueryContext,
 {
-    let client_id = ClientId::from_str(request.client_id.as_str())?;
+    let consensus_state_heights = ibc_ctx.consensus_state_heights(&request.client_id)?;
 
-    let consensus_state_heights = ibc_ctx.consensus_state_heights(&client_id)?;
-
-    Ok(QueryConsensusStateHeightsResponse {
-        consensus_state_heights: consensus_state_heights
-            .into_iter()
-            .map(Into::into)
-            .collect(),
+    Ok(QueryConsensusStateHeightsResponse::new(
+        consensus_state_heights,
         // no support for pagination yet
-        pagination: None,
-    })
+        None,
+    ))
 }
 
 /// Queries for the status (Active, Frozen, Expired, Unauthorized) of a given client.
@@ -193,15 +181,12 @@ pub fn query_client_status<I>(
 where
     I: ValidationContext,
 {
-    let client_id = ClientId::from_str(request.client_id.as_str())?;
     let client_val_ctx = ibc_ctx.get_client_validation_context();
-    let client_state = client_val_ctx.client_state(&client_id)?;
+    let client_state = client_val_ctx.client_state(&request.client_id)?;
     let client_validation_ctx = ibc_ctx.get_client_validation_context();
-    let client_status = client_state.status(client_validation_ctx, &client_id)?;
+    let client_status = client_state.status(client_validation_ctx, &request.client_id)?;
 
-    Ok(QueryClientStatusResponse {
-        status: format!("{client_status}"),
-    })
+    Ok(QueryClientStatusResponse::new(client_status))
 }
 
 /// Queries for the upgraded client state.
@@ -220,9 +205,9 @@ where
         .upgraded_client_state(&upgraded_client_state_path)
         .map_err(ClientError::from)?;
 
-    Ok(QueryUpgradedClientStateResponse {
-        upgraded_client_state: Some(upgraded_client_state.into()),
-    })
+    Ok(QueryUpgradedClientStateResponse::new(
+        upgraded_client_state.into(),
+    ))
 }
 
 /// Queries for the upgraded consensus state.
@@ -243,7 +228,7 @@ where
         .upgraded_consensus_state(&upgraded_consensus_state_path)
         .map_err(ClientError::from)?;
 
-    Ok(QueryUpgradedConsensusStateResponse {
-        upgraded_consensus_state: Some(upgraded_consensus_state.into()),
-    })
+    Ok(QueryUpgradedConsensusStateResponse::new(
+        upgraded_consensus_state.into(),
+    ))
 }

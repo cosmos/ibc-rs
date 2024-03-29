@@ -61,9 +61,16 @@ impl MockClientState {
         }
     }
 
-    pub fn with_frozen_height(self, _frozen_height: Height) -> Self {
+    pub fn frozen(self) -> Self {
         Self {
             frozen: true,
+            ..self
+        }
+    }
+
+    pub fn unfrozen(self) -> Self {
+        Self {
+            frozen: false,
             ..self
         }
     }
@@ -373,7 +380,7 @@ where
         client_id: &ClientId,
         _client_message: Any,
     ) -> Result<(), ClientError> {
-        let frozen_client_state = self.with_frozen_height(Height::min(0));
+        let frozen_client_state = self.frozen();
 
         ctx.store_client_state(
             ClientStatePath::new(client_id.clone()),

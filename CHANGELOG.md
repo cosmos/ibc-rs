@@ -1,5 +1,92 @@
 # CHANGELOG
 
+## v0.51.0
+
+*March 26, 2024*
+
+This release introduces a few changes for better customizability. The main one is modularizing ICS-24, ICS-02, and ICS-07 trait implementations. This change empowers developers to write Rust light clients succinctly in a smart-contract context like CosmWasm. Also, the default Tendermint client state verifier is now detached to support custom verifiers, if required.
+
+In addition, this version fixes a bug where the consensus state is incorrectly stored when a header with an older height is submitted.
+
+Furthermore, a set of new host keys is added. This makes `ibc-rs` more consistent with the storage access of `ibc-go`. Also, access to client update information is merged into a single method; instead of individual details.
+
+This release updates the `ibc-proto-rs` dependency to `v0.42.2`. This takes account of the updated `MsgUpdateClient` and deprecates `MsgSubmitMisbehaviour`. Also, `ibc-derive` dependency is updated to `v0.6.1`.
+Finally, the minimum supported Rust version is corrected and updated to `1.71.1`.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- [ibc-core] Update `MsgUpdateClient` handler to accept misbehaviour reports via
+  its `client_message` field
+  ([\#835](https://github.com/cosmos/ibc-rs/issues/835))
+- [ibc-core-client] Merge client update time and height modification method
+  pairs into one, that is replace
+  a) client_update_{time,height} by update_meta,
+  b) store_update_{time,height} by store_update_meta and
+  c) delete_update_{time,height} by delete_update_meta.
+  ([\#973](https://github.com/cosmos/ibc-rs/issues/973))
+- [ibc] Refactor client relevant APIs for improved modularity and allow
+  standalone ICS-02 integration
+  ([\#1114](https://github.com/cosmos/ibc-rs/issues/1114))
+- [ibc] Increase minimum supported Rust version to 1.71.1
+  ([\#1118](https://github.com/cosmos/ibc-rs/issues/1118))
+- [ibc] Upgrade `ibc-proto-rs` to `v0.42.2`
+  ([\#1125](https://github.com/cosmos/ibc-rs/pull/1125))
+
+### BUG FIXES
+
+- [ibc] Add missing dependencies for some feature flags across multiple crates
+  ([\#1059](https://github.com/cosmos/ibc-rs/issues/1059))
+- [ibc-client-tendermint-types] Ease frozen Height check in the tendermint
+  `ClientState` protobuf deserialization, and consequently include frozen client
+  check for client creation path.
+  ([\#1061](https://github.com/cosmos/ibc-rs/issues/1061)),
+  ([\#1063](https://github.com/cosmos/ibc-rs/pull/1063))
+- [ibc-client-tendermint] Use header height for Tendermint consensus state storage
+  ([\#1080](https://github.com/cosmos/ibc-rs/issues/1080))
+- [ibc] Upgrade `serde_json` to "1.0.1" to address an stack overflow issue
+  within the `serde-json-wasm` crate
+  ([\#1083](https://github.com/cosmos/ibc-rs/pull/1083))
+- [ibc] Resolve potential `base64` dependency resolution issue by bringing it to
+  the workspace `Cargo.toml`
+  ([\#1084](https://github.com/cosmos/ibc-rs/issues/1084))
+- [ibc-client-tendermint-types] Check ics23 proof specs for empty depth range.
+  ([\#1100](https://github.com/cosmos/ibc-rs/issues/1100))
+
+### FEATURE
+
+- [ibc-core-host] Add remaining storage paths.
+  ([\#1065](https://github.com/cosmos/ibc-rs/issues/1065))
+- [ibc-core-host] Add iteration key for cross-compatibility with `ibc-go` used
+  for iterating over consensus states
+  ([\#1090](https://github.com/cosmos/ibc-rs/issues/1090))
+
+### IMPROVEMENTS
+
+- [ibc-core] Deprecate `ChannelEnd::order_matches` method
+  ([\#394](https://github.com/cosmos/ibc-rs/issues/394))
+- [ibc-apps] Ease `serde` derive on `ICS-20` and `ICS-721` types
+  ([\#1060](https://github.com/cosmos/ibc-rs/pull/1060))
+- [ibc-data-types] Refactor `Default` implementations with concrete names
+  ([\#1074](https://github.com/cosmos/ibc-rs/issues/1074))
+- [ibc-core] Deprecate `MsgSubmitMisbehaviour` in favor of `MsgUpdateClient` for
+  submitting misbehaviour reports
+  ([\#1077](https://github.com/cosmos/ibc-rs/issues/1077))
+- [ibc-core-host] Improve path segment access by exposing path prefixes and
+  implementing some convenient parent/leaf methods
+  ([\#1089](https://github.com/cosmos/ibc-rs/issues/1089))
+- [ibc-client-tendermint] Detach client state verifier such that users have a
+  way to utilize custom verifiers
+  ([\#1097](https://github.com/cosmos/ibc-rs/pull/1097))
+- [ibc-primitives] Use `let-else` over `downcast!()` and remove `utils/macros`
+  module as a result ([\#1118](https://github.com/cosmos/ibc-rs/issues/1118))
+- [ibc-core] Remove unnecessary shadowing with same value
+  ([\#1120](https://github.com/cosmos/ibc-rs/issues/1120))
+- [ibc-core-connection] Remove `State::Uninitialized` check while parsing
+  `ConnectionEnd` from Protobuf
+  ([\#1123](https://github.com/cosmos/ibc-rs/issues/1123))
+
 ## v0.50.0
 
 *January 24, 2024*
@@ -1340,7 +1427,7 @@ This is a major release, which implemented [ADR 4](https://github.com/cosmos/ibc
 
 - Delete packet commitment instead of acknowledgement in acknowledgePacket
   [#1573](https://github.com/informalsystems/ibc-rs/issues/1573)
-- Set the `counterparty_channel_id` correctly to fix ICS04 [`chanOpenAck` handler verification](https://github.com/informalsystems/ibc-rs/blob/master/modules/src/core/ics04_channel/handler/chan_open_ack.rs)
+- Set the `counterparty_channel_id` correctly to fix ICS04 [`chanOpenAck` handler verification](https://github.com/informalsystems/ibc-rs/blob/v0.10.0/modules/src/core/ics04_channel/handler/chan_open_ack.rs)
   ([#1649](https://github.com/informalsystems/ibc-rs/issues/1649))
 - Add missing assertion for non-zero trust-level in Tendermint client initialization.
   ([#1697](https://github.com/informalsystems/ibc-rs/issues/1697))
@@ -1367,7 +1454,7 @@ This is a major release, which implemented [ADR 4](https://github.com/cosmos/ibc
 - Set the connection counterparty in the ICS 003 [`connOpenAck` handler][conn-open-ack-handler]
   ([#1532](https://github.com/informalsystems/ibc-rs/issues/1532))
 
-[conn-open-ack-handler]: https://github.com/informalsystems/ibc-rs/blob/master/modules/src/core/ics03_connection/handler/conn_open_ack.rs
+[conn-open-ack-handler]: https://github.com/informalsystems/ibc-rs/blob/v0.9.0/modules/src/core/ics03_connection/handler/conn_open_ack.rs
 
 ### IMPROVEMENTS
 
