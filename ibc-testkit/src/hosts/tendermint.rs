@@ -138,6 +138,8 @@ impl TestBlock for TendermintBlock {
     }
 
     fn into_header_with_previous_block(self, previous_block: &Self) -> Self::Header {
+        // this method is used to inject the trusted height and validators set
+        // given the previous_block is trusted, Tendermint light client validates the current (untrusted) block
         let mut header = TendermintHeader::from(self);
         header.set_trusted_height(previous_block.height());
         header.set_trusted_next_validators_set(previous_block.inner().validators.clone());
