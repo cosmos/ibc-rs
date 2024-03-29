@@ -8,11 +8,12 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_init;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_init;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientState};
 use rstest::*;
 use test_log::test;
 
@@ -62,7 +63,7 @@ fn chan_open_init_validate_happy_path(fixture: Fixture) {
         ctx, router, msg, ..
     } = fixture;
 
-    let res = validate(&ctx, &router, msg);
+    let res = validate(&ctx.ibc_store, &router, msg);
 
     assert!(res.is_ok(), "Validation succeeds; good parameters")
 }
@@ -75,7 +76,7 @@ fn chan_open_init_validate_counterparty_chan_id_set(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),
@@ -92,11 +93,11 @@ fn chan_open_init_execute_happy_path(fixture: Fixture) {
         ..
     } = fixture;
 
-    let res = execute(&mut ctx, &mut router, msg);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg);
 
     assert!(res.is_ok(), "Execution succeeds; good parameters");
 
-    assert_eq!(ctx.channel_counter().unwrap(), 1);
+    assert_eq!(ctx.ibc_store.channel_counter().unwrap(), 1);
 
     let ibc_events = ctx.get_events();
 
@@ -113,7 +114,7 @@ fn chan_open_init_execute_happy_path(fixture: Fixture) {
 fn chan_open_init_fail_no_connection(fixture: Fixture) {
     let Fixture { router, msg, .. } = fixture;
 
-    let res = validate(&MockContext::<MockHost>::default(), &router, msg);
+    let res = validate(&DefaultIbcStore::default(), &router, msg);
 
     assert!(
         res.is_err(),

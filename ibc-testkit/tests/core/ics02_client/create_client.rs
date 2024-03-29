@@ -1,3 +1,4 @@
+use basecoin_store::impls::InMemoryStore;
 use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ConsensusState as TmConsensusState,
 };
@@ -14,19 +15,18 @@ use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
-use ibc_testkit::hosts::{MockHost, TendermintHost};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
 };
 use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
+use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, MockIbcStore};
 use test_log::test;
 
 #[test]
 fn test_create_client_ok() {
-    let mut ctx = MockContext::<MockHost>::default();
+    let mut ctx = DefaultIbcStore::default();
     let mut router = MockRouter::new_with_transfer();
     let signer = dummy_account_id();
     let height = Height::new(0, 42).unwrap();
@@ -51,7 +51,7 @@ fn test_create_client_ok() {
     assert!(res.is_ok(), "execution happy path");
 
     let expected_client_state =
-        ClientStateRef::<MockContext<MockHost>>::try_from(msg.client_state).unwrap();
+        ClientStateRef::<DefaultIbcStore>::try_from(msg.client_state).unwrap();
     assert_eq!(expected_client_state.client_type(), client_type);
     assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
 }
@@ -60,7 +60,7 @@ fn test_create_client_ok() {
 fn test_tm_create_client_ok() {
     let signer = dummy_account_id();
 
-    let mut ctx = MockContext::<MockHost>::default();
+    let mut ctx = DefaultIbcStore::default();
 
     let mut router = MockRouter::new_with_transfer();
 
@@ -88,7 +88,7 @@ fn test_tm_create_client_ok() {
     assert!(res.is_ok(), "tendermint client execution happy path");
 
     let expected_client_state =
-        ClientStateRef::<MockContext<TendermintHost>>::try_from(msg.client_state).unwrap();
+        ClientStateRef::<MockIbcStore<InMemoryStore>>::try_from(msg.client_state).unwrap();
     assert_eq!(expected_client_state.client_type(), client_type);
     assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
 }
@@ -97,7 +97,7 @@ fn test_tm_create_client_ok() {
 fn test_invalid_frozen_tm_client_creation() {
     let signer = dummy_account_id();
 
-    let ctx = MockContext::<MockHost>::default();
+    let ctx = DefaultIbcStore::default();
 
     let router = MockRouter::new_with_transfer();
 
@@ -114,9 +114,9 @@ fn test_invalid_frozen_tm_client_creation() {
         signer,
     );
 
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = validate(&ctx, &router, msg_envelope);
 
     assert!(matches!(
         res,

@@ -3,9 +3,9 @@ use tendermint::Time;
 
 /// Returns a `Timestamp` representation of beginning of year 2023.
 ///
-/// This is introduced to initialize [`MockGenericContext`](crate::testapp::ibc::core::types::MockGenericContext)s
+/// This is introduced to initialize [`MockGenericContext`](crate::context::MockGenericContext)s
 /// with the same latest timestamp by default.
-/// If two [`MockGenericContext`](crate::testapp::ibc::core::types::MockGenericContext)
+/// If two [`MockGenericContext`](crate::context::MockGenericContext)
 /// are initialized using [`Time::now()`], second one will have a greater timestamp than the first one.
 /// So, the latest header of the second context can not be submitted to first one.
 /// We can still set a custom timestamp via [`MockContextConfig`](crate::fixtures::core::context::MockContextConfig).

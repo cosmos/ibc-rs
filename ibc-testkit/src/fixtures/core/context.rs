@@ -1,17 +1,16 @@
 use alloc::fmt::Debug;
-use core::cmp::min;
-use core::ops::{Add, Sub};
 use core::time::Duration;
 
 use basecoin_store::context::ProvableStore;
+use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::types::Height;
-use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use typed_builder::TypedBuilder;
 
-use crate::hosts::TestHost;
-use crate::testapp::ibc::core::types::{MockGenericContext, MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
+use crate::context::MockGenericContext;
+use crate::hosts::{HostClientState, TestBlock, TestHost};
+use crate::testapp::ibc::core::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 use crate::utils::year_2023;
 
 /// Configuration of the `MockContext` type for generating dummy contexts.
@@ -21,108 +20,78 @@ pub struct MockContextConfig<H>
 where
     H: TestHost,
 {
-    #[builder(default = ChainId::new("mockgaia-0").expect("Never fails"))]
-    host_id: ChainId,
+    #[builder(default)]
+    pub host: H,
 
     #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
     block_time: Duration,
 
-    // may panic if validator_set_history size is less than max_history_size + 1
-    #[builder(default = 5)]
-    max_history_size: u64,
+    #[builder(default = year_2023())]
+    latest_timestamp: Timestamp,
 
-    #[builder(default, setter(strip_option))]
-    block_params_history: Option<Vec<H::BlockParams>>,
+    #[builder(default)]
+    block_params_history: Vec<H::BlockParams>,
 
     #[builder(default = Height::new(0, 5).expect("Never fails"))]
     latest_height: Height,
-
-    #[builder(default = year_2023())]
-    latest_timestamp: Timestamp,
 }
 
 impl<S, H> From<MockContextConfig<H>> for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug + Default,
     H: TestHost,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     fn from(params: MockContextConfig<H>) -> Self {
-        assert_ne!(
-            params.max_history_size, 0,
-            "The chain must have a non-zero max_history_size"
-        );
-
         assert_ne!(
             params.latest_height.revision_height(),
             0,
             "The chain must have a non-zero revision_height"
         );
 
-        // Compute the number of blocks to store.
-        let n = min(
-            params.max_history_size,
-            params.latest_height.revision_height(),
+        // timestamp at height 1
+        let genesis_timestamp = (params.latest_timestamp
+            - (params.block_time
+                * u32::try_from(params.latest_height.revision_height() - 1).expect("no overflow")))
+        .expect("no underflow");
+
+        let mut context = Self {
+            ibc_store: MockIbcStore::new(
+                params.latest_height.revision_number(),
+                Default::default(),
+            ),
+            host: params.host,
+        };
+
+        // store is a height 0; no block
+
+        context.generate_genesis_block(genesis_timestamp, &Default::default());
+
+        // store is a height 1; one block
+
+        context = context.advance_block_up_to(
+            params
+                .latest_height
+                .sub(params.block_params_history.len() as u64)
+                .expect("no error"),
+        );
+
+        for block_params in params.block_params_history {
+            context.advance_with_block_params(params.block_time, &block_params);
+        }
+
+        assert_eq!(
+            context.host.latest_block().height(),
+            params.latest_height,
+            "The latest height in the host must match the latest height in the context"
         );
 
         assert_eq!(
-            params.host_id.revision_number(),
-            params.latest_height.revision_number(),
-            "The version in the chain identifier must match the version in the latest height"
+            context.host.latest_block().timestamp(),
+            params.latest_timestamp,
+            "The latest timestamp in the host must match the latest timestamp in the context"
         );
 
-        let next_block_timestamp = params
-            .latest_timestamp
-            .add(params.block_time)
-            .expect("Never fails");
-
-        let host = H::with_chain_id(params.host_id);
-
-        let history = if let Some(validator_set_history) = params.block_params_history {
-            (0..n)
-                .rev()
-                .map(|i| {
-                    // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
-                    // where N = now(), BT = block_time
-                    host.generate_block(
-                        params
-                            .latest_height
-                            .sub(i)
-                            .expect("Never fails")
-                            .revision_height(),
-                        next_block_timestamp
-                            .sub(params.block_time * ((i + 1) as u32))
-                            .expect("Never fails"),
-                        &validator_set_history[(n - i) as usize - 1],
-                    )
-                })
-                .collect()
-        } else {
-            (0..n)
-                .rev()
-                .map(|i| {
-                    // generate blocks with timestamps -> N, N - BT, N - 2BT, ...
-                    // where N = now(), BT = block_time
-                    host.generate_block(
-                        params
-                            .latest_height
-                            .sub(i)
-                            .expect("Never fails")
-                            .revision_height(),
-                        next_block_timestamp
-                            .sub(params.block_time * ((i + 1) as u32))
-                            .expect("Never fails"),
-                        &H::BlockParams::default(),
-                    )
-                })
-                .collect()
-        };
-
-        MockGenericContext {
-            host,
-            max_history_size: params.max_history_size,
-            history,
-            block_time: params.block_time,
-            ibc_store: MockIbcStore::default(),
-        }
+        context
     }
 }

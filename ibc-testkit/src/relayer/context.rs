@@ -1,17 +1,19 @@
 use alloc::fmt::Debug;
 
 use basecoin_store::context::ProvableStore;
+use ibc::clients::tendermint::context::ValidationContext;
+use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::ClientId;
-use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 
-use crate::hosts::TestHost;
+use crate::context::MockGenericContext;
+use crate::hosts::{HostClientState, TestHost};
 use crate::testapp::ibc::clients::AnyClientState;
-use crate::testapp::ibc::core::types::MockGenericContext;
+use crate::testapp::ibc::core::types::MockIbcStore;
 /// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
 /// relay packets between chains. This trait comprises the dependencies towards a single chain.
 /// Most of the functions in this represent wrappers over the ABCI interface.
@@ -33,14 +35,15 @@ impl<S, H> RelayerContext for MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
     H: TestHost,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     fn query_latest_height(&self) -> Result<Height, ContextError> {
-        ValidationContext::host_height(self)
+        self.ibc_store.host_height()
     }
 
     fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState> {
         // Forward call to Ics2.
-        self.client_state(client_id).ok()
+        self.ibc_store.client_state(client_id).ok()
     }
 
     fn signer(&self) -> Signer {
@@ -53,7 +56,6 @@ where
 #[cfg(test)]
 mod tests {
     use ibc::clients::tendermint::types::client_type as tm_client_type;
-    use ibc::core::client::context::client_state::ClientStateCommon;
     use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
     use ibc::core::client::types::Height;
     use ibc::core::handler::types::msgs::MsgEnvelope;
@@ -62,13 +64,14 @@ mod tests {
     use tracing::debug;
 
     use super::RelayerContext;
+    use crate::context::MockContext;
     use crate::fixtures::core::context::MockContextConfig;
-    use crate::hosts::{MockHost, TendermintHost, TestBlock, TestHeader};
+    use crate::hosts::{MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
     use crate::relayer::context::ClientId;
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
     use crate::testapp::ibc::core::router::MockRouter;
-    use crate::testapp::ibc::core::types::{LightClientBuilder, MockContext};
+    use crate::testapp::ibc::core::types::LightClientBuilder;
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
@@ -133,12 +136,12 @@ mod tests {
 
         // Create two mock contexts, one for each chain.
         let mut ctx_a = MockContextConfig::builder()
-            .host_id(chain_id_a.clone())
+            .host(MockHost::builder().chain_id(chain_id_a).build())
             .latest_height(chain_a_start_height)
             .build::<MockContext<MockHost>>();
 
         let mut ctx_b = MockContextConfig::builder()
-            .host_id(chain_id_b.clone())
+            .host(TendermintHost::builder().chain_id(chain_id_b).build())
             .latest_height(chain_b_start_height)
             .latest_timestamp(ctx_a.timestamp_at(chain_a_start_height.decrement().unwrap())) // chain B is running slower than chain A
             .build::<MockContext<TendermintHost>>();
@@ -185,7 +188,7 @@ mod tests {
             // - send the message to B. We bypass ICS18 interface and call directly into
             // MockContext `recv` method (to avoid additional serialization steps).
             let dispatch_res_b = ctx_b.deliver(&mut router_b, MsgEnvelope::Client(client_msg_b));
-            let validation_res = ctx_b.validate();
+            let validation_res = ctx_b.host.validate();
             assert!(
                 validation_res.is_ok(),
                 "context validation failed with error {validation_res:?} for context {ctx_b:?}",
@@ -224,7 +227,7 @@ mod tests {
 
             // - send the message to A
             let dispatch_res_a = ctx_a.deliver(&mut router_a, MsgEnvelope::Client(client_msg_a));
-            let validation_res = ctx_a.validate();
+            let validation_res = ctx_a.host.validate();
             assert!(
                 validation_res.is_ok(),
                 "context validation failed with error {validation_res:?} for context {ctx_a:?}",

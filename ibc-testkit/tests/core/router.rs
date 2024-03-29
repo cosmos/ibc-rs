@@ -1,4 +1,4 @@
-use std::ops::Add;
+use core::ops::Add;
 
 use ibc::apps::transfer::handler::send_transfer;
 use ibc::apps::transfer::types::error::TokenTransferError;
@@ -22,6 +22,7 @@ use ibc::core::host::types::path::CommitmentPath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::applications::transfer::{
     extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
 };
@@ -43,7 +44,6 @@ use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
 use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
 use test_log::test;
 
 #[test]
@@ -169,7 +169,7 @@ fn routing_module_and_keepers() {
         .build();
 
     let msg_transfer_no_timeout_or_timestamp = MsgTransferConfig::builder()
-        .packet_data(packet_data.clone())
+        .packet_data(packet_data)
         .timeout_timestamp_on_b(Timestamp::from_nanoseconds(0).unwrap())
         .build();
 
@@ -193,7 +193,7 @@ fn routing_module_and_keepers() {
 
     // First, create a client..
     let res = dispatch(
-        &mut ctx,
+        &mut ctx.ibc_store,
         &mut router,
         MsgEnvelope::Client(ClientMsg::CreateClient(create_client_msg.clone())),
     );
@@ -330,12 +330,13 @@ fn routing_module_and_keepers() {
             msg: MsgEnvelope::Packet(PacketMsg::Ack(msg_ack_packet.clone())).into(),
             want_pass: true,
             state_check: Some(Box::new(move |ctx| {
-                ctx.get_packet_commitment(&CommitmentPath::new(
-                    &msg_ack_packet.packet.port_id_on_a,
-                    &msg_ack_packet.packet.chan_id_on_a,
-                    msg_ack_packet.packet.seq_on_a,
-                ))
-                .is_err()
+                ctx.ibc_store
+                    .get_packet_commitment(&CommitmentPath::new(
+                        &msg_ack_packet.packet.port_id_on_a,
+                        &msg_ack_packet.packet.chan_id_on_a,
+                        msg_ack_packet.packet.seq_on_a,
+                    ))
+                    .is_err()
             })),
         },
         Test {
@@ -416,8 +417,8 @@ fn routing_module_and_keepers() {
 
     for test in tests {
         let res = match test.msg.clone() {
-            TestMsg::Ics26(msg) => dispatch(&mut ctx, &mut router, msg).map(|_| ()),
-            TestMsg::Ics20(msg) => send_transfer(&mut ctx, &mut DummyTransferModule, msg)
+            TestMsg::Ics26(msg) => dispatch(&mut ctx.ibc_store, &mut router, msg),
+            TestMsg::Ics20(msg) => send_transfer(&mut ctx.ibc_store, &mut DummyTransferModule, msg)
                 .map_err(|e: TokenTransferError| ChannelError::AppModule {
                     description: e.to_string(),
                 })

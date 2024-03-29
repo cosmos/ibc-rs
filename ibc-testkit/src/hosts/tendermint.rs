@@ -1,3 +1,4 @@
+use alloc::collections::VecDeque;
 use core::str::FromStr;
 
 use ibc::clients::tendermint::client_state::ClientState;
@@ -17,30 +18,55 @@ use tendermint_testgen::{
     Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
     Validator as TestgenValidator,
 };
+use typed_builder::TypedBuilder;
 
-use super::{TestBlock, TestHeader, TestHost};
+use crate::context::MockClientConfig;
 use crate::fixtures::clients::tendermint::ClientStateConfig;
-use crate::testapp::ibc::core::types::MockClientConfig;
+use crate::hosts::{TestBlock, TestHeader, TestHost};
 
-#[derive(Debug)]
-pub struct Host(ChainId);
+#[derive(TypedBuilder, Debug)]
+pub struct TendermintHost {
+    /// Unique identifier for the chain.
+    #[builder(default = ChainId::new("mock-0").expect("Never fails"))]
+    pub chain_id: ChainId,
+    /// The chain of blocks underlying this context.
+    #[builder(default)]
+    pub history: VecDeque<TendermintBlock>,
+}
 
-impl TestHost for Host {
+impl Default for TendermintHost {
+    fn default() -> Self {
+        Self::builder().build()
+    }
+}
+
+impl TestHost for TendermintHost {
     type Block = TendermintBlock;
+    type ClientState = ClientState;
     type BlockParams = BlockParams;
     type LightClientParams = MockClientConfig;
-    type ClientState = ClientState;
 
-    fn with_chain_id(chain_id: ChainId) -> Self {
-        Self(chain_id)
+    fn history(&self) -> &VecDeque<Self::Block> {
+        &self.history
     }
 
-    fn chain_id(&self) -> &ChainId {
-        &self.0
+    fn push_block(&mut self, block: Self::Block) {
+        self.history.push_back(block);
+    }
+
+    fn prune_block_till(&mut self, height: &Height) {
+        while let Some(block) = self.history.front() {
+            if &block.height() <= height {
+                self.history.pop_front();
+            } else {
+                break;
+            }
+        }
     }
 
     fn generate_block(
         &self,
+        commitment_root: Vec<u8>,
         height: u64,
         timestamp: Timestamp,
         params: &Self::BlockParams,
@@ -48,8 +74,9 @@ impl TestHost for Host {
         TendermintBlock(
             TestgenLightBlock::new_default_with_header(
                 TestgenHeader::new(&params.validators)
+                    .app_hash(commitment_root.try_into().expect("infallible"))
                     .height(height)
-                    .chain_id(self.chain_id().as_str())
+                    .chain_id(self.chain_id.as_str())
                     .next_validators(&params.next_validators)
                     .time(timestamp.into_tm_time().expect("Never fails")),
             )
@@ -62,15 +89,20 @@ impl TestHost for Host {
 
     fn generate_client_state(
         &self,
-        latest_block: &Self::Block,
+        latest_height: &Height,
         params: &Self::LightClientParams,
     ) -> Self::ClientState {
         let client_state: ClientState = ClientStateConfig::builder()
-            .chain_id(self.chain_id().clone())
-            .latest_height(latest_block.height())
+            .chain_id(self.chain_id.clone())
+            .latest_height(
+                self.get_block(latest_height)
+                    .expect("block exists")
+                    .height(),
+            )
             .trusting_period(params.trusting_period)
             .max_clock_drift(params.max_clock_drift)
             .unbonding_period(params.unbonding_period)
+            .proof_specs(params.proof_specs.clone())
             .build()
             .try_into()
             .expect("never fails");
@@ -92,6 +124,7 @@ impl TendermintBlock {
 
 impl TestBlock for TendermintBlock {
     type Header = TendermintHeader;
+
     fn height(&self) -> Height {
         Height::new(
             ChainId::from_str(self.0.signed_header.header.chain_id.as_str())
@@ -107,7 +140,7 @@ impl TestBlock for TendermintBlock {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, TypedBuilder)]
 pub struct BlockParams {
     pub validators: Vec<TestgenValidator>,
     pub next_validators: Vec<TestgenValidator>,
@@ -117,9 +150,11 @@ impl BlockParams {
     pub fn from_validator_history(validator_history: Vec<Vec<TestgenValidator>>) -> Vec<Self> {
         validator_history
             .windows(2)
-            .map(|vals| Self {
-                validators: vals[0].clone(),
-                next_validators: vals[1].clone(),
+            .map(|vals| {
+                Self::builder()
+                    .validators(vals[0].clone())
+                    .next_validators(vals[1].clone())
+                    .build()
             })
             .collect()
     }
@@ -127,15 +162,16 @@ impl BlockParams {
 
 impl Default for BlockParams {
     fn default() -> Self {
-        let validators = vec![
-            TestgenValidator::new("1").voting_power(50),
-            TestgenValidator::new("2").voting_power(50),
-        ];
-
-        Self {
-            validators: validators.clone(),
-            next_validators: validators,
-        }
+        Self::builder()
+            .validators(vec![
+                TestgenValidator::new("1").voting_power(50),
+                TestgenValidator::new("2").voting_power(50),
+            ])
+            .next_validators(vec![
+                TestgenValidator::new("1").voting_power(50),
+                TestgenValidator::new("2").voting_power(50),
+            ])
+            .build()
     }
 }
 
@@ -182,7 +218,7 @@ impl From<TendermintHeader> for Header {
 
 impl From<TendermintHeader> for ConsensusState {
     fn from(header: TendermintHeader) -> Self {
-        ConsensusState::from(header.0.signed_header.header)
+        header.0.signed_header.header.into()
     }
 }
 

@@ -148,12 +148,6 @@ pub struct CommitmentPrefix {
     bytes: Vec<u8>,
 }
 
-impl Default for CommitmentPrefix {
-    fn default() -> Self {
-        Self { bytes: vec![0x00] }
-    }
-}
-
 impl CommitmentPrefix {
     pub fn as_bytes(&self) -> &[u8] {
         &self.bytes

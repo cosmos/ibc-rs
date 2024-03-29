@@ -100,7 +100,7 @@ impl TryFrom<ClientStateConfig> for TmClientState {
             config.allow_update,
         )?;
 
-        Ok(TmClientState::from(client_state))
+        Ok(client_state.into())
     }
 }
 
@@ -146,7 +146,7 @@ pub fn dummy_ics07_header() -> Header {
 
     // Build a set of validators.
     // Below are test values inspired form `test_validator_set()` in tendermint-rs.
-    let v1: ValidatorInfo = ValidatorInfo::new(
+    let v1 = ValidatorInfo::new(
         PublicKey::from_raw_ed25519(
             &hex::decode_upper("F349539C7E5EF7C49549B09C4BFC2335318AB0FE51FBFAA2433B4F13E816F4A7")
                 .expect("Never fails"),

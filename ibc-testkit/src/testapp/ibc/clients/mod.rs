@@ -11,25 +11,41 @@ use ibc::clients::tendermint::types::{
     TENDERMINT_CLIENT_STATE_TYPE_URL, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
 use ibc::core::client::types::error::ClientError;
+use ibc::core::client::types::Height;
 use ibc::core::primitives::prelude::*;
 use ibc::derive::{ClientState, ConsensusState};
 use ibc::primitives::proto::{Any, Protobuf};
 
-use crate::hosts::TestHost;
+use super::core::types::MockIbcStore;
 use crate::testapp::ibc::clients::mock::client_state::{
     MockClientState, MOCK_CLIENT_STATE_TYPE_URL,
 };
 use crate::testapp::ibc::clients::mock::consensus_state::{
     MockConsensusState, MOCK_CONSENSUS_STATE_TYPE_URL,
 };
-use crate::testapp::ibc::core::types::MockGenericContext;
 
 #[derive(Debug, Clone, From, PartialEq, ClientState)]
-#[validation(MockGenericContext<S: ProvableStore + Debug, H: TestHost>)]
-#[execution(MockGenericContext<S: ProvableStore + Debug, H: TestHost>)]
+#[validation(MockIbcStore<S: ProvableStore + Debug>)]
+#[execution(MockIbcStore<S: ProvableStore + Debug>)]
 pub enum AnyClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),
+}
+
+impl AnyClientState {
+    pub fn latest_height(&self) -> Height {
+        match self {
+            Self::Tendermint(cs) => cs.inner().latest_height,
+            Self::Mock(cs) => cs.latest_height(),
+        }
+    }
+
+    pub fn is_frozen(&self) -> bool {
+        match self {
+            Self::Tendermint(cs) => cs.inner().is_frozen(),
+            Self::Mock(cs) => cs.is_frozen(),
+        }
+    }
 }
 
 impl Protobuf<Any> for AnyClientState {}
@@ -61,13 +77,13 @@ impl From<AnyClientState> for Any {
 
 impl From<ClientStateType> for AnyClientState {
     fn from(client_state: ClientStateType) -> Self {
-        AnyClientState::Tendermint(client_state.into())
+        Self::Tendermint(client_state.into())
     }
 }
 
 impl From<ConsensusStateType> for AnyConsensusState {
     fn from(consensus_state: ConsensusStateType) -> Self {
-        AnyConsensusState::Tendermint(consensus_state.into())
+        Self::Tendermint(consensus_state.into())
     }
 }
 
@@ -76,8 +92,6 @@ pub enum AnyConsensusState {
     Tendermint(TmConsensusState),
     Mock(MockConsensusState),
 }
-
-impl Protobuf<Any> for AnyConsensusState {}
 
 impl TryFrom<Any> for AnyConsensusState {
     type Error = ClientError;

@@ -12,12 +12,13 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::primitives::*;
 use ibc::core::router::types::module::ModuleId;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_ack;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
 use test_log::test;
 
@@ -104,7 +105,7 @@ fn chan_open_ack_happy_path(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(res.is_ok(), "Validation happy path")
 }
@@ -135,9 +136,9 @@ fn chan_open_ack_execute_happy_path(fixture: Fixture) {
             chan_end_on_a,
         );
 
-    let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg.clone()));
+    let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
-    let res = execute(&mut context, &mut router, msg_envelope);
+    let res = execute(&mut context.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok(), "Execution happy path");
 
@@ -176,7 +177,7 @@ fn chan_open_ack_fail_no_connection(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_err(),
@@ -205,7 +206,7 @@ fn chan_open_ack_fail_no_channel(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_err(),
@@ -248,7 +249,7 @@ fn chan_open_ack_fail_channel_wrong_state(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_err(),
