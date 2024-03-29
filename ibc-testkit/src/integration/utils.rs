@@ -38,16 +38,16 @@ use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, Ligh
 
 /// Implements relayer methods for a pair of hosts
 /// Note that, all the implementations are in one direction, from A to B
-/// For the methods in opposite direction, use `TypedRelayer::<B, A>` instead of TypedRelayer::<A, B>`
+/// For the methods in opposite direction, use `TypedIntegration::<B, A>` instead of TypedIntegration::<A, B>`
 #[derive(Debug, Default)]
-pub struct TypedRelayer<A, B>(PhantomData<A>, PhantomData<B>)
+pub struct TypedIntegration<A, B>(PhantomData<A>, PhantomData<B>)
 where
     A: TestHost,
     B: TestHost,
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>;
 
-impl<A, B> TypedRelayer<A, B>
+impl<A, B> TypedIntegration<A, B>
 where
     A: TestHost,
     B: TestHost,
@@ -98,15 +98,9 @@ where
         client_id_on_a
     }
 
-    pub fn sync_latest_timestamp(ctx_a: &mut MockContext<A>, ctx_b: &mut MockContext<B>) {
-        if ctx_a.latest_timestamp() > ctx_b.latest_timestamp() {
-            while ctx_a.latest_timestamp() > ctx_b.latest_timestamp() {
-                ctx_b.advance_block();
-            }
-        } else {
-            while ctx_b.latest_timestamp() > ctx_a.latest_timestamp() {
-                ctx_a.advance_block();
-            }
+    pub fn sync_clock_on_a(ctx_a: &mut MockContext<A>, ctx_b: &MockContext<B>) {
+        while ctx_b.latest_timestamp() > ctx_a.latest_timestamp() {
+            ctx_a.advance_block();
         }
     }
 
@@ -155,8 +149,16 @@ where
         client_id_on_a: ClientId,
         signer: Signer,
     ) {
-        TypedRelayer::<A, B>::sync_latest_timestamp(ctx_a, ctx_b);
-        TypedRelayer::<A, B>::update_client_on_a(ctx_a, router_a, ctx_b, client_id_on_a, signer);
+        // this is required, as IBC doesn't allow client update
+        // from future beyond max clock drift
+        TypedIntegration::<A, B>::sync_clock_on_a(ctx_a, ctx_b);
+        TypedIntegration::<A, B>::update_client_on_a(
+            ctx_a,
+            router_a,
+            ctx_b,
+            client_id_on_a,
+            signer,
+        );
     }
 
     pub fn connection_open_init_on_a(
@@ -400,7 +402,7 @@ where
         client_id_on_b: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
-        let conn_id_on_a = TypedRelayer::<A, B>::connection_open_init_on_a(
+        let conn_id_on_a = TypedIntegration::<A, B>::connection_open_init_on_a(
             ctx_a,
             router_a,
             ctx_b,
@@ -409,7 +411,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+        TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             router_b,
             ctx_a,
@@ -417,7 +419,7 @@ where
             signer.clone(),
         );
 
-        let conn_id_on_b = TypedRelayer::<A, B>::connection_open_try_on_b(
+        let conn_id_on_b = TypedIntegration::<A, B>::connection_open_try_on_b(
             ctx_b,
             router_b,
             ctx_a,
@@ -427,7 +429,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+        TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
             router_a,
             ctx_b,
@@ -435,7 +437,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::connection_open_ack_on_a(
+        TypedIntegration::<A, B>::connection_open_ack_on_a(
             ctx_a,
             router_a,
             ctx_b,
@@ -445,7 +447,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+        TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             router_b,
             ctx_a,
@@ -453,7 +455,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::connection_open_confirm_on_b(
+        TypedIntegration::<A, B>::connection_open_confirm_on_b(
             ctx_b,
             router_b,
             ctx_a,
@@ -462,7 +464,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+        TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
             router_a,
             ctx_b,
@@ -698,7 +700,7 @@ where
         port_id_on_b: PortId,
         signer: Signer,
     ) -> (ChannelId, ChannelId) {
-        let chan_id_on_a = TypedRelayer::<A, B>::channel_open_init_on_a(
+        let chan_id_on_a = TypedIntegration::<A, B>::channel_open_init_on_a(
             ctx_a,
             router_a,
             conn_id_on_a.clone(),
@@ -707,7 +709,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+        TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             router_b,
             ctx_a,
@@ -715,7 +717,7 @@ where
             signer.clone(),
         );
 
-        let chan_id_on_b = TypedRelayer::<A, B>::channel_open_try_on_b(
+        let chan_id_on_b = TypedIntegration::<A, B>::channel_open_try_on_b(
             ctx_b,
             router_b,
             ctx_a,
@@ -725,7 +727,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+        TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
             router_a,
             ctx_b,
@@ -733,7 +735,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::channel_open_ack_on_a(
+        TypedIntegration::<A, B>::channel_open_ack_on_a(
             ctx_a,
             router_a,
             ctx_b,
@@ -744,7 +746,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+        TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             router_b,
             ctx_a,
@@ -752,7 +754,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::channel_open_confirm_on_b(
+        TypedIntegration::<A, B>::channel_open_confirm_on_b(
             ctx_b,
             router_b,
             ctx_a,
@@ -762,7 +764,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+        TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
             router_a,
             ctx_b,
@@ -787,7 +789,7 @@ where
         port_id_on_b: PortId,
         signer: Signer,
     ) {
-        TypedRelayer::<A, B>::channel_close_init_on_a(
+        TypedIntegration::<A, B>::channel_close_init_on_a(
             ctx_a,
             router_a,
             chan_id_on_a.clone(),
@@ -795,7 +797,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+        TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             router_b,
             ctx_a,
@@ -803,7 +805,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::channel_close_confirm_on_b(
+        TypedIntegration::<A, B>::channel_close_confirm_on_b(
             ctx_b,
             router_b,
             ctx_a,
@@ -812,7 +814,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+        TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
             router_a,
             ctx_b,
@@ -993,7 +995,7 @@ where
     ) {
         // packet is passed from module
 
-        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+        TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             router_b,
             ctx_a,
@@ -1001,7 +1003,7 @@ where
             signer.clone(),
         );
 
-        let acknowledgement = TypedRelayer::<A, B>::packet_recv_on_b(
+        let acknowledgement = TypedIntegration::<A, B>::packet_recv_on_b(
             ctx_b,
             router_b,
             ctx_a,
@@ -1009,7 +1011,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+        TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
             router_a,
             ctx_b,
@@ -1017,7 +1019,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<A, B>::packet_ack_on_a(
+        TypedIntegration::<A, B>::packet_ack_on_a(
             ctx_a,
             router_a,
             ctx_b,
@@ -1026,7 +1028,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+        TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             router_b,
             ctx_a,

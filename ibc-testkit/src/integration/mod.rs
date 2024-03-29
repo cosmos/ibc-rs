@@ -13,7 +13,7 @@ use ibc::core::host::types::path::ChannelEndPath;
 use ibc::core::host::ValidationContext;
 use ibc::primitives::{Signer, Timestamp};
 
-use self::utils::TypedRelayer;
+use self::utils::TypedIntegration;
 use crate::context::MockContext;
 use crate::fixtures::core::signer::dummy_account_id;
 use crate::hosts::{HostClientState, TestHost};
@@ -23,7 +23,7 @@ use crate::testapp::ibc::core::types::DefaultIbcStore;
 
 pub mod utils;
 
-pub struct RelayerContext<A, B>
+pub struct IntegrationContext<A, B>
 where
     A: TestHost,
     B: TestHost,
@@ -36,7 +36,7 @@ where
     router_b: MockRouter,
 }
 
-impl<A, B> RelayerContext<A, B>
+impl<A, B> IntegrationContext<A, B>
 where
     A: TestHost,
     B: TestHost,
@@ -74,7 +74,7 @@ where
     }
 
     pub fn create_client_on_a(&mut self, signer: Signer) -> ClientId {
-        TypedRelayer::<A, B>::create_client_on_a(
+        TypedIntegration::<A, B>::create_client_on_a(
             &mut self.ctx_a,
             &mut self.router_a,
             &self.ctx_b,
@@ -83,7 +83,7 @@ where
     }
 
     pub fn create_client_on_b(&mut self, signer: Signer) -> ClientId {
-        TypedRelayer::<B, A>::create_client_on_a(
+        TypedIntegration::<B, A>::create_client_on_a(
             &mut self.ctx_b,
             &mut self.router_b,
             &self.ctx_a,
@@ -92,7 +92,7 @@ where
     }
 
     pub fn update_client_on_a_with_sync(&mut self, client_id_on_a: ClientId, signer: Signer) {
-        TypedRelayer::<A, B>::update_client_on_a_with_sync(
+        TypedIntegration::<A, B>::update_client_on_a_with_sync(
             &mut self.ctx_a,
             &mut self.router_a,
             &mut self.ctx_b,
@@ -102,7 +102,7 @@ where
     }
 
     pub fn update_client_on_b_with_sync(&mut self, client_id_on_b: ClientId, signer: Signer) {
-        TypedRelayer::<B, A>::update_client_on_a_with_sync(
+        TypedIntegration::<B, A>::update_client_on_a_with_sync(
             &mut self.ctx_b,
             &mut self.router_b,
             &mut self.ctx_a,
@@ -117,7 +117,7 @@ where
         client_id_on_b: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
-        TypedRelayer::<A, B>::create_connection_on_a(
+        TypedIntegration::<A, B>::create_connection_on_a(
             &mut self.ctx_a,
             &mut self.router_a,
             &mut self.ctx_b,
@@ -134,7 +134,7 @@ where
         client_id_on_a: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
-        TypedRelayer::<B, A>::create_connection_on_a(
+        TypedIntegration::<B, A>::create_connection_on_a(
             &mut self.ctx_b,
             &mut self.router_b,
             &mut self.ctx_a,
@@ -169,7 +169,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayer::<A, B>::create_channel_on_a(
+        TypedIntegration::<A, B>::create_channel_on_a(
             &mut self.ctx_a,
             &mut self.router_a,
             &mut self.ctx_b,
@@ -209,7 +209,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayer::<B, A>::create_channel_on_a(
+        TypedIntegration::<B, A>::create_channel_on_a(
             &mut self.ctx_b,
             &mut self.router_b,
             &mut self.ctx_a,
@@ -266,7 +266,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayer::<A, B>::close_channel_on_a(
+        TypedIntegration::<A, B>::close_channel_on_a(
             &mut self.ctx_a,
             &mut self.router_a,
             &mut self.ctx_b,
@@ -323,7 +323,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayer::<B, A>::close_channel_on_a(
+        TypedIntegration::<B, A>::close_channel_on_a(
             &mut self.ctx_b,
             &mut self.router_b,
             &mut self.ctx_a,
@@ -377,7 +377,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayer::<A, B>::send_packet_on_a(
+        TypedIntegration::<A, B>::send_packet_on_a(
             &mut self.ctx_a,
             &mut self.router_a,
             &mut self.ctx_b,
@@ -402,7 +402,7 @@ where
 
     let signer = dummy_account_id();
 
-    let mut relayer = RelayerContext::new(
+    let mut relayer = IntegrationContext::new(
         ctx_a,
         MockRouter::new_with_transfer(),
         ctx_b,
