@@ -153,7 +153,6 @@ where
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn create_channel_on_b(
         &mut self,
         conn_id_on_b: ConnectionId,
@@ -191,14 +190,12 @@ where
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn close_channel_on_a(
         &mut self,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
-
         signer: Signer,
     ) {
         let conn_id_on_a = self
@@ -246,14 +243,12 @@ where
         )
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn close_channel_on_b(
         &mut self,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
-
         signer: Signer,
     ) {
         let conn_id_on_b = self

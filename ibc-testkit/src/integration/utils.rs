@@ -524,7 +524,6 @@ where
         open_try_channel_event.chan_id_on_b().clone()
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn channel_open_ack_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -814,7 +813,6 @@ where
         write_ack_event.acknowledgement().clone()
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn packet_ack_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -932,7 +930,6 @@ where
         };
     }
 
-    #[allow(clippy::too_many_arguments)]
     pub fn send_packet_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &mut MockContext<B>,
