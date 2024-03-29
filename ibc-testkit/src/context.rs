@@ -6,7 +6,7 @@ use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore};
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::PacketCommitment;
 use ibc::core::client::context::client_state::ClientStateValidation;
-use ibc::core::client::context::ClientExecutionContext;
+use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
@@ -89,6 +89,13 @@ where
 
     pub fn query_latest_block(&self) -> Option<H::Block> {
         self.host.get_block(&self.latest_height())
+    }
+
+    pub fn light_client_latest_height(&self, client_id: &ClientId) -> Height {
+        self.ibc_store
+            .client_state(client_id)
+            .expect("client state exists")
+            .latest_height()
     }
 
     pub fn advance_block_up_to(mut self, target_height: Height) -> Self {

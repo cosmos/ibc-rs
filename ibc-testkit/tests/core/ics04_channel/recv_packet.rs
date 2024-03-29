@@ -17,7 +17,6 @@ use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::MockHost;
-use ibc_testkit::relayer::context::RelayerContext;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
@@ -42,7 +41,7 @@ fn fixture() -> Fixture {
 
     let router = MockRouter::new_with_transfer();
 
-    let host_height = context.query_latest_height().unwrap().increment();
+    let host_height = context.latest_height().increment();
 
     let client_height = host_height.increment();
 

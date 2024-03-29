@@ -1,90 +1,38 @@
-use alloc::fmt::Debug;
-
-use basecoin_store::context::ProvableStore;
-use ibc::clients::tendermint::context::ValidationContext;
-use ibc::core::client::context::client_state::ClientStateValidation;
-use ibc::core::client::context::ClientValidationContext;
-use ibc::core::client::types::Height;
-use ibc::core::handler::types::error::ContextError;
-use ibc::core::host::types::identifiers::ClientId;
-use ibc::core::primitives::prelude::*;
-use ibc::core::primitives::Signer;
-
-use crate::context::MockGenericContext;
-use crate::hosts::{HostClientState, TestHost};
-use crate::testapp::ibc::clients::AnyClientState;
-use crate::testapp::ibc::core::types::MockIbcStore;
-/// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
-/// relay packets between chains. This trait comprises the dependencies towards a single chain.
-/// Most of the functions in this represent wrappers over the ABCI interface.
-/// This trait mimics the `Chain` trait, but at a lower level of abstraction (no networking, header
-/// types, light client, RPC client, etc.)
-pub trait RelayerContext {
-    /// Returns the latest height of the chain.
-    fn query_latest_height(&self) -> Result<Height, ContextError>;
-
-    /// Returns this client state for the given `client_id` on this chain.
-    /// Wrapper over the `/abci_query?path=..` endpoint.
-    fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState>;
-
-    /// Temporary solution. Similar to `CosmosSDKChain::key_and_signer()` but simpler.
-    fn signer(&self) -> Signer;
-}
-
-impl<S, H> RelayerContext for MockGenericContext<S, H>
-where
-    S: ProvableStore + Debug,
-    H: TestHost,
-    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
-{
-    fn query_latest_height(&self) -> Result<Height, ContextError> {
-        self.ibc_store.host_height()
-    }
-
-    fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState> {
-        // Forward call to Ics2.
-        self.ibc_store.client_state(client_id).ok()
-    }
-
-    fn signer(&self) -> Signer {
-        "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
-            .to_string()
-            .into()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use ibc::clients::tendermint::types::client_type as tm_client_type;
+    use ibc::core::client::context::client_state::ClientStateValidation;
+    use ibc::core::client::context::ClientValidationContext;
     use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
     use ibc::core::client::types::Height;
     use ibc::core::handler::types::msgs::MsgEnvelope;
-    use ibc::core::host::types::identifiers::ChainId;
+    use ibc::core::host::types::identifiers::{ChainId, ClientId};
     use ibc::core::primitives::prelude::*;
     use tracing::debug;
 
-    use super::RelayerContext;
     use crate::context::MockContext;
     use crate::fixtures::core::context::MockContextConfig;
-    use crate::hosts::{MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
-    use crate::relayer::context::ClientId;
+    use crate::fixtures::core::signer::dummy_account_id;
+    use crate::hosts::{
+        HostClientState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost,
+    };
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
-    use crate::testapp::ibc::core::types::LightClientBuilder;
+    use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder};
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
     /// context, assuming that the latest header on the source context is `src_header`.
-    pub(crate) fn build_client_update_datagram<Ctx, H: TestHeader>(
-        dest: &Ctx,
+    pub(crate) fn build_client_update_datagram<H: TestHeader, Dst: TestHost>(
+        dest: &MockContext<Dst>,
         client_id: &ClientId,
         src_header: &H,
     ) -> Result<ClientMsg, RelayerError>
     where
-        Ctx: RelayerContext,
+        HostClientState<Dst>: ClientStateValidation<DefaultIbcStore>,
     {
         // Check if client for ibc0 on ibc1 has been updated to latest height:
         // - query client state on destination chain
-        let dest_client_state = dest.query_client_full_state(client_id).ok_or_else(|| {
+        let dest_client_state = dest.ibc_store.client_state(client_id).map_err(|_| {
             RelayerError::ClientStateNotFound {
                 client_id: client_id.clone(),
             }
@@ -112,7 +60,7 @@ mod tests {
         Ok(ClientMsg::UpdateClient(MsgUpdateClient {
             client_id: client_id.clone(),
             client_message: src_header.clone().into(),
-            signer: dest.signer(),
+            signer: dummy_account_id(),
         }))
     }
 
@@ -192,11 +140,11 @@ mod tests {
                 dispatch_res_b.is_ok(),
                 "Dispatch failed for host chain b with error: {dispatch_res_b:?}"
             );
-            let client_height_b = ctx_b
-                .query_client_full_state(&client_on_b_for_a)
-                .unwrap()
-                .latest_height();
-            assert_eq!(client_height_b, ctx_a.query_latest_height().unwrap());
+
+            assert_eq!(
+                ctx_b.light_client_latest_height(&client_on_b_for_a),
+                ctx_a.latest_height()
+            );
 
             // Update client on chain A to latest height of B.
             // - create the client update message with the latest header from B
@@ -231,11 +179,10 @@ mod tests {
                 dispatch_res_a.is_ok(),
                 "Dispatch failed for host chain a with error: {dispatch_res_a:?}"
             );
-            let client_height_a = ctx_a
-                .query_client_full_state(&client_on_a_for_b)
-                .unwrap()
-                .latest_height();
-            assert_eq!(client_height_a, ctx_b.query_latest_height().unwrap());
+            assert_eq!(
+                ctx_a.light_client_latest_height(&client_on_a_for_b),
+                ctx_b.latest_height()
+            );
         }
     }
 }
