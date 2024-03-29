@@ -2,7 +2,6 @@
 mod tests {
     use ibc::clients::tendermint::types::client_type as tm_client_type;
     use ibc::core::client::context::client_state::ClientStateValidation;
-    use ibc::core::client::context::ClientValidationContext;
     use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
     use ibc::core::client::types::Height;
     use ibc::core::handler::types::msgs::MsgEnvelope;
@@ -32,13 +31,7 @@ mod tests {
     {
         // Check if client for ibc0 on ibc1 has been updated to latest height:
         // - query client state on destination chain
-        let dest_client_state = dest.ibc_store.client_state(client_id).map_err(|_| {
-            RelayerError::ClientStateNotFound {
-                client_id: client_id.clone(),
-            }
-        })?;
-
-        let dest_client_latest_height = dest_client_state.latest_height();
+        let dest_client_latest_height = dest.light_client_latest_height(client_id);
 
         if src_header.height() == dest_client_latest_height {
             return Err(RelayerError::ClientAlreadyUpToDate {
