@@ -70,7 +70,6 @@ mod tests {
     use crate::relayer::context::ClientId;
     use crate::relayer::error::RelayerError;
     use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
-    use crate::testapp::ibc::core::router::MockRouter;
     use crate::testapp::ibc::core::types::LightClientBuilder;
 
     /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
@@ -162,12 +161,6 @@ mod tests {
                 .build(),
         );
 
-        // dummy; not actually used in client updates
-        let mut router_a = MockRouter::new_with_transfer();
-
-        // dummy; not actually used in client updates
-        let mut router_b = MockRouter::new_with_transfer();
-
         for _i in 0..num_iterations {
             // Update client on chain B to latest height of A.
             // - create the client update message with the latest header from A
@@ -187,7 +180,7 @@ mod tests {
 
             // - send the message to B. We bypass ICS18 interface and call directly into
             // MockContext `recv` method (to avoid additional serialization steps).
-            let dispatch_res_b = ctx_b.deliver(&mut router_b, MsgEnvelope::Client(client_msg_b));
+            let dispatch_res_b = ctx_b.deliver(MsgEnvelope::Client(client_msg_b));
             let validation_res = ctx_b.host.validate();
             assert!(
                 validation_res.is_ok(),
@@ -226,7 +219,7 @@ mod tests {
             debug!("client_msg_a = {:?}", client_msg_a);
 
             // - send the message to A
-            let dispatch_res_a = ctx_a.deliver(&mut router_a, MsgEnvelope::Client(client_msg_a));
+            let dispatch_res_a = ctx_a.deliver(MsgEnvelope::Client(client_msg_a));
             let validation_res = ctx_a.host.validate();
             assert!(
                 validation_res.is_ok(),

@@ -18,7 +18,6 @@ use ibc::core::host::types::path::{
     SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ExecutionContext, ValidationContext};
-use ibc::core::router::router::Router;
 use ibc::primitives::prelude::*;
 use ibc::primitives::Timestamp;
 
@@ -27,6 +26,7 @@ use crate::fixtures::core::context::MockContextConfig;
 use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
+use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::DEFAULT_BLOCK_TIME_SECS;
 
 /// A context implementing the dependencies necessary for testing any IBC module.
@@ -42,6 +42,8 @@ where
 
     /// The type of host chain underlying this mock context.
     pub host: H,
+
+    pub router: MockRouter,
 
     /// An object that stores all IBC related data.
     pub ibc_store: MockIbcStore<S>,
@@ -382,12 +384,9 @@ where
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
-    pub fn deliver(
-        &mut self,
-        router: &mut impl Router,
-        msg: MsgEnvelope,
-    ) -> Result<(), RelayerError> {
-        dispatch(&mut self.ibc_store, router, msg).map_err(RelayerError::TransactionFailed)?;
+    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
+        dispatch(&mut self.ibc_store, &mut self.router, msg)
+            .map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
         self.advance_block();
         Ok(())

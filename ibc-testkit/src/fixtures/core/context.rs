@@ -10,6 +10,7 @@ use typed_builder::TypedBuilder;
 
 use crate::context::MockGenericContext;
 use crate::hosts::{HostClientState, TestBlock, TestHost};
+use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 use crate::utils::year_2023;
 
@@ -61,6 +62,7 @@ where
                 params.latest_height.revision_number(),
                 Default::default(),
             ),
+            router: MockRouter::new_with_transfer(),
             host: params.host,
         };
 

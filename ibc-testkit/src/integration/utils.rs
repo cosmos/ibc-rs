@@ -33,7 +33,6 @@ use ibc_query::core::context::ProvableContext;
 
 use crate::context::MockContext;
 use crate::hosts::{HostClientState, TestBlock, TestHost};
-use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, LightClientState};
 
 /// Implements relayer methods for a pair of hosts
@@ -56,7 +55,6 @@ where
 {
     pub fn create_client_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &MockContext<B>,
         signer: Signer,
     ) -> ClientId {
@@ -77,7 +75,7 @@ where
             signer,
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::CreateClient(create_client_b_event)) =
             ctx_a.ibc_store().events.lock().last().cloned()
@@ -106,7 +104,6 @@ where
 
     pub fn update_client_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &MockContext<B>,
         client_id_on_a: ClientId,
         signer: Signer,
@@ -134,7 +131,7 @@ where
             signer,
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::UpdateClient(_)) = ctx_a.ibc_store().events.lock().last().cloned()
         else {
@@ -144,7 +141,6 @@ where
 
     pub fn update_client_on_a_with_sync(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &mut MockContext<B>,
         client_id_on_a: ClientId,
         signer: Signer,
@@ -152,18 +148,11 @@ where
         // this is required, as IBC doesn't allow client update
         // from future beyond max clock drift
         TypedIntegration::<A, B>::sync_clock_on_a(ctx_a, ctx_b);
-        TypedIntegration::<A, B>::update_client_on_a(
-            ctx_a,
-            router_a,
-            ctx_b,
-            client_id_on_a,
-            signer,
-        );
+        TypedIntegration::<A, B>::update_client_on_a(ctx_a, ctx_b, client_id_on_a, signer);
     }
 
     pub fn connection_open_init_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &MockContext<B>,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
@@ -183,7 +172,7 @@ where
             signer: signer.clone(),
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::OpenInitConnection(open_init_connection_event)) =
             ctx_a.ibc_store().events.lock().last().cloned()
@@ -196,7 +185,6 @@ where
 
     pub fn connection_open_try_on_b(
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         ctx_a: &MockContext<A>,
         conn_id_on_a: ConnectionId,
         client_id_on_a: ClientId,
@@ -271,7 +259,7 @@ where
             previous_connection_id: String::new(),
         }));
 
-        ctx_b.deliver(router_b, msg_for_b).expect("success");
+        ctx_b.deliver(msg_for_b).expect("success");
 
         let Some(IbcEvent::OpenTryConnection(open_try_connection_event)) =
             ctx_b.ibc_store().events.lock().last().cloned()
@@ -284,7 +272,6 @@ where
 
     pub fn connection_open_ack_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &MockContext<B>,
         conn_id_on_a: ConnectionId,
         conn_id_on_b: ConnectionId,
@@ -349,7 +336,7 @@ where
             proof_consensus_state_of_a: None,
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::OpenAckConnection(_)) = ctx_a.ibc_store().events.lock().last().cloned()
         else {
@@ -359,7 +346,6 @@ where
 
     pub fn connection_open_confirm_on_b(
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         ctx_a: &MockContext<A>,
         conn_id_on_a: ConnectionId,
         conn_id_on_b: ConnectionId,
@@ -385,7 +371,7 @@ where
                 signer: signer.clone(),
             }));
 
-        ctx_b.deliver(router_b, msg_for_b).expect("success");
+        ctx_b.deliver(msg_for_b).expect("success");
 
         let Some(IbcEvent::OpenConfirmConnection(_)) = ctx_b.ibc_store().events.lock().last()
         else {
@@ -395,16 +381,13 @@ where
 
     pub fn create_connection_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
         let conn_id_on_a = TypedIntegration::<A, B>::connection_open_init_on_a(
             ctx_a,
-            router_a,
             ctx_b,
             client_id_on_a.clone(),
             client_id_on_b.clone(),
@@ -413,7 +396,6 @@ where
 
         TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
-            router_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
@@ -421,7 +403,6 @@ where
 
         let conn_id_on_b = TypedIntegration::<A, B>::connection_open_try_on_b(
             ctx_b,
-            router_b,
             ctx_a,
             conn_id_on_a.clone(),
             client_id_on_a.clone(),
@@ -431,7 +412,6 @@ where
 
         TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
-            router_a,
             ctx_b,
             client_id_on_a.clone(),
             signer.clone(),
@@ -439,7 +419,6 @@ where
 
         TypedIntegration::<A, B>::connection_open_ack_on_a(
             ctx_a,
-            router_a,
             ctx_b,
             conn_id_on_a.clone(),
             conn_id_on_b.clone(),
@@ -449,7 +428,6 @@ where
 
         TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
-            router_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
@@ -457,7 +435,6 @@ where
 
         TypedIntegration::<A, B>::connection_open_confirm_on_b(
             ctx_b,
-            router_b,
             ctx_a,
             conn_id_on_b.clone(),
             conn_id_on_a.clone(),
@@ -466,7 +443,6 @@ where
 
         TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
-            router_a,
             ctx_b,
             client_id_on_a,
             signer,
@@ -477,7 +453,6 @@ where
 
     pub fn channel_open_init_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         conn_id_on_a: ConnectionId,
         port_id_on_a: PortId,
         port_id_on_b: PortId,
@@ -492,7 +467,7 @@ where
             version_proposal: ChannelVersion::empty(),
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::OpenInitChannel(open_init_channel_event)) =
             ctx_a.ibc_store().events.lock().last().cloned()
@@ -505,7 +480,6 @@ where
 
     pub fn channel_open_try_on_b(
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         ctx_a: &MockContext<A>,
         conn_id_on_b: ConnectionId,
         chan_id_on_a: ChannelId,
@@ -539,7 +513,7 @@ where
             version_proposal: ChannelVersion::empty(),
         }));
 
-        ctx_b.deliver(router_b, msg_for_b).expect("success");
+        ctx_b.deliver(msg_for_b).expect("success");
 
         let Some(IbcEvent::OpenTryChannel(open_try_channel_event)) =
             ctx_b.ibc_store().events.lock().last().cloned()
@@ -553,7 +527,6 @@ where
     #[allow(clippy::too_many_arguments)]
     pub fn channel_open_ack_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &MockContext<B>,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
@@ -583,7 +556,7 @@ where
             signer,
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::OpenAckChannel(_)) = ctx_a.ibc_store().events.lock().last().cloned()
         else {
@@ -593,7 +566,6 @@ where
 
     pub fn channel_open_confirm_on_b(
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         ctx_a: &MockContext<A>,
         chan_id_on_a: ChannelId,
         chan_id_on_b: ChannelId,
@@ -620,7 +592,7 @@ where
             signer,
         }));
 
-        ctx_b.deliver(router_b, msg_for_b).expect("success");
+        ctx_b.deliver(msg_for_b).expect("success");
 
         let Some(IbcEvent::OpenConfirmChannel(_)) = ctx_b.ibc_store().events.lock().last().cloned()
         else {
@@ -630,7 +602,6 @@ where
 
     pub fn channel_close_init_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
         signer: Signer,
@@ -641,7 +612,7 @@ where
             signer,
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::CloseInitChannel(_)) = ctx_a.ibc_store().events.lock().last().cloned()
         else {
@@ -651,7 +622,6 @@ where
 
     pub fn channel_close_confirm_on_b(
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         ctx_a: &MockContext<A>,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
@@ -677,7 +647,7 @@ where
             signer,
         }));
 
-        ctx_b.deliver(router_b, msg_for_b).expect("success");
+        ctx_b.deliver(msg_for_b).expect("success");
 
         let Some(IbcEvent::CloseConfirmChannel(_)) =
             ctx_b.ibc_store().events.lock().last().cloned()
@@ -689,9 +659,7 @@ where
     #[allow(clippy::too_many_arguments)]
     pub fn create_channel_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         client_id_on_a: ClientId,
         conn_id_on_a: ConnectionId,
         port_id_on_a: PortId,
@@ -702,7 +670,6 @@ where
     ) -> (ChannelId, ChannelId) {
         let chan_id_on_a = TypedIntegration::<A, B>::channel_open_init_on_a(
             ctx_a,
-            router_a,
             conn_id_on_a.clone(),
             port_id_on_a.clone(),
             port_id_on_b.clone(),
@@ -711,7 +678,6 @@ where
 
         TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
-            router_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
@@ -719,7 +685,6 @@ where
 
         let chan_id_on_b = TypedIntegration::<A, B>::channel_open_try_on_b(
             ctx_b,
-            router_b,
             ctx_a,
             conn_id_on_b.clone(),
             chan_id_on_a.clone(),
@@ -729,7 +694,6 @@ where
 
         TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
-            router_a,
             ctx_b,
             client_id_on_a.clone(),
             signer.clone(),
@@ -737,7 +701,6 @@ where
 
         TypedIntegration::<A, B>::channel_open_ack_on_a(
             ctx_a,
-            router_a,
             ctx_b,
             chan_id_on_a.clone(),
             port_id_on_a.clone(),
@@ -748,7 +711,6 @@ where
 
         TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
-            router_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
@@ -756,7 +718,6 @@ where
 
         TypedIntegration::<A, B>::channel_open_confirm_on_b(
             ctx_b,
-            router_b,
             ctx_a,
             chan_id_on_a.clone(),
             chan_id_on_b.clone(),
@@ -766,7 +727,6 @@ where
 
         TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
-            router_a,
             ctx_b,
             client_id_on_a,
             signer,
@@ -778,9 +738,7 @@ where
     #[allow(clippy::too_many_arguments)]
     pub fn close_channel_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         client_id_on_a: ClientId,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
@@ -791,7 +749,6 @@ where
     ) {
         TypedIntegration::<A, B>::channel_close_init_on_a(
             ctx_a,
-            router_a,
             chan_id_on_a.clone(),
             port_id_on_a.clone(),
             signer.clone(),
@@ -799,7 +756,6 @@ where
 
         TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
-            router_b,
             ctx_a,
             client_id_on_b,
             signer.clone(),
@@ -807,7 +763,6 @@ where
 
         TypedIntegration::<A, B>::channel_close_confirm_on_b(
             ctx_b,
-            router_b,
             ctx_a,
             chan_id_on_b,
             port_id_on_b,
@@ -816,7 +771,6 @@ where
 
         TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
-            router_a,
             ctx_b,
             client_id_on_a,
             signer,
@@ -825,7 +779,6 @@ where
 
     pub fn packet_recv_on_b(
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         ctx_a: &MockContext<A>,
         packet: Packet,
         signer: Signer,
@@ -850,7 +803,7 @@ where
             signer,
         }));
 
-        ctx_b.deliver(router_b, msg_for_b).expect("success");
+        ctx_b.deliver(msg_for_b).expect("success");
 
         let Some(IbcEvent::WriteAcknowledgement(write_ack_event)) =
             ctx_b.ibc_store().events.lock().last().cloned()
@@ -864,7 +817,6 @@ where
     #[allow(clippy::too_many_arguments)]
     pub fn packet_ack_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &MockContext<B>,
         packet: Packet,
         acknowledgement: Acknowledgement,
@@ -890,7 +842,7 @@ where
             signer,
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::AcknowledgePacket(_)) = ctx_a.ibc_store().events.lock().last().cloned()
         else {
@@ -900,7 +852,6 @@ where
 
     pub fn packet_timeout_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &MockContext<B>,
         packet: Packet,
         signer: Signer,
@@ -926,7 +877,7 @@ where
             signer,
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::TimeoutPacket(_)) = ctx_a.ibc_store().events.lock().last().cloned()
         else {
@@ -936,7 +887,6 @@ where
 
     pub fn packet_timeout_on_close_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &MockContext<B>,
         packet: Packet,
         chan_id_on_b: ChannelId,
@@ -974,7 +924,7 @@ where
             signer,
         }));
 
-        ctx_a.deliver(router_a, msg_for_a).expect("success");
+        ctx_a.deliver(msg_for_a).expect("success");
 
         let Some(IbcEvent::ChannelClosed(_)) = ctx_a.ibc_store().events.lock().last().cloned()
         else {
@@ -985,9 +935,7 @@ where
     #[allow(clippy::too_many_arguments)]
     pub fn send_packet_on_a(
         ctx_a: &mut MockContext<A>,
-        router_a: &mut MockRouter,
         ctx_b: &mut MockContext<B>,
-        router_b: &mut MockRouter,
         packet: Packet,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
@@ -997,7 +945,6 @@ where
 
         TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
-            router_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
@@ -1005,7 +952,6 @@ where
 
         let acknowledgement = TypedIntegration::<A, B>::packet_recv_on_b(
             ctx_b,
-            router_b,
             ctx_a,
             packet.clone(),
             signer.clone(),
@@ -1013,7 +959,6 @@ where
 
         TypedIntegration::<A, B>::update_client_on_a_with_sync(
             ctx_a,
-            router_a,
             ctx_b,
             client_id_on_a,
             signer.clone(),
@@ -1021,7 +966,6 @@ where
 
         TypedIntegration::<A, B>::packet_ack_on_a(
             ctx_a,
-            router_a,
             ctx_b,
             packet,
             acknowledgement,
@@ -1030,7 +974,6 @@ where
 
         TypedIntegration::<B, A>::update_client_on_a_with_sync(
             ctx_b,
-            router_b,
             ctx_a,
             client_id_on_b,
             signer.clone(),

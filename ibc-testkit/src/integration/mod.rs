@@ -18,7 +18,6 @@ use crate::context::MockContext;
 use crate::fixtures::core::signer::dummy_account_id;
 use crate::hosts::{HostClientState, TestHost};
 use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
-use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
 pub mod utils;
@@ -31,9 +30,7 @@ where
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
     ctx_a: MockContext<A>,
-    router_a: MockRouter,
     ctx_b: MockContext<B>,
-    router_b: MockRouter,
 }
 
 impl<A, B> IntegrationContext<A, B>
@@ -43,18 +40,8 @@ where
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
-    pub fn new(
-        ctx_a: MockContext<A>,
-        router_a: MockRouter,
-        ctx_b: MockContext<B>,
-        router_b: MockRouter,
-    ) -> Self {
-        Self {
-            ctx_a,
-            router_a,
-            ctx_b,
-            router_b,
-        }
+    pub fn new(ctx_a: MockContext<A>, ctx_b: MockContext<B>) -> Self {
+        Self { ctx_a, ctx_b }
     }
 
     pub fn get_ctx_a(&self) -> &MockContext<A> {
@@ -74,27 +61,16 @@ where
     }
 
     pub fn create_client_on_a(&mut self, signer: Signer) -> ClientId {
-        TypedIntegration::<A, B>::create_client_on_a(
-            &mut self.ctx_a,
-            &mut self.router_a,
-            &self.ctx_b,
-            signer,
-        )
+        TypedIntegration::<A, B>::create_client_on_a(&mut self.ctx_a, &self.ctx_b, signer)
     }
 
     pub fn create_client_on_b(&mut self, signer: Signer) -> ClientId {
-        TypedIntegration::<B, A>::create_client_on_a(
-            &mut self.ctx_b,
-            &mut self.router_b,
-            &self.ctx_a,
-            signer,
-        )
+        TypedIntegration::<B, A>::create_client_on_a(&mut self.ctx_b, &self.ctx_a, signer)
     }
 
     pub fn update_client_on_a_with_sync(&mut self, client_id_on_a: ClientId, signer: Signer) {
         TypedIntegration::<A, B>::update_client_on_a_with_sync(
             &mut self.ctx_a,
-            &mut self.router_a,
             &mut self.ctx_b,
             client_id_on_a,
             signer,
@@ -104,7 +80,6 @@ where
     pub fn update_client_on_b_with_sync(&mut self, client_id_on_b: ClientId, signer: Signer) {
         TypedIntegration::<B, A>::update_client_on_a_with_sync(
             &mut self.ctx_b,
-            &mut self.router_b,
             &mut self.ctx_a,
             client_id_on_b,
             signer,
@@ -119,9 +94,7 @@ where
     ) -> (ConnectionId, ConnectionId) {
         TypedIntegration::<A, B>::create_connection_on_a(
             &mut self.ctx_a,
-            &mut self.router_a,
             &mut self.ctx_b,
-            &mut self.router_b,
             client_id_on_a,
             client_id_on_b,
             signer,
@@ -136,9 +109,7 @@ where
     ) -> (ConnectionId, ConnectionId) {
         TypedIntegration::<B, A>::create_connection_on_a(
             &mut self.ctx_b,
-            &mut self.router_b,
             &mut self.ctx_a,
-            &mut self.router_a,
             client_id_on_b,
             client_id_on_a,
             signer,
@@ -171,9 +142,7 @@ where
 
         TypedIntegration::<A, B>::create_channel_on_a(
             &mut self.ctx_a,
-            &mut self.router_a,
             &mut self.ctx_b,
-            &mut self.router_b,
             client_id_on_a,
             conn_id_on_a,
             port_id_on_a,
@@ -211,9 +180,7 @@ where
 
         TypedIntegration::<B, A>::create_channel_on_a(
             &mut self.ctx_b,
-            &mut self.router_b,
             &mut self.ctx_a,
-            &mut self.router_a,
             client_id_on_b,
             conn_id_on_b,
             port_id_on_b,
@@ -268,9 +235,7 @@ where
 
         TypedIntegration::<A, B>::close_channel_on_a(
             &mut self.ctx_a,
-            &mut self.router_a,
             &mut self.ctx_b,
-            &mut self.router_b,
             client_id_on_a,
             chan_id_on_a,
             port_id_on_a,
@@ -325,9 +290,7 @@ where
 
         TypedIntegration::<B, A>::close_channel_on_a(
             &mut self.ctx_b,
-            &mut self.router_b,
             &mut self.ctx_a,
-            &mut self.router_a,
             client_id_on_b,
             chan_id_on_b,
             port_id_on_b,
@@ -379,9 +342,7 @@ where
 
         TypedIntegration::<A, B>::send_packet_on_a(
             &mut self.ctx_a,
-            &mut self.router_a,
             &mut self.ctx_b,
-            &mut self.router_b,
             packet,
             client_id_on_a,
             client_id_on_b,
@@ -402,12 +363,7 @@ where
 
     let signer = dummy_account_id();
 
-    let mut relayer = IntegrationContext::new(
-        ctx_a,
-        MockRouter::new_with_transfer(),
-        ctx_b,
-        MockRouter::new_with_transfer(),
-    );
+    let mut relayer = IntegrationContext::new(ctx_a, ctx_b);
 
     // client creation
     let client_id_on_a = relayer.create_client_on_a(signer.clone());
