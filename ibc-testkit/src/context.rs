@@ -43,10 +43,11 @@ where
     /// The type of host chain underlying this mock context.
     pub host: H,
 
-    pub router: MockRouter,
-
     /// An object that stores all IBC related data.
     pub ibc_store: MockIbcStore<S>,
+
+    /// A router that can route messages to the appropriate IBC application.
+    pub ibc_router: MockRouter,
 }
 
 pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
@@ -385,7 +386,7 @@ where
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
     pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
-        dispatch(&mut self.ibc_store, &mut self.router, msg)
+        dispatch(&mut self.ibc_store, &mut self.ibc_router, msg)
             .map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
         self.advance_block();

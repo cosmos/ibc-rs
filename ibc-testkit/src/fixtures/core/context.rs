@@ -62,7 +62,7 @@ where
                 params.latest_height.revision_number(),
                 Default::default(),
             ),
-            router: MockRouter::new_with_transfer(),
+            ibc_router: MockRouter::new_with_transfer(),
             host: params.host,
         };
 
