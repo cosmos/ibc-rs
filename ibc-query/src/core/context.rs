@@ -3,6 +3,7 @@
 use ibc::core::channel::types::channel::IdentifiedChannelEnd;
 use ibc::core::channel::types::packet::PacketState;
 use ibc::core::client::types::Height;
+use ibc::core::commitment_types::merkle::MerkleProof;
 use ibc::core::connection::types::IdentifiedConnectionEnd;
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
@@ -14,7 +15,7 @@ use ibc::core::primitives::prelude::*;
 pub trait ProvableContext {
     /// Returns the proof for the given path at the given height.
     /// As this is in the context of IBC, the path is expected to be an [`IbcPath`](Path).
-    fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>>;
+    fn get_proof(&self, height: Height, path: &Path) -> Option<MerkleProof>;
 }
 
 /// Context to be implemented by the host that provides gRPC query services.

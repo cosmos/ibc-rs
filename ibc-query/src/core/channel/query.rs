@@ -7,7 +7,9 @@ use ibc::core::host::types::path::{
 };
 use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc::primitives::prelude::format;
+use ibc::primitives::ToVec;
 use ibc_proto::google::protobuf::Any;
+use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 
 use super::{
     QueryChannelClientStateRequest, QueryChannelClientStateResponse,
@@ -50,7 +52,7 @@ where
 
     Ok(QueryChannelResponse::new(
         channel_end,
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -145,7 +147,7 @@ where
 
     Ok(QueryChannelClientStateResponse::new(
         IdentifiedClientState::new(connection_end.client_id().clone(), client_state.into()),
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -200,7 +202,7 @@ where
     Ok(QueryChannelConsensusStateResponse::new(
         consensus_state.into(),
         connection_end.client_id().clone(),
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -231,7 +233,7 @@ where
 
     Ok(QueryPacketCommitmentResponse::new(
         packet_commitment_data,
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -286,7 +288,7 @@ where
 
     Ok(QueryPacketReceiptResponse::new(
         packet_receipt_data.is_ok(),
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -317,7 +319,7 @@ where
 
     Ok(QueryPacketAcknowledgementResponse::new(
         packet_acknowledgement_data,
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -421,7 +423,7 @@ where
 
     Ok(QueryNextSequenceSendResponse::new(
         next_sequence_send,
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -451,7 +453,7 @@ where
 
     Ok(QueryNextSequenceReceiveResponse::new(
         next_sequence_recv,
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }

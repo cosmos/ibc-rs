@@ -10,6 +10,8 @@ use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc::cosmos_host::upgrade_proposal::{UpgradeValidationContext, UpgradedConsensusStateRef};
 use ibc::primitives::prelude::format;
 use ibc::primitives::proto::Any;
+use ibc::primitives::ToVec;
+use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 
 use super::{
     ConsensusStateWithHeight, IdentifiedClientState, QueryClientStateResponse,
@@ -53,7 +55,7 @@ where
 
     Ok(QueryClientStateResponse::new(
         client_state.into(),
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -130,7 +132,7 @@ where
 
     Ok(QueryConsensusStateResponse::new(
         consensus_state.into(),
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }

@@ -7,6 +7,8 @@ use ibc::core::host::types::path::{
 use ibc::core::host::{ConsensusStateRef, ValidationContext};
 use ibc::primitives::prelude::format;
 use ibc::primitives::proto::Any;
+use ibc::primitives::ToVec;
+use ibc_proto::ibc::core::commitment::v1::MerkleProof;
 
 use super::{
     QueryClientConnectionsRequest, QueryClientConnectionsResponse,
@@ -18,7 +20,6 @@ use super::{
 use crate::core::client::IdentifiedClientState;
 use crate::core::context::{ProvableContext, QueryContext};
 use crate::error::QueryError;
-use crate::types::Proof;
 
 /// Queries for the connection end of a given connection id.
 pub fn query_connection<I>(
@@ -46,7 +47,7 @@ where
 
     Ok(QueryConnectionResponse::new(
         connection_end,
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -80,7 +81,7 @@ where
 
     let current_height = ibc_ctx.host_height()?;
 
-    let proof: Proof = ibc_ctx
+    let proof = ibc_ctx
         .get_proof(
             current_height,
             &Path::ClientConnection(ClientConnectionPath::new(request.client_id.clone())),
@@ -94,7 +95,7 @@ where
 
     Ok(QueryClientConnectionsResponse::new(
         connections,
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -129,7 +130,7 @@ where
 
     Ok(QueryConnectionClientStateResponse::new(
         IdentifiedClientState::new(connection_end.client_id().clone(), client_state.into()),
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
@@ -169,7 +170,7 @@ where
     Ok(QueryConnectionConsensusStateResponse::new(
         consensus_state.into(),
         connection_end.client_id().clone(),
-        proof,
+        MerkleProof::from(proof).to_vec(),
         current_height,
     ))
 }
