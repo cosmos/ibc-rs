@@ -8,7 +8,7 @@ use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::ValidationContext;
-use ibc::core::primitives::{Signer, Timestamp};
+use ibc::core::primitives::Signer;
 
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
@@ -29,22 +29,32 @@ struct Fixture {
     signer: Signer,
 }
 
-#[fixture]
-fn fixture() -> Fixture {
+/// Initializes the testing fixture for validating client recovery logic.
+///
+/// Creates the subject and substitute clients via sending two `MsgCreateClient`
+/// messages. The subject client is initialized in an expired state by sleeping
+/// for the duration of its trusting period. The substitute client state is
+/// initialized with a much longer trusting period and at a height higher than
+/// the subject client state's in order to ensure that it remains in an active
+/// state.
+fn setup_client_recovery_fixture(
+    subject_trusting_period: Duration,
+    subject_height: Height,
+    substitute_trusting_period: Duration,
+    substitute_height: Height,
+) -> Fixture {
     let mut ctx = MockContext::default();
     let mut router = MockRouter::new_with_transfer();
     let signer = dummy_account_id();
-    let height = Height::new(0, 42).unwrap();
-    let timestamp = Timestamp::now();
 
     let subject_client_state =
-        MockClientState::new(MockHeader::new(height).with_timestamp(timestamp))
-            .with_trusting_period(Duration::from_nanos(100));
+        MockClientState::new(MockHeader::new(subject_height).with_current_timestamp())
+            .with_trusting_period(subject_trusting_period);
 
     // Create the subject client
     let msg = MsgCreateClient::new(
         subject_client_state.into(),
-        MockConsensusState::new(MockHeader::new(height).with_timestamp(timestamp)).into(),
+        MockConsensusState::new(MockHeader::new(subject_height).with_current_timestamp()).into(),
         signer.clone(),
     );
 
@@ -56,18 +66,18 @@ fn fixture() -> Fixture {
     validate(&ctx, &router, msg_envelope.clone()).expect("create subject client validation");
     execute(&mut ctx, &mut router, msg_envelope).expect("create subject client execution");
 
-    sleep(Duration::from_nanos(100));
+    // Ensure that the subject client state is in the `Status::Expired` state
+    // by sleeping for the length of its trusting period
+    sleep(subject_trusting_period);
 
     // Create the substitute client
-    let height = height.increment();
-
     let substitute_client_state =
-        MockClientState::new(MockHeader::new(height).with_timestamp(timestamp))
-            .with_trusting_period(Duration::from_secs(3));
+        MockClientState::new(MockHeader::new(substitute_height).with_current_timestamp())
+            .with_trusting_period(substitute_trusting_period);
 
     let msg = MsgCreateClient::new(
         substitute_client_state.into(),
-        MockConsensusState::new(MockHeader::new(height).with_timestamp(timestamp)).into(),
+        MockConsensusState::new(MockHeader::new(substitute_height).with_current_timestamp()).into(),
         signer.clone(),
     );
 
@@ -88,14 +98,24 @@ fn fixture() -> Fixture {
 }
 
 #[rstest]
-fn test_recover_client_ok(fixture: Fixture) {
+fn test_recover_client_ok() {
+    let subject_trusting_period = Duration::from_nanos(100);
+    let substitute_trusting_period = Duration::from_secs(3);
+    let subject_height = Height::new(0, 42).unwrap();
+    let substitute_height = Height::new(0, 43).unwrap();
+
     let Fixture {
         mut ctx,
         mut router,
         subject_client_id,
         substitute_client_id,
         signer,
-    } = fixture;
+    } = setup_client_recovery_fixture(
+        subject_trusting_period,
+        subject_height,
+        substitute_trusting_period,
+        substitute_height,
+    );
 
     let msg = MsgRecoverClient {
         subject_client_id,
@@ -107,14 +127,80 @@ fn test_recover_client_ok(fixture: Fixture) {
 
     let res = validate(&ctx, &router, msg_envelope.clone());
 
-    assert!(res.is_ok(), "validation happy path");
+    assert!(res.is_ok(), "client recovery validation happy path");
 
     let res = execute(&mut ctx, &mut router, msg_envelope);
 
-    assert!(res.is_ok(), "execution happy path");
+    assert!(res.is_ok(), "client recovery execution happy path");
 
     assert_eq!(
         ctx.client_state(&msg.subject_client_id).unwrap(),
         ctx.client_state(&msg.substitute_client_id).unwrap(),
-    )
+    );
+}
+
+#[rstest]
+fn test_recover_client_with_expired_substitute() {
+    let subject_trusting_period = Duration::from_nanos(100);
+    let substitute_trusting_period = Duration::from_nanos(100);
+    let subject_height = Height::new(0, 42).unwrap();
+    let substitute_height = Height::new(0, 43).unwrap();
+
+    let Fixture {
+        ctx,
+        router,
+        subject_client_id,
+        substitute_client_id,
+        signer,
+    } = setup_client_recovery_fixture(
+        subject_trusting_period,
+        subject_height,
+        substitute_trusting_period,
+        substitute_height,
+    );
+
+    let msg = MsgRecoverClient {
+        subject_client_id,
+        substitute_client_id,
+        signer,
+    };
+
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+
+    let res = validate(&ctx, &router, msg_envelope.clone());
+
+    assert!(res.is_err(), "expected client recovery validation to fail");
+}
+
+#[rstest]
+fn test_recover_client_with_matching_heights() {
+    let subject_trusting_period = Duration::from_nanos(100);
+    let substitute_trusting_period = Duration::from_secs(3);
+    let subject_height = Height::new(0, 42).unwrap();
+    let substitute_height = Height::new(0, 42).unwrap();
+
+    let Fixture {
+        ctx,
+        router,
+        subject_client_id,
+        substitute_client_id,
+        signer,
+    } = setup_client_recovery_fixture(
+        subject_trusting_period,
+        subject_height,
+        substitute_trusting_period,
+        substitute_height,
+    );
+
+    let msg = MsgRecoverClient {
+        subject_client_id,
+        substitute_client_id,
+        signer,
+    };
+
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+
+    let res = validate(&ctx, &router, msg_envelope.clone());
+
+    assert!(res.is_err(), "expected client recovery validation to fail");
 }
