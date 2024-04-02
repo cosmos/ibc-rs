@@ -7,137 +7,250 @@
 ## Context
 
 The current framework in the IBC testkit uses
-[existing types and injects state or dependency manually][1]. Sometimes, it uses
-[semantically wrong data as mock data][2]. Because of this, tests with
-customizable steps and fixed fixtures became messy and unmaintainable.
+[existing types and injects state or dependency
+manually](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/tests/core/ics02_client/update_client.rs#L574-L578).
+Sometimes, it uses
+[semantically wrong data as mock data](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/types.rs#L320).
+Because of this, tests with customizable steps and fixed fixtures became ad-hoc
+and unmaintainable.
 
-To overcome this, we need to create a proper integration test framework that
-allows:
+To overcome this, we need to improve our test framework that allows:
 
-- writing and maintaining tests easily.
-- yet covering various success and failure scenarios.
-
-[1]: https://github.com/cosmos/ibc-rs/blob/65d84464842b3620f0bd66a07af30705bfa37761/ibc-testkit/tests/core/ics02_client/update_client.rs#L572-L576
-[2]: https://github.com/cosmos/ibc-rs/blob/65d84464842b3620f0bd66a07af30705bfa37761/ibc-testkit/src/testapp/ibc/core/types.rs#L320
+- testing different implementations (traits).
+- succinct tests (useful `util` methods).
+- improving test coverage (Merkle proof generation).
+- integration tests exercising the IBC workflow (relayer-like interface)
 
 ## Decision
 
-### Principle
+The main goal of this proposal is to create a test framework that is modular and
+closer to the real blockchain environment. This should also make the existing
+tests succinct and readable. Instead of bootstrapping the mock data, we should
+use valid steps to generate it - so that we know the exact steps to reach a
+state to reproduce in a real environment.
 
-The main goal of this proposal is that writing and maintaining tests should be
-easier. The happy tests should be succinct and readable. The happy steps may be
-reused as fixtures - but not the sad steps. Because the sad tests should be
-descriptive and contain comments about the test steps. (Also, if there are more
-than 10 steps, it should be broken down into smaller tests or reuse fixtures)
+To achieve this, we have broken down the proposal into sub-proposals.
 
-### Testing traits
+### Adopt a Merkle store for the test framework
 
-Moreover, the test framework should allow testing the implementations of the
-traits. Namely, there are two sets of crucial traits - one for different kinds
-of clients and the other for different IBC apps.
+The current framework uses `HashMap` and `HashSet` to store data. This works for
+many test scenarios, but it fails to test proof-sensitive scenarios. Because of
+this, we don't have any connection, channel handshake or packet relay tests for
+Tendermint light client.
 
-Testing different implementations of clients is possible using a general `Host`
-and implementing its corresponding client traits. This is already done by
-[`Mock` and `SyntheticTendermint`][3].
+We generalize
+[`MockContext`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/types.rs#L103)
+to use a Merkle store which is used for IBC Context's store. For concrete or
+default implementation, we can use the IAVL Merkle store implementation from
+`informalsystems/basecoin-rs`.
 
-[3]: https://github.com/cosmos/ibc-rs/blob/65d84464842b3620f0bd66a07af30705bfa37761/ibc-testkit/src/hosts/block.rs#L32-L36
+### Modularize the host environment
 
-In the Tendermint client, we still don't test membership checks as we are not
-using a Merkle tree in our test framework. In the Mock client, we return success
-for these checks. This allowed us to write tests for Connection, Channel and
-Packets but clearly, they don't cover the failure cases.
+Currently, we are using `Mock` and `SyntheticTendermint`
+[variants](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L33-L36)
+as the host environments. To manage these two different environments, we also
+introduced
+[`HostBlocks`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L72-75)
+for corresponding host variants.
 
-For the IBC apps, we are using existing `ics-20` and `ics-721`. But we may add a
-mock one to cover more scenarios.
+This creates friction if we have to add a new host variant. It creates the same
+problem as why we have `ibc-derive` crate for `ClientState` and
+`ConsensusState`. This should be refactored by a generic `TestHost` trait that
+maintains its corresponding types e.g. `Block` types, via associated types.
+Finally, we generalize the `MockContext` once more to use this `TestHost` trait
+instead of a concrete enum variant.
 
-### Architecture
-
-To revamp the test framework, we need to unify the existing methods, traits and
-structs using a clear structure. The following is the proposed structure:
+This `TestHost` trait should be responsible for generating blocks, headers,
+client and consensus states specific to that host environment.
 
 ```rs
-struct Chain<H: Host, R: Router, S: Store> {
-    // host meta data
-    host: H,
+/// TestHost is a trait that defines the interface for a host blockchain.
+pub trait TestHost: Default + Debug + Sized {
+    /// The type of block produced by the host.
+    type Block: TestBlock;
 
-    // host chain history
-    blocks: Vec<H::Block>,
+    /// The type of client state produced by the host.
+    type ClientState: Into<AnyClientState> + Debug;
 
-    // chain storage with commitment vector support
-    store: S,
+    /// The type of block parameters to produce a block
+    type BlockParams: Debug + Default;
 
-    // deployed ibc module or contract
-    ibc: Ibc<R, S>
+    /// The type of light client parameters to produce a light client state
+    type LightClientParams: Debug + Default;
+
+    /// The history of blocks produced by the host chain.
+    fn history(&self) -> &VecDeque<Self::Block>;
+
+    /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
+    fn advance_block(
+        &mut self,
+        commitment_root: Vec<u8>,
+        block_time: Duration,
+        params: &Self::BlockParams,
+    );
+
+    /// Generate a block at the given height and timestamp, using the provided parameters.
+    fn generate_block(
+        &self,
+        commitment_root: Vec<u8>,
+        height: u64,
+        timestamp: Timestamp,
+        params: &Self::BlockParams,
+    ) -> Self::Block;
+
+    /// Generate a client state using the block at the given height and the provided parameters.
+    fn generate_client_state(
+        &self,
+        latest_height: &Height,
+        params: &Self::LightClientParams,
+    ) -> Self::ClientState;
 }
 
-impl<H, S> Chain<H: Host, S: Store> {
-    fn new(chain_id: H::ChainId) -> Self;
+/// TestBlock is a trait that defines the interface for a block produced by a host blockchain.
+pub trait TestBlock: Clone + Debug {
+    /// The type of header can be extracted from the block.
+    type Header: TestHeader;
 
-    fn dispatch(msg: MsgEnvelope) -> Result<(), Error> {
-        dispatch(self.ibc.context, self.ibc.router, msg)
-    }
-    ...
+    /// The height of the block.
+    fn height(&self) -> Height;
 
-    fn advance_height(&self) {
-        self.store.commit();
-        let root_hash = self.store.root_hash();
-        self.blocks.push(self.host.generate_block(root_hash));
-    }
+    /// The timestamp of the block.
+    fn timestamp(&self) -> Timestamp;
+
+    /// Extract the header from the block.
+    fn into_header(self) -> Self::Header;
 }
 
-struct Relayer;
+/// TestHeader is a trait that defines the interface for a header produced by a host blockchain.
+pub trait TestHeader: Clone + Debug + Into<Any> {
+    /// The type of consensus state can be extracted from the header.
+    type ConsensusState: ConsensusState + Into<AnyConsensusState> + From<Self> + Clone + Debug;
 
-impl Relayer {
-    fn bootstrap_client<LH, LS, RH, RS>(ctx_a: Chain<LH, LS>, ctx_b: Chain<RH, RS>);
+    /// The height of the block, as recorded in the header.
+    fn height(&self) -> Height;
 
-    fn bootstrap_connection<LH, LS>(ctx: Chain<LH, LS>, client_id: String);
-    fn bootstrap_channel<LH, LS>(ctx: Chain<LH, LS>, connection_id: String);
+    /// The timestamp of the block, as recorded in the header.
+    fn timestamp(&self) -> Timestamp;
 
-
-    fn client_create_msg(ctx: Chain<LH, LS>, height: Height) -> MsgEnvelope;
-    fn client_update_msg(ctx: Chain<LH, LS>, height: Height) -> MsgEnvelope;
-    ..
-
-    fn connection_open_init_msg(ctx: Chain<LH, LS>, client_id: String) -> MsgEnvelope;
-    // uses IBC events
-    fn connection_open_try_msg(ctx_a: Chain<LH, LS>, ctx_b: Chain<RH, RS>) -> MsgEnvelope;
-    ..
-
-    // similarly for channels and packets
-}
-
-struct Ibc<R: Router, S: Store> {
-    context: IbcStore<S>,
-    router: R
-}
-
-pub trait Host {
-    type Block;
-    fn chain_id(&self) -> String;
-    fn generate_block(&self, hash: Vec<u8>) -> Self::Block;
-    fn generate_client_state(&self) -> Self::Block;
-    fn generate_consensus_state(&self) -> Self::Block;
-}
-
-pub trait Store {
-    type Error;
-    fn get(&self, key: &[u8]) -> Result<Vec<u8>, Self::Error>;
-    fn set(&mut self, key: &[u8], value: Vec<u8>) -> Result<Vec<u8>, Self::Error>
-    fn commit(&mut self) -> Result<(), Self::Error>;
-    fn root_hash(&self) -> Result<Vec<u8>, Self::Error>;
-    fn get_proof(&self, key: &[u8]) -> Result<Vec<u8>, Self::Error>;
+    /// Extract the consensus state from the header.
+    fn into_consensus_state(self) -> Self::ConsensusState;
 }
 ```
 
-The idea is to maintain multiple `Chain` instances and use `Relayer` to
-facilitate the IBC among them. The `Chain` uses `blocks` and `store` to model
-chain history and storage. `Chain::advance_height` is used to commit changes to
-store and generate a new block with a new height and commitment root.
-`Chain::dispatch` is used to submit messages to the IBC module and make changes
-to the storage.
+### Decoupling IbcContext and Host environment
 
-We should use emitted IBC events and log messages in our tests too. We should
-have utility functions to parse and assert these in our tests.
+Currently, `MockContext` implements the top validation and execution context of
+`ibc-rs`. It contains other host-specific data e.g. `host_chain_id`,
+`block_time` - that are irrelevant to the IBC context directly. If we think
+`MockContext` as a real blockchain context, the `MockContext` represents the top
+runtime - which contains the IBC module. So we implement the validation and
+execution context on `MockIbcStore`, instead of `MockContext`.
+
+With this, the `MockContext` contains two decoupled parts - the host and the IBC
+module.
+
+### Chain-like interface for `MockContext`
+
+With the above changes, we can refactor the `MockContext` to have
+blockchain-like interfaces.
+
+The `MockContext` should have `end_block`, `produce_block` and `begin_block` to
+mimic the real blockchain environment such as Cosmos-SDK.
+
+```rs
+impl<S, H> MockContext<S, H>
+where
+    S: ProvableStore + Debug,
+    H: TestHost,
+{
+    pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S>;
+    pub fn host_mut(&mut self) -> &mut H;
+
+    pub fn generate_genesis_block(&mut self, genesis_time: Timestamp);
+    pub fn begin_block(&mut self);
+    pub fn end_block(&mut self);
+    pub fn produce_block(&mut self, block_time: Duration);
+}
+```
+
+### ICS23 compatible proof generation
+
+With the new ability of proof generation, we can now test the Tendermint light
+clients. But we need our proofs to be ICS23 compatible. ICS23 expects the IBC
+store root to be committed at a commitment prefix at a top store in the host
+environment.
+
+For this, we add an extra store in `MockContext` where the `MockIbcStore`
+commits its storage root at its
+[commitment prefix](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/core_ctx.rs#L127-L129)
+key.
+
+So the `MockContext` is finalized as:
+
+```rs
+pub struct MockGenericContext<S, H>
+where
+    S: ProvableStore + Debug,
+    H: TestHost
+{
+    pub main_store: S,
+    pub host: H,
+    pub ibc_store: MockIbcStore<S>,
+}
+```
+
+Now the `MockIbcStore` can generate proofs that contain the proofs in its store
+and commitment prefix. But it has to know the proofs of its commitment prefix of
+the previous heights.
+
+So we add an extra store in `MockIbcStore` to store the proofs from previous
+heights. This is similar to storing `HostConsensusState` of previous heights.
+
+```rs
+#[derive(Debug)]
+pub struct MockIbcStore<S>
+where
+    S: ProvableStore + Debug,
+{
+    ...
+    /// Map of host consensus states
+    pub host_consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
+    /// Map of proofs of ibc commitment prefix
+    pub ibc_commiment_proofs: Arc<Mutex<BTreeMap<u64, CommitmentProof>>>,
+}
+```
+
+The storing of the IBC store root at the IBC commitment prefix happens in the
+end block. The storing of proofs and host consensus states happens in the
+`begin_block` of the `MockContext`.
+
+### Integration Test via `RelayerContext`
+
+With all the above changes, we can now write an integration test that tests the
+IBC workflow - client creation, connection handshake, channel handshake and
+packet relay for any host environment that implements `TestHost`.
+
+This can be done by reading the
+[IBC events](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/types.rs#L95)
+from `MockIbcStore` and creating and sending the IBC messages via
+[`MockContext::deliver`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/types.rs#L696).
+
+### Miscellaneous
+
+To achieve blockchain-like interfaces, we removed `max_history_size` and
+`host_chain_id` from `MockContext`.
+
+- `max_history_size`: We generate all the blocks till a block height. This gives
+  us reproducibility. If we need to prune some older block data, we use a
+  dedicated `prune_block_till` to prune older blocks. This makes our tests more
+  descriptive about the assumption of the test scenarios.
+- `host_chain_id`: The IBC runtime does not depend on `host_chain_id` directly.
+  The `TestHost` trait implementation is responsible for generating the blocks
+  with the necessary data.
+
+Also to minimize verbosity while writing tests (as Rust doesn't support default
+arguments to function parameters), we want to use some parameter builders. For
+that, we can use [`TypedBuilder`](https://crates.io/crates/typed-builder) crate.
 
 ## Status
 
@@ -150,9 +263,9 @@ This ADR pays the technical debt of the existing testing framework.
 ### Positive
 
 The future tests will be more readable and maintainable. The test framework
-becomes modular and heavily leverages Rust's trait system. Even the `ibc-rs`
-users may benefit from this framework to test their implementations of `ibc-rs`
-traits.
+becomes modular and leverages Rust's trait system. Even the `ibc-rs` users may
+benefit from this framework to test their implementations of `ibc-rs`
+components.
 
 ### Negative
 
@@ -160,8 +273,7 @@ This requires a significant refactoring of the existing tests. Since this may
 take some time, the parallel development on `main` branch may conflict with this
 work.
 
-## Future
+## References
 
-The IBC standard is being implemented in different languages. We should
-investigate a DSL to write the IBC test scenarios. This way we add portability
-to our tests and check compatibility with other implementations, such as ibc-go.
+This work is being tracked at
+[cosmos/ibc-rs#1109](https://github.com/cosmos/ibc-rs/pull/1109)
