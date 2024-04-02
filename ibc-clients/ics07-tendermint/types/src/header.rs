@@ -15,9 +15,9 @@ use pretty::{PrettySignedHeader, PrettyValidatorSet};
 use tendermint::block::signed_header::SignedHeader;
 use tendermint::chain::Id as TmChainId;
 use tendermint::validator::Set as ValidatorSet;
+use tendermint::{Hash, Time};
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
-use crate::consensus_state::ConsensusState as TmConsensusState;
 use crate::error::Error;
 
 pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
@@ -69,12 +69,13 @@ impl Header {
 
     pub fn as_trusted_block_state<'a>(
         &'a self,
-        consensus_state: &TmConsensusState,
         chain_id: &'a TmChainId,
+        header_time: Time,
+        next_validators_hash: Hash,
     ) -> Result<TrustedBlockState<'a>, Error> {
         Ok(TrustedBlockState {
             chain_id,
-            header_time: consensus_state.timestamp,
+            header_time,
             height: self
                 .trusted_height
                 .revision_height()
@@ -83,7 +84,7 @@ impl Header {
                     height: self.trusted_height.revision_height(),
                 })?,
             next_validators: &self.trusted_next_validator_set,
-            next_validators_hash: consensus_state.next_validators_hash,
+            next_validators_hash,
         })
     }
 
@@ -97,14 +98,14 @@ impl Header {
         Ok(())
     }
 
-    // `header.trusted_validator_set` was given to us by the relayer. Thus, we
-    // need to ensure that the relayer gave us the right set, i.e. by ensuring
-    // that it matches the hash we have stored on chain.
+    /// `header.trusted_next_validator_set` was given to us by the relayer.
+    /// Thus, we need to ensure that the relayer gave us the right set, i.e. by
+    /// ensuring that it matches the hash we have stored on chain.
     pub fn check_trusted_next_validator_set(
         &self,
-        trusted_consensus_state: &TmConsensusState,
+        trusted_next_validator_hash: &Hash,
     ) -> Result<(), ClientError> {
-        if self.trusted_next_validator_set.hash() == trusted_consensus_state.next_validators_hash {
+        if &self.trusted_next_validator_set.hash() == trusted_next_validator_hash {
             Ok(())
         } else {
             Err(ClientError::HeaderVerificationFailure {

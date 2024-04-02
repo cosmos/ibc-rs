@@ -1,11 +1,11 @@
 use ibc_client_tendermint_types::error::{Error, IntoResult};
-use ibc_client_tendermint_types::{
-    ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
-};
+use ibc_client_tendermint_types::{ConsensusState as ConsensusStateType, Header as TmHeader};
 use ibc_core_client::types::error::ClientError;
-use ibc_core_host::types::identifiers::ClientId;
+use ibc_core_client::types::Height;
+use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
+use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
 
@@ -14,10 +14,11 @@ use crate::context::{
 };
 
 pub fn verify_header<V>(
-    client_state: &ClientStateType,
     ctx: &V,
-    client_id: &ClientId,
     header: &TmHeader,
+    client_id: &ClientId,
+    chain_id: &ChainId,
+    options: &Options,
     verifier: &impl TmVerifier,
 ) -> Result<(), ClientError>
 where
@@ -29,7 +30,7 @@ where
 
     // The tendermint-light-client crate though works on heights that are assumed
     // to have the same revision number. We ensure this here.
-    header.verify_chain_id_version_matches_height(&client_state.chain_id())?;
+    header.verify_chain_id_version_matches_height(chain_id)?;
 
     // Delegate to tendermint-light-client, which contains the required checks
     // of the new header against the trusted consensus state.
@@ -44,14 +45,16 @@ where
                 .consensus_state(&trusted_client_cons_state_path)?
                 .try_into()?;
 
-            header.check_trusted_next_validator_set(&trusted_consensus_state)?;
+            header
+                .check_trusted_next_validator_set(&trusted_consensus_state.next_validators_hash)?;
 
             TrustedBlockState {
-                chain_id: &client_state.chain_id.to_string().try_into().map_err(|e| {
-                    ClientError::Other {
+                chain_id: &chain_id
+                    .as_str()
+                    .try_into()
+                    .map_err(|e| ClientError::Other {
                         description: format!("failed to parse chain id: {}", e),
-                    }
-                })?,
+                    })?,
                 header_time: trusted_consensus_state.timestamp(),
                 height: header
                     .trusted_height
@@ -77,7 +80,6 @@ where
             next_validators: None,
         };
 
-        let options = client_state.as_light_client_options()?;
         let now =
             ctx.host_timestamp()?
                 .into_tm_time()
@@ -88,7 +90,7 @@ where
         // main header verification, delegated to the tendermint-light-client crate.
         verifier
             .verifier()
-            .verify_update_header(untrusted_state, trusted_state, &options, now)
+            .verify_update_header(untrusted_state, trusted_state, options, now)
             .into_result()?;
     }
 
@@ -97,11 +99,11 @@ where
 
 /// Checks for misbehaviour upon receiving a new consensus state as part
 /// of a client update.
-pub fn check_for_misbehaviour_update_client<V>(
-    client_state: &ClientStateType,
+pub fn check_for_misbehaviour_on_update<V>(
     ctx: &V,
-    client_id: &ClientId,
     header: TmHeader,
+    client_id: &ClientId,
+    client_latest_height: &Height,
 ) -> Result<bool, ClientError>
 where
     V: TmValidationContext,
@@ -146,7 +148,7 @@ where
 
         // 2. if a header comes in and is not the “last” header, then we also ensure
         //    that its timestamp is less than the “next header”
-        if header.height() < client_state.latest_height {
+        if &header.height() < client_latest_height {
             let maybe_next_cs = ctx.next_consensus_state(client_id, &header.height())?;
 
             if let Some(next_cs) = maybe_next_cs {
