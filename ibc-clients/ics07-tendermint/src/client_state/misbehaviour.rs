@@ -109,7 +109,7 @@ pub fn verify_misbehaviour_header(
     let untrusted_state = header.as_untrusted_block_state();
 
     let tm_chain_id = &chain_id
-        .to_string()
+        .as_str()
         .try_into()
         .map_err(|e| ClientError::Other {
             description: format!("failed to parse chain id: {e}"),
