@@ -107,17 +107,9 @@ fn test_recover_client_ok(fixture: Fixture) {
 
     let res = validate(&ctx, &router, msg_envelope.clone());
 
-    if let Err(ref e) = res {
-        eprintln!("validation happy path: {e}");
-    }
-
     assert!(res.is_ok(), "validation happy path");
 
     let res = execute(&mut ctx, &mut router, msg_envelope);
-
-    if let Err(ref e) = res {
-        eprintln!("execution happy path: {e}");
-    }
 
     assert!(res.is_ok(), "execution happy path");
 
