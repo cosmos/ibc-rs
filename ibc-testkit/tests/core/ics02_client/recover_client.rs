@@ -36,8 +36,8 @@ fn fixture() -> Fixture {
 
     // Create the subject client
     let msg = MsgCreateClient::new(
-        MockClientState::new(MockHeader::new(height)).into(),
-        MockConsensusState::new(MockHeader::new(height)).into(),
+        MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into(),
+        MockConsensusState::new(MockHeader::new(height).with_timestamp(timestamp)).into(),
         signer.clone(),
     );
 
@@ -53,8 +53,8 @@ fn fixture() -> Fixture {
     let height = height.increment();
 
     let msg = MsgCreateClient::new(
-        MockClientState::new(MockHeader::new(height)).into(),
-        MockConsensusState::new(MockHeader::new(height)).into(),
+        MockClientState::new(MockHeader::new(height).with_timestamp(timestamp)).into(),
+        MockConsensusState::new(MockHeader::new(height).with_timestamp(timestamp)).into(),
         signer.clone(),
     );
 
