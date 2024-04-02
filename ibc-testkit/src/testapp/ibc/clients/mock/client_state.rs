@@ -41,7 +41,7 @@ impl MockClientState {
     pub fn new(header: MockHeader) -> Self {
         Self {
             header,
-            trusting_period: Duration::from_nanos(0),
+            trusting_period: Duration::from_nanos(100),
             frozen: false,
         }
     }
@@ -79,8 +79,8 @@ impl MockClientState {
         self.frozen
     }
 
-    fn expired(&self, _elapsed: Duration) -> bool {
-        false
+    fn expired(&self, elapsed: Duration) -> bool {
+        elapsed > self.trusting_period
     }
 }
 
