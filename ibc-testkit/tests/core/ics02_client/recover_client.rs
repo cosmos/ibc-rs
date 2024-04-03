@@ -1,5 +1,4 @@
 use core::time::Duration;
-use std::thread::sleep;
 
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
@@ -8,7 +7,7 @@ use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::ValidationContext;
-use ibc::core::primitives::Signer;
+use ibc::core::primitives::{Signer, Timestamp};
 
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
@@ -47,8 +46,12 @@ fn setup_client_recovery_fixture(
     let mut router = MockRouter::new_with_transfer();
     let signer = dummy_account_id();
 
+    let subject_timestamp = (Timestamp::now() - subject_trusting_period).unwrap();
+
+    // Create the subject client state such that it will be in an expired state by initializing it with
+    // a timestamp that is of duration `subject_trusting_period` in the past
     let subject_client_state =
-        MockClientState::new(MockHeader::new(subject_height).with_current_timestamp())
+        MockClientState::new(MockHeader::new(subject_height).with_timestamp(subject_timestamp))
             .with_trusting_period(subject_trusting_period);
 
     // Create the subject client
@@ -65,10 +68,6 @@ fn setup_client_recovery_fixture(
 
     validate(&ctx, &router, msg_envelope.clone()).expect("create subject client validation");
     execute(&mut ctx, &mut router, msg_envelope).expect("create subject client execution");
-
-    // Ensure that the subject client state is in the `Status::Expired` state
-    // by sleeping for the length of its trusting period
-    sleep(subject_trusting_period);
 
     // Create the substitute client
     let substitute_client_state =
