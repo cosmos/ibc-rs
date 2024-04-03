@@ -1,3 +1,339 @@
+use ibc::core::channel::types::packet::Packet;
+use ibc::core::client::context::client_state::ClientStateValidation;
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::host::types::path::ChannelEndPath;
+use ibc::core::host::ValidationContext;
+use ibc::primitives::Signer;
+
+use crate::context::MockContext;
+use crate::hosts::{HostClientState, TestHost};
+use crate::relayer::utils::TypedIntegration;
+use crate::testapp::ibc::core::types::DefaultIbcStore;
+
+pub struct IntegrationContext<A, B>
+where
+    A: TestHost,
+    B: TestHost,
+    HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
+{
+    ctx_a: MockContext<A>,
+    ctx_b: MockContext<B>,
+}
+
+impl<A, B> IntegrationContext<A, B>
+where
+    A: TestHost,
+    B: TestHost,
+    HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
+{
+    pub fn new(ctx_a: MockContext<A>, ctx_b: MockContext<B>) -> Self {
+        Self { ctx_a, ctx_b }
+    }
+
+    pub fn get_ctx_a(&self) -> &MockContext<A> {
+        &self.ctx_a
+    }
+
+    pub fn get_ctx_b(&self) -> &MockContext<B> {
+        &self.ctx_b
+    }
+
+    pub fn get_ctx_a_mut(&mut self) -> &mut MockContext<A> {
+        &mut self.ctx_a
+    }
+
+    pub fn get_ctx_b_mut(&mut self) -> &mut MockContext<B> {
+        &mut self.ctx_b
+    }
+
+    pub fn create_client_on_a(&mut self, signer: Signer) -> ClientId {
+        TypedIntegration::<A, B>::create_client_on_a(&mut self.ctx_a, &self.ctx_b, signer)
+    }
+
+    pub fn create_client_on_b(&mut self, signer: Signer) -> ClientId {
+        TypedIntegration::<B, A>::create_client_on_a(&mut self.ctx_b, &self.ctx_a, signer)
+    }
+
+    pub fn update_client_on_a_with_sync(&mut self, client_id_on_a: ClientId, signer: Signer) {
+        TypedIntegration::<A, B>::update_client_on_a_with_sync(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            client_id_on_a,
+            signer,
+        )
+    }
+
+    pub fn update_client_on_b_with_sync(&mut self, client_id_on_b: ClientId, signer: Signer) {
+        TypedIntegration::<B, A>::update_client_on_a_with_sync(
+            &mut self.ctx_b,
+            &mut self.ctx_a,
+            client_id_on_b,
+            signer,
+        )
+    }
+
+    pub fn create_connection_on_a(
+        &mut self,
+        client_id_on_a: ClientId,
+        client_id_on_b: ClientId,
+        signer: Signer,
+    ) -> (ConnectionId, ConnectionId) {
+        TypedIntegration::<A, B>::create_connection_on_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            client_id_on_a,
+            client_id_on_b,
+            signer,
+        )
+    }
+
+    pub fn create_connection_on_b(
+        &mut self,
+        client_id_on_b: ClientId,
+        client_id_on_a: ClientId,
+        signer: Signer,
+    ) -> (ConnectionId, ConnectionId) {
+        TypedIntegration::<B, A>::create_connection_on_a(
+            &mut self.ctx_b,
+            &mut self.ctx_a,
+            client_id_on_b,
+            client_id_on_a,
+            signer,
+        )
+    }
+
+    pub fn create_channel_on_a(
+        &mut self,
+        conn_id_on_a: ConnectionId,
+        port_id_on_a: PortId,
+        conn_id_on_b: ConnectionId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) -> (ChannelId, ChannelId) {
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedIntegration::<A, B>::create_channel_on_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            client_id_on_a,
+            conn_id_on_a,
+            port_id_on_a,
+            client_id_on_b,
+            conn_id_on_b,
+            port_id_on_b,
+            signer,
+        )
+    }
+
+    pub fn create_channel_on_b(
+        &mut self,
+        conn_id_on_b: ConnectionId,
+        port_id_on_b: PortId,
+        conn_id_on_a: ConnectionId,
+        port_id_on_a: PortId,
+        signer: Signer,
+    ) -> (ChannelId, ChannelId) {
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedIntegration::<B, A>::create_channel_on_a(
+            &mut self.ctx_b,
+            &mut self.ctx_a,
+            client_id_on_b,
+            conn_id_on_b,
+            port_id_on_b,
+            client_id_on_a,
+            conn_id_on_a,
+            port_id_on_a,
+            signer,
+        )
+    }
+
+    pub fn close_channel_on_a(
+        &mut self,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) {
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_a, &chan_id_on_a))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_b, &chan_id_on_b))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedIntegration::<A, B>::close_channel_on_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            client_id_on_a,
+            chan_id_on_a,
+            port_id_on_a,
+            client_id_on_b,
+            chan_id_on_b,
+            port_id_on_b,
+            signer,
+        )
+    }
+
+    pub fn close_channel_on_b(
+        &mut self,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+        signer: Signer,
+    ) {
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_b, &chan_id_on_b))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_a, &chan_id_on_a))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedIntegration::<B, A>::close_channel_on_a(
+            &mut self.ctx_b,
+            &mut self.ctx_a,
+            client_id_on_b,
+            chan_id_on_b,
+            port_id_on_b,
+            client_id_on_a,
+            chan_id_on_a,
+            port_id_on_a,
+            signer,
+        )
+    }
+
+    pub fn send_packet_on_a(&mut self, packet: Packet, signer: Signer) {
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_a,
+                &packet.chan_id_on_a,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_b,
+                &packet.chan_id_on_b,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedIntegration::<A, B>::send_packet_on_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            packet,
+            client_id_on_a,
+            client_id_on_b,
+            signer,
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use ibc::clients::tendermint::types::client_type as tm_client_type;

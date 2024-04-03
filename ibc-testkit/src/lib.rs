@@ -21,7 +21,3 @@ pub mod hosts;
 pub mod relayer;
 pub mod testapp;
 pub mod utils;
-
-// `ibc::apps::transfer::handler::send_transfer` requires `serde`
-#[cfg(feature = "serde")]
-pub mod integration;
