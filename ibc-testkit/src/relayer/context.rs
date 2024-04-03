@@ -10,6 +10,7 @@ use crate::hosts::{HostClientState, TestHost};
 use crate::relayer::utils::TypedRelayerOps;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
+/// A relayer context that allows interaction between two [`MockContext`] instances.
 pub struct RelayerContext<A, B>
 where
     A: TestHost,
@@ -28,34 +29,42 @@ where
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
+    /// Creates a new relayer context with the given [`MockContext`] instances.
     pub fn new(ctx_a: MockContext<A>, ctx_b: MockContext<B>) -> Self {
         Self { ctx_a, ctx_b }
     }
 
+    /// Returns immutable reference to the first context.
     pub fn get_ctx_a(&self) -> &MockContext<A> {
         &self.ctx_a
     }
 
+    /// Returns immutable reference to the second context.
     pub fn get_ctx_b(&self) -> &MockContext<B> {
         &self.ctx_b
     }
 
+    /// Returns mutable reference to the first context.
     pub fn get_ctx_a_mut(&mut self) -> &mut MockContext<A> {
         &mut self.ctx_a
     }
 
+    /// Returns mutable reference to the second context.
     pub fn get_ctx_b_mut(&mut self) -> &mut MockContext<B> {
         &mut self.ctx_b
     }
 
+    /// Creates a light client of second context on the first context.
     pub fn create_client_on_a(&mut self, signer: Signer) -> ClientId {
         TypedRelayerOps::<A, B>::create_client_on_a(&mut self.ctx_a, &self.ctx_b, signer)
     }
 
+    /// Creates a light client of first context on the second context.
     pub fn create_client_on_b(&mut self, signer: Signer) -> ClientId {
         TypedRelayerOps::<B, A>::create_client_on_a(&mut self.ctx_b, &self.ctx_a, signer)
     }
 
+    /// Updates the client on the first context with the latest header of the second context.
     pub fn update_client_on_a_with_sync(&mut self, client_id_on_a: ClientId, signer: Signer) {
         TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
             &mut self.ctx_a,
@@ -65,6 +74,7 @@ where
         )
     }
 
+    /// Updates the client on the second context with the latest header of the first context.
     pub fn update_client_on_b_with_sync(&mut self, client_id_on_b: ClientId, signer: Signer) {
         TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             &mut self.ctx_b,
@@ -74,6 +84,7 @@ where
         )
     }
 
+    /// Creates a connection between the two contexts starting from the first context.
     pub fn create_connection_on_a(
         &mut self,
         client_id_on_a: ClientId,
@@ -89,6 +100,7 @@ where
         )
     }
 
+    /// Creates a connection between the two contexts starting from the second context.
     pub fn create_connection_on_b(
         &mut self,
         client_id_on_b: ClientId,
@@ -104,6 +116,7 @@ where
         )
     }
 
+    /// Creates a channel between the two contexts starting from the first context.
     pub fn create_channel_on_a(
         &mut self,
         conn_id_on_a: ConnectionId,
@@ -141,6 +154,7 @@ where
         )
     }
 
+    /// Creates a channel between the two contexts starting from the second context.
     pub fn create_channel_on_b(
         &mut self,
         conn_id_on_b: ConnectionId,
@@ -178,6 +192,7 @@ where
         )
     }
 
+    /// Closes a channel between the two contexts starting from the first context.
     pub fn close_channel_on_a(
         &mut self,
         chan_id_on_a: ChannelId,
@@ -231,6 +246,7 @@ where
         )
     }
 
+    /// Closes a channel between the two contexts starting from the second context.
     pub fn close_channel_on_b(
         &mut self,
         chan_id_on_b: ChannelId,
@@ -284,6 +300,8 @@ where
         )
     }
 
+    /// Sends a packet from the first context to the second context.
+    /// The IBC packet is created by an IBC application on the first context.
     pub fn send_packet_on_a(&mut self, packet: Packet, signer: Signer) {
         let conn_id_on_a = self
             .ctx_a

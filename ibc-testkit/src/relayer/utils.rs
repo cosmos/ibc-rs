@@ -947,7 +947,7 @@ where
         };
     }
 
-    /// Sends a packet from a module on `A` to `B` using the IBC packet relay protocol.
+    /// Sends a packet from an IBC application on `A` to `B` using the IBC packet relay protocol.
     pub fn send_packet_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &mut MockContext<B>,
