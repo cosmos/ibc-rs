@@ -10,9 +10,7 @@ use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
-use super::{
-    check_for_misbehaviour_misbehavior, check_for_misbehaviour_update_client, ClientState,
-};
+use super::{check_for_misbehaviour_on_misbehavior, check_for_misbehaviour_on_update, ClientState};
 use crate::client_state::{verify_header, verify_misbehaviour};
 use crate::context::{
     ConsensusStateConverter, DefaultVerifier, TmVerifier, ValidationContext as TmValidationContext,
@@ -83,11 +81,25 @@ where
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
             let header = TmHeader::try_from(client_message)?;
-            verify_header(client_state, ctx, client_id, &header, verifier)
+            verify_header(
+                ctx,
+                &header,
+                client_id,
+                client_state.chain_id(),
+                &client_state.as_light_client_options()?,
+                verifier,
+            )
         }
         TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
             let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-            verify_misbehaviour(client_state, ctx, client_id, &misbehaviour, verifier)
+            verify_misbehaviour(
+                ctx,
+                &misbehaviour,
+                client_id,
+                client_state.chain_id(),
+                &client_state.as_light_client_options()?,
+                verifier,
+            )
         }
         _ => Err(ClientError::InvalidUpdateClientMessage),
     }
@@ -138,11 +150,11 @@ where
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
             let header = TmHeader::try_from(client_message)?;
-            check_for_misbehaviour_update_client(client_state, ctx, client_id, header)
+            check_for_misbehaviour_on_update(ctx, header, client_id, &client_state.latest_height)
         }
         TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
             let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-            check_for_misbehaviour_misbehavior(&misbehaviour)
+            check_for_misbehaviour_on_misbehavior(misbehaviour.header1(), misbehaviour.header2())
         }
         _ => Err(ClientError::InvalidUpdateClientMessage),
     }
