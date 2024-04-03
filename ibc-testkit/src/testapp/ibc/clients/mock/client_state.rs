@@ -38,6 +38,9 @@ pub struct MockClientState {
 }
 
 impl MockClientState {
+    /// Initializes a new `MockClientState` with the given `MockHeader` and a
+    /// trusting period of 100 nanoseconds as a default. If the trusting period
+    /// needs to be changed, use the `with_trusting_period` method to override it.
     pub fn new(header: MockHeader) -> Self {
         Self {
             header,
