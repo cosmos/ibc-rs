@@ -17,16 +17,16 @@ pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Misbehaviour {
     client_id: ClientId,
-    header1: Header,
-    header2: Header,
+    header1: Box<Header>,
+    header2: Box<Header>,
 }
 
 impl Misbehaviour {
     pub fn new(client_id: ClientId, header1: Header, header2: Header) -> Self {
         Self {
             client_id,
-            header1,
-            header2,
+            header1: Box::new(header1),
+            header2: Box::new(header2),
         }
     }
 
@@ -98,8 +98,8 @@ impl From<Misbehaviour> for RawMisbehaviour {
         #[allow(deprecated)]
         RawMisbehaviour {
             client_id: value.client_id.to_string(),
-            header_1: Some(value.header1.into()),
-            header_2: Some(value.header2.into()),
+            header_1: Some((*value.header1).into()),
+            header_2: Some((*value.header2).into()),
         }
     }
 }

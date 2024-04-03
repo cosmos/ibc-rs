@@ -18,6 +18,6 @@ jobs:
         run: bash ci/code-quality/whitespace-lints.sh
 
       - name: Spell Check with Typos
-        uses: crate-ci/typos@master
+        uses: crate-ci/typos@v1.19.0 # NOTE: Newer versions detect false positives. Test locally before upgrading.
         with:
           config: ./.github/typos.toml

@@ -8,11 +8,13 @@ install-tools: ## Install development tools including nightly rustfmt, cargo-hac
 	rustup component add rustfmt --toolchain nightly
 	cargo install cargo-hack
 	cargo install cargo-release
+	cargo install typos-cli
 
 lint: ## Lint the code using rustfmt, clippy and whitespace lints.
 	cargo +nightly fmt --all --check
 	cargo clippy --all-targets --all-features
 	cargo clippy --all-targets --no-default-features
+	typos --config $(CURDIR)/.github/typos.toml
 	bash ./ci/code-quality/whitespace-lints.sh
 
 check-features: ## Check that project compiles with all combinations of features.

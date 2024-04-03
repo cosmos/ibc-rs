@@ -212,8 +212,8 @@ impl ClientState {
         })
     }
 
-    pub fn chain_id(&self) -> ChainId {
-        self.chain_id.clone()
+    pub fn chain_id(&self) -> &ChainId {
+        &self.chain_id
     }
 
     pub fn is_frozen(&self) -> bool {
