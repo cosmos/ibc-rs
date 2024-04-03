@@ -1,10 +1,10 @@
 use core::time::Duration;
 
 use ibc::core::client::context::ClientValidationContext;
+use ibc::core::client::handler::recover_client;
 use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient, MsgRecoverClient};
 use ibc::core::client::types::Height;
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::handler::recover_client;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::ValidationContext;
@@ -21,7 +21,6 @@ use rstest::*;
 
 struct Fixture {
     ctx: MockContext,
-    router: MockRouter,
     subject_client_id: ClientId,
     substitute_client_id: ClientId,
     signer: Signer,
@@ -88,7 +87,6 @@ fn setup_client_recovery_fixture(
 
     Fixture {
         ctx,
-        router,
         subject_client_id,
         substitute_client_id,
         signer,
@@ -104,7 +102,6 @@ fn test_recover_client_ok() {
 
     let Fixture {
         mut ctx,
-        mut router,
         subject_client_id,
         substitute_client_id,
         signer,
@@ -121,13 +118,11 @@ fn test_recover_client_ok() {
         signer,
     };
 
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
-
-    let res = recover_client::validate(&ctx, &router, msg_envelope.clone());
+    let res = recover_client::validate(&ctx, msg.clone());
 
     assert!(res.is_ok(), "client recovery validation happy path");
 
-    let res = recover_client::execute(&mut ctx, &mut router, msg_envelope);
+    let res = recover_client::execute(&mut ctx, msg.clone());
 
     assert!(res.is_ok(), "client recovery execution happy path");
 
@@ -146,7 +141,6 @@ fn test_recover_client_with_expired_substitute() {
 
     let Fixture {
         ctx,
-        router,
         subject_client_id,
         substitute_client_id,
         signer,
@@ -163,9 +157,7 @@ fn test_recover_client_with_expired_substitute() {
         signer,
     };
 
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
-
-    let res = recover_client::validate(&ctx, &router, msg_envelope.clone());
+    let res = recover_client::validate(&ctx, msg);
 
     assert!(res.is_err(), "expected client recovery validation to fail");
 }
@@ -179,7 +171,6 @@ fn test_recover_client_with_matching_heights() {
 
     let Fixture {
         ctx,
-        router,
         subject_client_id,
         substitute_client_id,
         signer,
@@ -196,9 +187,7 @@ fn test_recover_client_with_matching_heights() {
         signer,
     };
 
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
-
-    let res = recover_client::validate(&ctx, &router, msg_envelope.clone());
+    let res = recover_client::validate(&ctx, msg);
 
     assert!(res.is_err(), "expected client recovery validation to fail");
 }
