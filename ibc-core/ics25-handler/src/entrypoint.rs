@@ -56,6 +56,11 @@ where
                 update_client::validate(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
             }
             ClientMsg::UpgradeClient(msg) => upgrade_client::validate(ctx, msg),
+            ClientMsg::RecoverClient(_msg) => {
+                // Recover client messages are not dispatched by ibc-rs as they can only be
+                // authorized via a passing governance proposal
+                Ok(())
+            }
         },
         MsgEnvelope::Connection(msg) => match msg {
             ConnectionMsg::OpenInit(msg) => conn_open_init::validate(ctx, msg),
@@ -127,6 +132,11 @@ where
                 update_client::execute(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
             }
             ClientMsg::UpgradeClient(msg) => upgrade_client::execute(ctx, msg),
+            ClientMsg::RecoverClient(_msg) => {
+                // Recover client messages are not dispatched by ibc-rs as they can only be
+                // authorized via a passing governance proposal
+                Ok(())
+            }
         },
         MsgEnvelope::Connection(msg) => match msg {
             ConnectionMsg::OpenInit(msg) => conn_open_init::execute(ctx, msg),
