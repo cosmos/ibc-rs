@@ -35,24 +35,28 @@ use crate::context::MockContext;
 use crate::hosts::{HostClientState, TestBlock, TestHost};
 use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, LightClientState};
 
-/// Implements relayer methods for a pair of hosts
-/// Note that, all the implementations are in one direction, from A to B
-/// For the methods in opposite direction, use `TypedIntegration::<B, A>` instead of TypedIntegration::<A, B>`
+/// Implements IBC relayer functions for a pair of [`TestHost`] implementations: `A` and `B`.
+/// Note that, all the implementations are in one direction: from `A` to `B`.
+/// This makes the variable namings be consistent with the IBC message fields,
+/// making the implementation less error-prone.
+///
+/// For the functions in opposite direction, use `TypedRelayerOps::<B, A>` instead of TypedRelayerOps::<A, B>`.
 #[derive(Debug, Default)]
-pub struct TypedIntegration<A, B>(PhantomData<A>, PhantomData<B>)
+pub struct TypedRelayerOps<A, B>(PhantomData<A>, PhantomData<B>)
 where
     A: TestHost,
     B: TestHost,
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>;
 
-impl<A, B> TypedIntegration<A, B>
+impl<A, B> TypedRelayerOps<A, B>
 where
     A: TestHost,
     B: TestHost,
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
+    /// Creates a client on `A` with the state of `B`.
     pub fn create_client_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -96,12 +100,14 @@ where
         client_id_on_a
     }
 
+    /// Advances the block height on `A` until it catches up with the latest timestamp on `B`.
     pub fn sync_clock_on_a(ctx_a: &mut MockContext<A>, ctx_b: &MockContext<B>) {
         while ctx_b.latest_timestamp() > ctx_a.latest_timestamp() {
             ctx_a.advance_block();
         }
     }
 
+    /// Updates the client on `A` with the latest header from `B`.
     pub fn update_client_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -139,18 +145,20 @@ where
         };
     }
 
+    /// Updates the client on `A` with the latest header from `B` after syncing the timestamps.
+    ///
+    /// Timestamp sync is required, as IBC doesn't allow client update from future beyond max clock drift.
     pub fn update_client_on_a_with_sync(
         ctx_a: &mut MockContext<A>,
         ctx_b: &mut MockContext<B>,
         client_id_on_a: ClientId,
         signer: Signer,
     ) {
-        // this is required, as IBC doesn't allow client update
-        // from future beyond max clock drift
-        TypedIntegration::<A, B>::sync_clock_on_a(ctx_a, ctx_b);
-        TypedIntegration::<A, B>::update_client_on_a(ctx_a, ctx_b, client_id_on_a, signer);
+        TypedRelayerOps::<A, B>::sync_clock_on_a(ctx_a, ctx_b);
+        TypedRelayerOps::<A, B>::update_client_on_a(ctx_a, ctx_b, client_id_on_a, signer);
     }
 
+    /// `A` initiates a connection with the other end on `B`.
     pub fn connection_open_init_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -183,6 +191,7 @@ where
         open_init_connection_event.conn_id_on_a().clone()
     }
 
+    /// `B` receives the connection opening attempt by `A` after `A` initiates the connection.
     pub fn connection_open_try_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -270,6 +279,8 @@ where
         open_try_connection_event.conn_id_on_b().clone()
     }
 
+    /// `A` receives the acknowledgement of `B` that `B` received the connection opening attempt by `A`.
+    /// `A` starts processing the connection at its side.
     pub fn connection_open_ack_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -344,6 +355,8 @@ where
         };
     }
 
+    /// `B` receives the confirmation from `A` that the connection creation was successful.
+    /// `B` also starts processing the connection at its side.
     pub fn connection_open_confirm_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -379,6 +392,7 @@ where
         };
     }
 
+    /// A connection is created by `A` towards `B` using the IBC connection handshake protocol.
     pub fn create_connection_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &mut MockContext<B>,
@@ -386,7 +400,7 @@ where
         client_id_on_b: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
-        let conn_id_on_a = TypedIntegration::<A, B>::connection_open_init_on_a(
+        let conn_id_on_a = TypedRelayerOps::<A, B>::connection_open_init_on_a(
             ctx_a,
             ctx_b,
             client_id_on_a.clone(),
@@ -394,14 +408,14 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        let conn_id_on_b = TypedIntegration::<A, B>::connection_open_try_on_b(
+        let conn_id_on_b = TypedRelayerOps::<A, B>::connection_open_try_on_b(
             ctx_b,
             ctx_a,
             conn_id_on_a.clone(),
@@ -410,14 +424,14 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::update_client_on_a_with_sync(
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
             ctx_a,
             ctx_b,
             client_id_on_a.clone(),
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::connection_open_ack_on_a(
+        TypedRelayerOps::<A, B>::connection_open_ack_on_a(
             ctx_a,
             ctx_b,
             conn_id_on_a.clone(),
@@ -426,14 +440,14 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::connection_open_confirm_on_b(
+        TypedRelayerOps::<A, B>::connection_open_confirm_on_b(
             ctx_b,
             ctx_a,
             conn_id_on_b.clone(),
@@ -441,16 +455,12 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::update_client_on_a_with_sync(
-            ctx_a,
-            ctx_b,
-            client_id_on_a,
-            signer,
-        );
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(ctx_a, ctx_b, client_id_on_a, signer);
 
         (conn_id_on_a, conn_id_on_b)
     }
 
+    /// `A` initiates a channel with port identifier with the other end on `B`.
     pub fn channel_open_init_on_a(
         ctx_a: &mut MockContext<A>,
         conn_id_on_a: ConnectionId,
@@ -478,6 +488,7 @@ where
         open_init_channel_event.chan_id_on_a().clone()
     }
 
+    /// `B` receives the channel opening attempt by `A` after `A` initiates the channel.
     pub fn channel_open_try_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -524,6 +535,8 @@ where
         open_try_channel_event.chan_id_on_b().clone()
     }
 
+    /// `A` receives the acknowledgement of `B` that `B` received the channel opening attempt by `A`.
+    /// `A` starts processing the channel at its side.
     pub fn channel_open_ack_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -563,6 +576,8 @@ where
         };
     }
 
+    /// `B` receives the confirmation from `A` that the channel creation was successful.
+    /// `B` also starts processing the channel at its side.
     pub fn channel_open_confirm_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -599,6 +614,8 @@ where
         };
     }
 
+    /// `A` initiates the channel closing with the other end on `B`.
+    /// `A` stops processing the channel.
     pub fn channel_close_init_on_a(
         ctx_a: &mut MockContext<A>,
         chan_id_on_a: ChannelId,
@@ -619,6 +636,8 @@ where
         };
     }
 
+    /// `B` receives the channel closing attempt by `A` after `A` initiates the channel closing.
+    /// `B` also stops processing the channel.
     pub fn channel_close_confirm_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -655,6 +674,7 @@ where
         };
     }
 
+    /// A channel is created by `A` towards `B` using the IBC channel handshake protocol.
     #[allow(clippy::too_many_arguments)]
     pub fn create_channel_on_a(
         ctx_a: &mut MockContext<A>,
@@ -667,7 +687,7 @@ where
         port_id_on_b: PortId,
         signer: Signer,
     ) -> (ChannelId, ChannelId) {
-        let chan_id_on_a = TypedIntegration::<A, B>::channel_open_init_on_a(
+        let chan_id_on_a = TypedRelayerOps::<A, B>::channel_open_init_on_a(
             ctx_a,
             conn_id_on_a.clone(),
             port_id_on_a.clone(),
@@ -675,14 +695,14 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        let chan_id_on_b = TypedIntegration::<A, B>::channel_open_try_on_b(
+        let chan_id_on_b = TypedRelayerOps::<A, B>::channel_open_try_on_b(
             ctx_b,
             ctx_a,
             conn_id_on_b.clone(),
@@ -691,14 +711,14 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::update_client_on_a_with_sync(
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
             ctx_a,
             ctx_b,
             client_id_on_a.clone(),
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::channel_open_ack_on_a(
+        TypedRelayerOps::<A, B>::channel_open_ack_on_a(
             ctx_a,
             ctx_b,
             chan_id_on_a.clone(),
@@ -708,14 +728,14 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::channel_open_confirm_on_b(
+        TypedRelayerOps::<A, B>::channel_open_confirm_on_b(
             ctx_b,
             ctx_a,
             chan_id_on_a.clone(),
@@ -724,16 +744,12 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::update_client_on_a_with_sync(
-            ctx_a,
-            ctx_b,
-            client_id_on_a,
-            signer,
-        );
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(ctx_a, ctx_b, client_id_on_a, signer);
 
         (chan_id_on_a, chan_id_on_b)
     }
 
+    /// A channel is closed by `A` towards `B` using the IBC channel handshake protocol.
     #[allow(clippy::too_many_arguments)]
     pub fn close_channel_on_a(
         ctx_a: &mut MockContext<A>,
@@ -746,21 +762,21 @@ where
         port_id_on_b: PortId,
         signer: Signer,
     ) {
-        TypedIntegration::<A, B>::channel_close_init_on_a(
+        TypedRelayerOps::<A, B>::channel_close_init_on_a(
             ctx_a,
             chan_id_on_a.clone(),
             port_id_on_a.clone(),
             signer.clone(),
         );
 
-        TypedIntegration::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b,
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::channel_close_confirm_on_b(
+        TypedRelayerOps::<A, B>::channel_close_confirm_on_b(
             ctx_b,
             ctx_a,
             chan_id_on_b,
@@ -768,14 +784,10 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::update_client_on_a_with_sync(
-            ctx_a,
-            ctx_b,
-            client_id_on_a,
-            signer,
-        );
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(ctx_a, ctx_b, client_id_on_a, signer);
     }
 
+    /// `B` receives a packet from a IBC module on `A`.
     pub fn packet_recv_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -813,6 +825,7 @@ where
         write_ack_event.acknowledgement().clone()
     }
 
+    /// `A` receives the acknowledgement from `B` that `B` received the packet from `A`.
     pub fn packet_ack_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -848,6 +861,8 @@ where
         };
     }
 
+    /// `A` receives the timeout packet from `B`.
+    /// That is, `B` has not received the packet from `A` within the timeout period.
     pub fn packet_timeout_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -883,6 +898,8 @@ where
         };
     }
 
+    /// `A` receives the timeout packet from `B` after closing the channel.
+    /// That is, `B` has not received the packet from `A` because the channel is closed.
     pub fn packet_timeout_on_close_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -930,6 +947,7 @@ where
         };
     }
 
+    /// Sends a packet from a module on `A` to `B` using the IBC packet relay protocol.
     pub fn send_packet_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &mut MockContext<B>,
@@ -940,28 +958,24 @@ where
     ) {
         // packet is passed from module
 
-        TypedIntegration::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        let acknowledgement = TypedIntegration::<A, B>::packet_recv_on_b(
-            ctx_b,
-            ctx_a,
-            packet.clone(),
-            signer.clone(),
-        );
+        let acknowledgement =
+            TypedRelayerOps::<A, B>::packet_recv_on_b(ctx_b, ctx_a, packet.clone(), signer.clone());
 
-        TypedIntegration::<A, B>::update_client_on_a_with_sync(
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
             ctx_a,
             ctx_b,
             client_id_on_a,
             signer.clone(),
         );
 
-        TypedIntegration::<A, B>::packet_ack_on_a(
+        TypedRelayerOps::<A, B>::packet_ack_on_a(
             ctx_a,
             ctx_b,
             packet,
@@ -969,7 +983,7 @@ where
             signer.clone(),
         );
 
-        TypedIntegration::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b,

@@ -14,7 +14,7 @@ use ibc::primitives::Timestamp;
 use crate::context::MockContext;
 use crate::fixtures::core::signer::dummy_account_id;
 use crate::hosts::{HostClientState, TestHost};
-use crate::relayer::context::IntegrationContext;
+use crate::relayer::context::RelayerContext;
 use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
@@ -30,7 +30,7 @@ where
 
     let signer = dummy_account_id();
 
-    let mut relayer = IntegrationContext::new(ctx_a, ctx_b);
+    let mut relayer = RelayerContext::new(ctx_a, ctx_b);
 
     // client creation
     let client_id_on_a = relayer.create_client_on_a(signer.clone());

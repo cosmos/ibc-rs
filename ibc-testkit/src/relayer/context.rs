@@ -7,10 +7,10 @@ use ibc::primitives::Signer;
 
 use crate::context::MockContext;
 use crate::hosts::{HostClientState, TestHost};
-use crate::relayer::utils::TypedIntegration;
+use crate::relayer::utils::TypedRelayerOps;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
-pub struct IntegrationContext<A, B>
+pub struct RelayerContext<A, B>
 where
     A: TestHost,
     B: TestHost,
@@ -21,7 +21,7 @@ where
     ctx_b: MockContext<B>,
 }
 
-impl<A, B> IntegrationContext<A, B>
+impl<A, B> RelayerContext<A, B>
 where
     A: TestHost,
     B: TestHost,
@@ -49,15 +49,15 @@ where
     }
 
     pub fn create_client_on_a(&mut self, signer: Signer) -> ClientId {
-        TypedIntegration::<A, B>::create_client_on_a(&mut self.ctx_a, &self.ctx_b, signer)
+        TypedRelayerOps::<A, B>::create_client_on_a(&mut self.ctx_a, &self.ctx_b, signer)
     }
 
     pub fn create_client_on_b(&mut self, signer: Signer) -> ClientId {
-        TypedIntegration::<B, A>::create_client_on_a(&mut self.ctx_b, &self.ctx_a, signer)
+        TypedRelayerOps::<B, A>::create_client_on_a(&mut self.ctx_b, &self.ctx_a, signer)
     }
 
     pub fn update_client_on_a_with_sync(&mut self, client_id_on_a: ClientId, signer: Signer) {
-        TypedIntegration::<A, B>::update_client_on_a_with_sync(
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
             &mut self.ctx_a,
             &mut self.ctx_b,
             client_id_on_a,
@@ -66,7 +66,7 @@ where
     }
 
     pub fn update_client_on_b_with_sync(&mut self, client_id_on_b: ClientId, signer: Signer) {
-        TypedIntegration::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             &mut self.ctx_b,
             &mut self.ctx_a,
             client_id_on_b,
@@ -80,7 +80,7 @@ where
         client_id_on_b: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
-        TypedIntegration::<A, B>::create_connection_on_a(
+        TypedRelayerOps::<A, B>::create_connection_on_a(
             &mut self.ctx_a,
             &mut self.ctx_b,
             client_id_on_a,
@@ -95,7 +95,7 @@ where
         client_id_on_a: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
-        TypedIntegration::<B, A>::create_connection_on_a(
+        TypedRelayerOps::<B, A>::create_connection_on_a(
             &mut self.ctx_b,
             &mut self.ctx_a,
             client_id_on_b,
@@ -128,7 +128,7 @@ where
             .client_id()
             .clone();
 
-        TypedIntegration::<A, B>::create_channel_on_a(
+        TypedRelayerOps::<A, B>::create_channel_on_a(
             &mut self.ctx_a,
             &mut self.ctx_b,
             client_id_on_a,
@@ -165,7 +165,7 @@ where
             .client_id()
             .clone();
 
-        TypedIntegration::<B, A>::create_channel_on_a(
+        TypedRelayerOps::<B, A>::create_channel_on_a(
             &mut self.ctx_b,
             &mut self.ctx_a,
             client_id_on_b,
@@ -218,7 +218,7 @@ where
             .client_id()
             .clone();
 
-        TypedIntegration::<A, B>::close_channel_on_a(
+        TypedRelayerOps::<A, B>::close_channel_on_a(
             &mut self.ctx_a,
             &mut self.ctx_b,
             client_id_on_a,
@@ -271,7 +271,7 @@ where
             .client_id()
             .clone();
 
-        TypedIntegration::<B, A>::close_channel_on_a(
+        TypedRelayerOps::<B, A>::close_channel_on_a(
             &mut self.ctx_b,
             &mut self.ctx_a,
             client_id_on_b,
@@ -323,7 +323,7 @@ where
             .client_id()
             .clone();
 
-        TypedIntegration::<A, B>::send_packet_on_a(
+        TypedRelayerOps::<A, B>::send_packet_on_a(
             &mut self.ctx_a,
             &mut self.ctx_b,
             packet,
