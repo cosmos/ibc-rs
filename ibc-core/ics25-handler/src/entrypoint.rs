@@ -9,7 +9,7 @@ use ibc_core_channel::handler::{
 use ibc_core_channel::types::msgs::{
     channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
 };
-use ibc_core_client::handler::{create_client, recover_client, update_client, upgrade_client};
+use ibc_core_client::handler::{create_client, update_client, upgrade_client};
 use ibc_core_client::types::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
 use ibc_core_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
