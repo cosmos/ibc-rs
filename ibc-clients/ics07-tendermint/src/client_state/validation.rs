@@ -52,6 +52,10 @@ where
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
         status(self.inner(), ctx, client_id)
     }
+
+    fn check_substitute(&self, _ctx: &V, substitute_client_state: Any) -> Result<(), ClientError> {
+        check_substitute::<V>(self.inner(), substitute_client_state)
+    }
 }
 
 /// Verify the client message as part of the client state validation process.
@@ -201,4 +205,55 @@ where
     }
 
     Ok(Status::Active)
+}
+
+/// Check that the subject and substitute client states match as part of
+/// the client recovery validation step.
+///
+/// The subject and substitute client states match if all their respective
+/// client state parameters match except for frozen height, latest height,
+/// trusting period, and chain ID.
+pub fn check_substitute<V>(
+    subject_client_state: &ClientStateType,
+    substitute_client_state: Any,
+) -> Result<(), ClientError>
+where
+    V: TmValidationContext,
+    V::ConsensusStateRef: ConsensusStateConverter,
+{
+    let ClientStateType {
+        latest_height: _,
+        frozen_height: _,
+        trusting_period: _,
+        chain_id: _,
+        allow_update: _,
+        trust_level: subject_trust_level,
+        unbonding_period: subject_unbonding_period,
+        max_clock_drift: subject_max_clock_drift,
+        proof_specs: subject_proof_specs,
+        upgrade_path: subject_upgrade_path,
+    } = subject_client_state.clone();
+
+    let substitute_client_state = ClientStateType::try_from(substitute_client_state)?;
+
+    let ClientStateType {
+        latest_height: _,
+        frozen_height: _,
+        trusting_period: _,
+        chain_id: _,
+        allow_update: _,
+        trust_level: substitute_trust_level,
+        unbonding_period: substitute_unbonding_period,
+        max_clock_drift: substitute_max_clock_drift,
+        proof_specs: substitute_proof_specs,
+        upgrade_path: substitute_upgrade_path,
+    } = substitute_client_state;
+
+    (subject_trust_level == substitute_trust_level
+        && subject_unbonding_period == substitute_unbonding_period
+        && subject_max_clock_drift == substitute_max_clock_drift
+        && subject_proof_specs == substitute_proof_specs
+        && subject_upgrade_path == substitute_upgrade_path)
+        .then_some(())
+        .ok_or(ClientError::ClientRecoveryStateMismatch)
 }
