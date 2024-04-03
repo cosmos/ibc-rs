@@ -4,6 +4,7 @@ use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient, MsgRecoverClient};
 use ibc::core::client::types::Height;
 use ibc::core::entrypoint::{execute, validate};
+use ibc::core::handler::recover_client;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::ValidationContext;
@@ -122,11 +123,11 @@ fn test_recover_client_ok() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = recover_client::validate(&ctx, &router, msg_envelope.clone());
 
     assert!(res.is_ok(), "client recovery validation happy path");
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = recover_client::execute(&mut ctx, &mut router, msg_envelope);
 
     assert!(res.is_ok(), "client recovery execution happy path");
 
@@ -164,7 +165,7 @@ fn test_recover_client_with_expired_substitute() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = recover_client::validate(&ctx, &router, msg_envelope.clone());
 
     assert!(res.is_err(), "expected client recovery validation to fail");
 }
@@ -197,7 +198,7 @@ fn test_recover_client_with_matching_heights() {
 
     let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+    let res = recover_client::validate(&ctx, &router, msg_envelope.clone());
 
     assert!(res.is_err(), "expected client recovery validation to fail");
 }

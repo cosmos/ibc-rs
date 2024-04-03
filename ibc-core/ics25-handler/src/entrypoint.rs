@@ -56,7 +56,6 @@ where
                 update_client::validate(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
             }
             ClientMsg::UpgradeClient(msg) => upgrade_client::validate(ctx, msg),
-            ClientMsg::RecoverClient(msg) => recover_client::validate(ctx, msg),
         },
         MsgEnvelope::Connection(msg) => match msg {
             ConnectionMsg::OpenInit(msg) => conn_open_init::validate(ctx, msg),
@@ -128,7 +127,6 @@ where
                 update_client::execute(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
             }
             ClientMsg::UpgradeClient(msg) => upgrade_client::execute(ctx, msg),
-            ClientMsg::RecoverClient(msg) => recover_client::execute(ctx, msg),
         },
         MsgEnvelope::Connection(msg) => match msg {
             ConnectionMsg::OpenInit(msg) => conn_open_init::execute(ctx, msg),
