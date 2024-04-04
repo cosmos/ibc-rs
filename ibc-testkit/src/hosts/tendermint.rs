@@ -112,10 +112,11 @@ impl TestHost for TendermintHost {
         client_state
     }
 
-    fn header_params<C>(&self, client_id: &ClientId, client_context: &C) -> Option<TendermintBlock>
-    where
-        C: ClientValidationContext,
-    {
+    fn header_params<C: ClientValidationContext>(
+        &self,
+        client_id: &ClientId,
+        client_context: &C,
+    ) -> Option<TendermintBlock> {
         let latest_client_height = client_context
             .client_state(client_id)
             .expect("client state exists")

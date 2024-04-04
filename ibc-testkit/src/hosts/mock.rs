@@ -73,11 +73,7 @@ impl TestHost for MockHost {
         MockClientState::new(self.get_block(latest_height).expect("height exists"))
     }
 
-    fn header_params<C>(&self, _: &ClientId, _: &C)
-    where
-        C: ClientValidationContext,
-    {
-    }
+    fn header_params<C: ClientValidationContext>(&self, _: &ClientId, _: &C) {}
 }
 
 impl TestBlock for MockHeader {

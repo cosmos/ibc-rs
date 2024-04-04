@@ -123,13 +123,11 @@ pub trait TestHost: Default + Debug + Sized {
         Ok(())
     }
 
-    fn header_params<C>(
+    fn header_params<C: ClientValidationContext>(
         &self,
         client_id: &ClientId,
         client_context: &C,
-    ) -> HostLightClientHeaderParams<Self>
-    where
-        C: ClientValidationContext;
+    ) -> HostLightClientHeaderParams<Self>;
 }
 
 /// TestBlock is a trait that defines the interface for a block produced by a host blockchain.
