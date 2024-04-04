@@ -5,8 +5,10 @@ use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState;
 use ibc::clients::tendermint::types::proto::v1::Header as RawHeader;
 use ibc::clients::tendermint::types::{Header, TENDERMINT_HEADER_TYPE_URL};
+use ibc::core::client::context::client_state::ClientStateCommon;
+use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
-use ibc::core::host::types::identifiers::ChainId;
+use ibc::core::host::types::identifiers::{ChainId, ClientId};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
@@ -109,6 +111,20 @@ impl TestHost for TendermintHost {
 
         client_state
     }
+
+    fn header_params<C>(&self, client_id: &ClientId, client_context: &C) -> Option<TendermintBlock>
+    where
+        C: ClientValidationContext,
+    {
+        let latest_client_height = client_context
+            .client_state(client_id)
+            .expect("client state exists")
+            .latest_height();
+
+        let header_params = self.get_block(&latest_client_height).expect("block exists");
+
+        Some(header_params)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -122,6 +138,7 @@ impl TendermintBlock {
 
 impl TestBlock for TendermintBlock {
     type Header = TendermintHeader;
+    type HeaderParams = Option<Self>;
 
     fn height(&self) -> Height {
         Height::new(
@@ -137,12 +154,12 @@ impl TestBlock for TendermintBlock {
         self.0.signed_header.header.time.into()
     }
 
-    fn into_header_with_previous_block(self, previous_block: &Self) -> Self::Header {
-        // this method is used to inject the trusted height and validators set
-        // given the previous_block is trusted, Tendermint light client validates the current (untrusted) block
-        let mut header = TendermintHeader::from(self);
-        header.set_trusted_height(previous_block.height());
-        header.set_trusted_next_validators_set(previous_block.inner().validators.clone());
+    fn into_header_with_params(self, params: &Self::HeaderParams) -> Self::Header {
+        let trusted_block = params.as_ref().unwrap_or(&self);
+
+        let mut header = TendermintHeader::from(self.clone());
+        header.set_trusted_height(trusted_block.height());
+        header.set_trusted_next_validators_set(trusted_block.inner().validators.clone());
         header
     }
 }

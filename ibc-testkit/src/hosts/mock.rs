@@ -1,8 +1,9 @@
 use alloc::collections::VecDeque;
 use alloc::vec::Vec;
 
+use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
-use ibc::core::host::types::identifiers::ChainId;
+use ibc::core::host::types::identifiers::{ChainId, ClientId};
 use ibc::core::primitives::Timestamp;
 use typed_builder::TypedBuilder;
 
@@ -71,10 +72,17 @@ impl TestHost for MockHost {
     ) -> Self::ClientState {
         MockClientState::new(self.get_block(latest_height).expect("height exists"))
     }
+
+    fn header_params<C>(&self, _: &ClientId, _: &C)
+    where
+        C: ClientValidationContext,
+    {
+    }
 }
 
 impl TestBlock for MockHeader {
     type Header = Self;
+    type HeaderParams = ();
 
     fn height(&self) -> Height {
         self.height
@@ -84,7 +92,7 @@ impl TestBlock for MockHeader {
         self.timestamp
     }
 
-    fn into_header_with_previous_block(self, _: &Self) -> Self::Header {
+    fn into_header_with_params(self, _: &Self::HeaderParams) -> Self::Header {
         self
     }
 }
