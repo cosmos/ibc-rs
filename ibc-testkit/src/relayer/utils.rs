@@ -114,12 +114,10 @@ where
         client_id_on_a: ClientId,
         signer: Signer,
     ) {
-        let latest_client_height_on_a = ctx_a
-            .ibc_store()
-            .get_client_validation_context()
-            .client_state(&client_id_on_a)
-            .expect("client state exists")
-            .latest_height();
+        let header_params = ctx_b.host.header_params(
+            &client_id_on_a,
+            ctx_a.ibc_store().get_client_validation_context(),
+        );
 
         let latest_height_of_b = ctx_b.latest_height();
 
@@ -128,11 +126,7 @@ where
             client_message: ctx_b
                 .host_block(&latest_height_of_b)
                 .expect("block exists")
-                .into_header_with_previous_block(
-                    &ctx_b
-                        .host_block(&latest_client_height_on_a)
-                        .expect("block exists"),
-                )
+                .into_header_with_params(&header_params)
                 .into(),
             signer,
         }));
