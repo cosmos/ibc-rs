@@ -436,28 +436,21 @@ impl From<QueryClientParamsResponse> for RawQueryClientParamsResponse {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedClientStateResponse {
+    /// The upgraded client state.
     pub upgraded_client_state: Any,
+    /// The proof of the upgraded client state existence.
+    pub proof: Proof,
+    /// The height at which the proof was retrieved.
+    pub proof_height: Height,
 }
 
 impl QueryUpgradedClientStateResponse {
-    pub fn new(upgraded_client_state: Any) -> Self {
+    pub fn new(upgraded_client_state: Any, proof: Proof, proof_height: Height) -> Self {
         Self {
             upgraded_client_state,
+            proof,
+            proof_height,
         }
-    }
-}
-
-impl Protobuf<RawQueryUpgradedClientStateResponse> for QueryUpgradedClientStateResponse {}
-
-impl TryFrom<RawQueryUpgradedClientStateResponse> for QueryUpgradedClientStateResponse {
-    type Error = QueryError;
-
-    fn try_from(value: RawQueryUpgradedClientStateResponse) -> Result<Self, Self::Error> {
-        Ok(Self {
-            upgraded_client_state: value
-                .upgraded_client_state
-                .ok_or_else(|| QueryError::missing_field("upgraded_client_state"))?,
-        })
     }
 }
 
@@ -474,28 +467,21 @@ impl From<QueryUpgradedClientStateResponse> for RawQueryUpgradedClientStateRespo
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedConsensusStateResponse {
+    /// The upgraded consensus state.
     pub upgraded_consensus_state: Any,
+    /// The proof of the upgraded consensus state existence.
+    pub proof: Proof,
+    /// The height at which the proof was retrieved.
+    pub proof_height: Height,
 }
 
 impl QueryUpgradedConsensusStateResponse {
-    pub fn new(upgraded_consensus_state: Any) -> Self {
+    pub fn new(upgraded_consensus_state: Any, proof: Proof, proof_height: Height) -> Self {
         Self {
             upgraded_consensus_state,
+            proof,
+            proof_height,
         }
-    }
-}
-
-impl Protobuf<RawQueryUpgradedConsensusStateResponse> for QueryUpgradedConsensusStateResponse {}
-
-impl TryFrom<RawQueryUpgradedConsensusStateResponse> for QueryUpgradedConsensusStateResponse {
-    type Error = QueryError;
-
-    fn try_from(value: RawQueryUpgradedConsensusStateResponse) -> Result<Self, Self::Error> {
-        Ok(Self {
-            upgraded_consensus_state: value
-                .upgraded_consensus_state
-                .ok_or_else(|| QueryError::missing_field("upgraded_consensus_state"))?,
-        })
     }
 }
 

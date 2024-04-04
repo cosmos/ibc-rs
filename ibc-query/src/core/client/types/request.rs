@@ -200,12 +200,16 @@ impl From<RawQueryClientParamsRequest> for QueryClientParamsRequest {
 pub struct QueryUpgradedClientStateRequest {
     /// Height at which the chain is scheduled to halt for upgrade
     pub upgrade_height: Option<Height>,
+    /// The height at which to query the upgraded client state. If not provided,
+    /// the latest height should be used.
+    pub query_height: Option<Height>,
 }
 
 impl From<RawUpgradedClientStateRequest> for QueryUpgradedClientStateRequest {
     fn from(_request: RawUpgradedClientStateRequest) -> Self {
         Self {
             upgrade_height: None,
+            query_height: None,
         }
     }
 }
@@ -218,12 +222,16 @@ impl From<RawUpgradedClientStateRequest> for QueryUpgradedClientStateRequest {
 pub struct QueryUpgradedConsensusStateRequest {
     /// Height at which the chain is scheduled to halt for upgrade.
     pub upgrade_height: Option<Height>,
+    /// The height at which to query the upgraded consensus state. If not
+    /// provided, the latest height should be used.
+    pub query_height: Option<Height>,
 }
 
 impl From<RawUpgradedConsensusStateRequest> for QueryUpgradedConsensusStateRequest {
     fn from(_request: RawUpgradedConsensusStateRequest) -> Self {
         Self {
             upgrade_height: None,
+            query_height: None,
         }
     }
 }
