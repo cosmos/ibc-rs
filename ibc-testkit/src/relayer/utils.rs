@@ -57,6 +57,7 @@ where
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
     /// Creates a client on `A` with the state of `B`.
+    /// Returns the client identifier on `A`.
     pub fn create_client_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -153,6 +154,7 @@ where
     }
 
     /// `A` initiates a connection with the other end on `B`.
+    /// Returns the connection identifier on `A`.
     pub fn connection_open_init_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -186,6 +188,7 @@ where
     }
 
     /// `B` receives the connection opening attempt by `A` after `A` initiates the connection.
+    /// Returns the connection identifier on `B`.
     pub fn connection_open_try_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -387,6 +390,7 @@ where
     }
 
     /// A connection is created by `A` towards `B` using the IBC connection handshake protocol.
+    /// Returns the connection identifiers on `A` and `B`.
     pub fn create_connection_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &mut MockContext<B>,
@@ -455,6 +459,7 @@ where
     }
 
     /// `A` initiates a channel with port identifier with the other end on `B`.
+    /// Returns the channel identifier on `A`.
     pub fn channel_open_init_on_a(
         ctx_a: &mut MockContext<A>,
         conn_id_on_a: ConnectionId,
@@ -483,6 +488,7 @@ where
     }
 
     /// `B` receives the channel opening attempt by `A` after `A` initiates the channel.
+    /// Returns the channel identifier on `B`.
     pub fn channel_open_try_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -669,6 +675,7 @@ where
     }
 
     /// A channel is created by `A` towards `B` using the IBC channel handshake protocol.
+    /// Returns the channel identifiers on `A` and `B`.
     #[allow(clippy::too_many_arguments)]
     pub fn create_channel_on_a(
         ctx_a: &mut MockContext<A>,
@@ -782,6 +789,7 @@ where
     }
 
     /// `B` receives a packet from a IBC module on `A`.
+    /// Returns the acknowledgement of `B`.
     pub fn packet_recv_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,

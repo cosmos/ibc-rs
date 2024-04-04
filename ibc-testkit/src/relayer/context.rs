@@ -55,11 +55,13 @@ where
     }
 
     /// Creates a light client of second context on the first context.
+    /// Returns the client identifier of the created client.
     pub fn create_client_on_a(&mut self, signer: Signer) -> ClientId {
         TypedRelayerOps::<A, B>::create_client_on_a(&mut self.ctx_a, &self.ctx_b, signer)
     }
 
     /// Creates a light client of first context on the second context.
+    /// Returns the client identifier of the created client.
     pub fn create_client_on_b(&mut self, signer: Signer) -> ClientId {
         TypedRelayerOps::<B, A>::create_client_on_a(&mut self.ctx_b, &self.ctx_a, signer)
     }
@@ -85,6 +87,7 @@ where
     }
 
     /// Creates a connection between the two contexts starting from the first context.
+    /// Returns the connection identifiers of the created connection ends.
     pub fn create_connection_on_a(
         &mut self,
         client_id_on_a: ClientId,
@@ -101,6 +104,7 @@ where
     }
 
     /// Creates a connection between the two contexts starting from the second context.
+    /// Returns the connection identifiers of the created connection ends.
     pub fn create_connection_on_b(
         &mut self,
         client_id_on_b: ClientId,
@@ -117,6 +121,7 @@ where
     }
 
     /// Creates a channel between the two contexts starting from the first context.
+    /// Returns the channel identifiers of the created channel ends.
     pub fn create_channel_on_a(
         &mut self,
         conn_id_on_a: ConnectionId,
@@ -155,6 +160,7 @@ where
     }
 
     /// Creates a channel between the two contexts starting from the second context.
+    /// Returns the channel identifiers of the created channel ends.
     pub fn create_channel_on_b(
         &mut self,
         conn_id_on_b: ConnectionId,
