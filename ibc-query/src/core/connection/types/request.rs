@@ -59,6 +59,7 @@ impl From<RawQueryConnectionsRequest> for QueryConnectionsRequest {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryClientConnectionsRequest {
     pub client_id: ClientId,
+    pub query_height: Option<Height>,
 }
 
 impl TryFrom<RawQueryClientConnectionsRequest> for QueryClientConnectionsRequest {
@@ -67,6 +68,7 @@ impl TryFrom<RawQueryClientConnectionsRequest> for QueryClientConnectionsRequest
     fn try_from(request: RawQueryClientConnectionsRequest) -> Result<Self, Self::Error> {
         Ok(Self {
             client_id: request.client_id.parse()?,
+            query_height: None,
         })
     }
 }
