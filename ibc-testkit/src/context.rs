@@ -37,8 +37,9 @@ where
     H: TestHost,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
-    /// The main store of the context.
-    pub main_store: S,
+    /// The multi store of the context.
+    /// This is where the IBC store root is stored at IBC commitment prefix.
+    pub multi_store: S,
 
     /// The type of host chain underlying this mock context.
     pub host: H,
@@ -116,13 +117,13 @@ where
     pub fn generate_genesis_block(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
         self.end_block();
 
-        // commit main store
-        let main_store_commitment = self.main_store.commit().expect("no error");
+        // commit multi store
+        let multi_store_commitment = self.multi_store.commit().expect("no error");
 
         // generate a genesis block
         let genesis_block =
             self.host
-                .generate_block(main_store_commitment, 1, genesis_time, params);
+                .generate_block(multi_store_commitment, 1, genesis_time, params);
 
         // push the genesis block to the host
         self.host.push_block(genesis_block);
@@ -139,7 +140,7 @@ where
             .into();
 
         let ibc_commitment_proof = self
-            .main_store
+            .multi_store
             .get_proof(
                 self.host.latest_height().revision_height().into(),
                 &self
@@ -162,8 +163,8 @@ where
         // commit ibc store
         let ibc_store_commitment = self.ibc_store.end_block().expect("no error");
 
-        // commit ibc store commitment in main store
-        self.main_store
+        // commit ibc store commitment in multi store
+        self.multi_store
             .set(
                 self.ibc_store
                     .commitment_prefix()
@@ -176,11 +177,11 @@ where
     }
 
     pub fn produce_block(&mut self, block_time: Duration, params: &H::BlockParams) {
-        // commit main store
-        let main_store_commitment = self.main_store.commit().expect("no error");
+        // commit the multi store
+        let multi_store_commitment = self.multi_store.commit().expect("no error");
         // generate a new block
         self.host
-            .advance_block(main_store_commitment, block_time, params);
+            .advance_block(multi_store_commitment, block_time, params);
     }
 
     pub fn advance_with_block_params(&mut self, block_time: Duration, params: &H::BlockParams) {

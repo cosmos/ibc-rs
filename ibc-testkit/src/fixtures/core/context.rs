@@ -57,7 +57,7 @@ where
         .expect("no underflow");
 
         let mut context = Self {
-            main_store: Default::default(),
+            multi_store: Default::default(),
             host: params.host,
             ibc_store: MockIbcStore::new(
                 params.latest_height.revision_number(),
