@@ -224,9 +224,7 @@ where
     let proof = ibc_ctx
         .get_proof(
             proof_height,
-            &Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(
-                upgrade_revision_height,
-            )),
+            &Path::UpgradeClient(upgraded_client_state_path),
         )
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
@@ -265,6 +263,10 @@ where
     let upgraded_consensus_state_path =
         UpgradeClientPath::UpgradedClientConsensusState(upgrade_revision_height);
 
+    let upgraded_consensus_state = upgrade_ctx
+        .upgraded_consensus_state(&upgraded_consensus_state_path)
+        .map_err(ClientError::from)?;
+
     let proof_height = match request.query_height {
         Some(height) => height,
         None => ibc_ctx.host_height()?,
@@ -273,19 +275,13 @@ where
     let proof = ibc_ctx
         .get_proof(
             proof_height,
-            &Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(
-                upgrade_revision_height,
-            )),
+            &Path::UpgradeClient(upgraded_consensus_state_path),
         )
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
                 "Proof not found for upgraded consensus state at: {proof_height:?}"
             ))
         })?;
-
-    let upgraded_consensus_state = upgrade_ctx
-        .upgraded_consensus_state(&upgraded_consensus_state_path)
-        .map_err(ClientError::from)?;
 
     Ok(QueryUpgradedConsensusStateResponse::new(
         upgraded_consensus_state.into(),
