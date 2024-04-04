@@ -117,14 +117,17 @@ impl TestHost for TendermintHost {
         client_id: &ClientId,
         client_context: &C,
     ) -> Option<TendermintBlock> {
-        let latest_client_height = client_context
+        let trusted_height = client_context
             .client_state(client_id)
             .expect("client state exists")
             .latest_height();
 
-        let header_params = self.get_block(&latest_client_height).expect("block exists");
+        // `.expect` is called because this block should exist
+        let trusted_block = self.get_block(&trusted_height).expect("block exists");
 
-        Some(header_params)
+        // wraps with `Some`, as `None` corresponds to the case where
+        // the block bootstrap itself as trusted block
+        Some(trusted_block)
     }
 }
 
