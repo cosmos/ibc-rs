@@ -214,7 +214,9 @@ trait ClientState<ClientValidationContext, ClientExecutionContext>
 
 The problem with defining all methods directly under `ClientState` is that it would force users to use fully qualified notation to call any method.
 
-This arises from the fact that no method uses both generic parameters. Hence, our solution is to have all methods in a trait use every generic parameter of the trait to avoid this problem.
+This arises from the fact that no method uses both generic parameters. [This playground] provides an explanatory example. Hence, our solution is to have all methods in a trait use every generic parameter of the trait to avoid this problem.
+
+[This playground]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=da65c22f1532cecc9f92a2b7cb2d1360
 
 ### Why did you write custom `ClientState` and `ConsensusState` derive macros? Why not use `enum_dispatch` or `enum_delegate`?
 We ended up having to write our own custom derive macros because existing crates that offer similar functionality had shortcomings that prevented us from using them:
