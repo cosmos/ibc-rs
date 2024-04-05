@@ -232,7 +232,7 @@ where
         max_clock_drift: subject_max_clock_drift,
         proof_specs: subject_proof_specs,
         upgrade_path: subject_upgrade_path,
-    } = subject_client_state.clone();
+    } = subject_client_state;
 
     let substitute_client_state = ClientStateType::try_from(substitute_client_state)?;
 
@@ -249,11 +249,11 @@ where
         upgrade_path: substitute_upgrade_path,
     } = substitute_client_state;
 
-    (subject_trust_level == substitute_trust_level
-        && subject_unbonding_period == substitute_unbonding_period
-        && subject_max_clock_drift == substitute_max_clock_drift
-        && subject_proof_specs == substitute_proof_specs
-        && subject_upgrade_path == substitute_upgrade_path)
+    (subject_trust_level == &substitute_trust_level
+        && subject_unbonding_period == &substitute_unbonding_period
+        && subject_max_clock_drift == &substitute_max_clock_drift
+        && subject_proof_specs == &substitute_proof_specs
+        && subject_upgrade_path == &substitute_upgrade_path)
         .then_some(())
         .ok_or(ClientError::ClientRecoveryStateMismatch)
 }
