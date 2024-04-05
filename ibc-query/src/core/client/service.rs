@@ -124,14 +124,23 @@ where
         &self,
         request: Request<QueryUpgradedClientStateRequest>,
     ) -> Result<Response<QueryUpgradedClientStateResponse>, Status> {
-        query_upgraded_client_state(&self.upgrade_context, &request.into_domain())?.into_response()
+        query_upgraded_client_state(
+            &self.ibc_context,
+            &self.upgrade_context,
+            &request.into_domain(),
+        )?
+        .into_response()
     }
 
     async fn upgraded_consensus_state(
         &self,
         request: Request<QueryUpgradedConsensusStateRequest>,
     ) -> Result<Response<QueryUpgradedConsensusStateResponse>, Status> {
-        query_upgraded_consensus_state(&self.upgrade_context, &request.into_domain())?
-            .into_response()
+        query_upgraded_consensus_state(
+            &self.ibc_context,
+            &self.upgrade_context,
+            &request.into_domain(),
+        )?
+        .into_response()
     }
 }
