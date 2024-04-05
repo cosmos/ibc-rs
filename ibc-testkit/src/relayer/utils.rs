@@ -115,19 +115,26 @@ where
         client_id_on_a: ClientId,
         signer: Signer,
     ) {
-        let header_params = ctx_b.host.header_params(
-            &client_id_on_a,
-            ctx_a.ibc_store().get_client_validation_context(),
-        );
+        let trusted_height_of_b = ctx_a
+            .ibc_store()
+            .get_client_validation_context()
+            .client_state(&client_id_on_a)
+            .expect("client state exists")
+            .latest_height();
 
-        let latest_height_of_b = ctx_b.latest_height();
+        let trusted_block_of_b = ctx_b
+            .host
+            .get_block(&trusted_height_of_b)
+            .expect("block exists");
+
+        let target_height_of_b = ctx_b.latest_height();
+
+        let target_block_of_b = ctx_b.host_block(&target_height_of_b).expect("block exists");
 
         let msg_for_a = MsgEnvelope::Client(ClientMsg::UpdateClient(MsgUpdateClient {
             client_id: client_id_on_a.clone(),
-            client_message: ctx_b
-                .host_block(&latest_height_of_b)
-                .expect("block exists")
-                .into_header_with_params(&header_params)
+            client_message: target_block_of_b
+                .into_header_with_trusted(&trusted_block_of_b)
                 .into(),
             signer,
         }));

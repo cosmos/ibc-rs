@@ -7,9 +7,7 @@ use core::ops::Add;
 use core::time::Duration;
 
 use ibc::core::client::context::consensus_state::ConsensusState;
-use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
-use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
@@ -23,7 +21,6 @@ pub type HostBlock<H> = <H as TestHost>::Block;
 pub type HostBlockParams<H> = <H as TestHost>::BlockParams;
 pub type HostLightClientParams<H> = <H as TestHost>::LightClientParams;
 pub type HostHeader<H> = <HostBlock<H> as TestBlock>::Header;
-pub type HostLightClientHeaderParams<H> = <HostBlock<H> as TestBlock>::HeaderParams;
 pub type HostConsensusState<H> = <HostHeader<H> as TestHeader>::ConsensusState;
 
 /// TestHost is a trait that defines the interface for a host blockchain.
@@ -122,12 +119,6 @@ pub trait TestHost: Default + Debug + Sized {
         }
         Ok(())
     }
-
-    fn header_params<C: ClientValidationContext>(
-        &self,
-        client_id: &ClientId,
-        client_context: &C,
-    ) -> HostLightClientHeaderParams<Self>;
 }
 
 /// TestBlock is a trait that defines the interface for a block produced by a host blockchain.
@@ -135,20 +126,19 @@ pub trait TestBlock: Clone + Debug {
     /// The type of header can be extracted from the block.
     type Header: TestHeader;
 
-    /// The type of parameters required to extract the header from the block.
-    type HeaderParams: Debug + Default;
-
     /// The height of the block.
     fn height(&self) -> Height;
 
     /// The timestamp of the block.
     fn timestamp(&self) -> Timestamp;
 
-    /// Extract the header from the block.
-    fn into_header_with_params(self, params: &Self::HeaderParams) -> Self::Header;
+    /// Extract the IBC header using the target and trusted blocks.
+    fn into_header_with_trusted(self, trusted_block: &Self) -> Self::Header;
 
+    /// Extract the IBC header only using the target block (sets the trusted
+    /// block to itself).
     fn into_header(self) -> Self::Header {
-        self.into_header_with_params(&Default::default())
+        self.clone().into_header_with_trusted(&self)
     }
 }
 

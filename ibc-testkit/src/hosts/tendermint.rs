@@ -5,10 +5,8 @@ use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState;
 use ibc::clients::tendermint::types::proto::v1::Header as RawHeader;
 use ibc::clients::tendermint::types::{Header, TENDERMINT_HEADER_TYPE_URL};
-use ibc::core::client::context::client_state::ClientStateCommon;
-use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::Height;
-use ibc::core::host::types::identifiers::{ChainId, ClientId};
+use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
@@ -111,24 +109,6 @@ impl TestHost for TendermintHost {
 
         client_state
     }
-
-    fn header_params<C: ClientValidationContext>(
-        &self,
-        client_id: &ClientId,
-        client_context: &C,
-    ) -> Option<TendermintBlock> {
-        let trusted_height = client_context
-            .client_state(client_id)
-            .expect("client state exists")
-            .latest_height();
-
-        // `.expect` is called because this block should exist
-        let trusted_block = self.get_block(&trusted_height).expect("block exists");
-
-        // wraps with `Some`, as `None` corresponds to the case where
-        // the block bootstrap itself as trusted block
-        Some(trusted_block)
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -142,7 +122,6 @@ impl TendermintBlock {
 
 impl TestBlock for TendermintBlock {
     type Header = TendermintHeader;
-    type HeaderParams = Option<Self>;
 
     fn height(&self) -> Height {
         Height::new(
@@ -158,9 +137,7 @@ impl TestBlock for TendermintBlock {
         self.0.signed_header.header.time.into()
     }
 
-    fn into_header_with_params(self, params: &Self::HeaderParams) -> Self::Header {
-        let trusted_block = params.as_ref().unwrap_or(&self);
-
+    fn into_header_with_trusted(self, trusted_block: &Self) -> Self::Header {
         let mut header = TendermintHeader::from(self.clone());
         header.set_trusted_height(trusted_block.height());
         header.set_trusted_next_validators_set(trusted_block.inner().validators.clone());
