@@ -1,15 +1,13 @@
 use core::fmt::Debug;
 use core::time::Duration;
 
-use basecoin_store::avl::get_proof_spec as basecoin_proof_spec;
 use basecoin_store::context::ProvableStore;
 use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore};
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::PacketCommitment;
 use ibc::core::client::context::client_state::ClientStateValidation;
-use ibc::core::client::context::ClientExecutionContext;
+use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::Height;
-use ibc::core::commitment_types::specs::ProofSpecs;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::dispatch;
 use ibc::core::handler::types::events::IbcEvent;
@@ -20,16 +18,15 @@ use ibc::core::host::types::path::{
     SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ExecutionContext, ValidationContext};
-use ibc::core::router::router::Router;
 use ibc::primitives::prelude::*;
 use ibc::primitives::Timestamp;
-use typed_builder::TypedBuilder;
 
 use super::testapp::ibc::core::types::{LightClientState, MockIbcStore};
 use crate::fixtures::core::context::MockContextConfig;
 use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
+use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::DEFAULT_BLOCK_TIME_SECS;
 
 /// A context implementing the dependencies necessary for testing any IBC module.
@@ -40,33 +37,22 @@ where
     H: TestHost,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
+    /// The multi store of the context.
+    /// This is where the IBC store root is stored at IBC commitment prefix.
+    pub multi_store: S,
+
     /// The type of host chain underlying this mock context.
     pub host: H,
 
     /// An object that stores all IBC related data.
     pub ibc_store: MockIbcStore<S>,
+
+    /// A router that can route messages to the appropriate IBC application.
+    pub ibc_router: MockRouter,
 }
 
 pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
 pub type MockContext<H> = MockGenericContext<MockStore, H>;
-
-#[derive(Debug, TypedBuilder)]
-pub struct MockClientConfig {
-    #[builder(default = Duration::from_secs(64000))]
-    pub trusting_period: Duration,
-    #[builder(default = Duration::from_millis(3000))]
-    pub max_clock_drift: Duration,
-    #[builder(default = Duration::from_secs(128_000))]
-    pub unbonding_period: Duration,
-    #[builder(default = vec![basecoin_proof_spec()].into())]
-    pub proof_specs: ProofSpecs,
-}
-
-impl Default for MockClientConfig {
-    fn default() -> Self {
-        Self::builder().build()
-    }
-}
 
 /// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
@@ -94,12 +80,23 @@ where
         &self.ibc_store
     }
 
+    pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S> {
+        &mut self.ibc_store
+    }
+
     pub fn host_block(&self, target_height: &Height) -> Option<H::Block> {
         self.host.get_block(target_height)
     }
 
     pub fn query_latest_block(&self) -> Option<H::Block> {
         self.host.get_block(&self.latest_height())
+    }
+
+    pub fn light_client_latest_height(&self, client_id: &ClientId) -> Height {
+        self.ibc_store
+            .client_state(client_id)
+            .expect("client state exists")
+            .latest_height()
     }
 
     pub fn advance_block_up_to(mut self, target_height: Height) -> Self {
@@ -118,38 +115,79 @@ where
     }
 
     pub fn generate_genesis_block(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
-        // commit store
-        let app_hash = self.ibc_store.commit().expect("no error");
+        self.end_block();
 
-        // generate and push genesis block
-        let genesis_block = self.host.generate_block(app_hash, 1, genesis_time, params);
+        // commit multi store
+        let multi_store_commitment = self.multi_store.commit().expect("no error");
+
+        // generate a genesis block
+        let genesis_block =
+            self.host
+                .generate_block(multi_store_commitment, 1, genesis_time, params);
+
+        // push the genesis block to the host
         self.host.push_block(genesis_block);
 
-        // store it in ibc context as host consensus state
-        self.ibc_store.store_host_consensus_state(
-            self.host
-                .latest_block()
-                .into_header()
-                .into_consensus_state()
-                .into(),
+        self.begin_block();
+    }
+
+    pub fn begin_block(&mut self) {
+        let consensus_state = self
+            .host
+            .latest_block()
+            .into_header()
+            .into_consensus_state()
+            .into();
+
+        let ibc_commitment_proof = self
+            .multi_store
+            .get_proof(
+                self.host.latest_height().revision_height().into(),
+                &self
+                    .ibc_store
+                    .commitment_prefix()
+                    .as_bytes()
+                    .try_into()
+                    .expect("valid utf8 prefix"),
+            )
+            .expect("no error");
+
+        self.ibc_store.begin_block(
+            self.host.latest_height().revision_height(),
+            consensus_state,
+            ibc_commitment_proof,
         );
     }
 
-    pub fn advance_with_block_params(&mut self, block_time: Duration, params: &H::BlockParams) {
-        // commit store
-        let app_hash = self.ibc_store.commit().expect("no error");
+    pub fn end_block(&mut self) {
+        // commit ibc store
+        let ibc_store_commitment = self.ibc_store.end_block().expect("no error");
 
+        // commit ibc store commitment in multi store
+        self.multi_store
+            .set(
+                self.ibc_store
+                    .commitment_prefix()
+                    .as_bytes()
+                    .try_into()
+                    .expect("valid utf8 prefix"),
+                ibc_store_commitment,
+            )
+            .expect("no error");
+    }
+
+    pub fn produce_block(&mut self, block_time: Duration, params: &H::BlockParams) {
+        // commit the multi store
+        let multi_store_commitment = self.multi_store.commit().expect("no error");
         // generate a new block
-        self.host.advance_block(app_hash, block_time, params);
+        self.host
+            .advance_block(multi_store_commitment, block_time, params);
+    }
 
-        // store it in ibc context as host consensus state
-        self.ibc_store.store_host_consensus_state(
-            self.host
-                .latest_block()
-                .into_header()
-                .into_consensus_state()
-                .into(),
-        );
+    pub fn advance_with_block_params(&mut self, block_time: Duration, params: &H::BlockParams) {
+        self.end_block();
+        self.produce_block(block_time, params);
+        self.begin_block();
     }
 
     pub fn advance_block(&mut self) {
@@ -355,12 +393,9 @@ where
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
-    pub fn deliver(
-        &mut self,
-        router: &mut impl Router,
-        msg: MsgEnvelope,
-    ) -> Result<(), RelayerError> {
-        dispatch(&mut self.ibc_store, router, msg).map_err(RelayerError::TransactionFailed)?;
+    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
+        dispatch(&mut self.ibc_store, &mut self.ibc_router, msg)
+            .map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
         self.advance_block();
         Ok(())

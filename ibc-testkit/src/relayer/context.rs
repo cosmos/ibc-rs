@@ -1,248 +1,359 @@
-use alloc::fmt::Debug;
-
-use basecoin_store::context::ProvableStore;
-use ibc::clients::tendermint::context::ValidationContext;
+use ibc::core::channel::types::packet::Packet;
 use ibc::core::client::context::client_state::ClientStateValidation;
-use ibc::core::client::context::ClientValidationContext;
-use ibc::core::client::types::Height;
-use ibc::core::handler::types::error::ContextError;
-use ibc::core::host::types::identifiers::ClientId;
-use ibc::core::primitives::prelude::*;
-use ibc::core::primitives::Signer;
+use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
+use ibc::core::host::types::path::ChannelEndPath;
+use ibc::core::host::ValidationContext;
+use ibc::primitives::Signer;
 
-use crate::context::MockGenericContext;
+use crate::context::MockContext;
 use crate::hosts::{HostClientState, TestHost};
-use crate::testapp::ibc::clients::AnyClientState;
-use crate::testapp::ibc::core::types::MockIbcStore;
-/// Trait capturing all dependencies (i.e., the context) which algorithms in ICS18 require to
-/// relay packets between chains. This trait comprises the dependencies towards a single chain.
-/// Most of the functions in this represent wrappers over the ABCI interface.
-/// This trait mimics the `Chain` trait, but at a lower level of abstraction (no networking, header
-/// types, light client, RPC client, etc.)
-pub trait RelayerContext {
-    /// Returns the latest height of the chain.
-    fn query_latest_height(&self) -> Result<Height, ContextError>;
+use crate::relayer::utils::TypedRelayerOps;
+use crate::testapp::ibc::core::types::DefaultIbcStore;
 
-    /// Returns this client state for the given `client_id` on this chain.
-    /// Wrapper over the `/abci_query?path=..` endpoint.
-    fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState>;
-
-    /// Temporary solution. Similar to `CosmosSDKChain::key_and_signer()` but simpler.
-    fn signer(&self) -> Signer;
-}
-
-impl<S, H> RelayerContext for MockGenericContext<S, H>
+/// A relayer context that allows interaction between two [`MockContext`] instances.
+pub struct RelayerContext<A, B>
 where
-    S: ProvableStore + Debug,
-    H: TestHost,
-    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
+    A: TestHost,
+    B: TestHost,
+    HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
-    fn query_latest_height(&self) -> Result<Height, ContextError> {
-        self.ibc_store.host_height()
-    }
-
-    fn query_client_full_state(&self, client_id: &ClientId) -> Option<AnyClientState> {
-        // Forward call to Ics2.
-        self.ibc_store.client_state(client_id).ok()
-    }
-
-    fn signer(&self) -> Signer {
-        "0CDA3F47EF3C4906693B170EF650EB968C5F4B2C"
-            .to_string()
-            .into()
-    }
+    ctx_a: MockContext<A>,
+    ctx_b: MockContext<B>,
 }
 
-#[cfg(test)]
-mod tests {
-    use ibc::clients::tendermint::types::client_type as tm_client_type;
-    use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
-    use ibc::core::client::types::Height;
-    use ibc::core::handler::types::msgs::MsgEnvelope;
-    use ibc::core::host::types::identifiers::ChainId;
-    use ibc::core::primitives::prelude::*;
-    use tracing::debug;
-
-    use super::RelayerContext;
-    use crate::context::MockContext;
-    use crate::fixtures::core::context::MockContextConfig;
-    use crate::hosts::{MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
-    use crate::relayer::context::ClientId;
-    use crate::relayer::error::RelayerError;
-    use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
-    use crate::testapp::ibc::core::router::MockRouter;
-    use crate::testapp::ibc::core::types::LightClientBuilder;
-
-    /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
-    /// context, assuming that the latest header on the source context is `src_header`.
-    pub(crate) fn build_client_update_datagram<Ctx, H: TestHeader>(
-        dest: &Ctx,
-        client_id: &ClientId,
-        src_header: &H,
-    ) -> Result<ClientMsg, RelayerError>
-    where
-        Ctx: RelayerContext,
-    {
-        // Check if client for ibc0 on ibc1 has been updated to latest height:
-        // - query client state on destination chain
-        let dest_client_state = dest.query_client_full_state(client_id).ok_or_else(|| {
-            RelayerError::ClientStateNotFound {
-                client_id: client_id.clone(),
-            }
-        })?;
-
-        let dest_client_latest_height = dest_client_state.latest_height();
-
-        if src_header.height() == dest_client_latest_height {
-            return Err(RelayerError::ClientAlreadyUpToDate {
-                client_id: client_id.clone(),
-                source_height: src_header.height(),
-                destination_height: dest_client_latest_height,
-            });
-        };
-
-        if dest_client_latest_height > src_header.height() {
-            return Err(RelayerError::ClientAtHigherHeight {
-                client_id: client_id.clone(),
-                source_height: src_header.height(),
-                destination_height: dest_client_latest_height,
-            });
-        };
-
-        // Client on destination chain can be updated.
-        Ok(ClientMsg::UpdateClient(MsgUpdateClient {
-            client_id: client_id.clone(),
-            client_message: src_header.clone().into(),
-            signer: dest.signer(),
-        }))
+impl<A, B> RelayerContext<A, B>
+where
+    A: TestHost,
+    B: TestHost,
+    HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
+{
+    /// Creates a new relayer context with the given [`MockContext`] instances.
+    pub fn new(ctx_a: MockContext<A>, ctx_b: MockContext<B>) -> Self {
+        Self { ctx_a, ctx_b }
     }
 
-    #[test]
-    /// Serves to test both ICS-26 `dispatch` & `build_client_update_datagram` functions.
-    /// Implements a "ping pong" of client update messages, so that two chains repeatedly
-    /// process a client update message and update their height in succession.
-    fn client_update_ping_pong() {
-        let chain_a_start_height = Height::new(1, 11).unwrap();
-        let chain_b_start_height = Height::new(1, 20).unwrap();
-        let client_on_b_for_a_height = Height::new(1, 10).unwrap(); // Should be smaller than `chain_a_start_height`
-        let client_on_a_for_b_height = Height::new(1, 20).unwrap(); // Should be smaller than `chain_b_start_height`
-        let num_iterations = 4;
+    /// Returns immutable reference to the first context.
+    pub fn get_ctx_a(&self) -> &MockContext<A> {
+        &self.ctx_a
+    }
 
-        let client_on_a_for_b = tm_client_type().build_client_id(0);
-        let client_on_b_for_a = mock_client_type().build_client_id(0);
+    /// Returns immutable reference to the second context.
+    pub fn get_ctx_b(&self) -> &MockContext<B> {
+        &self.ctx_b
+    }
 
-        let chain_id_a = ChainId::new("mockgaiaA-1").unwrap();
-        let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
+    /// Returns mutable reference to the first context.
+    pub fn get_ctx_a_mut(&mut self) -> &mut MockContext<A> {
+        &mut self.ctx_a
+    }
 
-        // Create two mock contexts, one for each chain.
-        let mut ctx_a = MockContextConfig::builder()
-            .host(MockHost::builder().chain_id(chain_id_a).build())
-            .latest_height(chain_a_start_height)
-            .build::<MockContext<MockHost>>();
+    /// Returns mutable reference to the second context.
+    pub fn get_ctx_b_mut(&mut self) -> &mut MockContext<B> {
+        &mut self.ctx_b
+    }
 
-        let mut ctx_b = MockContextConfig::builder()
-            .host(TendermintHost::builder().chain_id(chain_id_b).build())
-            .latest_height(chain_b_start_height)
-            .latest_timestamp(ctx_a.timestamp_at(chain_a_start_height.decrement().unwrap())) // chain B is running slower than chain A
-            .build::<MockContext<TendermintHost>>();
+    /// Creates a light client of second context on the first context.
+    /// Returns the client identifier of the created client.
+    pub fn create_client_on_a(&mut self, signer: Signer) -> ClientId {
+        TypedRelayerOps::<A, B>::create_client_on_a(&mut self.ctx_a, &self.ctx_b, signer)
+    }
 
-        ctx_a = ctx_a.with_light_client(
-            &client_on_a_for_b,
-            LightClientBuilder::init()
-                .context(&ctx_b)
-                .consensus_heights([client_on_a_for_b_height])
-                .build(),
-        );
+    /// Creates a light client of first context on the second context.
+    /// Returns the client identifier of the created client.
+    pub fn create_client_on_b(&mut self, signer: Signer) -> ClientId {
+        TypedRelayerOps::<B, A>::create_client_on_a(&mut self.ctx_b, &self.ctx_a, signer)
+    }
 
-        ctx_b = ctx_b.with_light_client(
-            &client_on_b_for_a,
-            LightClientBuilder::init()
-                .context(&ctx_a)
-                .consensus_heights([client_on_b_for_a_height])
-                .build(),
-        );
+    /// Updates the client on the first context with the latest header of the second context.
+    pub fn update_client_on_a_with_sync(&mut self, client_id_on_a: ClientId, signer: Signer) {
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            client_id_on_a,
+            signer,
+        )
+    }
 
-        // dummy; not actually used in client updates
-        let mut router_a = MockRouter::new_with_transfer();
+    /// Updates the client on the second context with the latest header of the first context.
+    pub fn update_client_on_b_with_sync(&mut self, client_id_on_b: ClientId, signer: Signer) {
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+            &mut self.ctx_b,
+            &mut self.ctx_a,
+            client_id_on_b,
+            signer,
+        )
+    }
 
-        // dummy; not actually used in client updates
-        let mut router_b = MockRouter::new_with_transfer();
+    /// Creates a connection between the two contexts starting from the first context.
+    /// Returns the connection identifiers of the created connection ends.
+    pub fn create_connection_on_a(
+        &mut self,
+        client_id_on_a: ClientId,
+        client_id_on_b: ClientId,
+        signer: Signer,
+    ) -> (ConnectionId, ConnectionId) {
+        TypedRelayerOps::<A, B>::create_connection_on_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            client_id_on_a,
+            client_id_on_b,
+            signer,
+        )
+    }
 
-        for _i in 0..num_iterations {
-            // Update client on chain B to latest height of A.
-            // - create the client update message with the latest header from A
-            let a_latest_header = ctx_a.query_latest_block().unwrap();
-            let client_msg_b_res = build_client_update_datagram(
-                &ctx_b,
-                &client_on_b_for_a,
-                &a_latest_header.into_header(),
-            );
+    /// Creates a connection between the two contexts starting from the second context.
+    /// Returns the connection identifiers of the created connection ends.
+    pub fn create_connection_on_b(
+        &mut self,
+        client_id_on_b: ClientId,
+        client_id_on_a: ClientId,
+        signer: Signer,
+    ) -> (ConnectionId, ConnectionId) {
+        TypedRelayerOps::<B, A>::create_connection_on_a(
+            &mut self.ctx_b,
+            &mut self.ctx_a,
+            client_id_on_b,
+            client_id_on_a,
+            signer,
+        )
+    }
 
-            assert!(
-                client_msg_b_res.is_ok(),
-                "create_client_update failed for context destination {ctx_b:?}, error: {client_msg_b_res:?}",
-            );
+    /// Creates a channel between the two contexts starting from the first context.
+    /// Returns the channel identifiers of the created channel ends.
+    pub fn create_channel_on_a(
+        &mut self,
+        conn_id_on_a: ConnectionId,
+        port_id_on_a: PortId,
+        conn_id_on_b: ConnectionId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) -> (ChannelId, ChannelId) {
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
 
-            let client_msg_b = client_msg_b_res.unwrap();
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
 
-            // - send the message to B. We bypass ICS18 interface and call directly into
-            // MockContext `recv` method (to avoid additional serialization steps).
-            let dispatch_res_b = ctx_b.deliver(&mut router_b, MsgEnvelope::Client(client_msg_b));
-            let validation_res = ctx_b.host.validate();
-            assert!(
-                validation_res.is_ok(),
-                "context validation failed with error {validation_res:?} for context {ctx_b:?}",
-            );
+        TypedRelayerOps::<A, B>::create_channel_on_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            client_id_on_a,
+            conn_id_on_a,
+            port_id_on_a,
+            client_id_on_b,
+            conn_id_on_b,
+            port_id_on_b,
+            signer,
+        )
+    }
 
-            // Check if the update succeeded.
-            assert!(
-                dispatch_res_b.is_ok(),
-                "Dispatch failed for host chain b with error: {dispatch_res_b:?}"
-            );
-            let client_height_b = ctx_b
-                .query_client_full_state(&client_on_b_for_a)
-                .unwrap()
-                .latest_height();
-            assert_eq!(client_height_b, ctx_a.query_latest_height().unwrap());
+    /// Creates a channel between the two contexts starting from the second context.
+    /// Returns the channel identifiers of the created channel ends.
+    pub fn create_channel_on_b(
+        &mut self,
+        conn_id_on_b: ConnectionId,
+        port_id_on_b: PortId,
+        conn_id_on_a: ConnectionId,
+        port_id_on_a: PortId,
+        signer: Signer,
+    ) -> (ChannelId, ChannelId) {
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
 
-            // Update client on chain A to latest height of B.
-            // - create the client update message with the latest header from B
-            // The test uses LightClientBlock that does not store the trusted height
-            let mut b_latest_header = ctx_b.query_latest_block().unwrap().clone().into_header();
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
 
-            let th = b_latest_header.height();
-            b_latest_header.set_trusted_height(th.decrement().unwrap());
+        TypedRelayerOps::<B, A>::create_channel_on_a(
+            &mut self.ctx_b,
+            &mut self.ctx_a,
+            client_id_on_b,
+            conn_id_on_b,
+            port_id_on_b,
+            client_id_on_a,
+            conn_id_on_a,
+            port_id_on_a,
+            signer,
+        )
+    }
 
-            let client_msg_a_res =
-                build_client_update_datagram(&ctx_a, &client_on_a_for_b, &b_latest_header);
+    /// Closes a channel between the two contexts starting from the first context.
+    pub fn close_channel_on_a(
+        &mut self,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        signer: Signer,
+    ) {
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_a, &chan_id_on_a))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
 
-            assert!(
-                client_msg_a_res.is_ok(),
-                "create_client_update failed for context destination {ctx_a:?}, error: {client_msg_a_res:?}",
-            );
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_b, &chan_id_on_b))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
 
-            let client_msg_a = client_msg_a_res.unwrap();
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
 
-            debug!("client_msg_a = {:?}", client_msg_a);
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
 
-            // - send the message to A
-            let dispatch_res_a = ctx_a.deliver(&mut router_a, MsgEnvelope::Client(client_msg_a));
-            let validation_res = ctx_a.host.validate();
-            assert!(
-                validation_res.is_ok(),
-                "context validation failed with error {validation_res:?} for context {ctx_a:?}",
-            );
+        TypedRelayerOps::<A, B>::close_channel_on_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            client_id_on_a,
+            chan_id_on_a,
+            port_id_on_a,
+            client_id_on_b,
+            chan_id_on_b,
+            port_id_on_b,
+            signer,
+        )
+    }
 
-            // Check if the update succeeded.
-            assert!(
-                dispatch_res_a.is_ok(),
-                "Dispatch failed for host chain a with error: {dispatch_res_a:?}"
-            );
-            let client_height_a = ctx_a
-                .query_client_full_state(&client_on_a_for_b)
-                .unwrap()
-                .latest_height();
-            assert_eq!(client_height_a, ctx_b.query_latest_height().unwrap());
-        }
+    /// Closes a channel between the two contexts starting from the second context.
+    pub fn close_channel_on_b(
+        &mut self,
+        chan_id_on_b: ChannelId,
+        port_id_on_b: PortId,
+        chan_id_on_a: ChannelId,
+        port_id_on_a: PortId,
+        signer: Signer,
+    ) {
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_b, &chan_id_on_b))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(&port_id_on_a, &chan_id_on_a))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedRelayerOps::<B, A>::close_channel_on_a(
+            &mut self.ctx_b,
+            &mut self.ctx_a,
+            client_id_on_b,
+            chan_id_on_b,
+            port_id_on_b,
+            client_id_on_a,
+            chan_id_on_a,
+            port_id_on_a,
+            signer,
+        )
+    }
+
+    /// Sends a packet from the first context to the second context.
+    /// The IBC packet is created by an IBC application on the first context.
+    pub fn send_packet_on_a(&mut self, packet: Packet, signer: Signer) {
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_a,
+                &packet.chan_id_on_a,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_b,
+                &packet.chan_id_on_b,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedRelayerOps::<A, B>::send_packet_on_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            packet,
+            client_id_on_a,
+            client_id_on_b,
+            signer,
+        )
     }
 }

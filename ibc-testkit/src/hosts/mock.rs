@@ -83,6 +83,10 @@ impl TestBlock for MockHeader {
     fn timestamp(&self) -> Timestamp {
         self.timestamp
     }
+
+    fn into_header_with_trusted(self, _: &Self) -> Self::Header {
+        self
+    }
 }
 
 impl From<MockHeader> for MockConsensusState {

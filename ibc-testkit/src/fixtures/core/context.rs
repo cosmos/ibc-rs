@@ -10,6 +10,7 @@ use typed_builder::TypedBuilder;
 
 use crate::context::MockGenericContext;
 use crate::hosts::{HostClientState, TestBlock, TestHost};
+use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 use crate::utils::year_2023;
 
@@ -21,7 +22,7 @@ where
     H: TestHost,
 {
     #[builder(default)]
-    pub host: H,
+    host: H,
 
     #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))]
     block_time: Duration,
@@ -56,11 +57,13 @@ where
         .expect("no underflow");
 
         let mut context = Self {
+            multi_store: Default::default(),
+            host: params.host,
             ibc_store: MockIbcStore::new(
                 params.latest_height.revision_number(),
                 Default::default(),
             ),
-            host: params.host,
+            ibc_router: MockRouter::new_with_transfer(),
         };
 
         // store is a height 0; no block

@@ -8,7 +8,7 @@ use ibc::core::router::types::module::ModuleId;
 
 use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
 
-#[derive(Default)]
+#[derive(Debug, Default)]
 pub struct MockRouter {
     pub router: BTreeMap<ModuleId, Arc<dyn Module>>,
 
