@@ -13,7 +13,7 @@ This ADR is meant to address the main limitation of our current light client API
     + By giving the light clients access to `ValidationContext` and `ExecutionContext`, we're effectively giving them the same capabilities as the core handlers.
     + Although our current model is that all code is trusted (including light clients we didn't write), restraining the capabilities we give to light clients at the very least eliminates a class of bugs (e.g. calling the wrong method), and serves as documentation for exactly which methods the light client needs.
 
-This ADR is all about fixing this issue; namely, to enable light clients to define their own `ValidationContext` and `ExecutionContext` traits for the host to implement. 
+This ADR is all about fixing this issue; namely, to enable light clients to define their own `ValidationContext` and `ExecutionContext` traits for the host to implement.
 
 [ADR 4]: ../architecture/adr-004-light-client-crates-extraction.md
 [later improved]: https://github.com/cosmos/ibc-rs/pull/584
@@ -26,9 +26,9 @@ This ADR is all about fixing this issue; namely, to enable light clients to defi
 
 ### Changes to `ClientState`
 
-The `ClientState` functionality is split into 3 traits: 
-+ `ClientStateCommon`, 
-+ `ClientStateValidation<ClientValidationContext>`, and 
+The `ClientState` functionality is split into 3 traits:
++ `ClientStateCommon`,
++ `ClientStateValidation<ClientValidationContext>`, and
 + `ClientStateExecution<ClientExecutionContext>`
 
 Then, `ClientState` is defined as
@@ -68,7 +68,7 @@ where
         &self,
         ctx: &ClientValidationContext,
         // ...
-    ) -> Result<(), ClientError> { 
+    ) -> Result<(), ClientError> {
         // `get_resource_Y()` accessible through `ctx`
     }
 
@@ -93,7 +93,7 @@ where `ClientExecutionContext` is defined as (simplified)
 
 ```rust
 pub trait ClientExecutionContext: Sized {
-    // ... a few associated types 
+    // ... a few associated types
 
     /// Called upon successful client creation and update
     fn store_client_state(
@@ -214,9 +214,7 @@ trait ClientState<ClientValidationContext, ClientExecutionContext>
 
 The problem with defining all methods directly under `ClientState` is that it would force users to use fully qualified notation to call any method.
 
-This arises from the fact that no method uses both generic parameters. [This playground] provides an explanatory example. Hence, our solution is to have all methods in a trait use every generic parameter of the trait to avoid this problem.
-
-[This playground]: https://play.rust-lang.org/?version=stable&mode=debug&edition=2021&gist=da65c22f1532cecc9f92a2b7cb2d1360
+This arises from the fact that no method uses both generic parameters. Hence, our solution is to have all methods in a trait use every generic parameter of the trait to avoid this problem.
 
 ### Why did you write custom `ClientState` and `ConsensusState` derive macros? Why not use `enum_dispatch` or `enum_delegate`?
 We ended up having to write our own custom derive macros because existing crates that offer similar functionality had shortcomings that prevented us from using them:
@@ -235,7 +233,7 @@ We ended up having to write our own custom derive macros because existing crates
 
 ### Negative
 + Increased complexity.
-+ Harder to document. 
++ Harder to document.
     + Specifically, we do not write any trait bounds on the `Client{Validation, Execution}Context` generic parameters. The effective trait bounds are spread across all light client implementations that a given host uses.
 
 
