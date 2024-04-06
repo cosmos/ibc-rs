@@ -7,6 +7,8 @@ use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use ibc_core_commitment_types::merkle::{apply_prefix, MerkleProof};
+use ibc_core_commitment_types::proto::ics23::{HostFunctionsManager, HostFunctionsProvider};
+use ibc_core_commitment_types::specs::ProofSpecs;
 use ibc_core_host::types::identifiers::ClientType;
 use ibc_core_host::types::path::{Path, UpgradeClientPath};
 use ibc_primitives::prelude::*;
@@ -59,7 +61,14 @@ impl ClientStateCommon for ClientState {
         path: Path,
         value: Vec<u8>,
     ) -> Result<(), ClientError> {
-        verify_membership(self.inner(), prefix, proof, root, path, value)
+        verify_membership::<HostFunctionsManager>(
+            &self.inner().proof_specs,
+            prefix,
+            proof,
+            root,
+            path,
+            value,
+        )
     }
 
     fn verify_non_membership(
@@ -69,7 +78,13 @@ impl ClientStateCommon for ClientState {
         root: &CommitmentRoot,
         path: Path,
     ) -> Result<(), ClientError> {
-        verify_non_membership(self.inner(), prefix, proof, root, path)
+        verify_non_membership::<HostFunctionsManager>(
+            &self.inner().proof_specs,
+            prefix,
+            proof,
+            root,
+            path,
+        )
     }
 }
 
@@ -166,8 +181,8 @@ pub fn verify_upgrade_client(
     let last_height = latest_height.revision_height();
 
     // Verify the proof of the upgraded client state
-    verify_membership(
-        client_state,
+    verify_membership::<HostFunctionsManager>(
+        &client_state.proof_specs,
         &upgrade_path_prefix,
         &proof_upgrade_client,
         root,
@@ -176,8 +191,8 @@ pub fn verify_upgrade_client(
     )?;
 
     // Verify the proof of the upgraded consensus state
-    verify_membership(
-        client_state,
+    verify_membership::<HostFunctionsManager>(
+        &client_state.proof_specs,
         &upgrade_path_prefix,
         &proof_upgrade_consensus_state,
         root,
@@ -193,8 +208,8 @@ pub fn verify_upgrade_client(
 /// Note that this function is typically implemented as part of the
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
-pub fn verify_membership(
-    client_state: &ClientStateType,
+pub fn verify_membership<P: HostFunctionsProvider>(
+    proof_specs: &ProofSpecs,
     prefix: &CommitmentPrefix,
     proof: &CommitmentProofBytes,
     root: &CommitmentRoot,
@@ -205,13 +220,7 @@ pub fn verify_membership(
     let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
     merkle_proof
-        .verify_membership(
-            &client_state.proof_specs,
-            root.clone().into(),
-            merkle_path,
-            value,
-            0,
-        )
+        .verify_membership::<P>(proof_specs, root.clone().into(), merkle_path, value, 0)
         .map_err(ClientError::Ics23Verification)
 }
 
@@ -220,8 +229,8 @@ pub fn verify_membership(
 /// Note that this function is typically implemented as part of the
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
-pub fn verify_non_membership(
-    client_state: &ClientStateType,
+pub fn verify_non_membership<P: HostFunctionsProvider>(
+    proof_specs: &ProofSpecs,
     prefix: &CommitmentPrefix,
     proof: &CommitmentProofBytes,
     root: &CommitmentRoot,
@@ -231,6 +240,6 @@ pub fn verify_non_membership(
     let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
     merkle_proof
-        .verify_non_membership(&client_state.proof_specs, root.clone().into(), merkle_path)
+        .verify_non_membership::<P>(proof_specs, root.clone().into(), merkle_path)
         .map_err(ClientError::Ics23Verification)
 }

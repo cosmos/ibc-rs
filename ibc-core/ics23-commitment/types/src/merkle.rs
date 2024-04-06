@@ -1,13 +1,13 @@
 //! Merkle proof utilities
 
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::Protobuf;
 use ibc_proto::ibc::core::commitment::v1::{MerklePath, MerkleProof as RawMerkleProof, MerkleRoot};
 use ibc_proto::ics23::commitment_proof::Proof;
 use ibc_proto::ics23::{
     calculate_existence_root, verify_membership, verify_non_membership, CommitmentProof,
-    NonExistenceProof,
+    HostFunctionsProvider, NonExistenceProof,
 };
-use ibc_proto::Protobuf;
 
 use crate::commitment::{CommitmentPrefix, CommitmentRoot};
 use crate::error::CommitmentError;
@@ -53,7 +53,7 @@ impl From<MerkleProof> for RawMerkleProof {
 }
 
 impl MerkleProof {
-    pub fn verify_membership(
+    pub fn verify_membership<H: HostFunctionsProvider>(
         &self,
         specs: &ProofSpecs,
         root: MerkleRoot,
@@ -96,17 +96,10 @@ impl MerkleProof {
         {
             match &proof.proof {
                 Some(Proof::Exist(existence_proof)) => {
-                    subroot =
-                        calculate_existence_root::<ics23::HostFunctionsManager>(existence_proof)
-                            .map_err(|_| CommitmentError::InvalidMerkleProof)?;
+                    subroot = calculate_existence_root::<H>(existence_proof)
+                        .map_err(|_| CommitmentError::InvalidMerkleProof)?;
 
-                    if !verify_membership::<ics23::HostFunctionsManager>(
-                        proof,
-                        spec,
-                        &subroot,
-                        key.as_bytes(),
-                        &value,
-                    ) {
+                    if !verify_membership::<H>(proof, spec, &subroot, key.as_bytes(), &value) {
                         return Err(CommitmentError::VerificationFailure);
                     }
                     value.clone_from(&subroot);
@@ -122,7 +115,7 @@ impl MerkleProof {
         Ok(())
     }
 
-    pub fn verify_non_membership(
+    pub fn verify_non_membership<H: HostFunctionsProvider>(
         &self,
         specs: &ProofSpecs,
         root: MerkleRoot,
@@ -159,19 +152,14 @@ impl MerkleProof {
             .ok_or(CommitmentError::InvalidMerkleProof)?;
         match &proof.proof {
             Some(Proof::Nonexist(non_existence_proof)) => {
-                let subroot = calculate_non_existence_root(non_existence_proof)?;
+                let subroot = calculate_non_existence_root::<H>(non_existence_proof)?;
 
-                if !verify_non_membership::<ics23::HostFunctionsManager>(
-                    proof,
-                    spec,
-                    &subroot,
-                    key.as_bytes(),
-                ) {
+                if !verify_non_membership::<H>(proof, spec, &subroot, key.as_bytes()) {
                     return Err(CommitmentError::VerificationFailure);
                 }
 
                 // verify membership proofs starting from index 1 with value = subroot
-                self.verify_membership(specs, root, keys, subroot, 1)
+                self.verify_membership::<H>(specs, root, keys, subroot, 1)
             }
             _ => Err(CommitmentError::InvalidMerkleProof),
         }
@@ -179,13 +167,13 @@ impl MerkleProof {
 }
 
 // TODO move to ics23
-fn calculate_non_existence_root(proof: &NonExistenceProof) -> Result<Vec<u8>, CommitmentError> {
+fn calculate_non_existence_root<H: HostFunctionsProvider>(
+    proof: &NonExistenceProof,
+) -> Result<Vec<u8>, CommitmentError> {
     if let Some(left) = &proof.left {
-        calculate_existence_root::<ics23::HostFunctionsManager>(left)
-            .map_err(|_| CommitmentError::InvalidMerkleProof)
+        calculate_existence_root::<H>(left).map_err(|_| CommitmentError::InvalidMerkleProof)
     } else if let Some(right) = &proof.right {
-        calculate_existence_root::<ics23::HostFunctionsManager>(right)
-            .map_err(|_| CommitmentError::InvalidMerkleProof)
+        calculate_existence_root::<H>(right).map_err(|_| CommitmentError::InvalidMerkleProof)
     } else {
         Err(CommitmentError::InvalidMerkleProof)
     }
