@@ -208,7 +208,7 @@ pub fn verify_upgrade_client(
 /// Note that this function is typically implemented as part of the
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
-pub fn verify_membership<P: HostFunctionsProvider>(
+pub fn verify_membership<H: HostFunctionsProvider>(
     proof_specs: &ProofSpecs,
     prefix: &CommitmentPrefix,
     proof: &CommitmentProofBytes,
@@ -220,7 +220,7 @@ pub fn verify_membership<P: HostFunctionsProvider>(
     let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
     merkle_proof
-        .verify_membership::<P>(proof_specs, root.clone().into(), merkle_path, value, 0)
+        .verify_membership::<H>(proof_specs, root.clone().into(), merkle_path, value, 0)
         .map_err(ClientError::Ics23Verification)
 }
 
@@ -229,7 +229,7 @@ pub fn verify_membership<P: HostFunctionsProvider>(
 /// Note that this function is typically implemented as part of the
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
-pub fn verify_non_membership<P: HostFunctionsProvider>(
+pub fn verify_non_membership<H: HostFunctionsProvider>(
     proof_specs: &ProofSpecs,
     prefix: &CommitmentPrefix,
     proof: &CommitmentProofBytes,
@@ -240,6 +240,6 @@ pub fn verify_non_membership<P: HostFunctionsProvider>(
     let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
     merkle_proof
-        .verify_non_membership::<P>(proof_specs, root.clone().into(), merkle_path)
+        .verify_non_membership::<H>(proof_specs, root.clone().into(), merkle_path)
         .map_err(ClientError::Ics23Verification)
 }
