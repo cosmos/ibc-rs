@@ -139,8 +139,8 @@ pub trait TestHeader: Clone + Debug + Into<Any> {
 
 ### 3. Decoupling IbcContext and Host environment
 
-Currently, `MockContext` implements the top validation and execution context of
-`ibc-rs`. It contains other host-specific data e.g. `host_chain_id`,
+Currently, `MockContext` implements the top-level [validation](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-core/ics25-handler/src/entrypoint.rs#L45) and [execution](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-core/ics25-handler/src/entrypoint.rs#L112) contexts of
+`ibc-rs`, as opposed to the more granular contexts of each of the individual handlers. It contains other host-specific data e.g. `host_chain_id`,
 `block_time` - that are not directly relevant to the IBC context. If we think
 of `MockContext` as a real blockchain context, the `MockContext` represents the top-
 level runtime; it contains `MockIbcStore`, which is a more appropriate candidate to implement the validation and execution contexts than the `MockContext` itself.
