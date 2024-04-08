@@ -38,11 +38,14 @@ where
 
     let client_state = client_val_ctx.client_state(&client_id)?;
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
 
     let proof = ibc_ctx
         .get_proof(
-            current_height,
+            proof_height,
             &Path::ClientState(ClientStatePath::new(client_id.clone())),
         )
         .ok_or_else(|| {
@@ -54,7 +57,7 @@ where
     Ok(QueryClientStateResponse::new(
         client_state.into(),
         proof,
-        current_height,
+        proof_height,
     ))
 }
 
@@ -111,11 +114,14 @@ where
             })?
     };
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
 
     let proof = ibc_ctx
         .get_proof(
-            current_height,
+            proof_height,
             &Path::ClientConsensusState(ClientConsensusStatePath::new(
                 client_id.clone(),
                 height.revision_number(),
@@ -131,7 +137,7 @@ where
     Ok(QueryConsensusStateResponse::new(
         consensus_state.into(),
         proof,
-        current_height,
+        proof_height,
     ))
 }
 
