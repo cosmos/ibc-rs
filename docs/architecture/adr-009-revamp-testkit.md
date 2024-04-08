@@ -18,7 +18,7 @@ To overcome this, we need to improve our test framework that allows:
 
 - testing different implementations (traits).
 - succinct tests (useful `util` methods).
-- improving test coverage (Merkle proof generation).
+- improving test coverage (i.e. validating Merkle proof generation).
 - integration tests exercising the IBC workflow (relayer-like interface)
 
 ## Decision
@@ -29,31 +29,31 @@ tests succinct and readable. Instead of bootstrapping the mock data, we should
 use valid steps to generate it - so that we know the exact steps to reach a
 state to reproduce in a real environment.
 
-To achieve this, we have broken down the proposal into sub-proposals.
+To achieve this, we have broken down the proposal into sub-proposals:
 
 ### Adopt a Merkle store for the test framework
 
 The current framework uses `HashMap` and `HashSet` to store data. This works for
 many test scenarios, but it fails to test proof-sensitive scenarios. Because of
-this, we don't have any connection, channel handshake or packet relay tests for
-Tendermint light client.
+this, we don't have any connection, channel handshake, or packet relay tests that
+cover the Tendermint light client.
 
 We generalize
 [`MockContext`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/types.rs#L103)
 to use a Merkle store which is used for IBC Context's store. For concrete or
-default implementation, we can use the IAVL Merkle store implementation from
+default implementations, we can use the IAVL Merkle store implementation from
 `informalsystems/basecoin-rs`.
 
 ### Modularize the host environment
 
 Currently, we are using `Mock` and `SyntheticTendermint`
 [variants](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L33-L36)
-as the host environments. To manage these two different environments, we also
+as host environments. To manage these two different environments, we also
 introduced
 [`HostBlocks`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L72-75)
-for corresponding host variants.
+for encapsulating the possible host variants that need to be covered by `ibc-testkit`.
 
-This creates friction if we have to add a new host variant. It creates the same
+However, this creates friction in the case when we need to add new host variants. It creates the same
 problem as why we have `ibc-derive` crate for `ClientState` and
 `ConsensusState`. This should be refactored by a generic `TestHost` trait that
 maintains its corresponding types e.g. `Block` types, via associated types.
@@ -61,7 +61,7 @@ Finally, we generalize the `MockContext` once more to use this `TestHost` trait
 instead of a concrete enum variant.
 
 This `TestHost` trait should be responsible for generating blocks, headers,
-client and consensus states specific to that host environment.
+client, and consensus states specific to that host environment.
 
 ```rs
 /// TestHost is a trait that defines the interface for a host blockchain.
@@ -72,16 +72,16 @@ pub trait TestHost: Default + Debug + Sized {
     /// The type of client state produced by the host.
     type ClientState: Into<AnyClientState> + Debug;
 
-    /// The type of block parameters to produce a block
+    /// The type of block parameters to produce a block.
     type BlockParams: Debug + Default;
 
-    /// The type of light client parameters to produce a light client state
+    /// The type of light client parameters to produce a light client state.
     type LightClientParams: Debug + Default;
 
     /// The history of blocks produced by the host chain.
     fn history(&self) -> &VecDeque<Self::Block>;
 
-    /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
+    /// Triggers the advancing of the host chain by extending the history of blocks (or headers).
     fn advance_block(
         &mut self,
         commitment_root: Vec<u8>,
@@ -108,7 +108,7 @@ pub trait TestHost: Default + Debug + Sized {
 
 /// TestBlock is a trait that defines the interface for a block produced by a host blockchain.
 pub trait TestBlock: Clone + Debug {
-    /// The type of header can be extracted from the block.
+    /// The type of header that can be extracted from the block.
     type Header: TestHeader;
 
     /// The height of the block.
@@ -141,10 +141,9 @@ pub trait TestHeader: Clone + Debug + Into<Any> {
 
 Currently, `MockContext` implements the top validation and execution context of
 `ibc-rs`. It contains other host-specific data e.g. `host_chain_id`,
-`block_time` - that are irrelevant to the IBC context directly. If we think
-`MockContext` as a real blockchain context, the `MockContext` represents the top
-runtime - which contains the IBC module. So we implement the validation and
-execution context on `MockIbcStore`, instead of `MockContext`.
+`block_time` - that are not directly relevant to the IBC context. If we think
+of `MockContext` as a real blockchain context, the `MockContext` represents the top-
+level runtime; it contains `MockIbcStore`, which is a more appropriate candidate to implement the validation and execution contexts than the `MockContext` itself.
 
 With this, the `MockContext` contains two decoupled parts - the host and the IBC
 module.
@@ -154,8 +153,8 @@ module.
 With the above changes, we can refactor the `MockContext` to have
 blockchain-like interfaces.
 
-The `MockContext` should have `end_block`, `produce_block` and `begin_block` to
-mimic the real blockchain environment such as Cosmos-SDK.
+The `MockContext` should have `end_block`, `produce_block`, and `begin_block` to
+mimic real blockchain environments, such as the Cosmos-SDK.
 
 ```rs
 impl<S, H> MockContext<S, H>
@@ -175,9 +174,9 @@ where
 
 ### ICS23 compatible proof generation
 
-With the new ability of proof generation, we can now test the Tendermint light
+With the new proof generation capabilities, we can now test the Tendermint light
 clients. But we need our proofs to be ICS23 compatible. ICS23 expects the IBC
-store root to be committed at a commitment prefix at a top store in the host
+store root to be committed at a commitment prefix at a top-level store in the host
 environment.
 
 For this, we add an extra store in `MockContext` where the `MockIbcStore`
@@ -204,7 +203,7 @@ and commitment prefix. But it has to know the proofs of its commitment prefix of
 the previous heights.
 
 So we add an extra store in `MockIbcStore` to store the proofs from previous
-heights. This is similar to storing `HostConsensusState` of previous heights.
+heights. This is similar to storing `HostConsensusState`s of previous heights.
 
 ```rs
 #[derive(Debug)]
@@ -213,9 +212,9 @@ where
     S: ProvableStore + Debug,
 {
     ...
-    /// Map of host consensus states
+    /// Map of host consensus states.
     pub host_consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
-    /// Map of proofs of ibc commitment prefix
+    /// Map of proofs of ibc commitment prefix.
     pub ibc_commiment_proofs: Arc<Mutex<BTreeMap<u64, CommitmentProof>>>,
 }
 ```
@@ -227,8 +226,8 @@ end block. The storing of proofs and host consensus states happens in the
 ### Integration Test via `RelayerContext`
 
 With all the above changes, we can now write an integration test that tests the
-IBC workflow - client creation, connection handshake, channel handshake and
-packet relay for any host environment that implements `TestHost`.
+IBC workflow - client creation, connection handshake, channel handshake, and
+packet relaying for any host environment that implements `TestHost`.
 
 This can be done by reading the
 [IBC events](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/types.rs#L95)
@@ -250,7 +249,7 @@ To achieve blockchain-like interfaces, we removed `max_history_size` and
 
 Also to minimize verbosity while writing tests (as Rust doesn't support default
 arguments to function parameters), we want to use some parameter builders. For
-that, we can use [`TypedBuilder`](https://crates.io/crates/typed-builder) crate.
+that, we can use the [`TypedBuilder`](https://crates.io/crates/typed-builder) crate.
 
 ## Status
 
@@ -262,15 +261,14 @@ This ADR pays the technical debt of the existing testing framework.
 
 ### Positive
 
-The future tests will be more readable and maintainable. The test framework
-becomes modular and leverages Rust's trait system. Even the `ibc-rs` users may
-benefit from this framework to test their implementations of `ibc-rs`
-components.
+Future tests will be more readable and maintainable. The test framework
+becomes modular and leverages Rust's trait system. `ibc-rs` users may
+benefit from this framework, which allows them to test their host implementations of `ibc-rs` components.
 
 ### Negative
 
 This requires a significant refactoring of the existing tests. Since this may
-take some time, the parallel development on `main` branch may conflict with this
+take some time, the parallel development on the `main` branch may conflict with this
 work.
 
 ## References
