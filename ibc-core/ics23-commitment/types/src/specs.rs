@@ -18,8 +18,7 @@ impl ProofSpecs {
         vec![
             ics23::iavl_spec(),       // Format of proofs-iavl (iavl merkle proofs)
             ics23::tendermint_spec(), // Format of proofs-tendermint (crypto/ merkle SimpleProof)
-        ]
-        .into()
+        ].try_into().expect("should convert successfully")
     }
 
     pub fn is_empty(&self) -> bool {
@@ -45,9 +44,15 @@ impl ProofSpecs {
     }
 }
 
-impl From<Vec<RawProofSpec>> for ProofSpecs {
-    fn from(ics23_specs: Vec<RawProofSpec>) -> Self {
-        Self(ics23_specs.into_iter().map(Into::into).collect())
+impl TryFrom<Vec<RawProofSpec>> for ProofSpecs {
+    type Error = CommitmentError;
+    fn try_from(ics23_specs: Vec<RawProofSpec>) -> Result<Self, CommitmentError> {
+    let mut specs = Vec::new();
+    for raw_spec in ics23_specs {
+        let spec = ProofSpec::try_from(raw_spec)?;
+        specs.push(spec);
+    }
+    Ok(ProofSpecs(specs))
     }
 }
 
@@ -61,15 +66,29 @@ impl From<ProofSpecs> for Vec<RawProofSpec> {
 #[derive(Clone, Debug, PartialEq)]
 struct ProofSpec(RawProofSpec);
 
-impl From<RawProofSpec> for ProofSpec {
-    fn from(spec: RawProofSpec) -> Self {
-        Self(RawProofSpec {
-            leaf_spec: spec.leaf_spec.map(|lop| LeafOp::from(lop).0),
-            inner_spec: spec.inner_spec.map(|ispec| InnerSpec::from(ispec).0),
+impl TryFrom<RawProofSpec> for ProofSpec {
+    type Error = CommitmentError;
+    fn try_from(spec: RawProofSpec) -> Result<Self, CommitmentError> {
+        if spec.max_depth < spec.min_depth
+            || spec.min_depth < 0
+            || spec.max_depth < 0
+        {
+            return Err(CommitmentError::InvalidDepthRange(spec.min_depth, spec.max_depth));
+        }
+
+        let leaf_spec = spec.leaf_spec.map(|lop| LeafOp::from(lop)).map(|lop| lop.0);
+        let inner_spec = spec.inner_spec
+            .map(|ispec| InnerSpec::try_from(ispec))
+            .transpose()? 
+            .map(|ispec| ispec.0);
+
+        Ok(Self(RawProofSpec {
+            leaf_spec,
+            inner_spec,
             max_depth: spec.max_depth,
             min_depth: spec.min_depth,
             prehash_key_before_comparison: spec.prehash_key_before_comparison,
-        })
+        }))
     }
 }
 
@@ -119,16 +138,29 @@ impl From<LeafOp> for RawLeafOp {
 #[derive(Clone, Debug, PartialEq)]
 struct InnerSpec(RawInnerSpec);
 
-impl From<RawInnerSpec> for InnerSpec {
-    fn from(inner_spec: RawInnerSpec) -> Self {
-        Self(RawInnerSpec {
+impl TryFrom<RawInnerSpec> for InnerSpec {
+    type Error = CommitmentError;
+    fn try_from(inner_spec: RawInnerSpec) -> Result<Self, CommitmentError> {
+        if inner_spec.child_size <= 0 {
+            return Err(CommitmentError::InvalidChildSize(inner_spec.child_size));
+        }
+        if inner_spec.min_prefix_length > inner_spec.max_prefix_length
+         || inner_spec.min_prefix_length < 0 
+         || inner_spec.max_prefix_length < 0 {
+            return Err(CommitmentError::InvalidPrefixLengthRange(
+                inner_spec.min_prefix_length,
+                inner_spec.max_prefix_length,
+            ));
+        }
+        
+        Ok(Self(RawInnerSpec {
             child_order: inner_spec.child_order,
             child_size: inner_spec.child_size,
             min_prefix_length: inner_spec.min_prefix_length,
             max_prefix_length: inner_spec.max_prefix_length,
             empty_child: inner_spec.empty_child,
             hash: inner_spec.hash,
-        })
+        }))
     }
 }
 
