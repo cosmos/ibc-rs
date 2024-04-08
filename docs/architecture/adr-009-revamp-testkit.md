@@ -46,16 +46,18 @@ default implementations, we can use the IAVL Merkle store implementation from
 
 ### 2. Modularize the host environment
 
-Currently, we are using `Mock` and `SyntheticTendermint`
-[variants](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L33-L36)
-as host environments. To manage these two different environments, we also
+Currently, we are using `Mock` and `SyntheticTendermint` variants of
+[`HostType`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L33-L36)
+enum as host environments. To manage these two different environments, we also
 introduced
 [`HostBlocks`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L72-75)
 for encapsulating the possible host variants that need to be covered by `ibc-testkit`.
 
 However, this creates friction in the case when we need to add new host variants. It creates the same
-problem as why we have `ibc-derive` crate for `ClientState` and
-`ConsensusState`. This should be refactored by a generic `TestHost` trait that
+problem that the `ibc-derive` crate was designed to solve for `ClientState` and
+`ConsensusState` types, namely: dispatching methods to underlying variants of a top-level enum.
+But, a concrete `MockContext` will always have a unique `HostType` and its corresponding `HostBlocks`.
+So we can refactor `HostTypes` and `HockBlocks` with a generic `TestHost` trait that
 maintains its corresponding types e.g. `Block` types, via associated types.
 Finally, we generalize the `MockContext` once more to use this `TestHost` trait
 instead of a concrete enum variant.
