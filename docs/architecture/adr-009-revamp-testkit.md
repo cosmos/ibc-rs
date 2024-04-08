@@ -31,7 +31,7 @@ state to reproduce in a real environment.
 
 To achieve this, we have broken down the proposal into sub-proposals:
 
-### Adopt a Merkle store for the test framework
+### 1. Adopt a Merkle store for the test framework
 
 The current framework uses `HashMap` and `HashSet` to store data. This works for
 many test scenarios, but it fails to test proof-sensitive scenarios. Because of
@@ -44,7 +44,7 @@ to use a Merkle store which is used for IBC Context's store. For concrete or
 default implementations, we can use the IAVL Merkle store implementation from
 `informalsystems/basecoin-rs`.
 
-### Modularize the host environment
+### 2. Modularize the host environment
 
 Currently, we are using `Mock` and `SyntheticTendermint`
 [variants](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L33-L36)
@@ -137,7 +137,7 @@ pub trait TestHeader: Clone + Debug + Into<Any> {
 }
 ```
 
-### Decoupling IbcContext and Host environment
+### 3. Decoupling IbcContext and Host environment
 
 Currently, `MockContext` implements the top validation and execution context of
 `ibc-rs`. It contains other host-specific data e.g. `host_chain_id`,
@@ -148,7 +148,7 @@ level runtime; it contains `MockIbcStore`, which is a more appropriate candidate
 With this, the `MockContext` contains two decoupled parts - the host and the IBC
 module.
 
-### Chain-like interface for `MockContext`
+### 4. Chain-like interface for `MockContext`
 
 With the above changes, we can refactor the `MockContext` to have
 blockchain-like interfaces.
@@ -172,7 +172,7 @@ where
 }
 ```
 
-### ICS23 compatible proof generation
+### 5. ICS23 compatible proof generation
 
 With the new proof generation capabilities, we can now test the Tendermint light
 clients. But we need our proofs to be ICS23 compatible. ICS23 expects the IBC
@@ -223,7 +223,7 @@ The storing of the IBC store root at the IBC commitment prefix happens in the
 end block. The storing of proofs and host consensus states happens in the
 `begin_block` of the `MockContext`.
 
-### Integration Test via `RelayerContext`
+### 6. Integration Tests via `RelayerContext`
 
 With all the above changes, we can now write an integration test that tests the
 IBC workflow - client creation, connection handshake, channel handshake, and
