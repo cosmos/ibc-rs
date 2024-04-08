@@ -39,20 +39,20 @@ where
 
     let channel_end = ibc_ctx.channel_end(&channel_end_path)?;
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
+
     let proof = ibc_ctx
-        .get_proof(current_height, &Path::ChannelEnd(channel_end_path.clone()))
+        .get_proof(proof_height, &Path::ChannelEnd(channel_end_path.clone()))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
                 "Proof not found for channel end path {channel_end_path:?}"
             ))
         })?;
 
-    Ok(QueryChannelResponse::new(
-        channel_end,
-        proof,
-        current_height,
-    ))
+    Ok(QueryChannelResponse::new(channel_end, proof, proof_height))
 }
 
 /// Queries for all existing IBC channels and returns the corresponding channel ends
@@ -129,11 +129,14 @@ where
 
     let client_state = client_val_ctx.client_state(connection_end.client_id())?;
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
 
     let proof = ibc_ctx
         .get_proof(
-            current_height,
+            proof_height,
             &Path::ClientState(ClientStatePath::new(connection_end.client_id().clone())),
         )
         .ok_or_else(|| {
@@ -146,7 +149,7 @@ where
     Ok(QueryChannelClientStateResponse::new(
         IdentifiedClientState::new(connection_end.client_id().clone(), client_state.into()),
         proof,
-        current_height,
+        proof_height,
     ))
 }
 
@@ -184,11 +187,14 @@ where
 
     let consensus_state = client_val_ctx.consensus_state(&consensus_path)?;
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
 
     let proof = ibc_ctx
         .get_proof(
-            current_height,
+            proof_height,
             &Path::ClientConsensusState(consensus_path.clone()),
         )
         .ok_or_else(|| {
@@ -201,7 +207,7 @@ where
         consensus_state.into(),
         connection_end.client_id().clone(),
         proof,
-        current_height,
+        proof_height,
     ))
 }
 
@@ -219,10 +225,13 @@ where
 
     let packet_commitment_data = ibc_ctx.get_packet_commitment(&commitment_path)?;
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
 
     let proof = ibc_ctx
-        .get_proof(current_height, &Path::Commitment(commitment_path.clone()))
+        .get_proof(proof_height, &Path::Commitment(commitment_path.clone()))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
                 "Proof not found for packet commitment path: {commitment_path:?}"
@@ -232,7 +241,7 @@ where
     Ok(QueryPacketCommitmentResponse::new(
         packet_commitment_data,
         proof,
-        current_height,
+        proof_height,
     ))
 }
 
@@ -274,10 +283,13 @@ where
     // Unreceived packets are not stored
     let packet_receipt_data = ibc_ctx.get_packet_receipt(&receipt_path);
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
 
     let proof = ibc_ctx
-        .get_proof(current_height, &Path::Receipt(receipt_path.clone()))
+        .get_proof(proof_height, &Path::Receipt(receipt_path.clone()))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
                 "Proof not found for packet receipt path: {receipt_path:?}"
@@ -287,7 +299,7 @@ where
     Ok(QueryPacketReceiptResponse::new(
         packet_receipt_data.is_ok(),
         proof,
-        current_height,
+        proof_height,
     ))
 }
 
@@ -305,10 +317,13 @@ where
 
     let packet_acknowledgement_data = ibc_ctx.get_packet_acknowledgement(&acknowledgement_path)?;
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
 
     let proof = ibc_ctx
-        .get_proof(current_height, &Path::Ack(acknowledgement_path.clone()))
+        .get_proof(proof_height, &Path::Ack(acknowledgement_path.clone()))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
                 "Proof not found for packet acknowledgement path: {acknowledgement_path:?}"
@@ -318,7 +333,7 @@ where
     Ok(QueryPacketAcknowledgementResponse::new(
         packet_acknowledgement_data,
         proof,
-        current_height,
+        proof_height,
     ))
 }
 
@@ -408,10 +423,13 @@ where
 
     let next_sequence_send = ibc_ctx.get_next_sequence_send(&next_seq_send_path)?;
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
 
     let proof = ibc_ctx
-        .get_proof(current_height, &Path::SeqSend(next_seq_send_path))
+        .get_proof(proof_height, &Path::SeqSend(next_seq_send_path))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
                 "Next sequence send proof not found for channel {}",
@@ -422,7 +440,7 @@ where
     Ok(QueryNextSequenceSendResponse::new(
         next_sequence_send,
         proof,
-        current_height,
+        proof_height,
     ))
 }
 
@@ -438,10 +456,13 @@ where
 
     let next_sequence_recv = ibc_ctx.get_next_sequence_recv(&next_seq_recv_path)?;
 
-    let current_height = ibc_ctx.host_height()?;
+    let proof_height = match request.query_height {
+        Some(height) => height,
+        None => ibc_ctx.host_height()?,
+    };
 
     let proof = ibc_ctx
-        .get_proof(current_height, &Path::SeqRecv(next_seq_recv_path))
+        .get_proof(proof_height, &Path::SeqRecv(next_seq_recv_path))
         .ok_or_else(|| {
             QueryError::proof_not_found(format!(
                 "Next sequence receive proof not found for channel {}",
@@ -452,6 +473,6 @@ where
     Ok(QueryNextSequenceReceiveResponse::new(
         next_sequence_recv,
         proof,
-        current_height,
+        proof_height,
     ))
 }
