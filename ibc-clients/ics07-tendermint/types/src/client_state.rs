@@ -296,7 +296,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             unbonding_period,
             max_clock_drift,
             latest_height,
-            raw.proof_specs.into(),
+            raw.proof_specs.try_into()?,
             raw.upgrade_path,
             frozen_height,
             allow_update,
@@ -559,7 +559,7 @@ mod tests {
             Test {
                 name: "Invalid (empty) proof specs".to_string(),
                 params: ClientStateParams {
-                    proof_specs: Vec::<Ics23ProofSpec>::new().into(),
+                    proof_specs: Vec::<Ics23ProofSpec>::new().try_into().expect("should convert successfully"),
                     ..default_params.clone()
                 },
                 want_pass: false,
@@ -573,7 +573,7 @@ mod tests {
                         min_depth: 2,
                         max_depth: 1,
                         prehash_key_before_comparison: false,
-                    }].into(),
+                    }].try_into().expect("should convert successfully"),
                     ..default_params
                 },
                 want_pass: false,
