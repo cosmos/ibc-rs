@@ -21,7 +21,7 @@ use super::{
     QueryUpgradedConsensusStateResponse,
 };
 use crate::core::client::QueryClientStateRequest;
-use crate::core::context::QueryContext;
+use crate::core::context::{ProvableContext, QueryContext};
 use crate::error::QueryError;
 
 /// Queries for the client state of a given client id.
@@ -202,8 +202,8 @@ pub fn query_upgraded_client_state<I, U>(
     request: &QueryUpgradedClientStateRequest,
 ) -> Result<QueryUpgradedClientStateResponse, QueryError>
 where
-    I: QueryContext,
-    U: UpgradeValidationContext,
+    I: ValidationContext,
+    U: UpgradeValidationContext + ProvableContext,
 {
     let upgrade_revision_height = match request.upgrade_height {
         Some(height) => height.revision_height(),
@@ -227,7 +227,7 @@ where
         None => ibc_ctx.host_height()?,
     };
 
-    let proof = ibc_ctx
+    let proof = upgrade_ctx
         .get_proof(
             proof_height,
             &Path::UpgradeClient(upgraded_client_state_path),
@@ -252,8 +252,8 @@ pub fn query_upgraded_consensus_state<I, U>(
     request: &QueryUpgradedConsensusStateRequest,
 ) -> Result<QueryUpgradedConsensusStateResponse, QueryError>
 where
-    I: QueryContext,
-    U: UpgradeValidationContext,
+    I: ValidationContext,
+    U: UpgradeValidationContext + ProvableContext,
     UpgradedConsensusStateRef<U>: Into<Any>,
 {
     let upgrade_revision_height = match request.upgrade_height {
@@ -278,7 +278,7 @@ where
         None => ibc_ctx.host_height()?,
     };
 
-    let proof = ibc_ctx
+    let proof = upgrade_ctx
         .get_proof(
             proof_height,
             &Path::UpgradeClient(upgraded_consensus_state_path),
