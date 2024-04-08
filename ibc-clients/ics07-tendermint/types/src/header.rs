@@ -137,10 +137,12 @@ impl Header {
             });
         }
 
-        if self.validator_set.hash_with::<H>() != self.signed_header.header.validators_hash {
+        let validators_hash = self.validator_set.hash_with::<H>();
+
+        if validators_hash != self.signed_header.header.validators_hash {
             return Err(Error::MismatchValidatorsHashes {
                 signed_header_validators_hash: self.signed_header.header.validators_hash,
-                validators_hash: self.validator_set.hash_with::<H>(),
+                validators_hash,
             });
         }
 

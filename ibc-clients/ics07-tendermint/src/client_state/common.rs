@@ -43,7 +43,7 @@ impl ClientStateCommon for ClientState {
         proof_upgrade_consensus_state: CommitmentProofBytes,
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
-        verify_upgrade_client(
+        verify_upgrade_client::<HostFunctionsManager>(
             self.inner(),
             upgraded_client_state,
             upgraded_consensus_state,
@@ -139,7 +139,7 @@ pub fn validate_proof_height(
 /// Note that this function is typically implemented as part of the
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
-pub fn verify_upgrade_client(
+pub fn verify_upgrade_client<H: HostFunctionsProvider>(
     client_state: &ClientStateType,
     upgraded_client_state: Any,
     upgraded_consensus_state: Any,
@@ -181,7 +181,7 @@ pub fn verify_upgrade_client(
     let last_height = latest_height.revision_height();
 
     // Verify the proof of the upgraded client state
-    verify_membership::<HostFunctionsManager>(
+    verify_membership::<H>(
         &client_state.proof_specs,
         &upgrade_path_prefix,
         &proof_upgrade_client,
@@ -191,7 +191,7 @@ pub fn verify_upgrade_client(
     )?;
 
     // Verify the proof of the upgraded consensus state
-    verify_membership::<HostFunctionsManager>(
+    verify_membership::<H>(
         &client_state.proof_specs,
         &upgrade_path_prefix,
         &proof_upgrade_consensus_state,
