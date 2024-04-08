@@ -19,7 +19,7 @@ description  = """
 base64          = { workspace = true , features = ["alloc"] }
 displaydoc      = { workspace = true }
 serde           = { workspace = true , optional = true }
-cosmwasm-schema = { version = "1.4.1", default-features = false, optional = true }
+cosmwasm-schema = { version = "2.0.1", default-features = false, optional = true }
 
 # ibc dependencies
 ibc-core-client     = { workspace = true }
