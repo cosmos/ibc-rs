@@ -78,7 +78,7 @@ impl TryFrom<RawProofSpec> for ProofSpec {
 
         let leaf_spec = spec.leaf_spec.map(|lop| LeafOp::from(lop)).map(|lop| lop.0);
         let inner_spec = spec.inner_spec
-            .map(|ispec| InnerSpec::try_from(ispec))
+            .map(InnerSpec::try_from)
             .transpose()? 
             .map(|ispec| ispec.0);
 
