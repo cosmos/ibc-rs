@@ -144,7 +144,7 @@ impl TryFrom<RawInnerSpec> for InnerSpec {
         if inner_spec.child_size <= 0 {
             return Err(CommitmentError::InvalidChildSize(inner_spec.child_size));
         }
-        if inner_spec.min_prefix_length > inner_spec.max_prefix_length
+        if inner_spec.max_prefix_length < inner_spec.min_prefix_length
          || inner_spec.min_prefix_length < 0 
          || inner_spec.max_prefix_length < 0 {
             return Err(CommitmentError::InvalidPrefixLengthRange(
