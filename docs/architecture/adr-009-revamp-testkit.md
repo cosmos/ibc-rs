@@ -276,4 +276,34 @@ work.
 ## References
 
 This work is being tracked at
-[cosmos/ibc-rs#1109](https://github.com/cosmos/ibc-rs/pull/1109)
+[cosmos/ibc-rs#1109](https://github.com/cosmos/ibc-rs/pull/1109).
+
+The following provides the concrete implementations of the proposed changes:
+
+#### MockIbcStore
+
+The modified `MockIbcStore` with Merkle store lives at
+[`testapp/ibc/core/types.rs`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/testapp/ibc/core/types.rs#L43-L96).
+
+#### TestHost
+
+The Rust trait lives at
+[`hosts/mod.rs`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/hosts/mod.rs#L27).
+The `Mock` and `Tendermint` host implementations live in
+[`hosts/mock.rs`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/hosts/mock.rs#L30)
+and
+[`hosts/tendermint.rs`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/hosts/tendermint.rs#L42)
+respectively.
+
+#### MockGenericContext
+
+[`MockGenericContext`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/context.rs#L34-L52)
+is actually what is described as `MockContext` in the ADR. For simplicity, we
+defined `MockContext` to
+[have a concrete store](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/context.rs#L54-L55)
+implementation.
+
+```rs
+pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
+pub type MockContext<H> = MockGenericContext<MockStore, H>;
+```
