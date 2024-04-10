@@ -3,12 +3,12 @@ use core::convert::Infallible;
 use core::str::Utf8Error;
 
 use displaydoc::Display;
-use ibc_core::channel::types::acknowledgement::StatusValue;
-use ibc_core::channel::types::channel::Order;
-use ibc_core::handler::types::error::ContextError;
-use ibc_core::host::types::error::IdentifierError;
-use ibc_core::host::types::identifiers::{ChannelId, PortId};
-use ibc_core::primitives::prelude::*;
+use ibc_core_channel_types::acknowledgement::StatusValue;
+use ibc_core_channel_types::channel::Order;
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::identifiers::{ChannelId, PortId};
+use ibc_primitives::prelude::*;
 use uint::FromDecStrErr;
 
 #[derive(Display, Debug)]

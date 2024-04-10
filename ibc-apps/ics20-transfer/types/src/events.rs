@@ -1,8 +1,8 @@
 //! Defines all token transfer event types
-use ibc_core::channel::types::acknowledgement::AcknowledgementStatus;
-use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::Signer;
-use ibc_core::router::types::event::ModuleEvent;
+use ibc_core_channel_types::acknowledgement::AcknowledgementStatus;
+use ibc_primitives::prelude::*;
+use ibc_primitives::Signer;
+use ibc_core_router_types::event::ModuleEvent;
 
 use super::Memo;
 use crate::{Amount, PrefixedDenom, MODULE_ID_STR};

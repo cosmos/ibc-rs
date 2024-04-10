@@ -3,10 +3,10 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::{Display, From};
-use ibc_core::host::types::identifiers::{ChannelId, PortId};
-use ibc_core::primitives::prelude::*;
+use ibc_core_host_types::identifiers::{ChannelId, PortId};
+use ibc_primitives::prelude::*;
 #[cfg(feature = "serde")]
-use ibc_core::primitives::serializers;
+use ibc_primitives::serializers;
 use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
 
 use super::error::TokenTransferError;

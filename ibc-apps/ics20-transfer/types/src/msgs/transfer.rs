@@ -1,11 +1,11 @@
 //! Defines the token transfer message type
 
-use ibc_core::channel::types::error::PacketError;
-use ibc_core::channel::types::timeout::TimeoutHeight;
-use ibc_core::handler::types::error::ContextError;
-use ibc_core::host::types::identifiers::{ChannelId, PortId};
-use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::Timestamp;
+use ibc_core_channel_types::error::PacketError;
+use ibc_core_channel_types::timeout::TimeoutHeight;
+use ibc_core_handler_types::error::ContextError;
+use ibc_core_host_types::identifiers::{ChannelId, PortId};
+use ibc_primitives::prelude::*;
+use ibc_primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::Protobuf;

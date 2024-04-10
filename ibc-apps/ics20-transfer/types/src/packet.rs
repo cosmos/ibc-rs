@@ -2,8 +2,8 @@
 
 use core::str::FromStr;
 
-use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::Signer;
+use ibc_primitives::prelude::*;
+use ibc_primitives::Signer;
 use ibc_proto::ibc::applications::transfer::v2::FungibleTokenPacketData as RawPacketData;
 
 use super::error::TokenTransferError;

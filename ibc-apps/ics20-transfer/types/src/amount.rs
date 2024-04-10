@@ -3,9 +3,9 @@ use core::ops::Deref;
 use core::str::FromStr;
 
 use derive_more::{Display, From, Into};
-use ibc_core::primitives::prelude::*;
+use ibc_primitives::prelude::*;
 #[cfg(feature = "serde")]
-use ibc_core::primitives::serializers;
+use ibc_primitives::serializers;
 use primitive_types::U256;
 
 use super::error::TokenTransferError;

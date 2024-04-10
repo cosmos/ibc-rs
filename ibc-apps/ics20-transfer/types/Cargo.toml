@@ -1,14 +1,14 @@
 [package]
-name         = "ibc-app-transfer-types"
-version      = { workspace = true }
-authors      = { workspace = true }
-edition      = { workspace = true }
+name = "ibc-app-transfer-types"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
 rust-version = { workspace = true }
-license      = { workspace = true }
-repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "transfer", "ics20"]
-readme       = "./../../README.md"
-description  = """
+license = { workspace = true }
+repository = { workspace = true }
+keywords = [ "blockchain", "cosmos", "ibc", "ics20", "transfer" ]
+readme = "./../../README.md"
+description = """
     Maintained by `ibc-rs`, encapsulates essential ICS-20 Fungible Token Transfer data structures and
     domain types, as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal
     applicability to facilitate development and integration across diverse IBC-enabled projects.
@@ -19,57 +19,82 @@ all-features = true
 
 [dependencies]
 # external dependencies
-borsh           = { workspace = true, optional = true }
-derive_more     = { workspace = true }
-displaydoc      = { workspace = true }
-primitive-types = { version = "0.12.2", default-features = false, features = ["serde_no_std"] }
-schemars        = { workspace = true, optional = true }
-serde           = { workspace = true, optional = true }
-uint            = { version = "0.9", default-features = false }
+borsh = { workspace = true, optional = true }
+derive_more = { workspace = true }
+displaydoc = { workspace = true }
+primitive-types = { version = "0.12.2", default-features = false, features = [
+  "serde_no_std",
+] }
+schemars = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
+uint = { version = "0.9", default-features = false }
 
 # ibc dependencies
-ibc-core  = { workspace = true }
-ibc-proto = { workspace = true }
+ibc-core-channel-types = { workspace = true }
+ibc-core-handler-types = { workspace = true }
+ibc-core-host-types    = { workspace = true }
+ibc-core-router-types  = { workspace = true }
+ibc-primitives         = { workspace = true }
+ibc-proto              = { workspace = true }
 
 ## parity dependencies
-parity-scale-codec = { workspace = true , optional = true }
-scale-info         = { workspace = true , optional = true }
+parity-scale-codec = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
 
 [dev-dependencies]
-serde_json  = { workspace = true }
-rstest      = { workspace = true }
+serde_json = { workspace = true }
+rstest     = { workspace = true }
 
 [features]
-default = ["std"]
 std = [
-    "serde/std",
-    "serde_json/std",
-    "displaydoc/std",
-    "uint/std",
-    "primitive-types/std",
-    "ibc-core/std",
-    "ibc-proto/std",
+  "displaydoc/std",
+  "ibc-core-channel-types/std",
+  "ibc-core-handler-types/std",
+  "ibc-core-host-types/std",
+  "ibc-core-router-types/std",
+  "ibc-primitives/std",
+  "ibc-proto/std",
+  "primitive-types/std",
+  "serde/std",
+  "serde_json/std",
+  "uint/std",
 ]
+default = [ "std" ]
 serde = [
-    "dep:serde",
-    "ibc-core/serde",
-    "ibc-proto/serde",
+  "dep:serde",
+  "ibc-core-channel-types/serde",
+  "ibc-core-handler-types/serde",
+  "ibc-core-host-types/serde",
+  "ibc-core-router-types/serde",
+  "ibc-primitives/serde",
 ]
 schema = [
-    "dep:schemars",
-    "ibc-core/schema",
-    "ibc-proto/json-schema",
-    "serde",
-    "std"
+  "dep:schemars",
+  "ibc-core-channel-types/schema",
+  "ibc-core-handler-types/schema",
+  "ibc-core-host-types/schema",
+  "ibc-core-router-types/schema",
+  "ibc-primitives/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
 ]
 borsh = [
-    "dep:borsh",
-    "ibc-core/borsh",
-    "ibc-proto/borsh"
+  "dep:borsh",
+  "ibc-core-channel-types/borsh",
+  "ibc-core-handler-types/borsh",
+  "ibc-core-host-types/borsh",
+  "ibc-core-router-types/borsh",
+  "ibc-primitives/borsh",
+  "ibc-proto/borsh",
 ]
 parity-scale-codec = [
-    "dep:parity-scale-codec",
-    "dep:scale-info",
-    "ibc-core/parity-scale-codec",
-    "ibc-proto/parity-scale-codec"
+  "dep:parity-scale-codec",
+  "dep:scale-info",
+  "ibc-core-channel-types/parity-scale-codec",
+  "ibc-core-handler-types/parity-scale-codec",
+  "ibc-core-host-types/parity-scale-codec",
+  "ibc-core-router-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+  "ibc-proto/parity-scale-codec",
 ]
