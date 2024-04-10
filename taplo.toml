@@ -1,0 +1,8 @@
+include = ["**/Cargo.toml"]
+
+[formatting]
+align_entries = true
+reorder_keys = false
+reorder_arrays = true
+compact_entries = false
+compact_arrays = false
