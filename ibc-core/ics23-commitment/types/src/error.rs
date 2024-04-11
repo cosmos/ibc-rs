@@ -33,8 +33,6 @@ pub enum CommitmentError {
     InvalidPrefixLengthRange(i32, i32),
     /// invalid child size: `{0}`
     InvalidChildSize(i32),
-    
-    
 }
 
 #[cfg(feature = "std")]
