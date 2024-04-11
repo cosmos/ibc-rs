@@ -6,6 +6,8 @@ use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviour;
 use ibc_proto::Protobuf;
+use tendermint::crypto::Sha256;
+use tendermint::merkle::MerkleHash;
 
 use crate::error::Error;
 use crate::header::Header;
@@ -42,9 +44,9 @@ impl Misbehaviour {
         &self.header2
     }
 
-    pub fn validate_basic(&self) -> Result<(), Error> {
-        self.header1.validate_basic()?;
-        self.header2.validate_basic()?;
+    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(&self) -> Result<(), Error> {
+        self.header1.validate_basic::<H>()?;
+        self.header2.validate_basic::<H>()?;
 
         if self.header1.signed_header.header.chain_id != self.header2.signed_header.header.chain_id
         {

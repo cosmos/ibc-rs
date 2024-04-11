@@ -14,6 +14,8 @@ use ibc_proto::Protobuf;
 use pretty::{PrettySignedHeader, PrettyValidatorSet};
 use tendermint::block::signed_header::SignedHeader;
 use tendermint::chain::Id as TmChainId;
+use tendermint::crypto::Sha256;
+use tendermint::merkle::MerkleHash;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint::{Hash, Time};
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
@@ -101,11 +103,11 @@ impl Header {
     /// `header.trusted_next_validator_set` was given to us by the relayer.
     /// Thus, we need to ensure that the relayer gave us the right set, i.e. by
     /// ensuring that it matches the hash we have stored on chain.
-    pub fn check_trusted_next_validator_set(
+    pub fn check_trusted_next_validator_set<H: MerkleHash + Sha256 + Default>(
         &self,
         trusted_next_validator_hash: &Hash,
     ) -> Result<(), ClientError> {
-        if &self.trusted_next_validator_set.hash() == trusted_next_validator_hash {
+        if &self.trusted_next_validator_set.hash_with::<H>() == trusted_next_validator_hash {
             Ok(())
         } else {
             Err(ClientError::HeaderVerificationFailure {
@@ -117,7 +119,7 @@ impl Header {
     }
 
     /// Checks if the fields of a given header are consistent with the trusted fields of this header.
-    pub fn validate_basic(&self) -> Result<(), Error> {
+    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(&self) -> Result<(), Error> {
         if self.height().revision_number() != self.trusted_height.revision_number() {
             return Err(Error::MismatchHeightRevisions {
                 trusted_revision: self.trusted_height.revision_number(),
@@ -135,10 +137,12 @@ impl Header {
             });
         }
 
-        if self.validator_set.hash() != self.signed_header.header.validators_hash {
+        let validators_hash = self.validator_set.hash_with::<H>();
+
+        if validators_hash != self.signed_header.header.validators_hash {
             return Err(Error::MismatchValidatorsHashes {
                 signed_header_validators_hash: self.signed_header.header.validators_hash,
-                validators_hash: self.validator_set.hash(),
+                validators_hash,
             });
         }
 
