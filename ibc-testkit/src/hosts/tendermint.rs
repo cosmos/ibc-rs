@@ -1,4 +1,3 @@
-use alloc::collections::VecDeque;
 use core::str::FromStr;
 
 use ibc::clients::tendermint::client_state::ClientState;
@@ -30,7 +29,7 @@ pub struct TendermintHost {
     pub chain_id: ChainId,
     /// The chain of blocks underlying this context.
     #[builder(default)]
-    pub history: VecDeque<TendermintBlock>,
+    pub history: Vec<TendermintBlock>,
 }
 
 impl Default for TendermintHost {
@@ -45,22 +44,12 @@ impl TestHost for TendermintHost {
     type LightClientParams = ClientStateConfig;
     type ClientState = ClientState;
 
-    fn history(&self) -> &VecDeque<Self::Block> {
+    fn history(&self) -> &Vec<Self::Block> {
         &self.history
     }
 
     fn push_block(&mut self, block: Self::Block) {
-        self.history.push_back(block);
-    }
-
-    fn prune_block_till(&mut self, height: &Height) {
-        while let Some(block) = self.history.front() {
-            if &block.height() <= height {
-                self.history.pop_front();
-            } else {
-                break;
-            }
-        }
+        self.history.push(block);
     }
 
     fn generate_block(

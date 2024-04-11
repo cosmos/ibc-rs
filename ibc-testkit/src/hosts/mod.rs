@@ -1,7 +1,6 @@
 pub mod mock;
 pub mod tendermint;
 
-use alloc::collections::VecDeque;
 use core::fmt::Debug;
 use core::ops::Add;
 use core::time::Duration;
@@ -31,14 +30,14 @@ pub trait TestHost: Default + Debug + Sized {
     /// The type of client state produced by the host.
     type ClientState: Into<AnyClientState> + Debug;
 
-    /// The type of block parameters to produce a block
+    /// The type of block parameters to produce a block.
     type BlockParams: Debug + Default;
 
-    /// The type of light client parameters to produce a light client state
+    /// The type of light client parameters to produce a light client state.
     type LightClientParams: Debug + Default;
 
     /// The history of blocks produced by the host chain.
-    fn history(&self) -> &VecDeque<Self::Block>;
+    fn history(&self) -> &Vec<Self::Block>;
 
     /// Returns true if the host chain has no blocks.
     fn is_empty(&self) -> bool {
@@ -52,7 +51,7 @@ pub trait TestHost: Default + Debug + Sized {
 
     /// The latest block of the host chain.
     fn latest_block(&self) -> Self::Block {
-        self.history().back().cloned().expect("no error")
+        self.history().last().cloned().expect("no error")
     }
 
     /// Get the block at the given height.
@@ -65,10 +64,7 @@ pub trait TestHost: Default + Debug + Sized {
     /// Add a block to the host chain.
     fn push_block(&mut self, block: Self::Block);
 
-    /// Prune blocks until the given height.
-    fn prune_block_till(&mut self, height: &Height);
-
-    /// Triggers the advancing of the host chain, by extending the history of blocks (or headers).
+    /// Advance the host chain, by extending the history of blocks.
     fn advance_block(
         &mut self,
         commitment_root: Vec<u8>,
@@ -142,7 +138,7 @@ pub trait TestBlock: Clone + Debug {
     }
 }
 
-/// TestHeader is a trait that defines the interface for a header produced by a host blockchain.
+/// TestHeader is a trait that defines the interface for a header corresponding to a host blockchain.
 pub trait TestHeader: Clone + Debug + Into<Any> {
     /// The type of consensus state can be extracted from the header.
     type ConsensusState: ConsensusState + Into<AnyConsensusState> + From<Self> + Clone + Debug;
