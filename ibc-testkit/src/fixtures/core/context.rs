@@ -66,11 +66,11 @@ where
             ibc_router: MockRouter::new_with_transfer(),
         };
 
-        // store is a height 0; no block
+        // store is at height 0; no block
 
         context.generate_genesis_block(genesis_timestamp, &Default::default());
 
-        // store is a height 1; one block
+        // store is at height 1; one block
 
         context = context.advance_block_up_to(
             params

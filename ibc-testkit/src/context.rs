@@ -54,7 +54,7 @@ where
 pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
 pub type MockContext<H> = MockGenericContext<MockStore, H>;
 
-/// Returns a MockContext with bare minimum initialization: no clients, no connections and no channels are
+/// Returns a MockContext with bare minimum initialization: no clients, no connections, and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
 impl<S, H> Default for MockGenericContext<S, H>
@@ -69,7 +69,7 @@ where
 }
 
 /// Implementation of internal interface for use in testing. The methods in this interface should
-/// _not_ be accessible to any Ics handler.
+/// _not_ be accessible to any ICS handler.
 impl<S, H> MockGenericContext<S, H>
 where
     S: ProvableStore + Debug,
@@ -176,6 +176,9 @@ where
             .expect("no error");
     }
 
+    /// Produces the next block for the host chain by first committing the state of
+    /// the host's multi store, and then generating a new block that is added to
+    /// the host's block history.
     pub fn produce_block(&mut self, block_time: Duration, params: &H::BlockParams) {
         // commit the multi store
         let multi_store_commitment = self.multi_store.commit().expect("no error");
@@ -244,6 +247,9 @@ where
         self
     }
 
+    /// Generates a light client for the host by generating a client
+    /// state, as well as generating consensus states for each 
+    /// consensus height.
     pub fn generate_light_client(
         &self,
         mut consensus_heights: Vec<Height>,

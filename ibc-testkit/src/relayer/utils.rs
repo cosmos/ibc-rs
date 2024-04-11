@@ -37,10 +37,10 @@ use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, Ligh
 
 /// Implements IBC relayer functions for a pair of [`TestHost`] implementations: `A` and `B`.
 /// Note that, all the implementations are in one direction: from `A` to `B`.
-/// This makes the variable namings be consistent with the IBC message fields,
-/// making the implementation less error-prone.
+/// This ensures that the variable namings are consistent with the IBC message fields,
+/// leading to a less error-prone implementation.
 ///
-/// For the functions in opposite direction, use `TypedRelayerOps::<B, A>` instead of TypedRelayerOps::<A, B>`.
+/// For the functions in the opposite direction, use `TypedRelayerOps::<B, A>` instead of TypedRelayerOps::<A, B>`.
 #[derive(Debug, Default)]
 pub struct TypedRelayerOps<A, B>(PhantomData<A>, PhantomData<B>)
 where
@@ -149,7 +149,7 @@ where
 
     /// Updates the client on `A` with the latest header from `B` after syncing the timestamps.
     ///
-    /// Timestamp sync is required, as IBC doesn't allow client update from future beyond max clock drift.
+    /// Timestamp sync is required, as IBC doesn't allow client updates from the future beyond max clock drift.
     pub fn update_client_on_a_with_sync(
         ctx_a: &mut MockContext<A>,
         ctx_b: &mut MockContext<B>,
@@ -283,8 +283,8 @@ where
         open_try_connection_event.conn_id_on_b().clone()
     }
 
-    /// `A` receives the acknowledgement of `B` that `B` received the connection opening attempt by `A`.
-    /// `A` starts processing the connection at its side.
+    /// `A` receives `B`'s acknowledgement that `B` received the connection opening attempt by `A`.
+    /// `A` starts processing the connection on its side.
     pub fn connection_open_ack_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -360,7 +360,7 @@ where
     }
 
     /// `B` receives the confirmation from `A` that the connection creation was successful.
-    /// `B` also starts processing the connection at its side.
+    /// `B` also starts processing the connection on its side.
     pub fn connection_open_confirm_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -397,7 +397,7 @@ where
     }
 
     /// A connection is created by `A` towards `B` using the IBC connection handshake protocol.
-    /// Returns the connection identifiers on `A` and `B`.
+    /// Returns the connection identifiers of `A` and `B`.
     pub fn create_connection_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &mut MockContext<B>,
@@ -466,7 +466,7 @@ where
     }
 
     /// `A` initiates a channel with port identifier with the other end on `B`.
-    /// Returns the channel identifier on `A`.
+    /// Returns the channel identifier of `A`.
     pub fn channel_open_init_on_a(
         ctx_a: &mut MockContext<A>,
         conn_id_on_a: ConnectionId,
@@ -495,7 +495,7 @@ where
     }
 
     /// `B` receives the channel opening attempt by `A` after `A` initiates the channel.
-    /// Returns the channel identifier on `B`.
+    /// Returns the channel identifier of `B`.
     pub fn channel_open_try_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -542,8 +542,8 @@ where
         open_try_channel_event.chan_id_on_b().clone()
     }
 
-    /// `A` receives the acknowledgement of `B` that `B` received the channel opening attempt by `A`.
-    /// `A` starts processing the channel at its side.
+    /// `A` receives `B`'s acknowledgement that `B` received the channel opening attempt by `A`.
+    /// `A` starts processing the channel on its side.
     pub fn channel_open_ack_on_a(
         ctx_a: &mut MockContext<A>,
         ctx_b: &MockContext<B>,
@@ -584,7 +584,7 @@ where
     }
 
     /// `B` receives the confirmation from `A` that the channel creation was successful.
-    /// `B` also starts processing the channel at its side.
+    /// `B` also starts processing the channel on its side.
     pub fn channel_open_confirm_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,
@@ -682,7 +682,7 @@ where
     }
 
     /// A channel is created by `A` towards `B` using the IBC channel handshake protocol.
-    /// Returns the channel identifiers on `A` and `B`.
+    /// Returns the channel identifiers of `A` and `B`.
     #[allow(clippy::too_many_arguments)]
     pub fn create_channel_on_a(
         ctx_a: &mut MockContext<A>,
@@ -795,8 +795,8 @@ where
         TypedRelayerOps::<A, B>::update_client_on_a_with_sync(ctx_a, ctx_b, client_id_on_a, signer);
     }
 
-    /// `B` receives a packet from a IBC module on `A`.
-    /// Returns the acknowledgement of `B`.
+    /// `B` receives a packet from an IBC module on `A`.
+    /// Returns `B`'s acknowledgement of receipt.
     pub fn packet_recv_on_b(
         ctx_b: &mut MockContext<B>,
         ctx_a: &MockContext<A>,

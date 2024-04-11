@@ -22,6 +22,7 @@ use typed_builder::TypedBuilder;
 use crate::fixtures::clients::tendermint::ClientStateConfig;
 use crate::hosts::{TestBlock, TestHeader, TestHost};
 
+/// A host that produces Tendermint blocks and interfaces with Tendermint light clients.
 #[derive(TypedBuilder, Debug)]
 pub struct TendermintHost {
     /// Unique identifier for the chain.

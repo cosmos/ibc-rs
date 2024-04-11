@@ -56,7 +56,7 @@ impl TestHost for MockHost {
     fn generate_client_state(
         &self,
         latest_height: &Height,
-        _: &Self::LightClientParams,
+        _params: &Self::LightClientParams,
     ) -> Self::ClientState {
         MockClientState::new(self.get_block(latest_height).expect("height exists"))
     }
