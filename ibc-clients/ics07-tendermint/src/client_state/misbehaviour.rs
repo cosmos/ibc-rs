@@ -5,6 +5,8 @@ use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
+use tendermint::crypto::Sha256;
+use tendermint::merkle::MerkleHash;
 use tendermint::{Hash, Time};
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::Verifier;
@@ -15,7 +17,7 @@ use crate::types::Header;
 
 /// Determines whether or not two conflicting headers at the same height would
 /// have convinced the light client.
-pub fn verify_misbehaviour<V>(
+pub fn verify_misbehaviour<V, H>(
     ctx: &V,
     misbehaviour: &TmMisbehaviour,
     client_id: &ClientId,
@@ -26,8 +28,9 @@ pub fn verify_misbehaviour<V>(
 where
     V: TmValidationContext,
     V::ConsensusStateRef: ConsensusStateConverter,
+    H: MerkleHash + Sha256 + Default,
 {
-    misbehaviour.validate_basic()?;
+    misbehaviour.validate_basic::<H>()?;
 
     let header_1 = misbehaviour.header1();
     let trusted_consensus_state_1 = {
@@ -55,7 +58,7 @@ where
 
     let current_timestamp = ctx.host_timestamp()?;
 
-    verify_misbehaviour_header(
+    verify_misbehaviour_header::<H>(
         header_1,
         chain_id,
         options,
@@ -64,7 +67,7 @@ where
         current_timestamp,
         verifier,
     )?;
-    verify_misbehaviour_header(
+    verify_misbehaviour_header::<H>(
         header_2,
         chain_id,
         options,
@@ -75,7 +78,7 @@ where
     )
 }
 
-pub fn verify_misbehaviour_header(
+pub fn verify_misbehaviour_header<H>(
     header: &TmHeader,
     chain_id: &ChainId,
     options: &Options,
@@ -83,9 +86,12 @@ pub fn verify_misbehaviour_header(
     trusted_next_validator_hash: Hash,
     current_timestamp: Timestamp,
     verifier: &impl TmVerifier,
-) -> Result<(), ClientError> {
+) -> Result<(), ClientError>
+where
+    H: MerkleHash + Sha256 + Default,
+{
     // ensure correctness of the trusted next validator set provided by the relayer
-    header.check_trusted_next_validator_set(&trusted_next_validator_hash)?;
+    header.check_trusted_next_validator_set::<H>(&trusted_next_validator_hash)?;
 
     // ensure trusted consensus state is within trusting period
     {
