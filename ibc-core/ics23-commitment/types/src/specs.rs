@@ -52,12 +52,8 @@ impl ProofSpecs {
 impl TryFrom<Vec<RawProofSpec>> for ProofSpecs {
     type Error = CommitmentError;
     fn try_from(ics23_specs: Vec<RawProofSpec>) -> Result<Self, CommitmentError> {
-        let mut specs = Vec::new();
-        for raw_spec in ics23_specs {
-            let spec = ProofSpec::try_from(raw_spec)?;
-            specs.push(spec);
-        }
-        Ok(ProofSpecs(specs))
+        let specs = ics23_specs.into_iter().map(ProofSpec::try_from).collect::<Result<Vec<_>, _>>()?;
+        Ok(Self(specs))
     }
 }
 
