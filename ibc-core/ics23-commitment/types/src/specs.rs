@@ -55,7 +55,7 @@ impl TryFrom<Vec<RawProofSpec>> for ProofSpecs {
         ics23_specs
             .into_iter()
             .map(ProofSpec::try_from)
-            .collect::<Result<Vec<_>, _>>()
+            .collect::<Result<_, _>>()
             .map(Self)
     }
 }
