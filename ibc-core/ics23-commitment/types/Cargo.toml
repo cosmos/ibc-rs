@@ -25,7 +25,6 @@ displaydoc      = { workspace = true }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
-rstest          = { workspace = true }
 
 # ibc dependencies
 ibc-proto       = { workspace = true }
@@ -35,6 +34,9 @@ ics23           = { version = "0.11", default-features = false, features = ["hos
 # parity dependencies
 parity-scale-codec  = { workspace = true, optional = true }
 scale-info          = { workspace = true, optional = true }
+
+[dev-dependencies]
+rstest = { workspace = true }
 
 [features]
 default = ["std"]
