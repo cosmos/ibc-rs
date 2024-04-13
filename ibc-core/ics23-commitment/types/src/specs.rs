@@ -196,62 +196,46 @@ mod tests {
 
     use super::*;
 
-    fn mock_raw_proof_spec(min_depth: i32, max_depth: i32) -> RawProofSpec {
-        RawProofSpec {
-            leaf_spec: None,
-            inner_spec: None,
-            max_depth,
-            min_depth,
-            prehash_key_before_comparison: false,
-        }
-    }
-
-    fn mock_inner_spec(min_prefix_length: i32, max_prefix_length: i32) -> RawInnerSpec {
-        RawInnerSpec {
-            child_order: vec![1],
-            child_size: 2,
-            min_prefix_length,
-            max_prefix_length,
-            empty_child: vec![],
-            hash: 1,
-        }
-    }
-
     #[rstest]
     #[case(5, 6)]
     #[case(-3,3)]
     #[case(2,-6)]
     #[case(-2,-6)]
     #[case(-6,-2)]
-    fn test_proof_specs_try_from_ok(#[case] min_depth: i32, #[case] max_depth: i32) {
-        assert!(ProofSpec::try_from(mock_raw_proof_spec(min_depth, max_depth)).is_ok())
-    }
-
-    #[rstest]
+    #[should_panic(expected = "InvalidDepthRange")]
     #[case(5, 3)]
-    fn test_proof_specs_try_from_err(#[case] min_depth: i32, #[case] max_depth: i32) {
-        assert!(ProofSpec::try_from(mock_raw_proof_spec(min_depth, max_depth)).is_err())
+    fn test_proof_specs_try_from(#[case] min_depth: i32, #[case] max_depth: i32) {
+        let raw_proof_spec = RawProofSpec {
+            leaf_spec: None,
+            inner_spec: None,
+            max_depth,
+            min_depth,
+            prehash_key_before_comparison: false,
+        };
+        ProofSpec::try_from(raw_proof_spec).unwrap();
     }
 
     #[rstest]
     #[case(1, 2)]
-    fn test_inner_specs_try_from_ok(
-        #[case] min_prefix_length: i32,
-        #[case] max_prefix_length: i32,
-    ) {
-        assert!(InnerSpec::try_from(mock_inner_spec(min_prefix_length, max_prefix_length)).is_ok())
-    }
-
-    #[rstest]
+    #[should_panic(expected = "InvalidPrefixLengthRange")]
     #[case(2, 1)]
+    #[should_panic(expected = "InvalidPrefixLengthRange")]
     #[case(-2,1)]
+    #[should_panic(expected = "InvalidPrefixLengthRange")]
     #[case(2,-1)]
+    #[should_panic(expected = "InvalidPrefixLengthRange")]
     #[case(-2,-1)]
+    #[should_panic(expected = "InvalidPrefixLengthRange")]
     #[case(-1,-2)]
-    fn test_inner_specs_try_from_err(
-        #[case] min_prefix_length: i32,
-        #[case] max_prefix_length: i32,
-    ) {
-        assert!(InnerSpec::try_from(mock_inner_spec(min_prefix_length, max_prefix_length)).is_err())
+    fn test_inner_specs_try_from(#[case] min_prefix_length: i32, #[case] max_prefix_length: i32) {
+        let raw_inner_spec = RawInnerSpec {
+            child_order: vec![1],
+            child_size: 2,
+            min_prefix_length,
+            max_prefix_length,
+            empty_child: vec![],
+            hash: 1,
+        };
+        InnerSpec::try_from(raw_inner_spec).unwrap();
     }
 }
