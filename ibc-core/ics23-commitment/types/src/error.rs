@@ -29,7 +29,7 @@ pub enum CommitmentError {
     EncodingFailure(String),
     /// decoding commitment proof bytes failed: `{0}`
     DecodingFailure(String),
-    /// invalid length: `{0}`
+    /// invalid prefix length range: `[{0}, {1}]`
     InvalidPrefixLengthRange(i32, i32),
     /// invalid child size: `{0}`
     InvalidChildSize(i32),
