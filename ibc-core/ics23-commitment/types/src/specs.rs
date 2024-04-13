@@ -71,8 +71,8 @@ impl TryFrom<RawProofSpec> for ProofSpec {
     type Error = CommitmentError;
     fn try_from(spec: RawProofSpec) -> Result<Self, CommitmentError> {
         // A non-positive `min_depth` or `max_depth` indicates no limit on the respective bound.
-        // Both positive `min_depth` and `max_depth` can be specified. However, in this case,
-        //  `max_depth` must be greater than `min_depth` to ensure a valid range.
+        // Both positive `min_depth` and `max_depth` can be specified. However, in that case,
+        //  `max_depth` must be greater than or equal to `min_depth` to ensure a valid range.
         if 0 < spec.min_depth && 0 < spec.max_depth && spec.max_depth < spec.min_depth {
             return Err(CommitmentError::InvalidDepthRange(
                 spec.min_depth,
