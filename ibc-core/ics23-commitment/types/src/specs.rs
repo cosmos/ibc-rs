@@ -52,7 +52,10 @@ impl ProofSpecs {
 impl TryFrom<Vec<RawProofSpec>> for ProofSpecs {
     type Error = CommitmentError;
     fn try_from(ics23_specs: Vec<RawProofSpec>) -> Result<Self, CommitmentError> {
-        let specs = ics23_specs.into_iter().map(ProofSpec::try_from).collect::<Result<Vec<_>, _>>()?;
+        let specs = ics23_specs
+            .into_iter()
+            .map(ProofSpec::try_from)
+            .collect::<Result<Vec<_>, _>>()?;
         Ok(Self(specs))
     }
 }
@@ -149,6 +152,8 @@ impl TryFrom<RawInnerSpec> for InnerSpec {
         if inner_spec.child_size <= 0 {
             return Err(CommitmentError::InvalidChildSize(inner_spec.child_size));
         }
+
+        // ensure that min_prefix_length and max_prefix_length are non-negative integers.
         if inner_spec.max_prefix_length < inner_spec.min_prefix_length
             || inner_spec.min_prefix_length < 0
             || inner_spec.max_prefix_length < 0
@@ -187,123 +192,66 @@ impl From<InnerSpec> for RawInnerSpec {
 #[cfg(test)]
 mod tests {
     use ibc_proto::ics23::{InnerSpec as RawInnerSpec, ProofSpec as RawProofSpec};
+    use rstest::rstest;
 
     use super::*;
-    #[test]
-    fn test_proof_specs_try_from_ok() {
-        let valid_raw_proof_spec = vec![
-            RawProofSpec {
-                leaf_spec: None,
-                inner_spec: None,
-                max_depth: 5,
-                min_depth: 3,
-                prehash_key_before_comparison: false,
-            },
-            RawProofSpec {
-                leaf_spec: None,
-                inner_spec: None,
-                max_depth: -3,
-                min_depth: 3,
-                prehash_key_before_comparison: false,
-            },
-            RawProofSpec {
-                leaf_spec: None,
-                inner_spec: None,
-                max_depth: 2,
-                min_depth: -6,
-                prehash_key_before_comparison: false,
-            },
-            RawProofSpec {
-                leaf_spec: None,
-                inner_spec: None,
-                max_depth: -2,
-                min_depth: -6,
-                prehash_key_before_comparison: false,
-            },
-            RawProofSpec {
-                leaf_spec: None,
-                inner_spec: None,
-                max_depth: -6,
-                min_depth: -2,
-                prehash_key_before_comparison: false,
-            },
-        ];
-        let specs = ProofSpecs::try_from(valid_raw_proof_spec);
-        assert!(specs.is_ok());
-        assert_eq!(specs.unwrap().0.len(), 5);
-    }
-    #[test]
-    fn test_proof_specs_try_from_err() {
-        let invalid_raw_proof_spec = vec![RawProofSpec {
+
+    fn mock_raw_proof_spec(min_depth: i32, max_depth: i32) -> RawProofSpec {
+        RawProofSpec {
             leaf_spec: None,
             inner_spec: None,
-            max_depth: 5,
-            min_depth: 6,
+            max_depth,
+            min_depth,
             prehash_key_before_comparison: false,
-        }];
-        let specs = ProofSpecs::try_from(invalid_raw_proof_spec);
-        assert!(specs.is_err());
+        }
     }
-    #[test]
-    fn test_inner_specs_try_from_ok() {
-        let valid_raw_inner_spec = RawInnerSpec {
+
+    fn mock_inner_spec(min_prefix_length: i32, max_prefix_length: i32) -> RawInnerSpec {
+        RawInnerSpec {
             child_order: vec![1],
             child_size: 2,
-            min_prefix_length: 1,
-            max_prefix_length: 2,
+            min_prefix_length,
+            max_prefix_length,
             empty_child: vec![],
             hash: 1,
-        };
-        let inner_spec = InnerSpec::try_from(valid_raw_inner_spec);
-        assert!(inner_spec.is_ok());
-    }
-    #[test]
-    fn test_inner_specs_try_from_err() {
-        let invalid_raw_inner_spec = vec![
-            RawInnerSpec {
-                child_order: vec![1],
-                child_size: 2,
-                min_prefix_length: 2,
-                max_prefix_length: 1,
-                empty_child: vec![],
-                hash: 1,
-            },
-            RawInnerSpec {
-                child_order: vec![1],
-                child_size: 2,
-                min_prefix_length: -1,
-                max_prefix_length: 1,
-                empty_child: vec![],
-                hash: 1,
-            },
-            RawInnerSpec {
-                child_order: vec![1],
-                child_size: 2,
-                min_prefix_length: 1,
-                max_prefix_length: -1,
-                empty_child: vec![],
-                hash: 1,
-            },
-            RawInnerSpec {
-                child_order: vec![1],
-                child_size: 2,
-                min_prefix_length: -1,
-                max_prefix_length: -1,
-                empty_child: vec![],
-                hash: 1,
-            },
-            RawInnerSpec {
-                child_order: vec![1],
-                child_size: 2,
-                min_prefix_length: 2,
-                max_prefix_length: 1,
-                empty_child: vec![],
-                hash: 1,
-            },
-        ];
-        for invalid_raw_inner_spec in invalid_raw_inner_spec {
-            let inner_spec = InnerSpec::try_from(invalid_raw_inner_spec);
-            assert!(inner_spec.is_err());
         }
+    }
+
+    #[rstest]
+    #[case(5, 6)]
+    #[case(-3,3)]
+    #[case(2,-6)]
+    #[case(-2,-6)]
+    #[case(-6,-2)]
+    fn test_proof_specs_try_from_ok(#[case] min_depth: i32, #[case] max_depth: i32) {
+        assert!(ProofSpec::try_from(mock_raw_proof_spec(min_depth, max_depth)).is_ok())
+    }
+
+    #[rstest]
+    #[case(5, 3)]
+    fn test_proof_specs_try_from_err(#[case] min_depth: i32, #[case] max_depth: i32) {
+        assert!(ProofSpec::try_from(mock_raw_proof_spec(min_depth, max_depth)).is_err())
+    }
+
+    #[rstest]
+    #[case(1, 2)]
+    fn test_inner_specs_try_from_ok(
+        #[case] min_prefix_length: i32,
+        #[case] max_prefix_length: i32,
+    ) {
+        assert!(InnerSpec::try_from(mock_inner_spec(min_prefix_length, max_prefix_length)).is_ok())
+    }
+
+    #[rstest]
+    #[case(2, 1)]
+    #[case(-2,1)]
+    #[case(2,-1)]
+    #[case(-2,-1)]
+    #[case(-1,-2)]
+    fn test_inner_specs_try_from_err(
+        #[case] min_prefix_length: i32,
+        #[case] max_prefix_length: i32,
+    ) {
+        assert!(InnerSpec::try_from(mock_inner_spec(min_prefix_length, max_prefix_length)).is_err())
     }
 }
