@@ -33,8 +33,8 @@ impl ProofSpecs {
         }
         for proof_spec in &self.0 {
             // A non-positive `min_depth` or `max_depth` indicates no limit on the respective bound.
-            // Both positive `min_depth` and `max_depth` can be specified. However, in this case,
-            //  `max_depth` must be greater than `min_depth` to ensure a valid range.
+            // Both positive `min_depth` and `max_depth` can be specified. However, in that case,
+            //  `max_depth` must be greater than or equal to `min_depth` to ensure a valid range.
             if 0 < proof_spec.0.min_depth
                 && 0 < proof_spec.0.max_depth
                 && proof_spec.0.max_depth < proof_spec.0.min_depth
