@@ -279,7 +279,7 @@ must introduce a `ClientStateMut` type the same as `ClientStateRef`.
 With the mentioned classification, we can now streamline ICS-07 specific APIs,
 eliminating the requirement for implementing a redundant `consensus_state()`
 method. For the sake of simplification, we can remove the `CommonContext` trait
-and consolidate everything under the `TmValidationContext` as follows:
+and consolidate everything under the `ExtClientValidationContext` as follows:
 
 ```diff
 + /// Enables conversion (`TryInto` and `From`) between the consensus state type
@@ -296,11 +296,11 @@ and consolidate everything under the `TmValidationContext` as follows:
 + }
 
 - pub trait CommonContext {
--    // methods will be moved to the below `ValidationContext`
+-    // methods will be moved to the below `ExtClientValidationContext`
 - }
 
 // Client's context required during validation
-pub trait ValidationContext:
+pub trait ExtClientValidationContext:
 +    ClientValidationContext<ConsensusStateRef = Self::AnyConsensusState>
 {
 +    type ConversionError: ToString;
@@ -331,7 +331,7 @@ pub trait ValidationContext:
 }
 
 -impl<T> ExecutionContext for T where T: CommonContext + ClientExecutionContext {}
-+impl<T> ExecutionContext for T where T: ValidationContext + ClientExecutionContext {}
++impl<T> ExtClientExecutionContext for T where T: ExtClientValidationContext + ClientExecutionContext {}
 
 ```
 

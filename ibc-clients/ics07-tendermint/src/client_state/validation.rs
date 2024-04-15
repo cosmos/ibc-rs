@@ -1,8 +1,9 @@
 use ibc_client_tendermint_types::{
-    ClientState as ClientStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
-    TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
+    ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
+    Misbehaviour as TmMisbehaviour, TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
 use ibc_core_client::context::client_state::ClientStateValidation;
+use ibc_core_client::context::{ExtClientValidationContext, TypeCaster};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Status;
 use ibc_core_host::types::identifiers::ClientId;
@@ -15,14 +16,12 @@ use tendermint::merkle::MerkleHash;
 
 use super::{check_for_misbehaviour_on_misbehavior, check_for_misbehaviour_on_update, ClientState};
 use crate::client_state::{verify_header, verify_misbehaviour};
-use crate::context::{
-    ConsensusStateConverter, DefaultVerifier, TmVerifier, ValidationContext as TmValidationContext,
-};
+use crate::context::{DefaultVerifier, TmVerifier};
 
 impl<V> ClientStateValidation<V> for ClientState
 where
-    V: TmValidationContext,
-    V::ConsensusStateRef: ConsensusStateConverter,
+    V: ExtClientValidationContext,
+    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
     /// standalone `verify_client_message` function. This is to make it as simple
@@ -78,8 +77,8 @@ pub fn verify_client_message<V, H>(
     verifier: &impl TmVerifier,
 ) -> Result<(), ClientError>
 where
-    V: TmValidationContext,
-    V::ConsensusStateRef: ConsensusStateConverter,
+    V: ExtClientValidationContext,
+    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
     H: MerkleHash + Sha256Trait + Default,
 {
     match client_message.type_url.as_str() {
@@ -148,8 +147,8 @@ pub fn check_for_misbehaviour<V>(
     client_message: Any,
 ) -> Result<bool, ClientError>
 where
-    V: TmValidationContext,
-    V::ConsensusStateRef: ConsensusStateConverter,
+    V: ExtClientValidationContext,
+    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
@@ -175,8 +174,8 @@ pub fn status<V>(
     client_id: &ClientId,
 ) -> Result<Status, ClientError>
 where
-    V: TmValidationContext,
-    V::ConsensusStateRef: ConsensusStateConverter,
+    V: ExtClientValidationContext,
+    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
 {
     if client_state.is_frozen() {
         return Ok(Status::Frozen);
@@ -222,8 +221,8 @@ pub fn check_substitute<V>(
     substitute_client_state: Any,
 ) -> Result<(), ClientError>
 where
-    V: TmValidationContext,
-    V::ConsensusStateRef: ConsensusStateConverter,
+    V: ExtClientValidationContext,
+    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
 {
     let ClientStateType {
         latest_height: _,

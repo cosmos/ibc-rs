@@ -15,8 +15,6 @@ use ibc_core_client::types::error::ClientError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 
-use crate::context::ValidationContext as TmValidationContext;
-
 mod common;
 mod execution;
 mod misbehaviour;

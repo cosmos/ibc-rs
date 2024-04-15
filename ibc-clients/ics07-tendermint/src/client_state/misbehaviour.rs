@@ -1,5 +1,8 @@
 use ibc_client_tendermint_types::error::{Error, IntoResult};
-use ibc_client_tendermint_types::{Header as TmHeader, Misbehaviour as TmMisbehaviour};
+use ibc_client_tendermint_types::{
+    ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
+};
+use ibc_core_client::context::{ExtClientValidationContext, TypeCaster};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
@@ -11,8 +14,7 @@ use tendermint::{Hash, Time};
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::Verifier;
 
-use super::TmValidationContext;
-use crate::context::{ConsensusStateConverter, TmVerifier};
+use crate::context::TmVerifier;
 use crate::types::Header;
 
 /// Determines whether or not two conflicting headers at the same height would
@@ -26,8 +28,8 @@ pub fn verify_misbehaviour<V, H>(
     verifier: &impl TmVerifier,
 ) -> Result<(), ClientError>
 where
-    V: TmValidationContext,
-    V::ConsensusStateRef: ConsensusStateConverter,
+    V: ExtClientValidationContext,
+    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
     H: MerkleHash + Sha256 + Default,
 {
     misbehaviour.validate_basic::<H>()?;

@@ -2,6 +2,7 @@ use ibc_core_client_types::Height;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_core_host_types::path::{ClientConsensusStatePath, ClientStatePath};
+use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 
 use crate::client_state::{ClientStateExecution, ClientStateValidation};
@@ -102,3 +103,53 @@ pub trait ClientExecutionContext:
         height: Height,
     ) -> Result<(), ContextError>;
 }
+
+/// Extends the client validation context capabilities by providing additional
+/// methods for validating a client state, particularly benefiting ICS-07
+/// Tendermint clients by granting access to essential information from hosts.
+///
+/// Categorized under ICS-02, it can also be utilized by other types of light
+/// clients. Developers can view this trait as a custom context definition
+/// example that expands validation capabilities, according to their specific
+/// light client requirements.
+pub trait ExtClientValidationContext: ClientValidationContext {
+    /// Returns the current timestamp of the local chain.
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
+
+    /// Returns the current height of the local chain.
+    fn host_height(&self) -> Result<Height, ContextError>;
+
+    /// Returns all the heights at which a consensus state is stored
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
+
+    /// Search for the lowest consensus state higher than `height`.
+    fn next_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
+
+    /// Search for the highest consensus state lower than `height`.
+    fn prev_consensus_state(
+        &self,
+        client_id: &ClientId,
+        height: &Height,
+    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
+}
+
+/// Extends the client context required during execution.
+///
+/// This trait is automatically implemented for all types that implement
+/// [`ExtClientValidationContext`] and [`ClientExecutionContext`]
+pub trait ExtClientExecutionContext: ExtClientValidationContext + ClientExecutionContext {}
+
+impl<T> ExtClientExecutionContext for T where T: ExtClientValidationContext + ClientExecutionContext {}
+
+/// General-purpose helper converter enabling `TryInto` and `From` conversions
+/// primarily intended between an enum and its variants. This usually used by
+/// standalone functions as a trait bound allowing them to obtain the concrete
+/// local type from the enum containing that concrete type as its variant like
+/// when enum `AnyConsensusState` contains the Tendermint `ConsensusState`.
+pub trait TypeCaster<C, E>: TryInto<C, Error = E> + From<C> {}
+
+impl<T, C, E> TypeCaster<C, E> for T where T: TryInto<C, Error = E> + From<C> {}
