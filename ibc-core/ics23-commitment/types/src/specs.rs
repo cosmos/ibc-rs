@@ -249,7 +249,7 @@ mod tests {
     #[case(1, 1, -1, 1)]
     #[should_panic(expected = "InvalidLengthOp")]
     #[case(1, 1, 1, -1)]
-    fn test_leaf_op_from(
+    fn test_leaf_op_try_from(
         #[case] hash: i32,
         #[case] prehash_key: i32,
         #[case] prehash_value: i32,
