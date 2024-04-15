@@ -53,6 +53,8 @@ where
 
 pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
 pub type TestContext<H> = StoreGenericTestContext<MockStore, H>;
+pub type MockContext = TestContext<MockHost>;
+pub type TendermintContext = TestContext<TendermintHost>;
 
 /// Returns a MockContext with bare minimum initialization: no clients, no connections, and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
