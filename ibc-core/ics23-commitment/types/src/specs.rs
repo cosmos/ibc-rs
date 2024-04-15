@@ -56,6 +56,11 @@ impl ProofSpecs {
 impl TryFrom<Vec<RawProofSpec>> for ProofSpecs {
     type Error = CommitmentError;
     fn try_from(ics23_specs: Vec<RawProofSpec>) -> Result<Self, CommitmentError> {
+        // no proof specs provided
+        if ics23_specs.is_empty() {
+            return Err(CommitmentError::EmptyProofSpecs);
+        }
+
         ics23_specs
             .into_iter()
             .map(ProofSpec::try_from)
