@@ -18,7 +18,7 @@ extern crate std;
 
 pub mod client_state;
 pub mod consensus_state;
-pub mod context;
+pub mod verifier;
 
 pub const TENDERMINT_CLIENT_TYPE: &str = "07-tendermint";
 
