@@ -104,14 +104,15 @@ pub trait ClientExecutionContext:
     ) -> Result<(), ContextError>;
 }
 
-/// Extends the client validation context capabilities by providing additional
-/// methods for validating a client state, particularly benefiting ICS-07
-/// Tendermint clients by granting access to essential information from hosts.
+/// An optional trait that extends the client validation context capabilities by
+/// providing additional methods for validating a client state, particularly
+/// benefiting ICS-07 Tendermint clients by granting access to essential
+/// information from hosts.
 ///
-/// Categorized under ICS-02, it can also be utilized by other types of light
-/// clients. Developers can view this trait as a custom context definition
-/// example that expands validation capabilities, according to their specific
-/// light client requirements.
+/// Categorized under ICS-02, as it may also be utilized by other types of light
+/// clients. Developers can view this trait as an example of a custom context
+/// definition that expands client validation capabilities, according to their
+/// specific light client requirements.
 pub trait ExtClientValidationContext: ClientValidationContext {
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
@@ -119,7 +120,7 @@ pub trait ExtClientValidationContext: ClientValidationContext {
     /// Returns the current height of the local chain.
     fn host_height(&self) -> Result<Height, ContextError>;
 
-    /// Returns all the heights at which a consensus state is stored
+    /// Returns all the heights at which a consensus state is stored.
     fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
 
     /// Search for the lowest consensus state higher than `height`.
@@ -137,10 +138,18 @@ pub trait ExtClientValidationContext: ClientValidationContext {
     ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
 }
 
-/// Extends the client context required during execution.
+/// An optional trait that extends the client context required during execution.
 ///
-/// This trait is automatically implemented for all types that implement
-/// [`ExtClientValidationContext`] and [`ClientExecutionContext`]
+/// This trait as it stands right now serves as a trait alias for types that
+/// implement both [`ExtClientValidationContext`] and
+/// [`ClientExecutionContext`], and it is automatically implemented for such
+/// types.
+///
+/// Light client developers who wish to define and utilize their own custom
+/// client contexts may choose to introduce execution methods within a similar
+/// trait, which would allow them to store additional client-specific data and
+/// conduct execution operations more efficiently, tailored to their light
+/// client implementation.
 pub trait ExtClientExecutionContext: ExtClientValidationContext + ClientExecutionContext {}
 
 impl<T> ExtClientExecutionContext for T where T: ExtClientValidationContext + ClientExecutionContext {}
