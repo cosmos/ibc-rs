@@ -16,7 +16,7 @@ use tendermint::merkle::MerkleHash;
 
 use super::{check_for_misbehaviour_on_misbehavior, check_for_misbehaviour_on_update, ClientState};
 use crate::client_state::{verify_header, verify_misbehaviour};
-use crate::context::{DefaultVerifier, TmVerifier};
+use crate::verifier::{DefaultVerifier, TmVerifier};
 
 impl<V> ClientStateValidation<V> for ClientState
 where

@@ -12,7 +12,7 @@ use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
 
-use crate::context::TmVerifier;
+use crate::verifier::TmVerifier;
 
 pub fn verify_header<V, H>(
     ctx: &V,

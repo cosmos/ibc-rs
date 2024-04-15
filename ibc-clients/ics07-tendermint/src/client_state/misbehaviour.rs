@@ -14,8 +14,8 @@ use tendermint::{Hash, Time};
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::Verifier;
 
-use crate::context::TmVerifier;
 use crate::types::Header;
+use crate::verifier::TmVerifier;
 
 /// Determines whether or not two conflicting headers at the same height would
 /// have convinced the light client.
