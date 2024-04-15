@@ -3,11 +3,9 @@ use std::str::FromStr;
 
 use cosmwasm_schema::cw_serde;
 use ibc_client_wasm_types::serializer::Base64;
-use ibc_core::client::types::error::ClientError;
 use ibc_core::client::types::proto::v1::Height as RawHeight;
 use ibc_core::client::types::Height;
 use ibc_core::commitment_types::commitment::{CommitmentPrefix, CommitmentProofBytes};
-use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::path::Path;
 use ibc_core::primitives::proto::Any;
 use prost::Message;
@@ -63,10 +61,7 @@ impl TryFrom<UpdateStateOnMisbehaviourMsgRaw> for UpdateStateOnMisbehaviourMsg {
     type Error = ContractError;
 
     fn try_from(raw: UpdateStateOnMisbehaviourMsgRaw) -> Result<Self, Self::Error> {
-        let client_message =
-            Any::decode(&mut raw.client_message.as_slice()).map_err(|e| ClientError::Other {
-                description: e.to_string(),
-            })?;
+        let client_message = Any::decode(&mut raw.client_message.as_slice())?;
 
         Ok(Self { client_message })
     }
@@ -87,10 +82,7 @@ impl TryFrom<UpdateStateMsgRaw> for UpdateStateMsg {
     type Error = ContractError;
 
     fn try_from(raw: UpdateStateMsgRaw) -> Result<Self, Self::Error> {
-        let client_message =
-            Any::decode(&mut raw.client_message.as_slice()).map_err(|e| ClientError::Other {
-                description: e.to_string(),
-            })?;
+        let client_message = Any::decode(&mut raw.client_message.as_slice())?;
 
         Ok(Self { client_message })
     }
@@ -178,11 +170,8 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
         let prefix = raw.path.key_path.remove(0).into_bytes();
         let path_str = raw.path.key_path.join("");
         let path = Path::from_str(&path_str)?;
-        let height = Height::try_from(raw.height).map_err(|e| {
-            ContractError::Context(ContextError::ClientError(ClientError::Other {
-                description: e.to_string(),
-            }))
-        })?;
+        let height = Height::try_from(raw.height)?;
+
         Ok(Self {
             proof,
             path,
@@ -278,10 +267,7 @@ impl TryFrom<VerifyClientMessageRaw> for VerifyClientMessageMsg {
     type Error = ContractError;
 
     fn try_from(raw: VerifyClientMessageRaw) -> Result<Self, Self::Error> {
-        let client_message =
-            Any::decode(&mut raw.client_message.as_slice()).map_err(|e| ClientError::Other {
-                description: e.to_string(),
-            })?;
+        let client_message = Any::decode(&mut raw.client_message.as_slice())?;
 
         Ok(Self { client_message })
     }
@@ -302,10 +288,7 @@ impl TryFrom<CheckForMisbehaviourMsgRaw> for CheckForMisbehaviourMsg {
     type Error = ContractError;
 
     fn try_from(raw: CheckForMisbehaviourMsgRaw) -> Result<Self, Self::Error> {
-        let client_message =
-            Any::decode(&mut raw.client_message.as_slice()).map_err(|e| ClientError::Other {
-                description: e.to_string(),
-            })?;
+        let client_message = Any::decode(&mut raw.client_message.as_slice())?;
 
         Ok(Self { client_message })
     }

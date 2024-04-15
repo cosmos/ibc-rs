@@ -250,7 +250,7 @@ impl<'a, C: ClientType<'a>> StorageRef for Context<'a, C> {
             Some(ref deps) => deps.storage,
             None => match self.deps_mut {
                 Some(ref deps) => deps.storage,
-                None => panic!("storage should be available"),
+                None => panic!("Either deps or deps_mut should be available"),
             },
         }
     }
@@ -264,7 +264,7 @@ impl<'a, C: ClientType<'a>> StorageMut for Context<'a, C> {
     fn storage_mut(&mut self) -> &mut dyn Storage {
         match self.deps_mut {
             Some(ref mut deps) => deps.storage,
-            None => panic!("storage should be available"),
+            None => panic!("deps_mut should be available"),
         }
     }
 }
