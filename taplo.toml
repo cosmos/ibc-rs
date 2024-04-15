@@ -6,3 +6,5 @@ reorder_keys = false
 reorder_arrays = true
 compact_entries = false
 compact_arrays = false
+array_auto_expand = false
+array_auto_collapse = false
