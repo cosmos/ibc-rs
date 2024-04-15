@@ -5,8 +5,9 @@ use ibc_core::primitives::proto::Any;
 
 use crate::context::Context;
 
-/// Enables the introduction of custom client and consensus state types tailored
-/// for Sovereign light clients.
+/// Enables users to integrate their implemented light client by introducing
+/// their client state and consensus state types into the generic [`Context`]
+/// object.
 pub trait ClientType<'a>: Sized {
     type ClientState: ClientStateExecution<Context<'a, Self>> + Clone;
     type ConsensusState: ConsensusStateTrait + Into<Any> + TryFrom<Any, Error = ClientError>;

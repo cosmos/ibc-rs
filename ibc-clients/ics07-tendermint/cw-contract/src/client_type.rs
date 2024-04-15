@@ -8,6 +8,8 @@ use ibc_core::client::types::error::ClientError;
 use ibc_core::derive::ConsensusState as ConsensusStateDerive;
 use ibc_core::primitives::proto::Any;
 
+/// A unit struct that represents the Tendermint client type.
+#[derive(Clone, Debug)]
 pub struct TendermintClient;
 
 impl<'a> ClientType<'a> for TendermintClient {
