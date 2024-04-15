@@ -2,7 +2,7 @@ use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::{
     ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
 };
-use ibc_core_client::context::{ExtClientValidationContext, TypeCaster};
+use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
@@ -29,7 +29,7 @@ pub fn verify_misbehaviour<V, H>(
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
     H: MerkleHash + Sha256 + Default,
 {
     misbehaviour.validate_basic::<H>()?;

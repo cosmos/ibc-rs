@@ -1,6 +1,6 @@
 use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::{ConsensusState as ConsensusStateType, Header as TmHeader};
-use ibc_core_client::context::{ExtClientValidationContext, TypeCaster};
+use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
@@ -24,7 +24,7 @@ pub fn verify_header<V, H>(
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
     H: MerkleHash + Sha256 + Default,
 {
     // Checks that the header fields are valid.
@@ -110,7 +110,7 @@ pub fn check_for_misbehaviour_on_update<V>(
 ) -> Result<bool, ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let maybe_existing_consensus_state = {
         let path_at_header_height = ClientConsensusStatePath::new(

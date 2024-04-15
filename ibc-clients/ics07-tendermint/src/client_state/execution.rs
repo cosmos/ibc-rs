@@ -15,7 +15,7 @@ impl<E> ClientStateExecution<E> for ClientState
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     fn initialise(
         &self,
@@ -91,7 +91,7 @@ pub fn initialise<E>(
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let host_timestamp = ExtClientValidationContext::host_timestamp(ctx)?;
     let host_height = ExtClientValidationContext::host_height(ctx)?;
@@ -136,7 +136,7 @@ pub fn update_state<E>(
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let header = TmHeader::try_from(header)?;
     let header_height = header.height();
@@ -235,7 +235,7 @@ pub fn update_on_upgrade<E>(
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let mut upgraded_tm_client_state = ClientState::try_from(upgraded_client_state)?;
     let upgraded_tm_cons_state = ConsensusStateType::try_from(upgraded_consensus_state)?;
@@ -315,7 +315,7 @@ pub fn prune_oldest_consensus_state<E>(
 where
     E: ClientExecutionContext + ExtClientValidationContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let mut heights = ctx.consensus_state_heights(client_id)?;
 

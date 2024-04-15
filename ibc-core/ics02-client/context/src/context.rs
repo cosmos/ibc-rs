@@ -105,12 +105,12 @@ pub trait ClientExecutionContext:
 }
 
 /// An optional trait that extends the client validation context capabilities by
-/// providing additional methods for validating a client state, particularly
+/// providing additional methods for validating a client state. Mainly
 /// benefiting ICS-07 Tendermint clients by granting access to essential
 /// information from hosts.
 ///
 /// Categorized under ICS-02, as it may also be utilized by other types of light
-/// clients. Developers can view this trait as an example of a custom context
+/// clients. Developers may view this trait as an example of a custom context
 /// definition that expands client validation capabilities, according to their
 /// specific light client requirements.
 pub trait ExtClientValidationContext: ClientValidationContext {
@@ -140,10 +140,9 @@ pub trait ExtClientValidationContext: ClientValidationContext {
 
 /// An optional trait that extends the client context required during execution.
 ///
-/// This trait as it stands right now serves as a trait alias for types that
+/// This trait, as it stands right now, serves as a trait alias for types that
 /// implement both [`ExtClientValidationContext`] and
-/// [`ClientExecutionContext`], and it is automatically implemented for such
-/// types.
+/// [`ClientExecutionContext`], and it is auto-implemented for such types.
 ///
 /// Light client developers who wish to define and utilize their own custom
 /// client contexts may choose to introduce execution methods within a similar
@@ -157,8 +156,8 @@ impl<T> ExtClientExecutionContext for T where T: ExtClientValidationContext + Cl
 /// General-purpose helper converter enabling `TryInto` and `From` conversions
 /// primarily intended between an enum and its variants. This usually used by
 /// standalone functions as a trait bound allowing them to obtain the concrete
-/// local type from the enum containing that concrete type as its variant like
+/// local type from the enum containing that concrete type as its variant, like
 /// when enum `AnyConsensusState` contains the Tendermint `ConsensusState`.
-pub trait TypeCaster<C, E>: TryInto<C, Error = E> + From<C> {}
+pub trait Convertible<C, E>: TryInto<C, Error = E> + From<C> {}
 
-impl<T, C, E> TypeCaster<C, E> for T where T: TryInto<C, Error = E> + From<C> {}
+impl<T, C, E> Convertible<C, E> for T where T: TryInto<C, Error = E> + From<C> {}
