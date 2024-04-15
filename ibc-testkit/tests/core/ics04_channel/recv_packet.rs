@@ -13,7 +13,7 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
-use ibc_testkit::context::TestContext;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::MockHost;
@@ -23,7 +23,7 @@ use rstest::*;
 use test_log::test;
 
 pub struct Fixture {
-    pub context: TestContext<MockHost>,
+    pub context: MockContext,
     pub router: MockRouter,
     pub client_height: Height,
     pub host_height: Height,
@@ -37,7 +37,7 @@ pub struct Fixture {
 fn fixture() -> Fixture {
     let client_id = ClientId::new("07-tendermint", 0).expect("no error");
 
-    let context = TestContext::<MockHost>::default();
+    let context = MockContext::default();
 
     let router = MockRouter::new_with_transfer();
 

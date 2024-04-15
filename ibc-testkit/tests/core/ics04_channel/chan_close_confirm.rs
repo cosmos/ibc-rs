@@ -11,7 +11,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
-use ibc_testkit::context::TestContext;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_close_confirm;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::hosts::MockHost;
@@ -23,7 +23,7 @@ use ibc_testkit::testapp::ibc::core::types::LightClientState;
 fn test_chan_close_confirm_validate() {
     let client_id = mock_client_type().build_client_id(24);
     let conn_id = ConnectionId::new(2);
-    let default_context = TestContext::<MockHost>::default();
+    let default_context = MockContext::default();
     let client_consensus_state_height = default_context.ibc_store.host_height().unwrap();
 
     let conn_end = ConnectionEnd::new(
@@ -80,7 +80,7 @@ fn test_chan_close_confirm_validate() {
 fn test_chan_close_confirm_execute() {
     let client_id = mock_client_type().build_client_id(24);
     let conn_id = ConnectionId::new(2);
-    let default_context = TestContext::<MockHost>::default();
+    let default_context = MockContext::default();
     let client_consensus_state_height = default_context.ibc_store.host_height().unwrap();
 
     let conn_end = ConnectionEnd::new(

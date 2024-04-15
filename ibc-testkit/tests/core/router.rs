@@ -22,7 +22,7 @@ use ibc::core::host::types::path::CommitmentPath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
-use ibc_testkit::context::TestContext;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::applications::transfer::{
     extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
 };
@@ -38,7 +38,6 @@ use ibc_testkit::fixtures::core::connection::{
 };
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
-use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
 use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
@@ -69,7 +68,7 @@ fn routing_module_and_keepers() {
         }
     }
 
-    type StateCheckFn = dyn FnOnce(&TestContext<MockHost>) -> bool;
+    type StateCheckFn = dyn FnOnce(&MockContext) -> bool;
 
     // Test parameters
     struct Test {
@@ -99,7 +98,7 @@ fn routing_module_and_keepers() {
                 .add(core::time::Duration::from_secs(4))
                 .unwrap(),
         )
-        .build::<TestContext<MockHost>>();
+        .build::<MockContext>();
 
     let mut router = MockRouter::new_with_transfer();
 

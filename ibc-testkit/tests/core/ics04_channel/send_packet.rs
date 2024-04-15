@@ -14,7 +14,7 @@ use ibc::core::connection::types::{
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
-use ibc_testkit::context::TestContext;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::types::LightClientState;
@@ -26,7 +26,7 @@ fn send_packet_processing() {
 
     struct Test {
         name: String,
-        ctx: TestContext<MockHost>,
+        ctx: MockContext,
         packet: Packet,
         want_pass: bool,
     }
@@ -87,13 +87,13 @@ fn send_packet_processing() {
     let tests: Vec<Test> = vec![
         Test {
             name: "Processing fails because no channel exists in the context".to_string(),
-            ctx: TestContext::<MockHost>::default(),
+            ctx: MockContext::default(),
             packet: packet.clone(),
             want_pass: false,
         },
         Test {
             name: "Good parameters".to_string(),
-            ctx: TestContext::<MockHost>::default()
+            ctx: MockContext::default()
                 .with_light_client(
                     &ClientId::new("07-tendermint", 0).expect("no error"),
                     LightClientState::<MockHost>::with_latest_height(client_height),
@@ -106,7 +106,7 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height same as destination chain height".to_string(),
-            ctx: TestContext::<MockHost>::default()
+            ctx: MockContext::default()
                 .with_light_client(
                     &ClientId::new("07-tendermint", 0).expect("no error"),
                     LightClientState::<MockHost>::with_latest_height(client_height),
@@ -119,7 +119,7 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height one more than destination chain height".to_string(),
-            ctx: TestContext::<MockHost>::default()
+            ctx: MockContext::default()
                 .with_light_client(
                     &ClientId::new("07-tendermint", 0).expect("no error"),
                     LightClientState::<MockHost>::with_latest_height(client_height),
@@ -132,7 +132,7 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout due to timestamp".to_string(),
-            ctx: TestContext::<MockHost>::default()
+            ctx: MockContext::default()
                 .with_light_client(
                     &ClientId::new("07-tendermint", 0).expect("no error"),
                     LightClientState::<MockHost>::with_latest_height(client_height),
