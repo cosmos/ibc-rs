@@ -1,3 +1,5 @@
+//! Implementation of the `ClientValidationContext` and `ClientExecutionContext`
+//! traits for the `Context` type.
 use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
 use ibc_client_wasm_types::consensus_state::ConsensusState as WasmConsensusState;
 use ibc_core::client::context::{ClientExecutionContext, ClientValidationContext};

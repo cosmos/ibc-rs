@@ -34,6 +34,13 @@ IBC light clients:
 ### CosmWasm Integration
 
 - [ibc-client-cw](./cosmwasm): Types and Utilities for CosmWasm Integration
+  - To utilize the CosmWasm contracts developed with this library, hosting
+    environments must support the CosmWasm module and be using the version of
+    `ibc-go` that supports the `08-wasm` proxy light client.
+
+  - **DISCLAIMER: This project is currently in development and should not be
+    deployed for production use. Users are advised to exercise caution and test
+    thoroughly in non-production environments.**
 
 ## Third-party Clients
 

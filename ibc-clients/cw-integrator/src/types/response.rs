@@ -1,3 +1,4 @@
+//! Contains the response types for the CosmWasm contract.
 use cosmwasm_schema::cw_serde;
 use ibc_core::client::types::Height;
 

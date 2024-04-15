@@ -1,4 +1,5 @@
-//! Contains the definition of the messages that can be sent to the CosmWasm contract.
+//! Defines the messages sent to the CosmWasm contract by the 08-wasm proxy
+//! light client.
 use std::str::FromStr;
 
 use cosmwasm_schema::cw_serde;

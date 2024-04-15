@@ -1,3 +1,5 @@
+//! Implementation of the `ExtClientValidationContext` trait for the `Context`
+//! type.
 use ibc_core::client::context::prelude::*;
 use ibc_core::client::types::Height;
 use ibc_core::handler::types::error::ContextError;

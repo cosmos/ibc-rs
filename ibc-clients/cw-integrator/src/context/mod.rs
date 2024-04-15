@@ -35,6 +35,7 @@ pub struct Context<'a, C: ClientType<'a>> {
 }
 
 impl<'a, C: ClientType<'a>> Context<'a, C> {
+    /// Constructs a new Context object with the given deps and env.
     pub fn new_ref(deps: Deps<'a>, env: Env) -> Result<Self, ContractError> {
         let client_id = ClientId::from_str(env.contract.address.as_str())?;
 
@@ -49,12 +50,13 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         })
     }
 
-    pub fn new_mut(deps: DepsMut<'a>, env: Env) -> Result<Self, ContractError> {
+    /// Constructs a new Context object with the given deps_mut and env.
+    pub fn new_mut(deps_mut: DepsMut<'a>, env: Env) -> Result<Self, ContractError> {
         let client_id = ClientId::from_str(env.contract.address.as_str())?;
 
         Ok(Self {
             deps: None,
-            deps_mut: Some(deps),
+            deps_mut: Some(deps_mut),
             env,
             client_id,
             checksum: None,
@@ -63,30 +65,37 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         })
     }
 
+    /// Returns the env of the context.
     pub fn env(&self) -> &Env {
         &self.env
     }
 
+    /// Logs the given message.
     pub fn log(&self, msg: &str) -> Option<()> {
         self.deps.map(|deps| deps.api.debug(msg))
     }
 
+    /// Returns the client id of the context.
     pub fn client_id(&self) -> ClientId {
         self.client_id.clone()
     }
 
+    /// Sets the checksum of the context.
     pub fn set_checksum(&mut self, checksum: Checksum) {
         self.checksum = Some(checksum);
     }
 
+    /// Enables the migration mode with the subject prefix.
     pub fn set_subject_prefix(&mut self) {
         self.migration_prefix = MigrationPrefix::Subject;
     }
 
+    /// Enables the migration mode with the substitute prefix.
     pub fn set_substitute_prefix(&mut self) {
         self.migration_prefix = MigrationPrefix::Substitute;
     }
 
+    /// Prefixes the given key with the migration prefix.
     pub fn prefixed_key(&self, key: impl AsRef<[u8]>) -> Vec<u8> {
         let mut prefixed_key = Vec::new();
         prefixed_key.extend_from_slice(self.migration_prefix.key());
@@ -95,6 +104,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         prefixed_key
     }
 
+    /// Retrieves the value of the given key.
     pub fn retrieve(&self, key: impl AsRef<[u8]>) -> Result<Vec<u8>, ClientError> {
         let prefixed_key = self.prefixed_key(key);
 
@@ -102,20 +112,23 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
             .storage_ref()
             .get(prefixed_key.as_ref())
             .ok_or(ClientError::Other {
-                description: "key not found".to_string(),
+                description: "key not found upon retrieval".to_string(),
             })?;
 
         Ok(value)
     }
 
+    /// Inserts the given key-value pair.
     pub fn insert(&mut self, key: impl AsRef<[u8]>, value: impl AsRef<[u8]>) {
         self.storage_mut().set(key.as_ref(), value.as_ref());
     }
 
+    /// Removes the value of the given key.
     pub fn remove(&mut self, key: impl AsRef<[u8]>) {
         self.storage_mut().remove(key.as_ref());
     }
 
+    /// Returns the storage of the context.
     pub fn get_heights(&self) -> Result<Vec<Height>, ClientError> {
         let iterator = self.storage_ref().range(None, None, Order::Ascending);
 
@@ -148,6 +161,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
             .transpose()
     }
 
+    /// Returns the key for the client update time.
     pub fn client_update_time_key(&self, height: &Height) -> Vec<u8> {
         let client_update_time_path = ClientUpdateTimePath::new(
             self.client_id(),
@@ -158,6 +172,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         client_update_time_path.leaf().into_bytes()
     }
 
+    /// Returns the key for the client update height.
     pub fn client_update_height_key(&self, height: &Height) -> Vec<u8> {
         let client_update_height_path = ClientUpdateHeightPath::new(
             self.client_id(),
@@ -168,6 +183,8 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         client_update_height_path.leaf().into_bytes()
     }
 
+    /// Returns the genesis metadata by iterating over the stored consensus
+    /// state metadata.
     pub fn get_metadata(&self) -> Result<Option<Vec<GenesisMetadata>>, ContractError> {
         let mut metadata = Vec::<GenesisMetadata>::new();
 
@@ -208,6 +225,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         Ok(Some(metadata))
     }
 
+    /// Returns the checksum of the current contract.
     pub fn obtain_checksum(&self) -> Result<Checksum, ClientError> {
         match &self.checksum {
             Some(checksum) => Ok(checksum.clone()),
@@ -226,6 +244,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         }
     }
 
+    /// Encodes the given client state into a byte vector.
     pub fn encode_client_state(
         &self,
         client_state: C::ClientState,

@@ -2,6 +2,8 @@ use ibc_core::client::types::error::ClientError;
 use ibc_core::primitives::proto::Any;
 use prost::Message;
 
+/// AnyCodec is a convenient trait that provides a generic way to encode and
+/// decode domain types through the `Any` type.
 pub trait AnyCodec {
     fn decode_thru_any<C>(data: Vec<u8>) -> Result<C, ClientError>
     where
