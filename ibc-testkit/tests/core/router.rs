@@ -36,7 +36,7 @@ use ibc_testkit::fixtures::core::connection::{
     dummy_msg_conn_open_ack, dummy_msg_conn_open_init, dummy_msg_conn_open_init_with_client_id,
     dummy_msg_conn_open_try, msg_conn_open_try_with_client_id,
 };
-use ibc_testkit::fixtures::core::context::MockContextConfig;
+use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
@@ -90,7 +90,7 @@ fn routing_module_and_keepers() {
     let upgrade_client_height_second = Height::new(1, 1).unwrap();
 
     // We reuse this same context across all tests. Nothing in particular needs parametrizing.
-    let mut ctx = MockContextConfig::builder()
+    let mut ctx = TestContextConfig::builder()
         // a future timestamp, so that submitted packets are considered from past
         // not more than 5 secs, as later dummy_raw_msg_timeout_on_close(*, 5) is used
         .latest_timestamp(

@@ -26,7 +26,7 @@ use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
 use ibc_testkit::context::{MockContext, TendermintContext, TestContext};
 use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
-use ibc_testkit::fixtures::core::context::MockContextConfig;
+use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::tendermint::BlockParams;
 use ibc_testkit::hosts::{
@@ -129,7 +129,7 @@ fn test_update_client_with_prev_header() {
     let height_1 = Height::new(0, 43).unwrap();
     let height_2 = Height::new(0, 44).unwrap();
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(
             TendermintHost::builder()
                 .chain_id(chain_id_b.clone())
@@ -226,12 +226,12 @@ fn test_consensus_state_pruning() {
 
     let client_id = tm_client_type().build_client_id(0);
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id.clone()).build())
         .latest_height(client_height)
         .build::<TendermintContext>();
 
-    let mut ctx = MockContextConfig::builder()
+    let mut ctx = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id).build())
         .latest_height(client_height)
         .latest_timestamp(Timestamp::now())
@@ -344,12 +344,12 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     let update_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .build::<TendermintContext>();
 
-    let mut ctx = MockContextConfig::builder()
+    let mut ctx = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -435,13 +435,13 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
 
     assert_eq!(update_height.revision_height(), 22);
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<TendermintContext>();
 
-    let mut ctx_a = MockContextConfig::builder()
+    let mut ctx_a = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -535,13 +535,13 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
 
     assert_eq!(update_height.revision_height(), 22);
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<TendermintContext>();
 
-    let ctx_a = MockContextConfig::builder()
+    let ctx_a = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -643,13 +643,13 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
 
     assert_eq!(update_height.revision_height(), 22);
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<TendermintContext>();
 
-    let ctx_a = MockContextConfig::builder()
+    let ctx_a = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -738,13 +738,13 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
 
     assert_eq!(update_height.revision_height(), 22);
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<TendermintContext>();
 
-    let mut ctx_a = MockContextConfig::builder()
+    let mut ctx_a = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -835,13 +835,13 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
 
     assert_eq!(update_height.revision_height(), 22);
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
         .build::<TendermintContext>();
 
-    let ctx_a = MockContextConfig::builder()
+    let ctx_a = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -893,12 +893,12 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     let update_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .build::<TendermintContext>();
 
-    let mut ctx = MockContextConfig::builder()
+    let mut ctx = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -957,12 +957,12 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
     let ctx_b_chain_id = ChainId::new("mockgaiaB-1").unwrap();
     let start_height = Height::new(1, 11).unwrap();
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(ctx_b_chain_id).build())
         .latest_height(client_height)
         .build::<TendermintContext>();
 
-    let mut ctx_a = MockContextConfig::builder()
+    let mut ctx_a = TestContextConfig::builder()
         .host(MockHost::builder().chain_id(ctx_a_chain_id).build())
         .latest_height(start_height)
         .build::<MockContext>()
@@ -1077,7 +1077,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
 
     let chain_start_height = Height::new(1, 11).unwrap();
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(
             TendermintHost::builder()
                 .chain_id(ChainId::new("mockgaiaB-1").unwrap())
@@ -1086,7 +1086,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
         .latest_height(client_height)
         .build::<TendermintContext>();
 
-    let ctx = MockContextConfig::builder()
+    let ctx = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -1247,7 +1247,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     // Create a mock context for chain-B
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(
             TendermintHost::builder()
                 .chain_id(chain_id_b.clone())
@@ -1257,7 +1257,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
         .build::<TendermintContext>();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
-    let mut ctx_a = MockContextConfig::builder()
+    let mut ctx_a = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -1320,7 +1320,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     let misbehaviour_height = Height::new(1, 21).unwrap();
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(
             TendermintHost::builder()
                 .chain_id(chain_id_b.clone())
@@ -1330,7 +1330,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
         .build::<TendermintContext>();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
-    let mut ctx_a = MockContextConfig::builder()
+    let mut ctx_a = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -1409,13 +1409,13 @@ fn test_expired_client() {
 
     let trusting_period = Duration::from_secs(64);
 
-    let ctx_b = MockContextConfig::builder()
+    let ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(client_height)
         .latest_timestamp(timestamp)
         .build::<TendermintContext>();
 
-    let mut ctx = MockContextConfig::builder()
+    let mut ctx = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -1462,13 +1462,13 @@ fn test_client_update_max_clock_drift() {
 
     let max_clock_drift = Duration::from_secs(64);
 
-    let mut ctx_b = MockContextConfig::builder()
+    let mut ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(client_height)
         .latest_timestamp(timestamp)
         .build::<TendermintContext>();
 
-    let ctx_a = MockContextConfig::builder()
+    let ctx_a = TestContextConfig::builder()
         .host(
             MockHost::builder()
                 .chain_id(ChainId::new("mockgaiaA-1").unwrap())
@@ -1585,12 +1585,12 @@ fn client_update_ping_pong() {
     let chain_id_b = ChainId::new("mockgaiaB-1").unwrap();
 
     // Create two mock contexts, one for each chain.
-    let mut ctx_a = MockContextConfig::builder()
+    let mut ctx_a = TestContextConfig::builder()
         .host(MockHost::builder().chain_id(chain_id_a).build())
         .latest_height(chain_a_start_height)
         .build::<MockContext>();
 
-    let mut ctx_b = MockContextConfig::builder()
+    let mut ctx_b = TestContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(chain_b_start_height)
         .latest_timestamp(ctx_a.timestamp_at(chain_a_start_height.decrement().unwrap())) // chain B is running slower than chain A

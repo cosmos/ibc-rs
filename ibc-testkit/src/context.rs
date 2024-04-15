@@ -22,7 +22,7 @@ use ibc::primitives::prelude::*;
 use ibc::primitives::Timestamp;
 
 use super::testapp::ibc::core::types::{LightClientState, MockIbcStore};
-use crate::fixtures::core::context::MockContextConfig;
+use crate::fixtures::core::context::TestContextConfig;
 use crate::hosts::{HostClientState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
@@ -66,7 +66,7 @@ where
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     fn default() -> Self {
-        MockContextConfig::builder().build()
+        TestContextConfig::builder().build()
     }
 }
 
@@ -444,25 +444,25 @@ mod tests {
             let tests: Vec<Test<H>> = vec![
                 Test {
                     name: "Empty history, small pruning window".to_string(),
-                    ctx: MockContextConfig::builder()
+                    ctx: TestContextConfig::builder()
                         .latest_height(Height::new(cv, 1).expect("Never fails"))
                         .build(),
                 },
                 Test {
                     name: "Large pruning window".to_string(),
-                    ctx: MockContextConfig::builder()
+                    ctx: TestContextConfig::builder()
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
                         .build(),
                 },
                 Test {
                     name: "Small pruning window".to_string(),
-                    ctx: MockContextConfig::builder()
+                    ctx: TestContextConfig::builder()
                         .latest_height(Height::new(cv, 30).expect("Never fails"))
                         .build(),
                 },
                 Test {
                     name: "Small pruning window, small starting height".to_string(),
-                    ctx: MockContextConfig::builder()
+                    ctx: TestContextConfig::builder()
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
                         .build(),
                 },

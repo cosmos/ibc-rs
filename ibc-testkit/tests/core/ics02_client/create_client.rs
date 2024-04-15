@@ -19,7 +19,7 @@ use ibc_testkit::context::{MockContext, TendermintContext};
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
-use ibc_testkit::fixtures::core::context::MockContextConfig;
+use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
@@ -136,7 +136,7 @@ fn test_tm_create_client_proof_verification_ok() {
     let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let client_height = Height::new(0, 10).expect("no error");
 
-    let ctx_tm = MockContextConfig::builder()
+    let ctx_tm = TestContextConfig::builder()
         .latest_height(client_height)
         .build::<TendermintContext>();
 

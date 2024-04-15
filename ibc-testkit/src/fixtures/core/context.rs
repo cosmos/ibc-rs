@@ -17,7 +17,7 @@ use crate::utils::year_2023;
 /// Configuration of the `MockContext` type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
 #[builder(build_method(into))]
-pub struct MockContextConfig<H>
+pub struct TestContextConfig<H>
 where
     H: TestHost,
 {
@@ -37,13 +37,13 @@ where
     latest_height: Height,
 }
 
-impl<S, H> From<MockContextConfig<H>> for StoreGenericTestContext<S, H>
+impl<S, H> From<TestContextConfig<H>> for StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug + Default,
     H: TestHost,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
-    fn from(params: MockContextConfig<H>) -> Self {
+    fn from(params: TestContextConfig<H>) -> Self {
         assert_ne!(
             params.latest_height.revision_height(),
             0,

@@ -30,7 +30,7 @@ use parking_lot::Mutex;
 use typed_builder::TypedBuilder;
 
 use crate::context::{MockStore, TestContext};
-use crate::fixtures::core::context::MockContextConfig;
+use crate::fixtures::core::context::TestContextConfig;
 use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
@@ -466,7 +466,7 @@ where
     HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     pub fn with_latest_height(height: Height) -> Self {
-        let context = MockContextConfig::builder()
+        let context = TestContextConfig::builder()
             .latest_height(height)
             .build::<TestContext<_>>();
         LightClientBuilder::init().context(&context).build()
