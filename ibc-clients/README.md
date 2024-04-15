@@ -23,12 +23,17 @@ IBC light clients:
 
 ### ICS-07: Tendermint Light Client
 
-- [ibc-client-tendermint](./ics07-tendermint)
-- [ibc-client-tendermint-types](./ics07-tendermint/types)
+- [ibc-client-tendermint-types](./ics07-tendermint/types): Data Structures
+- [ibc-client-tendermint](./ics07-tendermint): Implementation
+- [ibc-client-tendermint-cw](./ics07-tendermint/cw): CosmWasm Contract
 
 ### ICS-08: WASM Proxy Light Client
 
 - [ibc-client-wasm-types](./ics08-wasm/types)
+
+### CosmWasm Integration
+
+- [ibc-client-cw](./cosmwasm): Types and Utilities for CosmWasm Integration
 
 ## Third-party Clients
 
