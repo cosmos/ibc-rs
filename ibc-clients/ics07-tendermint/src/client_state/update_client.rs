@@ -5,6 +5,8 @@ use ibc_core_client::types::Height;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
+use tendermint::crypto::Sha256;
+use tendermint::merkle::MerkleHash;
 use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
@@ -13,7 +15,7 @@ use crate::context::{
     ConsensusStateConverter, TmVerifier, ValidationContext as TmValidationContext,
 };
 
-pub fn verify_header<V>(
+pub fn verify_header<V, H>(
     ctx: &V,
     header: &TmHeader,
     client_id: &ClientId,
@@ -24,9 +26,10 @@ pub fn verify_header<V>(
 where
     V: TmValidationContext,
     V::ConsensusStateRef: ConsensusStateConverter,
+    H: MerkleHash + Sha256 + Default,
 {
     // Checks that the header fields are valid.
-    header.validate_basic()?;
+    header.validate_basic::<H>()?;
 
     // The tendermint-light-client crate though works on heights that are assumed
     // to have the same revision number. We ensure this here.
@@ -45,8 +48,9 @@ where
                 .consensus_state(&trusted_client_cons_state_path)?
                 .try_into()?;
 
-            header
-                .check_trusted_next_validator_set(&trusted_consensus_state.next_validators_hash)?;
+            header.check_trusted_next_validator_set::<H>(
+                &trusted_consensus_state.next_validators_hash,
+            )?;
 
             TrustedBlockState {
                 chain_id: &chain_id

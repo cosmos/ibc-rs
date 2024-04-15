@@ -124,6 +124,20 @@ where
 
     /// Returns the status of the client. Only Active clients are allowed to process packets.
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError>;
+
+    /// Verifies whether the calling (subject) client state matches the substitute
+    /// client state for the purposes of client recovery.
+    ///
+    /// Note that this validation function does not need to perform *all* of the
+    /// validation steps necessary to confirm client recovery. Some checks, such
+    /// as checking that the subject client state's latest height < the substitute
+    /// client's latest height, as well as checking that the subject client is
+    /// inactive and that the substitute client is active, are performed by the
+    /// `validate` function in the `recover_client` module at the ics02-client
+    /// level.
+    ///
+    /// Returns `Ok` if the subject and substitute client states match, `Err` otherwise.
+    fn check_substitute(&self, ctx: &V, substitute_client_state: Any) -> Result<(), ClientError>;
 }
 
 /// `ClientState` methods which require access to the client's
@@ -172,7 +186,7 @@ where
         client_message: Any,
     ) -> Result<(), ClientError>;
 
-    // Update the client state and consensus state in the store with the upgraded ones.
+    /// Update the client state and consensus state in the store with the upgraded ones.
     fn update_state_on_upgrade(
         &self,
         ctx: &mut E,
@@ -180,6 +194,15 @@ where
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError>;
+
+    /// Update the subject client using the `substitute_client_state` in response
+    /// to a successful client recovery.
+    fn update_on_recovery(
+        &self,
+        ctx: &mut E,
+        subject_client_id: &ClientId,
+        substitute_client_state: Any,
+    ) -> Result<(), ClientError>;
 }
 
 use crate::context::{ClientExecutionContext, ClientValidationContext};

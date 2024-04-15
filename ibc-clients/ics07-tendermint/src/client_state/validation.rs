@@ -9,6 +9,9 @@ use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
+use tendermint::crypto::default::Sha256;
+use tendermint::crypto::Sha256 as Sha256Trait;
+use tendermint::merkle::MerkleHash;
 
 use super::{check_for_misbehaviour_on_misbehavior, check_for_misbehaviour_on_update, ClientState};
 use crate::client_state::{verify_header, verify_misbehaviour};
@@ -31,7 +34,7 @@ where
         client_id: &ClientId,
         client_message: Any,
     ) -> Result<(), ClientError> {
-        verify_client_message(
+        verify_client_message::<V, Sha256>(
             self.inner(),
             ctx,
             client_id,
@@ -52,6 +55,10 @@ where
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
         status(self.inner(), ctx, client_id)
     }
+
+    fn check_substitute(&self, _ctx: &V, substitute_client_state: Any) -> Result<(), ClientError> {
+        check_substitute::<V>(self.inner(), substitute_client_state)
+    }
 }
 
 /// Verify the client message as part of the client state validation process.
@@ -63,7 +70,7 @@ where
 /// function, except for an additional `verifier` parameter that allows users
 /// who require custom verification logic to easily pass in their own verifier
 /// implementation.
-pub fn verify_client_message<V>(
+pub fn verify_client_message<V, H>(
     client_state: &ClientStateType,
     ctx: &V,
     client_id: &ClientId,
@@ -73,11 +80,12 @@ pub fn verify_client_message<V>(
 where
     V: TmValidationContext,
     V::ConsensusStateRef: ConsensusStateConverter,
+    H: MerkleHash + Sha256Trait + Default,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
             let header = TmHeader::try_from(client_message)?;
-            verify_header(
+            verify_header::<V, H>(
                 ctx,
                 &header,
                 client_id,
@@ -88,7 +96,7 @@ where
         }
         TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
             let misbehaviour = TmMisbehaviour::try_from(client_message)?;
-            verify_misbehaviour(
+            verify_misbehaviour::<V, H>(
                 ctx,
                 &misbehaviour,
                 client_id,
@@ -201,4 +209,55 @@ where
     }
 
     Ok(Status::Active)
+}
+
+/// Check that the subject and substitute client states match as part of
+/// the client recovery validation step.
+///
+/// The subject and substitute client states match if all their respective
+/// client state parameters match except for frozen height, latest height,
+/// trusting period, and chain ID.
+pub fn check_substitute<V>(
+    subject_client_state: &ClientStateType,
+    substitute_client_state: Any,
+) -> Result<(), ClientError>
+where
+    V: TmValidationContext,
+    V::ConsensusStateRef: ConsensusStateConverter,
+{
+    let ClientStateType {
+        latest_height: _,
+        frozen_height: _,
+        trusting_period: _,
+        chain_id: _,
+        allow_update: _,
+        trust_level: subject_trust_level,
+        unbonding_period: subject_unbonding_period,
+        max_clock_drift: subject_max_clock_drift,
+        proof_specs: subject_proof_specs,
+        upgrade_path: subject_upgrade_path,
+    } = subject_client_state;
+
+    let substitute_client_state = ClientStateType::try_from(substitute_client_state)?;
+
+    let ClientStateType {
+        latest_height: _,
+        frozen_height: _,
+        trusting_period: _,
+        chain_id: _,
+        allow_update: _,
+        trust_level: substitute_trust_level,
+        unbonding_period: substitute_unbonding_period,
+        max_clock_drift: substitute_max_clock_drift,
+        proof_specs: substitute_proof_specs,
+        upgrade_path: substitute_upgrade_path,
+    } = substitute_client_state;
+
+    (subject_trust_level == &substitute_trust_level
+        && subject_unbonding_period == &substitute_unbonding_period
+        && subject_max_clock_drift == &substitute_max_clock_drift
+        && subject_proof_specs == &substitute_proof_specs
+        && subject_upgrade_path == &substitute_upgrade_path)
+        .then_some(())
+        .ok_or(ClientError::ClientRecoveryStateMismatch)
 }

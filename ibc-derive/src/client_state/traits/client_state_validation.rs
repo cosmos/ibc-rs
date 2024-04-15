@@ -37,6 +37,14 @@ pub(crate) fn impl_ClientStateValidation(
         imports,
     );
 
+    let check_substitute_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        opts,
+        quote! { check_substitute(cs, ctx, substitute_client_state) },
+        imports,
+    );
+
     // The imports we need for the generated code.
     let Any = imports.any();
     let ClientId = imports.client_id();
@@ -46,7 +54,7 @@ pub(crate) fn impl_ClientStateValidation(
 
     // The types we need for the generated code.
     let HostClientState = client_state_enum_name;
-    let ClientValidationContext = opts.client_validation_context.clone().into_token_stream();
+    let V = opts.client_validation_context.clone().into_token_stream();
 
     // The `impl` block quote based on whether the context includes generics.
     let Impl = opts.client_validation_context.impl_ts();
@@ -56,10 +64,10 @@ pub(crate) fn impl_ClientStateValidation(
     let Where = opts.client_validation_context.where_clause_ts();
 
     quote! {
-        #Impl #ClientStateValidation<#ClientValidationContext> for #HostClientState #Where {
+        #Impl #ClientStateValidation<#V> for #HostClientState #Where {
             fn verify_client_message(
                 &self,
-                ctx: &#ClientValidationContext,
+                ctx: &#V,
                 client_id: &#ClientId,
                 client_message: #Any,
             ) -> core::result::Result<(), #ClientError> {
@@ -70,7 +78,7 @@ pub(crate) fn impl_ClientStateValidation(
 
             fn check_for_misbehaviour(
                 &self,
-                ctx: &#ClientValidationContext,
+                ctx: &#V,
                 client_id: &#ClientId,
                 client_message: #Any,
             ) -> core::result::Result<bool, #ClientError> {
@@ -81,13 +89,22 @@ pub(crate) fn impl_ClientStateValidation(
 
             fn status(
                 &self,
-                ctx: &#ClientValidationContext,
+                ctx: &#V,
                 client_id: &#ClientId,
             ) -> core::result::Result<#Status, #ClientError> {
                 match self {
                     #(#status_impl),*
                 }
+            }
 
+            fn check_substitute(
+                &self,
+                ctx: &#V,
+                substitute_client_state: #Any,
+            ) -> core::result::Result<(), #ClientError> {
+                match self {
+                    #(#check_substitute_impl),*
+                }
             }
         }
 
