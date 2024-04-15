@@ -34,11 +34,14 @@ impl ProofSpecs {
         }
         for proof_spec in &self.0 {
             // A non-positive `min_depth` or `max_depth` indicates no limit on the respective bound.
-            // Both positive `min_depth` and `max_depth` can be specified. However, in that case,
-            //  `max_depth` must be greater than or equal to `min_depth` to ensure a valid range.
-            if 0 < proof_spec.0.min_depth
-                && 0 < proof_spec.0.max_depth
-                && proof_spec.0.max_depth < proof_spec.0.min_depth
+            // For simplicity, negative values for `min_depth` and `max_depth` are not allowed
+            // and only `0` is used to indicate no limit. When `min_depth` and `max_depth` are both positive,
+            // `max_depth` must be greater than or equal to `min_depth` to ensure a valid range.
+            if proof_spec.0.max_depth < 0
+                || proof_spec.0.min_depth < 0
+                || (0 < proof_spec.0.min_depth
+                    && 0 < proof_spec.0.max_depth
+                    && proof_spec.0.max_depth < proof_spec.0.min_depth)
             {
                 return Err(CommitmentError::InvalidDepthRange(
                     proof_spec.0.min_depth,
@@ -75,9 +78,13 @@ impl TryFrom<RawProofSpec> for ProofSpec {
     type Error = CommitmentError;
     fn try_from(spec: RawProofSpec) -> Result<Self, CommitmentError> {
         // A non-positive `min_depth` or `max_depth` indicates no limit on the respective bound.
-        // Both positive `min_depth` and `max_depth` can be specified. However, in that case,
-        //  `max_depth` must be greater than or equal to `min_depth` to ensure a valid range.
-        if 0 < spec.min_depth && 0 < spec.max_depth && spec.max_depth < spec.min_depth {
+        // For simplicity, negative values for `min_depth` and `max_depth` are not allowed
+        // and only `0` is used to indicate no limit. When `min_depth` and `max_depth` are both positive,
+        // `max_depth` must be greater than or equal to `min_depth` to ensure a valid range.
+        if spec.max_depth < 0
+            || spec.min_depth < 0
+            || (0 < spec.min_depth && 0 < spec.max_depth && spec.max_depth < spec.min_depth)
+        {
             return Err(CommitmentError::InvalidDepthRange(
                 spec.min_depth,
                 spec.max_depth,
@@ -148,10 +155,11 @@ impl TryFrom<RawInnerSpec> for InnerSpec {
             return Err(CommitmentError::InvalidChildSize(inner_spec.child_size));
         }
 
-        // ensure that min_prefix_length and max_prefix_length are non-negative integers.
-        if inner_spec.max_prefix_length < inner_spec.min_prefix_length
-            || inner_spec.min_prefix_length < 0
+        // Negative prefix lengths are not allowed and the maximum prefix length must
+        // be greater than or equal to the minimum prefix length.
+        if inner_spec.min_prefix_length < 0
             || inner_spec.max_prefix_length < 0
+            || inner_spec.max_prefix_length < inner_spec.min_prefix_length
         {
             return Err(CommitmentError::InvalidPrefixLengthRange(
                 inner_spec.min_prefix_length,
