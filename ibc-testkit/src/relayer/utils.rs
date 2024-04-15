@@ -31,7 +31,7 @@ use ibc::core::host::ValidationContext;
 use ibc::primitives::Signer;
 use ibc_query::core::context::ProvableContext;
 
-use crate::context::MockContext;
+use crate::context::TestContext;
 use crate::hosts::{HostClientState, TestBlock, TestHost};
 use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, LightClientState};
 
@@ -59,8 +59,8 @@ where
     /// Creates a client on `A` with the state of `B`.
     /// Returns the client identifier on `A`.
     pub fn create_client_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &TestContext<B>,
         signer: Signer,
     ) -> ClientId {
         let light_client_of_b = LightClientBuilder::init()
@@ -102,7 +102,7 @@ where
     }
 
     /// Advances the block height on `A` until it catches up with the latest timestamp on `B`.
-    pub fn sync_clock_on_a(ctx_a: &mut MockContext<A>, ctx_b: &MockContext<B>) {
+    pub fn sync_clock_on_a(ctx_a: &mut TestContext<A>, ctx_b: &TestContext<B>) {
         while ctx_b.latest_timestamp() > ctx_a.latest_timestamp() {
             ctx_a.advance_block();
         }
@@ -110,8 +110,8 @@ where
 
     /// Updates the client on `A` with the latest header from `B`.
     pub fn update_client_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &TestContext<B>,
         client_id_on_a: ClientId,
         signer: Signer,
     ) {
@@ -151,8 +151,8 @@ where
     ///
     /// Timestamp sync is required, as IBC doesn't allow client updates from the future beyond max clock drift.
     pub fn update_client_on_a_with_sync(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &mut MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &mut TestContext<B>,
         client_id_on_a: ClientId,
         signer: Signer,
     ) {
@@ -163,8 +163,8 @@ where
     /// `A` initiates a connection with the other end on `B`.
     /// Returns the connection identifier on `A`.
     pub fn connection_open_init_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &TestContext<B>,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
         signer: Signer,
@@ -197,8 +197,8 @@ where
     /// `B` receives the connection opening attempt by `A` after `A` initiates the connection.
     /// Returns the connection identifier on `B`.
     pub fn connection_open_try_on_b(
-        ctx_b: &mut MockContext<B>,
-        ctx_a: &MockContext<A>,
+        ctx_b: &mut TestContext<B>,
+        ctx_a: &TestContext<A>,
         conn_id_on_a: ConnectionId,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
@@ -286,8 +286,8 @@ where
     /// `A` receives `B`'s acknowledgement that `B` received the connection opening attempt by `A`.
     /// `A` starts processing the connection on its side.
     pub fn connection_open_ack_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &TestContext<B>,
         conn_id_on_a: ConnectionId,
         conn_id_on_b: ConnectionId,
         client_id_on_b: ClientId,
@@ -362,8 +362,8 @@ where
     /// `B` receives the confirmation from `A` that the connection creation was successful.
     /// `B` also starts processing the connection on its side.
     pub fn connection_open_confirm_on_b(
-        ctx_b: &mut MockContext<B>,
-        ctx_a: &MockContext<A>,
+        ctx_b: &mut TestContext<B>,
+        ctx_a: &TestContext<A>,
         conn_id_on_a: ConnectionId,
         conn_id_on_b: ConnectionId,
         signer: Signer,
@@ -399,8 +399,8 @@ where
     /// A connection is created by `A` towards `B` using the IBC connection handshake protocol.
     /// Returns the connection identifiers of `A` and `B`.
     pub fn create_connection_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &mut MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &mut TestContext<B>,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
         signer: Signer,
@@ -468,7 +468,7 @@ where
     /// `A` initiates a channel with port identifier with the other end on `B`.
     /// Returns the channel identifier of `A`.
     pub fn channel_open_init_on_a(
-        ctx_a: &mut MockContext<A>,
+        ctx_a: &mut TestContext<A>,
         conn_id_on_a: ConnectionId,
         port_id_on_a: PortId,
         port_id_on_b: PortId,
@@ -497,8 +497,8 @@ where
     /// `B` receives the channel opening attempt by `A` after `A` initiates the channel.
     /// Returns the channel identifier of `B`.
     pub fn channel_open_try_on_b(
-        ctx_b: &mut MockContext<B>,
-        ctx_a: &MockContext<A>,
+        ctx_b: &mut TestContext<B>,
+        ctx_a: &TestContext<A>,
         conn_id_on_b: ConnectionId,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
@@ -545,8 +545,8 @@ where
     /// `A` receives `B`'s acknowledgement that `B` received the channel opening attempt by `A`.
     /// `A` starts processing the channel on its side.
     pub fn channel_open_ack_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &TestContext<B>,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
         chan_id_on_b: ChannelId,
@@ -586,8 +586,8 @@ where
     /// `B` receives the confirmation from `A` that the channel creation was successful.
     /// `B` also starts processing the channel on its side.
     pub fn channel_open_confirm_on_b(
-        ctx_b: &mut MockContext<B>,
-        ctx_a: &MockContext<A>,
+        ctx_b: &mut TestContext<B>,
+        ctx_a: &TestContext<A>,
         chan_id_on_a: ChannelId,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
@@ -624,7 +624,7 @@ where
     /// `A` initiates the channel closing with the other end on `B`.
     /// `A` stops processing the channel.
     pub fn channel_close_init_on_a(
-        ctx_a: &mut MockContext<A>,
+        ctx_a: &mut TestContext<A>,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
         signer: Signer,
@@ -646,8 +646,8 @@ where
     /// `B` receives the channel closing attempt by `A` after `A` initiates the channel closing.
     /// `B` also stops processing the channel.
     pub fn channel_close_confirm_on_b(
-        ctx_b: &mut MockContext<B>,
-        ctx_a: &MockContext<A>,
+        ctx_b: &mut TestContext<B>,
+        ctx_a: &TestContext<A>,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
         signer: Signer,
@@ -685,8 +685,8 @@ where
     /// Returns the channel identifiers of `A` and `B`.
     #[allow(clippy::too_many_arguments)]
     pub fn create_channel_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &mut MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &mut TestContext<B>,
         client_id_on_a: ClientId,
         conn_id_on_a: ConnectionId,
         port_id_on_a: PortId,
@@ -760,8 +760,8 @@ where
     /// A channel is closed by `A` towards `B` using the IBC channel handshake protocol.
     #[allow(clippy::too_many_arguments)]
     pub fn close_channel_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &mut MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &mut TestContext<B>,
         client_id_on_a: ClientId,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
@@ -798,8 +798,8 @@ where
     /// `B` receives a packet from an IBC module on `A`.
     /// Returns `B`'s acknowledgement of receipt.
     pub fn packet_recv_on_b(
-        ctx_b: &mut MockContext<B>,
-        ctx_a: &MockContext<A>,
+        ctx_b: &mut TestContext<B>,
+        ctx_a: &TestContext<A>,
         packet: Packet,
         signer: Signer,
     ) -> Acknowledgement {
@@ -836,8 +836,8 @@ where
 
     /// `A` receives the acknowledgement from `B` that `B` received the packet from `A`.
     pub fn packet_ack_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &TestContext<B>,
         packet: Packet,
         acknowledgement: Acknowledgement,
         signer: Signer,
@@ -873,8 +873,8 @@ where
     /// `A` receives the timeout packet from `B`.
     /// That is, `B` has not received the packet from `A` within the timeout period.
     pub fn packet_timeout_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &TestContext<B>,
         packet: Packet,
         signer: Signer,
     ) {
@@ -910,8 +910,8 @@ where
     /// `A` receives the timeout packet from `B` after closing the channel.
     /// That is, `B` has not received the packet from `A` because the channel is closed.
     pub fn packet_timeout_on_close_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &TestContext<B>,
         packet: Packet,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
@@ -958,8 +958,8 @@ where
 
     /// Sends a packet from an IBC application on `A` to `B` using the IBC packet relay protocol.
     pub fn send_packet_on_a(
-        ctx_a: &mut MockContext<A>,
-        ctx_b: &mut MockContext<B>,
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &mut TestContext<B>,
         packet: Packet,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,

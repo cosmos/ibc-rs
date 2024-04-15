@@ -243,7 +243,7 @@ where
     }
 
     /// Returns a counter of the number of channel ids that have been created thus far.
-    /// The value of this counter should increase only via the 
+    /// The value of this counter should increase only via the
     /// `ChannelKeeper::increase_channel_counter` method.
     fn channel_counter(&self) -> Result<u64, ContextError> {
         Ok(self

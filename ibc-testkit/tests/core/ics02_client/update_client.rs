@@ -24,7 +24,7 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::TestContext;
 use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
@@ -48,7 +48,7 @@ use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
 
 struct Fixture {
-    ctx: MockContext<MockHost>,
+    ctx: TestContext<MockHost>,
     router: MockRouter,
 }
 
@@ -56,7 +56,7 @@ struct Fixture {
 fn fixture() -> Fixture {
     let client_id = ClientId::new("07-tendermint", 0).expect("no error");
 
-    let ctx = MockContext::<MockHost>::default().with_light_client(
+    let ctx = TestContext::<MockHost>::default().with_light_client(
         &client_id,
         LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
@@ -136,9 +136,9 @@ fn test_update_client_with_prev_header() {
                 .build(),
         )
         .latest_height(latest_height)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
-    let mut ctx = MockContext::<MockHost>::default()
+    let mut ctx = TestContext::<MockHost>::default()
         .with_light_client(
             &client_id,
             LightClientBuilder::init().context(&ctx_b).build(),
@@ -229,13 +229,13 @@ fn test_consensus_state_pruning() {
     let ctx_b = MockContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id.clone()).build())
         .latest_height(client_height)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let mut ctx = MockContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id).build())
         .latest_height(client_height)
         .latest_timestamp(Timestamp::now())
-        .build::<MockContext<TendermintHost>>()
+        .build::<TestContext<TendermintHost>>()
         .with_light_client(
             &client_id,
             LightClientBuilder::init()
@@ -347,7 +347,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     let ctx_b = MockContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let mut ctx = MockContextConfig::builder()
         .host(
@@ -356,7 +356,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             LightClientBuilder::init()
@@ -439,7 +439,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let mut ctx_a = MockContextConfig::builder()
         .host(
@@ -448,7 +448,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
@@ -539,7 +539,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
         .host(
@@ -548,7 +548,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
@@ -647,7 +647,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
         .host(
@@ -656,7 +656,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
@@ -742,7 +742,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let mut ctx_a = MockContextConfig::builder()
         .host(
@@ -751,7 +751,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
@@ -839,7 +839,7 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
         .host(
@@ -848,7 +848,7 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
@@ -896,7 +896,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     let ctx_b = MockContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let mut ctx = MockContextConfig::builder()
         .host(
@@ -905,7 +905,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             LightClientBuilder::init()
@@ -960,12 +960,12 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
     let ctx_b = MockContextConfig::builder()
         .host(TendermintHost::builder().chain_id(ctx_b_chain_id).build())
         .latest_height(client_height)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let mut ctx_a = MockContextConfig::builder()
         .host(MockHost::builder().chain_id(ctx_a_chain_id).build())
         .latest_height(start_height)
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             LightClientBuilder::init()
@@ -1084,7 +1084,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
                 .build(),
         )
         .latest_height(client_height)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let ctx = MockContextConfig::builder()
         .host(
@@ -1093,7 +1093,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
                 .build(),
         )
         .latest_height(chain_start_height)
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             LightClientBuilder::init().context(&ctx_b).build(),
@@ -1213,7 +1213,7 @@ fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
 
     let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient").unwrap());
 
-    let ctx = MockContext::<MockHost>::default().with_light_client(
+    let ctx = TestContext::<MockHost>::default().with_light_client(
         &client_id,
         LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
@@ -1229,7 +1229,7 @@ fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
 
     let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient").unwrap());
 
-    let ctx = MockContext::<MockHost>::default().with_light_client(
+    let ctx = TestContext::<MockHost>::default().with_light_client(
         &client_id,
         LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
@@ -1254,7 +1254,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
                 .build(),
         )
         .latest_height(misbehaviour_height)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
     let mut ctx_a = MockContextConfig::builder()
@@ -1264,7 +1264,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             LightClientBuilder::init()
@@ -1327,7 +1327,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
                 .build(),
         )
         .latest_height(client_height)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
     let mut ctx_a = MockContextConfig::builder()
@@ -1337,7 +1337,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             LightClientBuilder::init().context(&ctx_b).build(),
@@ -1413,7 +1413,7 @@ fn test_expired_client() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(client_height)
         .latest_timestamp(timestamp)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let mut ctx = MockContextConfig::builder()
         .host(
@@ -1423,7 +1423,7 @@ fn test_expired_client() {
         )
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             LightClientBuilder::init()
@@ -1466,7 +1466,7 @@ fn test_client_update_max_clock_drift() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(client_height)
         .latest_timestamp(timestamp)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     let ctx_a = MockContextConfig::builder()
         .host(
@@ -1476,7 +1476,7 @@ fn test_client_update_max_clock_drift() {
         )
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
-        .build::<MockContext<MockHost>>()
+        .build::<TestContext<MockHost>>()
         .with_light_client(
             &client_id,
             LightClientBuilder::init()
@@ -1532,7 +1532,7 @@ fn test_client_update_max_clock_drift() {
 /// Builds a `ClientMsg::UpdateClient` for a client with id `client_id` running on the `dest`
 /// context, assuming that the latest header on the source context is `src_header`.
 pub(crate) fn build_client_update_datagram<H: TestHeader, Dst: TestHost>(
-    dest: &MockContext<Dst>,
+    dest: &TestContext<Dst>,
     client_id: &ClientId,
     src_header: &H,
 ) -> Result<ClientMsg, RelayerError>
@@ -1588,13 +1588,13 @@ fn client_update_ping_pong() {
     let mut ctx_a = MockContextConfig::builder()
         .host(MockHost::builder().chain_id(chain_id_a).build())
         .latest_height(chain_a_start_height)
-        .build::<MockContext<MockHost>>();
+        .build::<TestContext<MockHost>>();
 
     let mut ctx_b = MockContextConfig::builder()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(chain_b_start_height)
         .latest_timestamp(ctx_a.timestamp_at(chain_a_start_height.decrement().unwrap())) // chain B is running slower than chain A
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
     ctx_a = ctx_a.with_light_client(
         &client_on_a_for_b,

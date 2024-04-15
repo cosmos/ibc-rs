@@ -5,7 +5,7 @@ use ibc::core::host::types::path::ChannelEndPath;
 use ibc::core::host::ValidationContext;
 use ibc::primitives::Signer;
 
-use crate::context::MockContext;
+use crate::context::TestContext;
 use crate::hosts::{HostClientState, TestHost};
 use crate::relayer::utils::TypedRelayerOps;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
@@ -18,8 +18,8 @@ where
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
-    ctx_a: MockContext<A>,
-    ctx_b: MockContext<B>,
+    ctx_a: TestContext<A>,
+    ctx_b: TestContext<B>,
 }
 
 impl<A, B> RelayerContext<A, B>
@@ -30,27 +30,27 @@ where
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
     /// Creates a new relayer context with the given [`MockContext`] instances.
-    pub fn new(ctx_a: MockContext<A>, ctx_b: MockContext<B>) -> Self {
+    pub fn new(ctx_a: TestContext<A>, ctx_b: TestContext<B>) -> Self {
         Self { ctx_a, ctx_b }
     }
 
     /// Returns immutable reference to the first context.
-    pub fn get_ctx_a(&self) -> &MockContext<A> {
+    pub fn get_ctx_a(&self) -> &TestContext<A> {
         &self.ctx_a
     }
 
     /// Returns immutable reference to the second context.
-    pub fn get_ctx_b(&self) -> &MockContext<B> {
+    pub fn get_ctx_b(&self) -> &TestContext<B> {
         &self.ctx_b
     }
 
     /// Returns mutable reference to the first context.
-    pub fn get_ctx_a_mut(&mut self) -> &mut MockContext<A> {
+    pub fn get_ctx_a_mut(&mut self) -> &mut TestContext<A> {
         &mut self.ctx_a
     }
 
     /// Returns mutable reference to the second context.
-    pub fn get_ctx_b_mut(&mut self) -> &mut MockContext<B> {
+    pub fn get_ctx_b_mut(&mut self) -> &mut TestContext<B> {
         &mut self.ctx_b
     }
 

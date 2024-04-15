@@ -15,7 +15,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::primitives::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::TestContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
@@ -23,7 +23,7 @@ use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
 
 struct Fixture {
-    ctx: MockContext<MockHost>,
+    ctx: TestContext<MockHost>,
     pub router: MockRouter,
     client_id: ClientId,
     client_height: Height,
@@ -39,7 +39,7 @@ fn fixture() -> Fixture {
     let client_id = ClientId::new("07-tendermint", 0).expect("no error");
 
     let client_height = Height::new(0, 2).unwrap();
-    let ctx = MockContext::<MockHost>::default().with_light_client(
+    let ctx = TestContext::<MockHost>::default().with_light_client(
         &ClientId::new("07-tendermint", 0).expect("no error"),
         LightClientState::<MockHost>::with_latest_height(client_height),
     );

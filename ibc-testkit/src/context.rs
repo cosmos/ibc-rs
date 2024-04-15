@@ -23,7 +23,7 @@ use ibc::primitives::Timestamp;
 
 use super::testapp::ibc::core::types::{LightClientState, MockIbcStore};
 use crate::fixtures::core::context::MockContextConfig;
-use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
+use crate::hosts::{HostClientState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::router::MockRouter;
@@ -31,7 +31,7 @@ use crate::testapp::ibc::core::types::DEFAULT_BLOCK_TIME_SECS;
 
 /// A context implementing the dependencies necessary for testing any IBC module.
 #[derive(Debug)]
-pub struct MockGenericContext<S, H>
+pub struct StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug,
     H: TestHost,
@@ -52,12 +52,12 @@ where
 }
 
 pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
-pub type MockContext<H> = MockGenericContext<MockStore, H>;
+pub type TestContext<H> = StoreGenericTestContext<MockStore, H>;
 
 /// Returns a MockContext with bare minimum initialization: no clients, no connections, and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
-impl<S, H> Default for MockGenericContext<S, H>
+impl<S, H> Default for StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug + Default,
     H: TestHost,
@@ -70,7 +70,7 @@ where
 
 /// Implementation of internal interface for use in testing. The methods in this interface should
 /// _not_ be accessible to any ICS handler.
-impl<S, H> MockGenericContext<S, H>
+impl<S, H> StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug,
     H: TestHost,
@@ -248,7 +248,7 @@ where
     }
 
     /// Generates a light client for the host by generating a client
-    /// state, as well as generating consensus states for each 
+    /// state, as well as generating consensus states for each
     /// consensus height.
     pub fn generate_light_client(
         &self,
@@ -428,7 +428,7 @@ mod tests {
             HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
         {
             name: String,
-            ctx: MockContext<H>,
+            ctx: TestContext<H>,
         }
 
         fn run_tests<H>(sub_title: &str)

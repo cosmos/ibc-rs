@@ -10,7 +10,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::TestContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_try;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::hosts::MockHost;
@@ -21,7 +21,7 @@ use rstest::*;
 use test_log::test;
 
 pub struct Fixture {
-    pub ctx: MockContext<MockHost>,
+    pub ctx: TestContext<MockHost>,
     pub router: MockRouter,
     pub msg: MsgEnvelope,
     pub client_id_on_b: ClientId,
@@ -56,7 +56,7 @@ fn fixture() -> Fixture {
 
     let msg = MsgEnvelope::from(ChannelMsg::from(msg_chan_open_try));
 
-    let ctx = MockContext::<MockHost>::default();
+    let ctx = TestContext::<MockHost>::default();
 
     let router = MockRouter::new_with_transfer();
 

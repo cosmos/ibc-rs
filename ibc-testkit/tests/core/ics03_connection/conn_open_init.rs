@@ -7,7 +7,7 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::TestContext;
 use ibc_testkit::fixtures::core::connection::{
     dummy_msg_conn_open_init, msg_conn_open_init_with_counterparty_conn_id,
     msg_conn_open_with_version,
@@ -41,7 +41,7 @@ fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConn
         Msg::WithCounterpartyConnId => msg_conn_open_init_with_counterparty_conn_id(msg_default, 2),
     };
 
-    let ctx_default = MockContext::<MockHost>::default();
+    let ctx_default = TestContext::<MockHost>::default();
     let ctx = match ctx_variant {
         Ctx::WithClient => {
             ctx_default

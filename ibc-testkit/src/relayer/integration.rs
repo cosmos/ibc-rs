@@ -11,7 +11,7 @@ use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc::primitives::Timestamp;
 
-use crate::context::MockContext;
+use crate::context::TestContext;
 use crate::fixtures::core::signer::dummy_account_id;
 use crate::hosts::{HostClientState, TestHost};
 use crate::relayer::context::RelayerContext;
@@ -28,8 +28,8 @@ where
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
-    let ctx_a = MockContext::<A>::default();
-    let ctx_b = MockContext::<B>::default();
+    let ctx_a = TestContext::<A>::default();
+    let ctx_b = TestContext::<B>::default();
 
     let signer = dummy_account_id();
 

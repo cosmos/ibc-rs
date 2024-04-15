@@ -15,7 +15,7 @@ use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::{ClientConsensusStatePath, NextClientSequencePath};
 use ibc::core::host::{ClientStateRef, ValidationContext};
 use ibc_query::core::context::ProvableContext;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::TestContext;
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
@@ -139,9 +139,9 @@ fn test_tm_create_client_proof_verification_ok() {
 
     let ctx_tm = MockContextConfig::builder()
         .latest_height(client_height)
-        .build::<MockContext<TendermintHost>>();
+        .build::<TestContext<TendermintHost>>();
 
-    let ctx_mk = MockContext::<MockHost>::default().with_light_client(
+    let ctx_mk = TestContext::<MockHost>::default().with_light_client(
         &client_id,
         LightClientBuilder::init().context(&ctx_tm).build(),
     );

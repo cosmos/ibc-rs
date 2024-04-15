@@ -29,7 +29,7 @@ use ibc_proto::ics23::CommitmentProof;
 use parking_lot::Mutex;
 use typed_builder::TypedBuilder;
 
-use crate::context::{MockContext, MockStore};
+use crate::context::{MockStore, TestContext};
 use crate::fixtures::core::context::MockContextConfig;
 use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::mock::header::MockHeader;
@@ -455,7 +455,7 @@ where
     HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     fn default() -> Self {
-        let context = MockContext::<H>::default();
+        let context = TestContext::<H>::default();
         LightClientBuilder::init().context(&context).build()
     }
 }
@@ -468,7 +468,7 @@ where
     pub fn with_latest_height(height: Height) -> Self {
         let context = MockContextConfig::builder()
             .latest_height(height)
-            .build::<MockContext<_>>();
+            .build::<TestContext<_>>();
         LightClientBuilder::init().context(&context).build()
     }
 }
@@ -480,7 +480,7 @@ where
     H: TestHost,
     HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
-    context: &'a MockContext<H>,
+    context: &'a TestContext<H>,
     #[builder(default, setter(into))]
     consensus_heights: Vec<Height>,
     #[builder(default)]

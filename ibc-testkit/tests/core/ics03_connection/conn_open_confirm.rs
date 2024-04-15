@@ -11,7 +11,7 @@ use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::TestContext;
 use ibc_testkit::fixtures::core::connection::dummy_conn_open_confirm;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
@@ -34,7 +34,7 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
         CommitmentPrefix::try_from(b"ibc".to_vec()).unwrap(),
     );
 
-    let ctx_default = MockContext::<MockHost>::default();
+    let ctx_default = TestContext::<MockHost>::default();
 
     let incorrect_conn_end_state = ConnectionEnd::new(
         State::Init,

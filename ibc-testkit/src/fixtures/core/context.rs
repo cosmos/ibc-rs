@@ -8,7 +8,7 @@ use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use typed_builder::TypedBuilder;
 
-use crate::context::MockGenericContext;
+use crate::context::StoreGenericTestContext;
 use crate::hosts::{HostClientState, TestBlock, TestHost};
 use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
@@ -37,7 +37,7 @@ where
     latest_height: Height,
 }
 
-impl<S, H> From<MockContextConfig<H>> for MockGenericContext<S, H>
+impl<S, H> From<MockContextConfig<H>> for StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug + Default,
     H: TestHost,

@@ -6,7 +6,7 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::TestContext;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_try;
 use ibc_testkit::fixtures::core::context::MockContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
@@ -53,7 +53,7 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
 
     let ctx_new = MockContextConfig::builder()
         .latest_height(host_chain_height)
-        .build::<MockContext<MockHost>>();
+        .build::<TestContext<MockHost>>();
     let ctx = match ctx_variant {
         Ctx::Default => DefaultIbcStore::default(),
         Ctx::WithClient => {
