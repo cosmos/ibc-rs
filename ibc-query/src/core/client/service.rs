@@ -25,7 +25,7 @@ use super::{
     query_consensus_state_heights, query_consensus_states, query_upgraded_client_state,
     query_upgraded_consensus_state,
 };
-use crate::core::context::QueryContext;
+use crate::core::context::{ProvableContext, QueryContext};
 use crate::utils::{IntoDomain, IntoResponse, TryIntoDomain};
 
 // TODO(rano): currently the services don't support pagination, so we return all the results.
@@ -64,7 +64,7 @@ where
 impl<I, U> ClientQuery for ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
-    U: UpgradeValidationContext + Send + Sync + 'static,
+    U: UpgradeValidationContext + ProvableContext + Send + Sync + 'static,
     ConsensusStateRef<I>: Into<Any>,
     UpgradedConsensusStateRef<U>: Into<Any>,
 {
