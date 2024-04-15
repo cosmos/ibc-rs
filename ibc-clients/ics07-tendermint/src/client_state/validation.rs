@@ -3,7 +3,7 @@ use ibc_client_tendermint_types::{
     Misbehaviour as TmMisbehaviour, TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
 use ibc_core_client::context::client_state::ClientStateValidation;
-use ibc_core_client::context::{ExtClientValidationContext, TypeCaster};
+use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Status;
 use ibc_core_host::types::identifiers::ClientId;
@@ -16,12 +16,12 @@ use tendermint::merkle::MerkleHash;
 
 use super::{check_for_misbehaviour_on_misbehavior, check_for_misbehaviour_on_update, ClientState};
 use crate::client_state::{verify_header, verify_misbehaviour};
-use crate::context::{DefaultVerifier, TmVerifier};
+use crate::verifier::{DefaultVerifier, TmVerifier};
 
 impl<V> ClientStateValidation<V> for ClientState
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
     /// standalone `verify_client_message` function. This is to make it as simple
@@ -78,7 +78,7 @@ pub fn verify_client_message<V, H>(
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
     H: MerkleHash + Sha256Trait + Default,
 {
     match client_message.type_url.as_str() {
@@ -148,7 +148,7 @@ pub fn check_for_misbehaviour<V>(
 ) -> Result<bool, ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
@@ -175,7 +175,7 @@ pub fn status<V>(
 ) -> Result<Status, ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     if client_state.is_frozen() {
         return Ok(Status::Frozen);
@@ -222,7 +222,7 @@ pub fn check_substitute<V>(
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: TypeCaster<ConsensusStateType, ClientError>,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let ClientStateType {
         latest_height: _,
