@@ -2,6 +2,7 @@
 
 use ibc_primitives::prelude::*;
 use ibc_proto::ics23::{InnerSpec as RawInnerSpec, LeafOp as RawLeafOp, ProofSpec as RawProofSpec};
+use ics23::{HashOp, LengthOp};
 
 use crate::error::CommitmentError;
 /// An array of proof specifications.
@@ -83,7 +84,11 @@ impl TryFrom<RawProofSpec> for ProofSpec {
             ));
         }
 
-        let leaf_spec = spec.leaf_spec.map(LeafOp::from).map(|lop| lop.0);
+        let leaf_spec = spec
+            .leaf_spec
+            .map(LeafOp::try_from)
+            .transpose()?
+            .map(|lop| lop.0);
         let inner_spec = spec
             .inner_spec
             .map(InnerSpec::try_from)
@@ -117,15 +122,19 @@ impl From<ProofSpec> for RawProofSpec {
 #[derive(Clone, Debug, PartialEq)]
 struct LeafOp(RawLeafOp);
 
-impl From<RawLeafOp> for LeafOp {
-    fn from(leaf_op: RawLeafOp) -> Self {
-        Self(RawLeafOp {
-            hash: leaf_op.hash,
-            prehash_key: leaf_op.prehash_key,
-            prehash_value: leaf_op.prehash_value,
-            length: leaf_op.length,
-            prefix: leaf_op.prefix,
-        })
+impl TryFrom<RawLeafOp> for LeafOp {
+    type Error = CommitmentError;
+    fn try_from(leaf_op: RawLeafOp) -> Result<Self, Self::Error> {
+        let _ = HashOp::try_from(leaf_op.hash)
+            .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.hash))?;
+        let _ = HashOp::try_from(leaf_op.prehash_key)
+            .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.prehash_key))?;
+        let _ = HashOp::try_from(leaf_op.prehash_value)
+            .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.prehash_value))?;
+        let _ = LengthOp::try_from(leaf_op.length)
+            .map_err(|_| CommitmentError::InvalidLengthOp(leaf_op.length))?;
+
+        Ok(Self(leaf_op))
     }
 }
 
@@ -237,5 +246,31 @@ mod tests {
             hash: 1,
         };
         InnerSpec::try_from(raw_inner_spec).unwrap();
+    }
+
+    #[rstest]
+    #[case(1, 1, 1, 1)]
+    #[should_panic(expected = "InvalidHashOp")]
+    #[case(-1, 1, 1, 1)]
+    #[should_panic(expected = "InvalidHashOp")]
+    #[case(1, -1, 1, 1)]
+    #[should_panic(expected = "InvalidHashOp")]
+    #[case(1, 1, -1, 1)]
+    #[should_panic(expected = "InvalidLengthOp")]
+    #[case(1, 1, 1, -1)]
+    fn test_leaf_op_from(
+        #[case] hash: i32,
+        #[case] prehash_key: i32,
+        #[case] prehash_value: i32,
+        #[case] length: i32,
+    ) {
+        let raw_leaf_op = RawLeafOp {
+            hash,
+            prehash_key,
+            prehash_value,
+            length,
+            prefix: vec![],
+        };
+        LeafOp::try_from(raw_leaf_op).unwrap();
     }
 }
