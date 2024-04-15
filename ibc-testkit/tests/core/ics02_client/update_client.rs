@@ -209,8 +209,8 @@ fn test_update_client_with_prev_header() {
 /// Tests that the Tendermint client consensus state pruning logic
 /// functions correctly.
 ///
-/// This test sets up a MockContext with host height 1 and a trusting
-/// period of 3 seconds. It then advances the state of the MockContext
+/// This test sets up a `TendermintContext` with host height 1 and a trusting
+/// period of 3 seconds. It then advances the state of the `TendermintContext`
 /// by 2 heights, and thus 6 seconds, due to the DEFAULT_BLOCK_TIME_SECS
 /// constant being set to 3 seconds. At this point, the chain is at height
 /// 3. Any consensus states associated with a block more than 3 seconds
@@ -984,7 +984,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
     // Update the trusted height of the header to point to the previous height
     // (`start_height` in this case).
     //
-    // Note: The current MockContext interface doesn't allow us to
+    // Note: The current `TestContext` interface doesn't allow us to
     // do this without a major redesign.
 
     // current problem: the timestamp of the new header doesn't match the timestamp of
@@ -995,7 +995,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
 
     // Update the client height to `client_height`
     //
-    // Note: The current MockContext interface doesn't allow us to
+    // Note: The current `TestContext` interface doesn't allow us to
     // do this without a major redesign.
     {
         // FIXME: idea: we need to update the light client with the latest block from
@@ -1630,7 +1630,7 @@ fn client_update_ping_pong() {
         let client_msg_b = client_msg_b_res.unwrap();
 
         // - send the message to B. We bypass ICS18 interface and call directly into
-        // MockContext `recv` method (to avoid additional serialization steps).
+        // `TestContext` `recv` method (to avoid additional serialization steps).
         let dispatch_res_b = ctx_b.deliver(MsgEnvelope::Client(client_msg_b));
         let validation_res = ctx_b.host.validate();
         assert!(

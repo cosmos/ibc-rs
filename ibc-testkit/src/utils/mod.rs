@@ -8,7 +8,7 @@ use tendermint::Time;
 /// If two [`MockGenericContext`](crate::context::MockGenericContext)
 /// are initialized using [`Time::now()`], second one will have a greater timestamp than the first one.
 /// So, the latest header of the second context can not be submitted to first one.
-/// We can still set a custom timestamp via [`MockContextConfig`](crate::fixtures::core::context::MockContextConfig).
+/// We can still set a custom timestamp via [`TestContextConfig`](crate::fixtures::core::context::TestContextConfig).
 pub fn year_2023() -> Timestamp {
     // TODO(rano): can we turn this into a fixture?
 

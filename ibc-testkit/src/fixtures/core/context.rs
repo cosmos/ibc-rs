@@ -14,7 +14,7 @@ use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 use crate::utils::year_2023;
 
-/// Configuration of the `MockContext` type for generating dummy contexts.
+/// Configuration of the [`StoreGenericTestContext`] type for generating dummy contexts.
 #[derive(Debug, TypedBuilder)]
 #[builder(build_method(into))]
 pub struct TestContextConfig<H>

@@ -10,7 +10,7 @@ use crate::hosts::{HostClientState, TestHost};
 use crate::relayer::utils::TypedRelayerOps;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
-/// A relayer context that allows interaction between two [`MockContext`] instances.
+/// A relayer context that allows interaction between two [`TestContext`] instances.
 pub struct RelayerContext<A, B>
 where
     A: TestHost,
@@ -29,7 +29,7 @@ where
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
-    /// Creates a new relayer context with the given [`MockContext`] instances.
+    /// Creates a new relayer context with the given [`TestContext`] instances.
     pub fn new(ctx_a: TestContext<A>, ctx_b: TestContext<B>) -> Self {
         Self { ctx_a, ctx_b }
     }

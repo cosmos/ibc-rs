@@ -51,12 +51,16 @@ where
     pub ibc_router: MockRouter,
 }
 
+/// A mock store type using basecoin-storage implementations.
 pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
+/// A [`StoreGenericTestContext`] using [`MockStore`].
 pub type TestContext<H> = StoreGenericTestContext<MockStore, H>;
+/// A [`StoreGenericTestContext`] using [`MockStore`] and [`MockHost`].
 pub type MockContext = TestContext<MockHost>;
+/// A [`StoreGenericTestContext`] using [`MockStore`] and [`TendermintHost`].
 pub type TendermintContext = TestContext<TendermintHost>;
 
-/// Returns a MockContext with bare minimum initialization: no clients, no connections, and no channels are
+/// Returns a [`StoreGenericTestContext`] with bare minimum initialization: no clients, no connections, and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
 impl<S, H> Default for StoreGenericTestContext<S, H>
@@ -470,7 +474,7 @@ mod tests {
                 // Generating 2000 Tendermint blocks is slow.
                 // Test {
                 //     name: "Large pruning window, large starting height".to_string(),
-                //     ctx: MockContextConfig::builder()
+                //     ctx: TestContextConfig::builder()
                 //         .latest_height(Height::new(cv, 2000).expect("Never fails"))
                 //         .build(),
                 // },
