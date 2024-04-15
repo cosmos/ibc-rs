@@ -107,14 +107,7 @@ impl TryFrom<RawProofSpec> for ProofSpec {
 
 impl From<ProofSpec> for RawProofSpec {
     fn from(spec: ProofSpec) -> Self {
-        let spec = spec.0;
-        RawProofSpec {
-            leaf_spec: spec.leaf_spec.map(|lop| LeafOp(lop).into()),
-            inner_spec: spec.inner_spec.map(|ispec| InnerSpec(ispec).into()),
-            max_depth: spec.max_depth,
-            min_depth: spec.min_depth,
-            prehash_key_before_comparison: spec.prehash_key_before_comparison,
-        }
+        spec.0
     }
 }
 
@@ -140,14 +133,7 @@ impl TryFrom<RawLeafOp> for LeafOp {
 
 impl From<LeafOp> for RawLeafOp {
     fn from(leaf_op: LeafOp) -> Self {
-        let leaf_op = leaf_op.0;
-        RawLeafOp {
-            hash: leaf_op.hash,
-            prehash_key: leaf_op.prehash_key,
-            prehash_value: leaf_op.prehash_value,
-            length: leaf_op.length,
-            prefix: leaf_op.prefix,
-        }
+        leaf_op.0
     }
 }
 
@@ -186,15 +172,7 @@ impl TryFrom<RawInnerSpec> for InnerSpec {
 
 impl From<InnerSpec> for RawInnerSpec {
     fn from(inner_spec: InnerSpec) -> Self {
-        let inner_spec = inner_spec.0;
-        RawInnerSpec {
-            child_order: inner_spec.child_order,
-            child_size: inner_spec.child_size,
-            min_prefix_length: inner_spec.min_prefix_length,
-            max_prefix_length: inner_spec.max_prefix_length,
-            empty_child: inner_spec.empty_child,
-            hash: inner_spec.hash,
-        }
+        inner_spec.0
     }
 }
 
