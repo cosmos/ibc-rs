@@ -197,10 +197,16 @@ mod tests {
     use super::*;
 
     #[rstest]
+    #[case(0, 0)]
+    #[case(2, 2)]
     #[case(5, 6)]
+    #[should_panic(expected = "InvalidDepthRange")]
     #[case(-3,3)]
+    #[should_panic(expected = "InvalidDepthRange")]
     #[case(2,-6)]
+    #[should_panic(expected = "InvalidDepthRange")]
     #[case(-2,-6)]
+    #[should_panic(expected = "InvalidDepthRange")]
     #[case(-6,-2)]
     #[should_panic(expected = "InvalidDepthRange")]
     #[case(5, 3)]
@@ -216,7 +222,9 @@ mod tests {
     }
 
     #[rstest]
+    #[case(0, 0)]
     #[case(1, 2)]
+    #[case(2, 2)]
     #[should_panic(expected = "InvalidPrefixLengthRange")]
     #[case(2, 1)]
     #[should_panic(expected = "InvalidPrefixLengthRange")]
@@ -240,15 +248,24 @@ mod tests {
     }
 
     #[rstest]
-    #[case(1, 1, 1, 1)]
+    #[case(0, 0, 0, 0)]
+    #[case(9, 9, 9, 8)]
     #[should_panic(expected = "InvalidHashOp")]
-    #[case(-1, 1, 1, 1)]
+    #[case(-1, 4, 4, 4)]
     #[should_panic(expected = "InvalidHashOp")]
-    #[case(1, -1, 1, 1)]
+    #[case(10, 4, 4, 4)]
     #[should_panic(expected = "InvalidHashOp")]
-    #[case(1, 1, -1, 1)]
+    #[case(4, -1, 4, 4)]
+    #[should_panic(expected = "InvalidHashOp")]
+    #[case(4, 10, 4, 4)]
+    #[should_panic(expected = "InvalidHashOp")]
+    #[case(4, 4, -1, 4)]
+    #[should_panic(expected = "InvalidHashOp")]
+    #[case(4, 4, 10, 4)]
     #[should_panic(expected = "InvalidLengthOp")]
-    #[case(1, 1, 1, -1)]
+    #[case(4, 4, 4, -1)]
+    #[should_panic(expected = "InvalidLengthOp")]
+    #[case(4, 4, 4, 9)]
     fn test_leaf_op_try_from(
         #[case] hash: i32,
         #[case] prehash_key: i32,
