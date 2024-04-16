@@ -27,6 +27,14 @@ ibc-client-tendermint = { workspace = true }
 ### (This is the min version of `ibc-go` that supports `08-wasm` light clients)
 cosmwasm-std 	      = "1.5.2"
 
+[dev-dependencies]
+cosmwasm-vm           = "1.5.2"
+hex				      = "0.4.2"
+ibc-testkit 		  = { workspace = true }
+ibc-client-tendermint = { workspace = true }
+tendermint 		      = { workspace = true }
+tendermint-testgen    = { workspace = true }
+
 [features]
 default = ["std"]
 std = [
@@ -34,5 +42,4 @@ std = [
 	"ibc-client-cw/std",
 	"ibc-client-tendermint/std",
 ]
-library = []
 

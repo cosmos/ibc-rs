@@ -132,7 +132,11 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
     pub fn get_heights(&self) -> Result<Vec<Height>, ClientError> {
         let iterator = self.storage_ref().range(None, None, Order::Ascending);
 
-        iterator.map(|(_, height)| parse_height(height)).collect()
+        let heights: Vec<_> = iterator
+            .filter_map(|(_, value)| parse_height(value).transpose())
+            .collect::<Result<_, _>>()?;
+
+        Ok(heights)
     }
 
     /// Searches for either the earliest next or latest previous height based on
@@ -157,8 +161,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
         iterator
             .next()
-            .map(|(_, height)| parse_height(height))
-            .transpose()
+            .map_or(Ok(None), |(_, height)| parse_height(height))
     }
 
     /// Returns the key for the client update time.
@@ -195,10 +198,10 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
             .range(Some(&start_key), None, Order::Ascending);
 
         for (_, encoded_height) in iterator {
-            let height = parse_height(encoded_height);
+            let height = parse_height(encoded_height)?;
 
             match height {
-                Ok(height) => {
+                Some(height) => {
                     let processed_height_key = self.client_update_height_key(&height);
                     metadata.push(GenesisMetadata {
                         key: processed_height_key.clone(),
@@ -210,7 +213,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
                         value: self.retrieve(&processed_time_key)?,
                     });
                 }
-                Err(_) => break,
+                None => continue,
             }
         }
 
