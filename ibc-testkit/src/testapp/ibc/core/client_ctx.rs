@@ -1,5 +1,6 @@
-use ibc::clients::tendermint::context::ValidationContext as TmValidationContext;
-use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc::core::client::context::{
+    ClientExecutionContext, ClientValidationContext, ExtClientValidationContext,
+};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::handler::types::error::ContextError;
@@ -36,7 +37,7 @@ impl MockClientContext for MockContext {
     }
 }
 
-impl TmValidationContext for MockContext {
+impl ExtClientValidationContext for MockContext {
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         ValidationContext::host_timestamp(self)
     }
