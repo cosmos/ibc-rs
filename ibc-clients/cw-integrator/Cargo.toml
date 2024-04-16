@@ -26,8 +26,11 @@ ibc-core   			  = { workspace = true }
 ibc-client-wasm-types = { workspace = true, features = ["cosmwasm"] }
 
 # cosmwasm dependencies
-cosmwasm-schema       = "1.4.1"
-cosmwasm-std 	      = "1.4.1"
+### Note: Kept at the following version to match the CosmWasm module version
+### used by chains supporting the wasm-enabled version of ibc-go v7.3
+### (This is the min version of `ibc-go` that supports `08-wasm` light clients)
+cosmwasm-schema       = "1.5.2"
+cosmwasm-std 	      = "1.5.2"
 
 [features]
 default = ["std"]

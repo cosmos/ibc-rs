@@ -22,7 +22,10 @@ ibc-client-cw         = { workspace = true }
 ibc-client-tendermint = { workspace = true }
 
 # cosmwasm dependencies
-cosmwasm-std 	      = "1.4.1"
+### Note: Kept at the following version to match the CosmWasm module version
+### used by chains supporting the wasm-enabled version of `ibc-go` v7.3
+### (This is the min version of `ibc-go` that supports `08-wasm` light clients)
+cosmwasm-std 	      = "1.5.2"
 
 [features]
 default = ["std"]
