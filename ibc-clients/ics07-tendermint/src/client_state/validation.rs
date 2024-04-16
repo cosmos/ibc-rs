@@ -38,7 +38,7 @@ where
     /// for it. For method implementation, the simplest way is to import and
     /// call their analogous standalone versions under the
     /// [`crate::client_state`] module, unless bespoke logic is desired for any
-    /// of those functions. Then, when it comes to implement the
+    /// of those functions. Then, when it comes to implementing the
     /// `verify_client_message` method, use the [`verify_client_message`]
     /// function and pass your custom verifier object as the `verifier`
     /// parameter.
