@@ -29,6 +29,14 @@ pub enum CommitmentError {
     EncodingFailure(String),
     /// decoding commitment proof bytes failed: `{0}`
     DecodingFailure(String),
+    /// invalid prefix length range: `[{0}, {1}]`
+    InvalidPrefixLengthRange(i32, i32),
+    /// invalid child size: `{0}`
+    InvalidChildSize(i32),
+    /// invalid hash operation: `{0}`
+    InvalidHashOp(i32),
+    /// invalid length operation: `{0}`
+    InvalidLengthOp(i32),
 }
 
 #[cfg(feature = "std")]
