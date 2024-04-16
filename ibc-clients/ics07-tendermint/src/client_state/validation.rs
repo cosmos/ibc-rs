@@ -30,7 +30,7 @@ where
     ///
     /// In a situation where the Tendermint [`ProdVerifier`] doesn't provide the
     /// desired outcome, users should define a custom verifier struct and then
-    /// implement the `tendermint_light_client_verifier::Verifier` trait for it.
+    /// implement the [`Verifier`] trait for it.
     fn verify_client_message(
         &self,
         ctx: &V,
