@@ -112,6 +112,14 @@ tendermint-proto                 = { version = "0.34.0", default-features = fals
 tendermint-rpc                   = { version = "0.34.0", default-features = false }
 tendermint-testgen               = { version = "0.34.0", default-features = false }
 
+# cosmwasm dependencies
+### Note: Kept at the following version to match the CosmWasm module version
+### used by chains supporting the wasm-enabled version of ibc-go v7.3
+### (This is the min version of `ibc-go` that supports `08-wasm` light clients)
+cosmwasm-schema    = { version = "1.5.2" }
+cosmwasm-std       = { version = "1.5.2" }
+cosmwasm-vm        = { version = "1.5.2" }
+
 # parity dependencies
 parity-scale-codec = { version = "3.6.5", default-features = false, features = ["full"] }
 scale-info         = { version = "2.10.0", default-features = false, features = ["derive"] }
