@@ -29,5 +29,7 @@ mc.log
 # Specifically, we want the ci/no-std-check/Cargo.lock to be committed
 # to ensure a reproducible CI build for that crate.
 # This will make it easier to spot bugs such as [this one](https://github.com/cosmos/ibc-rs/pull/560)
-# caused by a dependency updated to a faulty version. 
+# caused by a dependency updated to a faulty version.
 /Cargo.lock
+
+/cw-contracts
