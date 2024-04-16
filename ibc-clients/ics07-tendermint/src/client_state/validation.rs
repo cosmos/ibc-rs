@@ -25,12 +25,23 @@ where
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
     /// standalone `verify_client_message` function. This is to make it as
-    /// simple as possible for those who merely need the default [`ProdVerifier`]
-    /// behaviour, as well as those who require custom verification logic.
+    /// simple as possible for those who merely need the default
+    /// [`ProdVerifier`] behaviour, as well as those who require custom
+    /// verification logic.
     ///
     /// In a situation where the Tendermint [`ProdVerifier`] doesn't provide the
     /// desired outcome, users should define a custom verifier struct and then
     /// implement the [`Verifier`] trait for it.
+    ///
+    /// In order to wire up the custom verifier, create a newtype `ClientState`
+    /// wrapper similar to [`ClientState`] and implement all client state traits
+    /// for it. For method implementation, the simplest way is to import and
+    /// call their analogous standalone versions under the
+    /// [`crate::client_state`] module, unless bespoke logic is desired for any
+    /// of those functions. Then, when it comes to implement the
+    /// `verify_client_message` method, use the [`verify_client_message`]
+    /// function and pass your custom verifier object as the `verifier`
+    /// parameter.
     fn verify_client_message(
         &self,
         ctx: &V,
