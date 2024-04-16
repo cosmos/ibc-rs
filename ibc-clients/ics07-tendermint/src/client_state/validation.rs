@@ -25,7 +25,7 @@ where
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
     /// standalone `verify_client_message` function. This is to make it as
-    /// simple as possible for those who merely need the default `ProdVerifier`
+    /// simple as possible for those who merely need the default [`ProdVerifier`]
     /// behaviour, as well as those who require custom verification logic.
     ///
     /// In situations when the Tendermint [`ProdVerifier`] doesn't provide the
