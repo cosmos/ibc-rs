@@ -22,7 +22,7 @@ members = [
     "ibc-clients/ics07-tendermint/types",
     "ibc-clients/ics07-tendermint",
     "ibc-clients/ics08-wasm/types",
-    "ibc-clients/cw-integrator",
+    "ibc-clients/cw-context",
     "ibc-clients/ics07-tendermint/cw-contract",
     "ibc-clients",
     "ibc-apps/ics20-transfer/types",
@@ -79,7 +79,7 @@ ibc-core-host               = { version = "0.51.0", path = "./ibc-core/ics24-hos
 ibc-core-handler            = { version = "0.51.0", path = "./ibc-core/ics25-handler", default-features = false }
 ibc-core-router             = { version = "0.51.0", path = "./ibc-core/ics26-routing", default-features = false }
 
-ibc-client-cw               = { version = "0.51.0", path = "./ibc-clients/cw-integrator", default-features = false }
+ibc-client-cw               = { version = "0.51.0", path = "./ibc-clients/cw-context", default-features = false }
 ibc-client-tendermint       = { version = "0.51.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
 ibc-client-tendermint-cw    = { version = "0.51.0", path = "./ibc-clients/ics07-tendermint/cw-contract", default-features = false }
 

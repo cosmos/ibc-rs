@@ -25,7 +25,7 @@ IBC light clients:
 
 - [ibc-client-tendermint-types](./ics07-tendermint/types): Data Structures
 - [ibc-client-tendermint](./ics07-tendermint): Implementation
-- [ibc-client-tendermint-cw](./ics07-tendermint/cw): CosmWasm Contract
+- [ibc-client-tendermint-cw](./ics07-tendermint/cw-contract): CosmWasm Contract
 
 ### ICS-08: WASM Proxy Light Client
 
@@ -33,12 +33,12 @@ IBC light clients:
 
 ### CosmWasm Integration
 
-- [ibc-client-cw](./cosmwasm): Types and Utilities for CosmWasm Integration
+- [ibc-client-cw](./cw-context): Types and Utilities for CosmWasm Integration
   - To utilize the CosmWasm contracts developed with this library, hosting
     environments must support the CosmWasm module and be using the version of
     `ibc-go` that supports the `08-wasm` proxy light client.
 
-  - **DISCLAIMER: This project is currently in development and should not be
+  - **DISCLAIMER: This library is currently in development and should not be
     deployed for production use. Users are advised to exercise caution and test
     thoroughly in non-production environments.**
 
