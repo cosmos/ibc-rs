@@ -28,7 +28,7 @@ where
     /// simple as possible for those who merely need the default [`ProdVerifier`]
     /// behaviour, as well as those who require custom verification logic.
     ///
-    /// In situations when the Tendermint [`ProdVerifier`] doesn't provide the
+    /// In a situation where the Tendermint [`ProdVerifier`] doesn't provide the
     /// desired outcome, users should define a custom verifier struct and then
     /// implement the `tendermint_light_client_verifier::Verifier` trait for it.
     fn verify_client_message(
