@@ -15,7 +15,6 @@ use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::Verifier;
 
 use crate::types::Header;
-use crate::verifier::TmVerifier;
 
 /// Determines whether or not two conflicting headers at the same height would
 /// have convinced the light client.
@@ -25,7 +24,7 @@ pub fn verify_misbehaviour<V, H>(
     client_id: &ClientId,
     chain_id: &ChainId,
     options: &Options,
-    verifier: &impl TmVerifier,
+    verifier: &impl Verifier,
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
@@ -87,7 +86,7 @@ pub fn verify_misbehaviour_header<H>(
     trusted_timestamp: Time,
     trusted_next_validator_hash: Hash,
     current_timestamp: Timestamp,
-    verifier: &impl TmVerifier,
+    verifier: &impl Verifier,
 ) -> Result<(), ClientError>
 where
     H: MerkleHash + Sha256 + Default,
@@ -134,7 +133,6 @@ where
     })?;
 
     verifier
-        .verifier()
         .verify_misbehaviour_header(untrusted_state, trusted_state, options, current_timestamp)
         .into_result()?;
 
