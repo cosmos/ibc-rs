@@ -26,7 +26,7 @@ cosmwasm-std          = { workspace = true }
 
 [dev-dependencies]
 cosmwasm-vm           = { workspace = true }
-hex				      = { version = "0.4.2" }
+hex                   = { version = "0.4.2" }
 ibc-testkit           = { workspace = true }
 ibc-client-tendermint = { workspace = true }
 tendermint            = { workspace = true }
