@@ -12,15 +12,13 @@ use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
 
-use crate::verifier::TmVerifier;
-
 pub fn verify_header<V, H>(
     ctx: &V,
     header: &TmHeader,
     client_id: &ClientId,
     chain_id: &ChainId,
     options: &Options,
-    verifier: &impl TmVerifier,
+    verifier: &impl Verifier,
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
@@ -92,7 +90,6 @@ where
 
         // main header verification, delegated to the tendermint-light-client crate.
         verifier
-            .verifier()
             .verify_update_header(untrusted_state, trusted_state, options, now)
             .into_result()?;
     }
