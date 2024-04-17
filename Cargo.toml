@@ -22,6 +22,8 @@ members = [
     "ibc-clients/ics07-tendermint/types",
     "ibc-clients/ics07-tendermint",
     "ibc-clients/ics08-wasm/types",
+    "ibc-clients/cw-context",
+    "ibc-clients/ics07-tendermint/cw-contract",
     "ibc-clients",
     "ibc-apps/ics20-transfer/types",
     "ibc-apps/ics20-transfer",
@@ -53,6 +55,7 @@ authors      = ["Informal Systems <hello@informal.systems>"]
 base64              = { version = "0.21", default-features = false }
 borsh               = { version = "0.10", default-features = false }
 displaydoc          = { version = "0.2", default-features = false }
+prost               = { version = "0.12", default-features = false }
 derive_more         = { version = "0.99.17", default-features = false, features = ["from", "into", "display", "try_into"] }
 rstest              = "0.18.2"
 schemars            = { version = "0.8.15" }
@@ -62,22 +65,28 @@ serde_json          = { package = "serde-json-wasm", version = "1.0.1", default-
 subtle-encoding     = { version = "0.5", default-features = false }
 
 # ibc dependencies
-ibc                 = { version = "0.51.0", path = "./ibc", default-features = false }
-ibc-core            = { version = "0.51.0", path = "./ibc-core", default-features = false }
-ibc-clients         = { version = "0.51.0", path = "./ibc-clients", default-features = false }
-ibc-apps            = { version = "0.51.0", path = "./ibc-apps", default-features = false }
-ibc-primitives      = { version = "0.51.0", path = "./ibc-primitives", default-features = false }
-ibc-derive          = { version = "0.6.1", path = "./ibc-derive" }
+ibc                         = { version = "0.51.0", path = "./ibc", default-features = false }
+ibc-core                    = { version = "0.51.0", path = "./ibc-core", default-features = false }
+ibc-clients                 = { version = "0.51.0", path = "./ibc-clients", default-features = false }
+ibc-apps                    = { version = "0.51.0", path = "./ibc-apps", default-features = false }
+ibc-primitives              = { version = "0.51.0", path = "./ibc-primitives", default-features = false }
+ibc-testkit                 = { version = "0.51.0", path = "./ibc-testkit", default-features = false }
 
-ibc-core-client       = { version = "0.51.0", path = "./ibc-core/ics02-client", default-features = false }
-ibc-core-connection   = { version = "0.51.0", path = "./ibc-core/ics03-connection", default-features = false }
-ibc-core-channel      = { version = "0.51.0", path = "./ibc-core/ics04-channel", default-features = false }
-ibc-core-host         = { version = "0.51.0", path = "./ibc-core/ics24-host", default-features = false }
-ibc-core-handler      = { version = "0.51.0", path = "./ibc-core/ics25-handler", default-features = false }
-ibc-core-router       = { version = "0.51.0", path = "./ibc-core/ics26-routing", default-features = false }
-ibc-client-tendermint = { version = "0.51.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
-ibc-app-transfer      = { version = "0.51.0", path = "./ibc-apps/ics20-transfer", default-features = false }
-ibc-app-nft-transfer  = { version = "0.51.0", path = "./ibc-apps/ics721-nft-transfer", default-features = false }
+ibc-derive                  = { version = "0.6.1", path = "./ibc-derive" }
+
+ibc-core-client             = { version = "0.51.0", path = "./ibc-core/ics02-client", default-features = false }
+ibc-core-connection         = { version = "0.51.0", path = "./ibc-core/ics03-connection", default-features = false }
+ibc-core-channel            = { version = "0.51.0", path = "./ibc-core/ics04-channel", default-features = false }
+ibc-core-host               = { version = "0.51.0", path = "./ibc-core/ics24-host", default-features = false }
+ibc-core-handler            = { version = "0.51.0", path = "./ibc-core/ics25-handler", default-features = false }
+ibc-core-router             = { version = "0.51.0", path = "./ibc-core/ics26-routing", default-features = false }
+
+ibc-client-cw               = { version = "0.51.0", path = "./ibc-clients/cw-context", default-features = false }
+ibc-client-tendermint       = { version = "0.51.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
+ibc-client-tendermint-cw    = { version = "0.51.0", path = "./ibc-clients/ics07-tendermint/cw-contract", default-features = false }
+
+ibc-app-transfer            = { version = "0.51.0", path = "./ibc-apps/ics20-transfer", default-features = false }
+ibc-app-nft-transfer        = { version = "0.51.0", path = "./ibc-apps/ics721-nft-transfer", default-features = false }
 
 ibc-core-client-context     = { version = "0.51.0", path = "./ibc-core/ics02-client/context", default-features = false }
 ibc-core-client-types       = { version = "0.51.0", path = "./ibc-core/ics02-client/types", default-features = false }
@@ -102,6 +111,14 @@ tendermint-light-client-verifier = { version = "0.34.0", default-features = fals
 tendermint-proto                 = { version = "0.34.0", default-features = false }
 tendermint-rpc                   = { version = "0.34.0", default-features = false }
 tendermint-testgen               = { version = "0.34.0", default-features = false }
+
+# cosmwasm dependencies
+### Note: Kept at the following version to match the CosmWasm module version
+### used by chains supporting the wasm-enabled version of ibc-go v7.3
+### (This is the min version of `ibc-go` that supports `08-wasm` light clients)
+cosmwasm-schema    = { version = "1.5.2" }
+cosmwasm-std       = { version = "1.5.2" }
+cosmwasm-vm        = { version = "1.5.2" }
 
 # parity dependencies
 parity-scale-codec = { version = "3.6.5", default-features = false, features = ["full"] }
