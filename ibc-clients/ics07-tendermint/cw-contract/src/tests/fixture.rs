@@ -92,8 +92,8 @@ impl Fixture {
         let tm_consensus_state = dummy_sov_consensus_state(self.trusted_timestamp);
 
         InstantiateMsg {
-            client_state: TmClientState::encode_thru_any(tm_client_state),
-            consensus_state: TmConsensusState::encode_thru_any(tm_consensus_state),
+            client_state: TmClientState::encode_to_any_vec(tm_client_state),
+            consensus_state: TmConsensusState::encode_to_any_vec(tm_consensus_state),
             checksum: dummy_checksum(),
         }
     }
@@ -126,7 +126,7 @@ impl Fixture {
             trusted_next_validator_set: light_block.next_validators,
         };
 
-        Header::encode_thru_any(tm_header)
+        Header::encode_to_any_vec(tm_header)
     }
 
     pub fn dummy_client_message(&self) -> Vec<u8> {

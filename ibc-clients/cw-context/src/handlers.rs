@@ -14,7 +14,7 @@ use crate::types::{
 };
 
 impl<'a, C: ClientType<'a>> Context<'a, C> {
-    /// Instantiates a new client with the given `InstantiateMsg` message.
+    /// Instantiates a new client with the given [`InstantiateMsg`] message.
     pub fn instantiate(&mut self, msg: InstantiateMsg) -> Result<Binary, ContractError> {
         let any = Any::decode(&mut msg.client_state.as_slice())?;
 
@@ -29,7 +29,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         Ok(to_json_binary(&ContractResult::success())?)
     }
 
-    /// Executes the sudo message.
+    /// Executes the given [`SudoMsg`].
     pub fn sudo(&mut self, msg: SudoMsg) -> Result<Binary, ContractError> {
         let client_id = self.client_id();
 
@@ -142,7 +142,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         Ok(to_json_binary(&result)?)
     }
 
-    /// Queries the client with the given `QueryMsg` message.
+    /// Queries the client with the given [`QueryMsg`] message.
     pub fn query(&self, msg: QueryMsg) -> Result<Binary, ContractError> {
         let client_id = self.client_id();
 

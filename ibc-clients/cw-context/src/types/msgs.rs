@@ -4,6 +4,7 @@ use std::str::FromStr;
 
 use cosmwasm_schema::cw_serde;
 use ibc_client_wasm_types::serializer::Base64;
+use ibc_client_wasm_types::Bytes;
 use ibc_core::client::types::proto::v1::Height as RawHeight;
 use ibc_core::client::types::Height;
 use ibc_core::commitment_types::commitment::{CommitmentPrefix, CommitmentProofBytes};
@@ -12,8 +13,6 @@ use ibc_core::primitives::proto::Any;
 use prost::Message;
 
 use super::error::ContractError;
-
-pub type Bytes = Vec<u8>;
 
 // ------------------------------------------------------------
 // Implementation of the InstantiateMsg struct
@@ -213,7 +212,7 @@ impl TryFrom<VerifyNonMembershipMsgRaw> for VerifyNonMembershipMsg {
         let prefix = raw.path.key_path.remove(0).into_bytes();
         let path_str = raw.path.key_path.join("");
         let path = Path::from_str(&path_str)?;
-        let height = raw.height.try_into().expect("invalid height");
+        let height = raw.height.try_into()?;
         Ok(Self {
             proof,
             path,

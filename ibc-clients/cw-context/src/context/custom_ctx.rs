@@ -1,6 +1,7 @@
 //! Implementation of the `ExtClientValidationContext` trait for the `Context`
 //! type.
 use ibc_core::client::context::prelude::*;
+use ibc_core::client::types::error::ClientError;
 use ibc_core::client::types::Height;
 use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::identifiers::ClientId;
@@ -15,7 +16,10 @@ impl<'a, C: ClientType<'a>> ExtClientValidationContext for Context<'a, C> {
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         let time = self.env().block.time;
 
-        let host_timestamp = Timestamp::from_nanoseconds(time.nanos()).expect("invalid timestamp");
+        let host_timestamp =
+            Timestamp::from_nanoseconds(time.nanos()).map_err(|e| ClientError::Other {
+                description: e.to_string(),
+            })?;
 
         Ok(host_timestamp)
     }

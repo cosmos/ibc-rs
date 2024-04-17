@@ -1,12 +1,12 @@
 [package]
-name 		 = "ibc-client-cw"
-authors 	 = { workspace = true }
-edition 	 = { workspace = true }
-license 	 = { workspace = true }
+name         = "ibc-client-cw"
+authors      = { workspace = true }
+edition      = { workspace = true }
+license      = { workspace = true }
 repository   = { workspace = true }
 rust-version = { workspace = true }
-version 	 = { workspace = true }
-keywords     = ["ibc", "light-client", "CosmWasm"]
+version      = { workspace = true }
+keywords     = ["ibc", "light-client", "CosmWasm", "ICS-08"]
 readme       = "./../README.md"
 description  = """
     Contains types and implementations that are needed to integrate a light client, built using ibc-rs,
@@ -18,23 +18,22 @@ description  = """
 [dependencies]
 # external dependencies
 derive_more = { workspace = true }
-prost 		= { workspace = true }
-serde 		= { workspace = true, features = ["derive"] }
+prost       = { workspace = true }
+serde       = { workspace = true, features = ["derive"] }
 
 # ibc dependencies
-ibc-core   			  = { workspace = true }
+ibc-core              = { workspace = true }
 ibc-client-wasm-types = { workspace = true, features = ["cosmwasm"] }
 
 # cosmwasm dependencies
 cosmwasm-schema       = { workspace = true }
-cosmwasm-std 	      = { workspace = true }
+cosmwasm-std          = { workspace = true }
 
 [features]
 default = ["std"]
 std = [
-	"prost/std",
-	"serde/std",
-	"ibc-core/std",
-	"ibc-client-wasm-types/std",
+    "prost/std",
+    "serde/std",
+    "ibc-core/std",
+    "ibc-client-wasm-types/std",
 ]
-

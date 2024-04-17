@@ -17,7 +17,7 @@ pub fn dummy_checksum() -> Vec<u8> {
 
 pub fn dummy_sov_consensus_state(timestamp: Timestamp) -> ConsensusState {
     ConsensusState::new(
-        vec![0].into(),
+        &[0].into(),
         timestamp.into_tm_time().expect("Time exists"),
         // Hash of default validator set
         Hash::from_str("D6B93922C33AAEBEC9043566CB4B1B48365B1358B67C7DEF986D9EE1861BC143")

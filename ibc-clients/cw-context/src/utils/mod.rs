@@ -8,6 +8,9 @@ use ibc_core::client::types::{Height, HeightError};
 pub fn parse_height(encoded_height: Vec<u8>) -> Result<Option<Height>, ClientError> {
     let height_str = match alloc::str::from_utf8(encoded_height.as_slice()) {
         Ok(s) => s,
+        // In cases where the height is unavailable, the encoded representation
+        // might not be valid UTF-8, resulting in an invalid string. In such
+        // instances, we return None.
         Err(_) => return Ok(None),
     };
     match Height::try_from(height_str) {

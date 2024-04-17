@@ -38,9 +38,10 @@ IBC light clients:
     environments must support the CosmWasm module and be using the version of
     `ibc-go` that supports the `08-wasm` proxy light client.
 
-  - **DISCLAIMER: This library is currently in development and should not be
-    deployed for production use. Users are advised to exercise caution and test
-    thoroughly in non-production environments.**
+> [!CAUTION]
+> DISCLAIMER: the `ibc-client-cw` is currently in development and should not be
+  deployed for production use. Users are advised to exercise caution and test
+  thoroughly in non-production environments.
 
 ## Third-party Clients
 

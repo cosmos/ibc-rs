@@ -1,11 +1,12 @@
 //! Contains the response types for the CosmWasm contract.
 use cosmwasm_schema::cw_serde;
+use ibc_client_wasm_types::Bytes;
 use ibc_core::client::types::Height;
 
 #[cw_serde]
 pub struct GenesisMetadata {
-    pub key: Vec<u8>,
-    pub value: Vec<u8>,
+    pub key: Bytes,
+    pub value: Bytes,
 }
 
 #[cw_serde]

@@ -253,7 +253,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         client_state: C::ClientState,
     ) -> Result<Vec<u8>, ClientError> {
         let wasm_client_state = WasmClientState {
-            data: C::ClientState::encode_thru_any(client_state.clone()),
+            data: C::ClientState::encode_to_any_vec(client_state.clone()),
             checksum: self.obtain_checksum()?,
             latest_height: client_state.latest_height(),
         };

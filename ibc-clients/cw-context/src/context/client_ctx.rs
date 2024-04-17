@@ -27,7 +27,7 @@ impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C> {
                 description: e.to_string(),
             })?;
 
-        let sov_client_state = C::ClientState::decode_thru_any(any_wasm.data)?;
+        let sov_client_state = C::ClientState::decode_any_vec(any_wasm.data)?;
 
         Ok(sov_client_state)
     }
@@ -39,9 +39,9 @@ impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C> {
         let consensus_state_value = self.retrieve(client_cons_state_path.leaf())?;
 
         let any_wasm: WasmConsensusState =
-            C::ConsensusState::decode_thru_any(consensus_state_value)?;
+            C::ConsensusState::decode_any_vec(consensus_state_value)?;
 
-        let consensus_state = C::ConsensusState::decode_thru_any(any_wasm.data)?;
+        let consensus_state = C::ConsensusState::decode_any_vec(any_wasm.data)?;
 
         Ok(consensus_state)
     }
@@ -55,17 +55,26 @@ impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C> {
 
         let time_vec = self.retrieve(time_key)?;
 
-        let time = u64::from_be_bytes(time_vec.try_into().expect("invalid timestamp"));
+        let time = u64::from_be_bytes(time_vec.try_into().map_err(|_| ClientError::Other {
+            description: "time key cannot be converted to u64".to_string(),
+        })?);
 
-        let timestamp =
-            Timestamp::from_nanoseconds(time).map_err(ClientError::InvalidPacketTimestamp)?;
+        let timestamp = Timestamp::from_nanoseconds(time).map_err(|e| ClientError::Other {
+            description: e.to_string(),
+        })?;
 
         let height_key = self.client_update_height_key(height);
 
         let revision_height_vec = self.retrieve(height_key)?;
 
         let revision_height =
-            u64::from_be_bytes(revision_height_vec.try_into().expect("invalid height"));
+            u64::from_be_bytes(
+                revision_height_vec
+                    .try_into()
+                    .map_err(|_| ClientError::Other {
+                        description: "revision height key cannot be converted to u64".to_string(),
+                    })?,
+            );
 
         let height = Height::new(0, revision_height)?;
 
@@ -97,13 +106,14 @@ impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
     ) -> Result<(), ContextError> {
         let prefixed_key = self.prefixed_key(consensus_state_path.leaf());
 
-        let encoded_consensus_state = C::ConsensusState::encode_thru_any(consensus_state);
+        let encoded_consensus_state = C::ConsensusState::encode_to_any_vec(consensus_state);
 
         let wasm_consensus_state = WasmConsensusState {
             data: encoded_consensus_state,
         };
 
-        let encoded_wasm_consensus_state = C::ConsensusState::encode_thru_any(wasm_consensus_state);
+        let encoded_wasm_consensus_state =
+            C::ConsensusState::encode_to_any_vec(wasm_consensus_state);
 
         self.insert(prefixed_key, encoded_wasm_consensus_state);
 
@@ -132,7 +142,7 @@ impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
 
         let prefixed_time_key = self.prefixed_key(time_key);
 
-        let time_vec: [u8; 8] = host_timestamp.nanoseconds().to_be_bytes();
+        let time_vec = host_timestamp.nanoseconds().to_be_bytes();
 
         self.insert(prefixed_time_key, time_vec);
 
@@ -140,7 +150,7 @@ impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
 
         let prefixed_height_key = self.prefixed_key(height_key);
 
-        let revision_height_vec: [u8; 8] = host_height.revision_height().to_be_bytes();
+        let revision_height_vec = host_height.revision_height().to_be_bytes();
 
         self.insert(prefixed_height_key, revision_height_vec);
 
