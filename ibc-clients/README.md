@@ -39,7 +39,7 @@ IBC light clients:
     `ibc-go` that supports the `08-wasm` proxy light client.
 
 > [!CAUTION]
-> DISCLAIMER: the `ibc-client-cw` is currently in development and should not be
+> the `ibc-client-cw` is currently in development and should not be
   deployed for production use. Users are advised to exercise caution and test
   thoroughly in non-production environments.
 
