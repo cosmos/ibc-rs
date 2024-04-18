@@ -82,11 +82,9 @@ impl Fixture {
         // freeze for the `happy_cw_client_recovery` test.
 
         let tm_client_state: TmClientState = ClientStateConfig::builder()
-            .chain_id("test-chain".parse().unwrap())
             .trusting_period(Duration::from_secs(1))
-            .latest_height(self.trusted_height)
             .build()
-            .try_into()
+            .into_client_state("test-chain".parse().unwrap(), self.trusted_height)
             .expect("never fails");
 
         let tm_consensus_state = dummy_sov_consensus_state(self.trusted_timestamp);
