@@ -68,6 +68,8 @@ jobs:
         with:
           name: tendermint-wasm08-${{ github.sha }}
           path: artifacts/ibc_client_tendermint_cw.wasm
+          # Retain the artifact for 1 week for PRs and 3 months for `main` branch
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
           overwrite: true
 
   # # An example workflow to download the artifact:
