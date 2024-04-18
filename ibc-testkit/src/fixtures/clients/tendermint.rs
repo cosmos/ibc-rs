@@ -76,7 +76,7 @@ pub struct ClientStateConfig {
     pub unbonding_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
     pub max_clock_drift: Duration,
-    #[builder(default = vec![basecoin_proof_spec(); 2].into())]
+    #[builder(default = vec![basecoin_proof_spec(); 2].try_into().expect("no error"))]
     pub proof_specs: ProofSpecs,
     #[builder(default)]
     pub upgrade_path: Vec<String>,
