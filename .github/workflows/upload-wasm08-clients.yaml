@@ -44,7 +44,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
 
       # `cosmwasm/optimizer` requires `Cargo.lock`. but currently,
-      # `Cargo.lock` is not committed, because `ibc-rs` is treated as library
+      # `Cargo.lock` is not committed, because `ibc-rs` is treated as library.
       - name: Produce `Cargo.lock` file
         run: cargo update -p ibc-client-tendermint-cw
 
@@ -70,8 +70,7 @@ jobs:
           path: artifacts/ibc_client_tendermint_cw.wasm
           overwrite: true
 
-  # an example workflow to download the artifact
-  #
+  # # An example workflow to download the artifact:
   # download-tm-wasm08-client:
   #   name: Download pre-compiled Tendermint wasm08 client
   #   runs-on: ubuntu-latest
