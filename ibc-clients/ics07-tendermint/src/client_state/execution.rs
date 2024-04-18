@@ -10,16 +10,12 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
 use super::ClientState;
-use crate::context::{
-    ConsensusStateConverter, ExecutionContext as TmExecutionContext,
-    ValidationContext as TmValidationContext,
-};
 
 impl<E> ClientStateExecution<E> for ClientState
 where
-    E: TmExecutionContext,
+    E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: ConsensusStateConverter,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     fn initialise(
         &self,
@@ -93,12 +89,12 @@ pub fn initialise<E>(
     consensus_state: Any,
 ) -> Result<(), ClientError>
 where
-    E: TmExecutionContext,
+    E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: ConsensusStateConverter,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
-    let host_timestamp = TmValidationContext::host_timestamp(ctx)?;
-    let host_height = TmValidationContext::host_height(ctx)?;
+    let host_timestamp = ExtClientValidationContext::host_timestamp(ctx)?;
+    let host_height = ExtClientValidationContext::host_height(ctx)?;
 
     let tm_consensus_state = ConsensusStateType::try_from(consensus_state)?;
 
@@ -138,9 +134,9 @@ pub fn update_state<E>(
     header: Any,
 ) -> Result<Vec<Height>, ClientError>
 where
-    E: TmExecutionContext,
+    E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: ConsensusStateConverter,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let header = TmHeader::try_from(header)?;
     let header_height = header.height();
@@ -163,8 +159,8 @@ where
         //
         // Do nothing.
     } else {
-        let host_timestamp = TmValidationContext::host_timestamp(ctx)?;
-        let host_height = TmValidationContext::host_height(ctx)?;
+        let host_timestamp = ExtClientValidationContext::host_timestamp(ctx)?;
+        let host_height = ExtClientValidationContext::host_height(ctx)?;
 
         let new_consensus_state = ConsensusStateType::from(header.clone());
         let new_client_state = client_state.clone().with_header(header)?;
@@ -205,9 +201,8 @@ pub fn update_on_misbehaviour<E>(
     _client_message: Any,
 ) -> Result<(), ClientError>
 where
-    E: TmExecutionContext,
+    E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: ConsensusStateConverter,
 {
     // NOTE: frozen height is  set to `Height {revision_height: 0,
     // revision_number: 1}` and it is the same for all misbehaviour. This
@@ -238,9 +233,9 @@ pub fn update_on_upgrade<E>(
     upgraded_consensus_state: Any,
 ) -> Result<Height, ClientError>
 where
-    E: TmExecutionContext,
+    E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: ConsensusStateConverter,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let mut upgraded_tm_client_state = ClientState::try_from(upgraded_client_state)?;
     let upgraded_tm_cons_state = ConsensusStateType::try_from(upgraded_consensus_state)?;
@@ -284,8 +279,8 @@ where
     );
 
     let latest_height = new_client_state.latest_height;
-    let host_timestamp = TmValidationContext::host_timestamp(ctx)?;
-    let host_height = TmValidationContext::host_height(ctx)?;
+    let host_timestamp = ExtClientValidationContext::host_timestamp(ctx)?;
+    let host_height = ExtClientValidationContext::host_height(ctx)?;
 
     ctx.store_client_state(
         ClientStatePath::new(client_id.clone()),
@@ -318,9 +313,9 @@ pub fn prune_oldest_consensus_state<E>(
     client_id: &ClientId,
 ) -> Result<(), ClientError>
 where
-    E: ClientExecutionContext + TmValidationContext,
+    E: ClientExecutionContext + ExtClientValidationContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: ConsensusStateConverter,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let mut heights = ctx.consensus_state_heights(client_id)?;
 
@@ -380,9 +375,8 @@ pub fn update_on_recovery<E>(
     substitute_client_state: Any,
 ) -> Result<(), ClientError>
 where
-    E: TmExecutionContext,
+    E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: ConsensusStateConverter,
 {
     let substitute_client_state = ClientState::try_from(substitute_client_state)?
         .inner()

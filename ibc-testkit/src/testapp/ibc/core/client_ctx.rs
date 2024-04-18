@@ -2,8 +2,9 @@ use core::fmt::Debug;
 
 use basecoin_store::context::{ProvableStore, Store};
 use basecoin_store::types::Height as StoreHeight;
-use ibc::clients::tendermint::context::ValidationContext as TmValidationContext;
-use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc::core::client::context::{
+    ClientExecutionContext, ClientValidationContext, ExtClientValidationContext,
+};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::handler::types::error::ContextError;
@@ -45,7 +46,7 @@ where
     }
 }
 
-impl<S> TmValidationContext for MockIbcStore<S>
+impl<S> ExtClientValidationContext for MockIbcStore<S>
 where
     S: ProvableStore + Debug,
 {

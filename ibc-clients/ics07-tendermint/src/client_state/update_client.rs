@@ -1,5 +1,6 @@
 use ibc_client_tendermint_types::error::{Error, IntoResult};
 use ibc_client_tendermint_types::{ConsensusState as ConsensusStateType, Header as TmHeader};
+use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
@@ -11,21 +12,17 @@ use tendermint_light_client_verifier::options::Options;
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 use tendermint_light_client_verifier::Verifier;
 
-use crate::context::{
-    ConsensusStateConverter, TmVerifier, ValidationContext as TmValidationContext,
-};
-
 pub fn verify_header<V, H>(
     ctx: &V,
     header: &TmHeader,
     client_id: &ClientId,
     chain_id: &ChainId,
     options: &Options,
-    verifier: &impl TmVerifier,
+    verifier: &impl Verifier,
 ) -> Result<(), ClientError>
 where
-    V: TmValidationContext,
-    V::ConsensusStateRef: ConsensusStateConverter,
+    V: ExtClientValidationContext,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
     H: MerkleHash + Sha256 + Default,
 {
     // Checks that the header fields are valid.
@@ -93,7 +90,6 @@ where
 
         // main header verification, delegated to the tendermint-light-client crate.
         verifier
-            .verifier()
             .verify_update_header(untrusted_state, trusted_state, options, now)
             .into_result()?;
     }
@@ -110,8 +106,8 @@ pub fn check_for_misbehaviour_on_update<V>(
     client_latest_height: &Height,
 ) -> Result<bool, ClientError>
 where
-    V: TmValidationContext,
-    V::ConsensusStateRef: ConsensusStateConverter,
+    V: ExtClientValidationContext,
+    V::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let maybe_existing_consensus_state = {
         let path_at_header_height = ClientConsensusStatePath::new(
