@@ -211,7 +211,7 @@ things than users do. Changelogs are for users.
 
 Changelog structure is modeled after [Tendermint
 Core](https://github.com/tendermint/tendermint/blob/master/CHANGELOG.md) and
-[Hashicorp Consul](http://github.com/hashicorp/consul/tree/master/CHANGELOG.md).
+[Hashicorp Consul](http://github.com/hashicorp/consul/tree/main/CHANGELOG.md).
 See those changelogs for examples.
 
 We currently split changes for a given release between these four sections:
