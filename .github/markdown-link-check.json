@@ -5,6 +5,9 @@
     },
     {
       "pattern": "^https?://localhost"
+    },
+    {
+      "pattern": "www.conventionalcommits.org"
     }
   ],
   "aliveStatusCodes": [429, 200]
