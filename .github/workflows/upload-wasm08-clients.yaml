@@ -41,7 +41,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
 
       # `cosmwasm/optimizer` requires `Cargo.lock`. but currently,
       # `Cargo.lock` is not committed, because `ibc-rs` is treated as library.
