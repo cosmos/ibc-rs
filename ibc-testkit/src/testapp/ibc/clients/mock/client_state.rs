@@ -44,7 +44,7 @@ impl MockClientState {
     pub fn new(header: MockHeader) -> Self {
         Self {
             header,
-            trusting_period: Duration::from_secs(10),
+            trusting_period: Duration::from_secs(64000),
             frozen: false,
         }
     }
