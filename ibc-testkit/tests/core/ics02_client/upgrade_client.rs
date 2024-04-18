@@ -1,6 +1,5 @@
 use ibc::clients::tendermint::types::client_type;
-use ibc::core::client::context::ClientValidationContext;
-use ibc::core::client::context::ExtClientValidationContext;
+use ibc::core::client::context::{ClientValidationContext, ExtClientValidationContext};
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
 use ibc::core::client::types::msgs::{ClientMsg, MsgUpgradeClient};
 use ibc::core::client::types::Height;
