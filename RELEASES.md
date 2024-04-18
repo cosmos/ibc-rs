@@ -56,4 +56,4 @@ Our release process is as follows:
 All done! 🎉
 
 [crates.io]: https://crates.io
-[release.yml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yaml
+[release.yml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yml
