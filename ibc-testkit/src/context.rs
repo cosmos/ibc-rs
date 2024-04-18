@@ -9,7 +9,8 @@ use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
-use ibc::core::entrypoint::dispatch;
+use ibc::core::entrypoint::{dispatch, execute, validate};
+use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId, Sequence};
@@ -88,6 +89,14 @@ where
 
     pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S> {
         &mut self.ibc_store
+    }
+
+    pub fn ibc_router(&self) -> &MockRouter {
+        &self.ibc_router
+    }
+
+    pub fn ibc_router_mut(&mut self) -> &mut MockRouter {
+        &mut self.ibc_router
     }
 
     pub fn host_block(&self, target_height: &Height) -> Option<H::Block> {
@@ -397,11 +406,23 @@ where
         self
     }
 
+    pub fn validate(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+        validate(&self.ibc_store, &self.ibc_router, msg)
+    }
+
+    pub fn execute(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+        execute(&mut self.ibc_store, &mut self.ibc_router, msg)
+    }
+
+    pub fn dispatch(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+        dispatch(&mut self.ibc_store, &mut self.ibc_router, msg)
+    }
+
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
     pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
-        dispatch(&mut self.ibc_store, &mut self.ibc_router, msg)
+        self.dispatch(msg)
             .map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
         self.advance_block();
