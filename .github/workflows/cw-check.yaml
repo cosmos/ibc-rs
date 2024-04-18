@@ -33,9 +33,21 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Run cw-check
+
+      # only for caching cargo build artifacts from `cosmwasm/optimizer`
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Compile `cw-check`
         run: |
-          cd ci/cw-check
-          nix-shell --run "cw-check"
+          docker run --rm -v "$(pwd)":/code \
+          --mount type=volume,source="cw_check_cache",target=/code/ci/cw-check/target \
+          --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+          cosmwasm/optimizer:0.15.0 ./ci/cw-check
+
+      - name: Install `cosmwasm-check` from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cosmwasm-check
+
+      - name: Check compiled CosmWasm contract
+        run: cosmwasm-check artifacts/cw_check.wasm
