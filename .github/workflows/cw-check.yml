@@ -36,9 +36,9 @@ jobs:
 
       - name: Compile `cw-check`
         run: |
-          docker run --rm -v "$(pwd)":/code \
-          --mount type=volume,source="cw_check_cache",target=/code/ci/cw-check/target \
-          --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+          docker run \
+          -v "$(pwd)":/code \
+          -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
           cosmwasm/optimizer:0.15.0 ./ci/cw-check
 
       - name: Install `cosmwasm-check` from crates.io
