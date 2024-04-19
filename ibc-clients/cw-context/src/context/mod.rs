@@ -132,12 +132,10 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
     pub fn get_heights(&self) -> Result<Vec<Height>, ClientError> {
         let iterator = self.storage_ref().range(None, None, Order::Ascending);
 
-        let heights: Vec<_> = iterator
+        iterator
             .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()))
-            .filter_map(|(_, value)| parse_height(value).transpose())
-            .collect::<Result<_, _>>()?;
-
-        Ok(heights)
+            .map(|(_, value)| parse_height(value))
+            .collect::<Result<_, _>>()
     }
 
     /// Searches for either the earliest next or latest previous height based on
@@ -162,7 +160,8 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
         iterator
             .find(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()))
-            .map_or(Ok(None), |(_, height)| parse_height(height))
+            .map(|(_, height)| parse_height(height))
+            .transpose()
     }
 
     /// Returns the key for the client update time.
@@ -202,21 +201,16 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         for (_, encoded_height) in iterator {
             let height = parse_height(encoded_height)?;
 
-            match height {
-                Some(height) => {
-                    let processed_height_key = self.client_update_height_key(&height);
-                    metadata.push(GenesisMetadata {
-                        key: processed_height_key.clone(),
-                        value: self.retrieve(&processed_height_key)?,
-                    });
-                    let processed_time_key = self.client_update_time_key(&height);
-                    metadata.push(GenesisMetadata {
-                        key: processed_time_key.clone(),
-                        value: self.retrieve(&processed_time_key)?,
-                    });
-                }
-                None => continue,
-            }
+            let processed_height_key = self.client_update_height_key(&height);
+            metadata.push(GenesisMetadata {
+                key: processed_height_key.clone(),
+                value: self.retrieve(&processed_height_key)?,
+            });
+            let processed_time_key = self.client_update_time_key(&height);
+            metadata.push(GenesisMetadata {
+                key: processed_time_key.clone(),
+                value: self.retrieve(&processed_time_key)?,
+            });
         }
 
         let iterator = self
