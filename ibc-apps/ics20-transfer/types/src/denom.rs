@@ -450,22 +450,35 @@ mod tests {
     #[case("", "transfer/channel-1")]
     #[case("transfer/channel-1", "transfer")]
     #[case("", "transfer/channelToA/uatom")]
-    #[should_panic]
-    #[case("", "")]
-    #[should_panic]
-    #[case("transfer/channel-1", "")]
-    #[should_panic]
-    #[case("transfer/channel-1/transfer/channel-2", "")]
-    fn test_strange_prefixed_denom(#[case] prefix: &str, #[case] denom: &str) {
+    fn test_strange_but_accepted_prefixed_denom(
+        #[case] prefix: &str,
+        #[case] denom: &str,
+    ) -> Result<(), TokenTransferError> {
         let pd_s = if prefix.is_empty() {
             denom.to_owned()
         } else {
-            format!("{}/{}", prefix, denom)
+            format!("{prefix}/{denom}")
         };
-        let pd = PrefixedDenom::from_str(&pd_s).expect("no error");
+        let pd = PrefixedDenom::from_str(&pd_s)?;
 
         assert_eq!(pd.trace_path.to_string(), prefix);
         assert_eq!(pd.base_denom.to_string(), denom);
+
+        Ok(())
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case("transfer/channel-1")]
+    #[case("transfer/channel-1/transfer/channel-2")]
+    #[should_panic(expected = "EmptyBaseDenom")]
+    fn test_prefixed_empty_base_denom(#[case] prefix: &str) {
+        let pd_s = if prefix.is_empty() {
+            "".to_owned()
+        } else {
+            format!("{prefix}/")
+        };
+        PrefixedDenom::from_str(&pd_s).expect("error");
     }
 
     #[test]
