@@ -114,7 +114,9 @@ pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
 /// in the ICS-24 spec.
 pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
-    validate_identifier_length(id, 10, 64)
+    validate_identifier_length(id, 10, 64)?;
+    validate_named_u64_index(id, "connection")?;
+    Ok(())
 }
 
 /// Default validator function for Port identifiers.
@@ -132,7 +134,9 @@ pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
 /// the ICS-24 spec.
 pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
-    validate_identifier_length(id, 8, 64)
+    validate_identifier_length(id, 8, 64)?;
+    validate_named_u64_index(id, "channel")?;
+    Ok(())
 }
 
 #[cfg(test)]
