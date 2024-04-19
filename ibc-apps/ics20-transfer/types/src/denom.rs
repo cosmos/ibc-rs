@@ -399,6 +399,17 @@ mod tests {
     }
 
     #[test]
+    fn parse_denom() -> Result<(), TokenTransferError> {
+        let denom = "transfer/channel-75/factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust";
+        let dt = PrefixedDenom::from_str(denom)?;
+
+        assert_eq!(dt.base_denom.to_string(), "factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust");
+        assert_eq!(dt.trace_path.to_string(), "transfer/channel-75");
+
+        Ok(())
+    }
+
+    #[test]
     fn test_denom_trace() -> Result<(), TokenTransferError> {
         assert_eq!(
             PrefixedDenom::from_str("transfer/channel-0/uatom")?,
