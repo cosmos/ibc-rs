@@ -50,9 +50,9 @@ jobs:
 
       - name: Compile cosmwasm blob for tendermint light client
         run: |
-          docker run --rm -v "$(pwd)":/code \
-          --mount type=volume,source="wasm08_tm_cache",target=/code/ibc-clients/ics07-tendermint/cw-contract/target \
-          --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
+          docker run \
+          -v "$(pwd)":/code \
+          -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
           cosmwasm/optimizer:0.15.0 ./ibc-clients/ics07-tendermint/cw-contract
 
       - name: Install `cosmwasm-check` from crates.io
