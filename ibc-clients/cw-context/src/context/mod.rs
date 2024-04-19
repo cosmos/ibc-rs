@@ -18,7 +18,7 @@ use prost::Message;
 
 use crate::api::ClientType;
 use crate::types::{ContractError, GenesisMetadata, HeightTravel, MigrationPrefix};
-use crate::utils::{parse_height, AnyCodec};
+use crate::utils::{decode_height, AnyCodec};
 
 type Checksum = Vec<u8>;
 
@@ -134,7 +134,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
         iterator
             .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()))
-            .map(|(_, value)| parse_height(value))
+            .map(|(_, value)| decode_height(value))
             .collect::<Result<_, _>>()
     }
 
@@ -160,7 +160,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
         iterator
             .find(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()))
-            .map(|(_, height)| parse_height(height))
+            .map(|(_, height)| decode_height(height))
             .transpose()
     }
 
@@ -199,7 +199,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
             .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()));
 
         for (_, encoded_height) in iterator {
-            let height = parse_height(encoded_height)?;
+            let height = decode_height(encoded_height)?;
 
             let processed_height_key = self.client_update_height_key(&height);
             metadata.push(GenesisMetadata {

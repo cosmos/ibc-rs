@@ -13,7 +13,7 @@ use ibc_core::primitives::Timestamp;
 
 use super::Context;
 use crate::api::ClientType;
-use crate::utils::AnyCodec;
+use crate::utils::{encode_height, AnyCodec};
 
 impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C> {
     type ClientStateRef = C::ClientState;
@@ -156,8 +156,7 @@ impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
 
         let iteration_key = iteration_key(height.revision_number(), height.revision_height());
 
-        // protobuf encoding
-        let height_vec = height.encode_vec();
+        let height_vec = encode_height(height);
 
         self.insert(iteration_key, height_vec);
 
