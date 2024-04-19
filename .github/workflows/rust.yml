@@ -15,22 +15,11 @@ on:
       - ibc-testkit/**
       - ibc-derive/**
   push:
-    branches: main
-    paths:
-      - .github/workflows/rust.yml
-      - Cargo.toml
-      - ci/**
-      - ibc/**
-      - ibc-core/**
-      - ibc-apps/**
-      - ibc-data-types/**
-      - ibc-clients/**
-      - ibc-primitives/**
-      - ibc-query/**
-      - ibc-testkit/**
-      - ibc-derive/**
-  merge_group:
-    types: [checks_requested]
+    tags:
+      - v[0-9]+.*
+    branches:
+      - "release/*"
+      - main
 
 env:
   CARGO_INCREMENTAL: 0

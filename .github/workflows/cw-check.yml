@@ -6,17 +6,6 @@ on:
       - Cargo.toml
       - Cargo.lock
       - ci/cw-check/**
-  push:
-    tags:
-      - v[0-9]+.*
-    branches:
-      - "release/*"
-      - main
-    paths:
-      - .github/workflows/cw-check.yml
-      - Cargo.toml
-      - Cargo.lock
-      - ci/cw-check/**
       - ci/**
       - ibc/**
       - ibc-core/**
@@ -25,8 +14,12 @@ on:
       - ibc-clients/**
       - ibc-primitives/**
       - ibc-derive/**
-  merge_group:
-    types: [checks_requested]
+  push:
+    tags:
+      - v[0-9]+.*
+    branches:
+      - "release/*"
+      - main
 
 jobs:
   cw-check:
