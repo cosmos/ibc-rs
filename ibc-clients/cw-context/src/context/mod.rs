@@ -135,7 +135,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         iterator
             .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()))
             .map(|(_, value)| decode_height(value))
-            .collect::<Result<_, _>>()
+            .collect()
     }
 
     /// Searches for either the earliest next or latest previous height based on
