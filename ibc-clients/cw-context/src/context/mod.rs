@@ -133,6 +133,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         let iterator = self.storage_ref().range(None, None, Order::Ascending);
 
         let heights: Vec<_> = iterator
+            .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()))
             .filter_map(|(_, value)| parse_height(value).transpose())
             .collect::<Result<_, _>>()?;
 
@@ -160,7 +161,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         };
 
         iterator
-            .next()
+            .find(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()))
             .map_or(Ok(None), |(_, height)| parse_height(height))
     }
 
@@ -195,7 +196,8 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
         let iterator = self
             .storage_ref()
-            .range(Some(&start_key), None, Order::Ascending);
+            .range(Some(&start_key), None, Order::Ascending)
+            .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()));
 
         for (_, encoded_height) in iterator {
             let height = parse_height(encoded_height)?;
