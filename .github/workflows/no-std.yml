@@ -21,6 +21,10 @@ on:
       - "release/*"
       - main
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main' }}
+
 jobs:
   check-no-std-panic-conflict:
     name: Check no_std panic conflict
