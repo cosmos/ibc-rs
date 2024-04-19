@@ -427,17 +427,45 @@ mod tests {
         "transfer/channel-75/transfer/channel-123/transfer/channel-1023/transfer/channel-0",
         "//////////////////////dust"
     )]
-    fn test_strange_prefixed_denom(
-        #[case] prefix: &str,
-        #[case] denom: &str,
-    ) -> Result<(), TokenTransferError> {
-        let pd_s = format!("{}/{}", prefix, denom);
-        let pd = PrefixedDenom::from_str(&pd_s)?;
+    // https://github.com/cosmos/ibc-go/blob/e2ad31975f2ede592912b86346b5ebf055c9e05f/modules/apps/transfer/types/trace_test.go#L17-L38
+    #[case("", "uatom")]
+    #[case("", "uatom/")]
+    #[case("", "gamm/pool/1")]
+    #[case("", "gamm//pool//1")]
+    #[case("transfer/channel-1", "uatom")]
+    #[case("customtransfer/channel-1", "uatom")]
+    #[case("transfer/channel-1", "uatom/")]
+    #[case(
+        "transfer/channel-1",
+        "erc20/0x85bcBCd7e79Ec36f4fBBDc54F90C643d921151AA"
+    )]
+    #[case("transfer/channel-1", "gamm/pool/1")]
+    #[case("transfer/channel-1", "gamm//pool//1")]
+    #[case("transfer/channel-1/transfer/channel-2", "uatom")]
+    #[case("customtransfer/channel-1/alternativetransfer/channel-2", "uatom")]
+    #[case("", "transfer/uatom")]
+    #[case("", "transfer//uatom")]
+    #[case("", "channel-1/transfer/uatom")]
+    #[case("", "uatom/transfer")]
+    #[case("", "transfer/channel-1")]
+    #[case("transfer/channel-1", "transfer")]
+    #[case("", "transfer/channelToA/uatom")]
+    #[should_panic]
+    #[case("", "")]
+    #[should_panic]
+    #[case("transfer/channel-1", "")]
+    #[should_panic]
+    #[case("transfer/channel-1/transfer/channel-2", "")]
+    fn test_strange_prefixed_denom(#[case] prefix: &str, #[case] denom: &str) {
+        let pd_s = if prefix.is_empty() {
+            denom.to_owned()
+        } else {
+            format!("{}/{}", prefix, denom)
+        };
+        let pd = PrefixedDenom::from_str(&pd_s).expect("no error");
 
         assert_eq!(pd.trace_path.to_string(), prefix);
         assert_eq!(pd.base_denom.to_string(), denom);
-
-        Ok(())
     }
 
     #[test]
