@@ -156,7 +156,8 @@ impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
 
         let iteration_key = iteration_key(height.revision_number(), height.revision_height());
 
-        let height_vec = height.to_string().into_bytes();
+        // protobuf encoding
+        let height_vec = height.encode_vec();
 
         self.insert(iteration_key, height_vec);
 
