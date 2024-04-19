@@ -53,7 +53,7 @@ jobs:
           docker run \
           -v "$(pwd)":/code \
           -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
-          cosmwasm/optimizer:0.15.0 ./ibc-clients/ics07-tendermint/cw-contract
+          cosmwasm/optimizer:0.15.1 ./ibc-clients/ics07-tendermint/cw-contract
 
       - name: Install `cosmwasm-check` from crates.io
         uses: baptiste0928/cargo-install@v3
