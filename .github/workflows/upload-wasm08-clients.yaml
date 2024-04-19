@@ -48,10 +48,14 @@ jobs:
       - name: Produce `Cargo.lock` file
         run: cargo update -p ibc-client-tendermint-cw
 
+      - name: Create mount directories
+        run: mkdir -p "${HOME}/.cargo/registry" "$(pwd)"/target
+
       - name: Compile cosmwasm blob for tendermint light client
         run: |
           docker run \
           -v "$(pwd)":/code \
+          -v "$(pwd)"/target:/target \
           -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
           cosmwasm/optimizer:0.15.1 ./ibc-clients/ics07-tendermint/cw-contract
 
