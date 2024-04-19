@@ -301,18 +301,34 @@ impl FromStr for PrefixedDenom {
     type Err = TokenTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts: Vec<&str> = s.split('/').collect();
-        let last_part = parts.pop().expect("split() returned an empty iterator");
+        let mut trace_prefixes = vec![];
 
-        let (base_denom, trace_path) = {
-            if last_part == s {
-                (BaseDenom::from_str(s)?, TracePath::empty())
-            } else {
-                let base_denom = BaseDenom::from_str(last_part)?;
-                let trace_path = TracePath::try_from(parts)?;
-                (base_denom, trace_path)
+        let mut remaining_parts = s;
+
+        loop {
+            let parsed_prefix = remaining_parts
+                .split_once('/')
+                .and_then(|(port_id_s, remaining)| {
+                    remaining
+                        .split_once('/')
+                        .map(|(channel_id_s, remaining)| (port_id_s, channel_id_s, remaining))
+                })
+                .and_then(|(port_id_s, channel_id_s, remaining)| {
+                    let port_id = PortId::from_str(port_id_s).ok()?;
+                    let channel_id = ChannelId::from_str(channel_id_s).ok()?;
+                    Some((port_id, channel_id, remaining))
+                });
+            match parsed_prefix {
+                Some((port_id, channel_id, remaining)) => {
+                    trace_prefixes.push(TracePrefix::new(port_id, channel_id));
+                    remaining_parts = remaining;
+                }
+                None => break,
             }
-        };
+        }
+
+        let trace_path = TracePath::new(trace_prefixes);
+        let base_denom = BaseDenom::from_str(remaining_parts)?;
 
         Ok(Self {
             trace_path,

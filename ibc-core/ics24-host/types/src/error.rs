@@ -16,6 +16,8 @@ pub enum IdentifierError {
     RevisionNumberOverflow,
     /// String `{value}` cannot be converted to packet sequence, error: `{reason}`
     InvalidStringAsSequence { value: String, reason: String },
+    /// String `{id}` does not start with `{name}`
+    InvalidNamedIndex { id: String, name: String },
 }
 
 #[cfg(feature = "std")]
