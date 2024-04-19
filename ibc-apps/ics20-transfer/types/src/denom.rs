@@ -393,16 +393,6 @@ mod tests {
             PrefixedDenom::from_str("transfer/channel-0/").is_err(),
             "empty base denom with trace"
         );
-        assert!(PrefixedDenom::from_str("/uatom").is_err(), "empty prefix");
-        assert!(PrefixedDenom::from_str("//uatom").is_err(), "empty ids");
-        assert!(
-            PrefixedDenom::from_str("transfer/").is_err(),
-            "single trace"
-        );
-        assert!(
-            PrefixedDenom::from_str("transfer/atom").is_err(),
-            "single trace with base denom"
-        );
         assert!(
             PrefixedDenom::from_str("transfer/channel-0/uatom").is_ok(),
             "valid single trace info"
@@ -419,6 +409,13 @@ mod tests {
             PrefixedDenom::from_str("transfer/(channel-0)/uatom").is_err(),
             "invalid channel"
         );
+
+        // the followings are valid denom according to `ibc-go`
+        // https://github.com/cosmos/ibc-go/blob/e2ad31975f2ede592912b86346b5ebf055c9e05f/modules/apps/transfer/types/trace_test.go#L17-L38
+        PrefixedDenom::from_str("/uatom").expect("no error");
+        PrefixedDenom::from_str("//uatom").expect("no error");
+        PrefixedDenom::from_str("transfer/").expect("no error");
+        PrefixedDenom::from_str("transfer/atom").expect("no error");
 
         Ok(())
     }
