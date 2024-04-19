@@ -61,6 +61,38 @@ pub fn validate_prefix_length(
     validate_identifier_length(prefix, min, max)
 }
 
+/// Checks if the identifier is a valid named u64 index: {name}-{u64}.
+/// Example: "connection-0", "connection-100", "channel-0", "channel-100".
+pub fn validate_named_u64_index(id: &str, name: &str) -> Result<(), Error> {
+    let number_s = id
+        .strip_prefix(name)
+        .ok_or_else(|| Error::InvalidNamedIndex {
+            id: id.into(),
+            name: name.into(),
+        })?
+        .strip_prefix('-')
+        .ok_or_else(|| Error::InvalidNamedIndex {
+            id: id.into(),
+            name: name.into(),
+        })?;
+
+    if number_s.starts_with('0') && number_s.len() > 1 {
+        return Err(Error::InvalidNamedIndex {
+            id: id.into(),
+            name: name.into(),
+        });
+    }
+
+    _ = number_s
+        .parse::<u64>()
+        .map_err(|_| Error::InvalidNamedIndex {
+            id: id.into(),
+            name: name.into(),
+        })?;
+
+    Ok(())
+}
+
 /// Default validator function for the Client types.
 pub fn validate_client_type(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
