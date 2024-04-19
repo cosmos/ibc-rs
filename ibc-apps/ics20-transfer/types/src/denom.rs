@@ -380,6 +380,8 @@ impl Display for PrefixedDenom {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
     #[test]
@@ -421,16 +423,28 @@ mod tests {
         Ok(())
     }
 
-    #[test]
-    fn test_invalid_channel_id() -> Result<(), TokenTransferError> {
-        let denom = "transfer/channel-75/factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust";
-        let dt = PrefixedDenom::from_str(denom)?;
+    #[rstest]
+    #[case(
+        "transfer/channel-75",
+        "factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"
+    )]
+    #[case(
+        "transfer/channel-75/transfer/channel-123/transfer/channel-1023/transfer/channel-0",
+        "factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"
+    )]
+    #[case(
+        "transfer/channel-75/transfer/channel-123/transfer/channel-1023/transfer/channel-0",
+        "//////////////////////dust"
+    )]
+    fn test_strange_prefixed_denom(
+        #[case] prefix: &str,
+        #[case] denom: &str,
+    ) -> Result<(), TokenTransferError> {
+        let pd_s = format!("{}/{}", prefix, denom);
+        let pd = PrefixedDenom::from_str(&pd_s)?;
 
-        assert_eq!(dt.trace_path.to_string(), "transfer/channel-75");
-        assert_eq!(
-            dt.base_denom.to_string(),
-            "factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"
-        );
+        assert_eq!(pd.trace_path.to_string(), prefix);
+        assert_eq!(pd.base_denom.to_string(), denom);
 
         Ok(())
     }
