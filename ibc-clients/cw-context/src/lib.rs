@@ -18,8 +18,6 @@
 )]
 #![forbid(unsafe_code)]
 
-extern crate alloc;
-
 pub mod api;
 pub mod context;
 pub mod handlers;
