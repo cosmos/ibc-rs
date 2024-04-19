@@ -113,6 +113,13 @@ impl Display for TracePrefix {
 pub struct TracePath(Vec<TracePrefix>);
 
 impl TracePath {
+    /// Creates a new trace path from a vector of trace prefixes.
+    /// Reverse the order of the prefixes for easier addition/removal from the end.
+    pub fn new(mut trace: Vec<TracePrefix>) -> Self {
+        trace.reverse();
+        Self(trace)
+    }
+
     /// Returns true iff this path starts with the specified prefix
     pub fn starts_with(&self, prefix: &TracePrefix) -> bool {
         self.0.last().map(|p| p == prefix).unwrap_or(false)
