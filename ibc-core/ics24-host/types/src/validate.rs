@@ -178,6 +178,25 @@ mod tests {
     }
 
     #[test]
+    fn parse_invalid_connection_id_indexed() {
+        // valid connection id with index
+        validate_connection_identifier("connection-0").expect("no error");
+        validate_connection_identifier("connection-123").expect("no error");
+        validate_connection_identifier("connection-18446744073709551615").expect("no error");
+    }
+
+    #[test]
+    fn parse_invalid_connection_id_non_idexed() {
+        // invalid indexing for connection id
+        validate_connection_identifier("connection-0123").expect_err("InvalidNamedIndex");
+        validate_connection_identifier("connection0123").expect_err("InvalidNamedIndex");
+        validate_connection_identifier("connection000").expect_err("InvalidNamedIndex");
+        // 1 << 64 = 18446744073709551616
+        validate_connection_identifier("connection-18446744073709551616")
+            .expect_err("InvalidNamedIndex");
+    }
+
+    #[test]
     fn parse_invalid_channel_id_min() {
         // invalid channel id, must be at least 8 characters
         let id = validate_channel_identifier("channel");
@@ -191,6 +210,24 @@ mod tests {
             "ihhankr30iy4nna65hjl2wjod7182io1t2s7u3ip3wqtbbn1sl0rgcntqc540r36r",
         );
         assert!(id.is_err())
+    }
+
+    #[test]
+    fn parse_invalid_channel_id_indexed() {
+        // valid channel id with index
+        validate_channel_identifier("channel-0").expect("no error");
+        validate_channel_identifier("channel-123").expect("no error");
+        validate_channel_identifier("channel-18446744073709551615").expect("no error");
+    }
+
+    #[test]
+    fn parse_invalid_channel_id_non_idexed() {
+        // invalid indexing for channel id
+        validate_channel_identifier("channel-0123").expect_err("InvalidNamedIndex");
+        validate_channel_identifier("channel0123").expect_err("InvalidNamedIndex");
+        validate_channel_identifier("channel000").expect_err("InvalidNamedIndex");
+        // 1 << 64 = 18446744073709551616
+        validate_channel_identifier("channel-18446744073709551616").expect_err("InvalidNamedIndex");
     }
 
     #[test]
@@ -277,5 +314,18 @@ mod tests {
     ) {
         let result = validate_prefix_length(prefix, min, max);
         assert_eq!(result.is_ok(), success);
+    }
+
+    #[rstest]
+    #[case::zero_padded("channel", "001", false)]
+    #[case::only_zero("connection", "000", false)]
+    #[case::zero("channel", "0", true)]
+    #[case::one("connection", "1", true)]
+    #[case::n1234("channel", "1234", true)]
+    #[case::u64_max("chan", "18446744073709551615", true)]
+    #[case::u64_max_plus_1("chan", "18446744073709551616", false)]
+    fn test_named_index_validation(#[case] name: &str, #[case] id: &str, #[case] success: bool) {
+        let result = validate_named_u64_index(format!("{name}-{id}").as_str(), name);
+        assert_eq!(result.is_ok(), success, "{result:?}");
     }
 }
