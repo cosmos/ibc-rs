@@ -321,6 +321,8 @@ impl FromStr for PrefixedDenom {
         let mut remaining_parts = s;
 
         loop {
+            // The below two chained `split_once` calls emulate a virtual `split_twice` call,
+            // which is not available in the standard library.
             let parsed_prefix = remaining_parts
                 .split_once('/')
                 .and_then(|(port_id_s, remaining)| {
