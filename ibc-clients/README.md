@@ -27,6 +27,14 @@ IBC light clients:
 - [ibc-client-tendermint](./ics07-tendermint): Implementation
 - [ibc-client-tendermint-cw](./ics07-tendermint/cw-contract): CosmWasm Contract
 
+> [!TIP]
+> The pre-compiled CosmWasm contract for `ibc-client-tendermint-cw` is available
+> as Github workflow artifacts at
+> [_Actions_](https://github.com/cosmos/ibc-rs/actions/workflows/upload-cw-clients.yaml)
+> tab. They can be downloaded
+> [during a Github workflow](https://github.com/cosmos/ibc-rs/blob/1098f252c04152812f026520e28e323f3bc0507e/.github/workflows/upload-cw-clients.yaml#L87-L96)
+> using `actions/download-artifact@v4` action.
+
 ### ICS-08: WASM Proxy Light Client
 
 - [ibc-client-wasm-types](./ics08-wasm/types)
