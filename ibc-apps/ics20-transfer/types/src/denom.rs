@@ -493,17 +493,13 @@ mod tests {
     }
 
     #[rstest]
+    #[case("transfer/channel-1/")]
+    #[case("transfer/channel-1/transfer/channel-2/")]
     #[case("")]
-    #[case("transfer/channel-1")]
-    #[case("transfer/channel-1/transfer/channel-2")]
+    #[case("transfer/channel-0/")]
     #[should_panic(expected = "EmptyBaseDenom")]
-    fn test_prefixed_empty_base_denom(#[case] prefix: &str) {
-        let pd_s = if prefix.is_empty() {
-            "".to_owned()
-        } else {
-            format!("{prefix}/")
-        };
-        PrefixedDenom::from_str(&pd_s).expect("error");
+    fn test_prefixed_empty_base_denom(#[case] pd_s: &str) {
+        PrefixedDenom::from_str(pd_s).expect("error");
     }
 
     #[rstest]
