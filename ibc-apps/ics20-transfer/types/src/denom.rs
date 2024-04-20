@@ -304,7 +304,7 @@ impl FromStr for PrefixedDenom {
     /// the first segment into a [`PortId`] and the second into a [`ChannelId`].
     /// This continues on the third remaining segment in a loop until a
     /// `{port-id/channel-id}` pair cannot be created from the top two segments.
-    /// The remaining parts of the string are then considered the `BaseDenom`.
+    /// The remaining parts of the string are then considered the [`BaseDenom`].
     ///
     /// For example, given the following denom trace:
     /// "transfer/channel-75/factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust",
@@ -312,7 +312,7 @@ impl FromStr for PrefixedDenom {
     /// first is a valid [`PortId`], and the second is a valid [`ChannelId`], so that becomes
     /// the first `{port-id/channel-id}` pair that gets added as part of the [`TracePath`]
     /// of the [`PrefixedDenom`]. The next two segments are `"factory"`, a
-    /// valid [`PortId`], and `"stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4"`, and invalid `ChannelId`.
+    /// valid [`PortId`], and `"stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4"`, an invalid [`ChannelId`].
     /// The loop breaks at this point, resulting in a [`TracePath`] of `"transfer/channel-75"`
     /// and a [`BaseDenom`] of `"factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"`.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
