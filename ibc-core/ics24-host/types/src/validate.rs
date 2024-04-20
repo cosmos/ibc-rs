@@ -187,7 +187,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_invalid_connection_id_non_idexed() {
+    fn parse_invalid_connection_id_non_indexed() {
         // invalid indexing for connection id
         validate_connection_identifier("connection-0123").expect_err("InvalidNamedIndex");
         validate_connection_identifier("connection0123").expect_err("InvalidNamedIndex");
@@ -222,7 +222,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_invalid_channel_id_non_idexed() {
+    fn parse_invalid_channel_id_non_indexed() {
         // invalid indexing for channel id
         validate_channel_identifier("channel-0123").expect_err("InvalidNamedIndex");
         validate_channel_identifier("channel0123").expect_err("InvalidNamedIndex");
