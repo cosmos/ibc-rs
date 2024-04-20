@@ -3,7 +3,8 @@ pub mod custom_ctx;
 
 use std::str::FromStr;
 
-use cosmwasm_std::{Deps, DepsMut, Env, Order, Storage};
+use cosmwasm_std::{Deps, DepsMut, Empty, Env, Order, Storage};
+use cw_storage_plus::{Bound, Map};
 use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
 use ibc_core::client::context::client_state::ClientStateCommon;
 use ibc_core::client::types::error::ClientError;
@@ -19,8 +20,6 @@ use prost::Message;
 use crate::api::ClientType;
 use crate::types::{ContractError, GenesisMetadata, HeightTravel, MigrationPrefix};
 use crate::utils::AnyCodec;
-use cosmwasm_std::Empty;
-use cw_storage_plus::{Bound, Map};
 
 type Checksum = Vec<u8>;
 
