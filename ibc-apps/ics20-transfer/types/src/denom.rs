@@ -503,6 +503,93 @@ mod tests {
         PrefixedDenom::from_str(&pd_s).expect("error");
     }
 
+    #[rstest]
+    fn test_trace_path_order() {
+        let mut prefixed_denom =
+            PrefixedDenom::from_str("customtransfer/channel-1/alternativetransfer/channel-2/uatom")
+                .expect("no error");
+
+        assert_eq!(
+            prefixed_denom.trace_path.to_string(),
+            "customtransfer/channel-1/alternativetransfer/channel-2"
+        );
+        assert_eq!(prefixed_denom.base_denom.to_string(), "uatom");
+
+        let trace_prefix_1 = TracePrefix::new(
+            "alternativetransfer".parse().unwrap(),
+            "channel-2".parse().unwrap(),
+        );
+
+        let trace_prefix_2 = TracePrefix::new(
+            "customtransfer".parse().unwrap(),
+            "channel-1".parse().unwrap(),
+        );
+
+        let trace_prefix_3 =
+            TracePrefix::new("transferv2".parse().unwrap(), "channel-10".parse().unwrap());
+        let trace_prefix_4 = TracePrefix::new(
+            "transferv3".parse().unwrap(),
+            "channel-101".parse().unwrap(),
+        );
+
+        prefixed_denom.trace_path.add_prefix(trace_prefix_3.clone());
+
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+
+        assert_eq!(
+            prefixed_denom.to_string(),
+            "transferv2/channel-10/customtransfer/channel-1/alternativetransfer/channel-2/uatom"
+        );
+
+        prefixed_denom.trace_path.remove_prefix(&trace_prefix_4);
+
+        assert!(!prefixed_denom.trace_path.is_empty());
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+        assert_eq!(
+            prefixed_denom.to_string(),
+            "transferv2/channel-10/customtransfer/channel-1/alternativetransfer/channel-2/uatom"
+        );
+
+        prefixed_denom.trace_path.remove_prefix(&trace_prefix_3);
+
+        assert!(!prefixed_denom.trace_path.is_empty());
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+        assert_eq!(
+            prefixed_denom.to_string(),
+            "customtransfer/channel-1/alternativetransfer/channel-2/uatom"
+        );
+
+        prefixed_denom.trace_path.remove_prefix(&trace_prefix_2);
+
+        assert!(!prefixed_denom.trace_path.is_empty());
+        assert!(prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+        assert_eq!(
+            prefixed_denom.to_string(),
+            "alternativetransfer/channel-2/uatom"
+        );
+
+        prefixed_denom.trace_path.remove_prefix(&trace_prefix_1);
+
+        assert!(prefixed_denom.trace_path.is_empty());
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+        assert_eq!(prefixed_denom.to_string(), "uatom");
+    }
+
     #[test]
     fn test_trace_path() -> Result<(), TokenTransferError> {
         assert!(TracePath::from_str("").is_ok(), "empty trace path");
