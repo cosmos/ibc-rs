@@ -13,6 +13,7 @@ use ibc_core::primitives::Timestamp;
 
 use super::{Context, StorageMut};
 use crate::api::ClientType;
+use crate::context::CONSENSUS_STATE_HEIGHT_MAP;
 use crate::utils::AnyCodec;
 
 impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C> {
@@ -154,7 +155,7 @@ impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
 
         self.insert(prefixed_height_key, revision_height_vec);
 
-        super::CONSENSUS_STATE_HEIGHT_MAP
+        CONSENSUS_STATE_HEIGHT_MAP
             .save(
                 self.storage_mut(),
                 (height.revision_number(), height.revision_height()),
@@ -184,7 +185,7 @@ impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
 
         self.remove(prefixed_height_key);
 
-        super::CONSENSUS_STATE_HEIGHT_MAP.remove(
+        CONSENSUS_STATE_HEIGHT_MAP.remove(
             self.storage_mut(),
             (height.revision_number(), height.revision_height()),
         );
