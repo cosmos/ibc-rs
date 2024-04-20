@@ -34,6 +34,11 @@ jobs:
       # only for caching cargo build artifacts from `cosmwasm/optimizer`
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
+      - name: Install `cosmwasm-check` from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cosmwasm-check
+
       - name: Create mount directories
         run: mkdir -p "${HOME}/.cargo/registry" "$(pwd)"/target
 
@@ -44,11 +49,6 @@ jobs:
           -v "$(pwd)"/target:/target \
           -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
           cosmwasm/optimizer:0.15.1 ./ci/cw-check
-
-      - name: Install `cosmwasm-check` from crates.io
-        uses: baptiste0928/cargo-install@v3
-        with:
-          crate: cosmwasm-check
 
       - name: Check compiled CosmWasm contract
         working-directory: artifacts
