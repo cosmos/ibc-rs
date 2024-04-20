@@ -215,7 +215,8 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
         let iterator = self
             .storage_ref()
-            .range(Some(&start_key), None, Order::Ascending);
+            .range(Some(&start_key), None, Order::Ascending)
+            .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()));
 
         for (key, height) in iterator {
             metadata.push(GenesisMetadata { key, value: height });
