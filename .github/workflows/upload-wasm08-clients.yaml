@@ -65,7 +65,10 @@ jobs:
           crate: cosmwasm-check
 
       - name: Check compiled CosmWasm contract
-        run: cosmwasm-check artifacts/ibc_client_tendermint_cw.wasm
+        working-directory: artifacts
+        run: |
+          sha256sum -c checksums.txt
+          cosmwasm-check ibc_client_tendermint_cw.wasm
 
       - name: Upload compiled CosmWasm contract
         uses: actions/upload-artifact@v4
