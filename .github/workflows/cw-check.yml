@@ -51,4 +51,7 @@ jobs:
           crate: cosmwasm-check
 
       - name: Check compiled CosmWasm contract
-        run: cosmwasm-check artifacts/cw_check.wasm
+        working-directory: artifacts
+        run: |
+          sha256sum -c checksums.txt
+          cosmwasm-check cw_check.wasm
