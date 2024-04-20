@@ -92,9 +92,10 @@ impl Display for TracePrefix {
 }
 
 /// A full trace path modelled as a collection of `TracePrefix`s.
-// Internally, the `TracePath` is modelled as a `Vec<TracePrefix>` but with the order reversed, i.e.
-// "transfer/channel-0/transfer/channel-1/uatom" => `["transfer/channel-1", "transfer/channel-0"]`
-// This is done for ease of addition/removal of prefixes.
+///
+/// Internally, the `TracePath` is modelled as a `Vec<TracePrefix>` but with the order reversed, i.e.
+/// "transfer/channel-0/transfer/channel-1/uatom" => `["transfer/channel-1", "transfer/channel-0"]`
+/// This is done for ease of addition/removal of prefixes.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -113,13 +114,6 @@ impl Display for TracePrefix {
 pub struct TracePath(Vec<TracePrefix>);
 
 impl TracePath {
-    /// Creates a new trace path from a vector of trace prefixes.
-    /// Reverse the order of the prefixes for easier addition/removal from the end.
-    pub fn new(mut trace: Vec<TracePrefix>) -> Self {
-        trace.reverse();
-        Self(trace)
-    }
-
     /// Returns true iff this path starts with the specified prefix
     pub fn starts_with(&self, prefix: &TracePrefix) -> bool {
         self.0.last().map(|p| p == prefix).unwrap_or(false)
@@ -348,7 +342,11 @@ impl FromStr for PrefixedDenom {
             }
         }
 
-        let trace_path = TracePath::new(trace_prefixes);
+        // reversing is needed, as [`TracePath`] requires quick addition/removal
+        // of prefixes which is performant from the end of a [`Vec`].
+        trace_prefixes.reverse();
+        let trace_path = TracePath::from(trace_prefixes);
+
         let base_denom = BaseDenom::from_str(remaining_parts)?;
 
         Ok(Self {
