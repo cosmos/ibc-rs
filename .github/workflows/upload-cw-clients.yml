@@ -1,8 +1,8 @@
-name: Upload wasm08 clients as Github workflow artifact
+name: Upload CosmWasm clients as Github workflow artifact
 on:
   pull_request:
     paths:
-      - .github/workflows/upload-wasm08-clients.yaml
+      - .github/workflows/upload-cw-clients.yml
       - Cargo.toml
       - ci/**
       - ibc/**
@@ -17,7 +17,7 @@ on:
   push:
     branches: main
     paths:
-      - .github/workflows/upload-wasm08-clients.yaml
+      - .github/workflows/upload-cw-clients.yml
       - Cargo.toml
       - ci/**
       - ibc/**
@@ -35,8 +35,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  upload-tm-wasm08-client:
-    name: Compile and upload Tendermint wasm08 client
+  upload-tm-cw-client:
+    name: Compile and upload Tendermint CosmWasm client
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -73,19 +73,19 @@ jobs:
       - name: Upload compiled CosmWasm contract
         uses: actions/upload-artifact@v4
         with:
-          name: tendermint-wasm08-${{ github.sha }}
+          name: tendermint-cw-${{ github.sha }}
           path: artifacts/ibc_client_tendermint_cw.wasm
           # Retain the artifact for 1 week for PRs and 3 months for `main` branch
           retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
           overwrite: true
 
   # # An example workflow to download the artifact:
-  # download-tm-wasm08-client:
-  #   name: Download pre-compiled Tendermint wasm08 client
+  # download-tm-cw-client:
+  #   name: Download pre-compiled Tendermint CosmWasm client
   #   runs-on: ubuntu-latest
   #   steps:
   #     - uses: actions/download-artifact@v4
   #       with:
-  #         name: tendermint-wasm08-${{ env.IBC_RS_COMMIT_HASH }}
+  #         name: tendermint-cw-${{ env.IBC_RS_COMMIT_HASH }}
   #         repository: cosmos/ibc-rs
   #     - run: ls -l ibc_client_tendermint_cw.wasm
