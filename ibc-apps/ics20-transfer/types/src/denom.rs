@@ -446,6 +446,8 @@ mod tests {
         "transfer/channel-75/transfer/channel-123/transfer/channel-1023/transfer/channel-0",
         "//////////////////////dust"
     )]
+    #[case("transfer/channel-0", "uatom")]
+    #[case("transfer/channel-0/transfer/channel-1", "uatom")]
     // https://github.com/cosmos/ibc-go/blob/e2ad31975f2ede592912b86346b5ebf055c9e05f/modules/apps/transfer/types/trace_test.go#L17-L38
     #[case("", "uatom")]
     #[case("", "uatom/")]
@@ -498,28 +500,6 @@ mod tests {
             format!("{prefix}/")
         };
         PrefixedDenom::from_str(&pd_s).expect("error");
-    }
-
-    #[test]
-    fn test_denom_trace() -> Result<(), TokenTransferError> {
-        assert_eq!(
-            PrefixedDenom::from_str("transfer/channel-0/uatom")?,
-            PrefixedDenom {
-                trace_path: "transfer/channel-0".parse()?,
-                base_denom: "uatom".parse()?
-            },
-            "valid single trace info"
-        );
-        assert_eq!(
-            PrefixedDenom::from_str("transfer/channel-0/transfer/channel-1/uatom")?,
-            PrefixedDenom {
-                trace_path: "transfer/channel-0/transfer/channel-1".parse()?,
-                base_denom: "uatom".parse()?
-            },
-            "valid multiple trace info"
-        );
-
-        Ok(())
     }
 
     #[test]
