@@ -22,6 +22,9 @@ use crate::utils::{decode_height, AnyCodec};
 
 type Checksum = Vec<u8>;
 
+pub const CONSENSUS_STATE_HEIGHT_MAP: Map<'_, (u64, u64), Empty> =
+    Map::new(ITERATE_CONSENSUS_STATE_PREFIX);
+
 /// Context is a wrapper around the deps and env that gives access to the
 /// methods under the ibc-rs Validation and Execution traits.
 pub struct Context<'a, C: ClientType<'a>> {

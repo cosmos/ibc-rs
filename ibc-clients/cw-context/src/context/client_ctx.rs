@@ -7,13 +7,13 @@ use ibc_core::client::types::error::ClientError;
 use ibc_core::client::types::Height;
 use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::identifiers::ClientId;
-use ibc_core::host::types::path::{iteration_key, ClientConsensusStatePath, ClientStatePath};
+use ibc_core::host::types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_core::primitives::proto::{Any, Protobuf};
 use ibc_core::primitives::Timestamp;
 
-use super::Context;
+use super::{Context, StorageMut};
 use crate::api::ClientType;
-use crate::utils::{encode_height, AnyCodec};
+use crate::utils::AnyCodec;
 
 impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C> {
     type ClientStateRef = C::ClientState;
@@ -154,11 +154,15 @@ impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
 
         self.insert(prefixed_height_key, revision_height_vec);
 
-        let iteration_key = iteration_key(height.revision_number(), height.revision_height());
-
-        let height_vec = encode_height(height);
-
-        self.insert(iteration_key, height_vec);
+        super::CONSENSUS_STATE_HEIGHT_MAP
+            .save(
+                self.storage_mut(),
+                (height.revision_number(), height.revision_height()),
+                &Default::default(),
+            )
+            .map_err(|e| ClientError::Other {
+                description: e.to_string(),
+            })?;
 
         Ok(())
     }
@@ -180,9 +184,10 @@ impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
 
         self.remove(prefixed_height_key);
 
-        let iteration_key = iteration_key(height.revision_number(), height.revision_height());
-
-        self.remove(iteration_key);
+        super::CONSENSUS_STATE_HEIGHT_MAP.remove(
+            self.storage_mut(),
+            (height.revision_number(), height.revision_height()),
+        );
 
         Ok(())
     }
