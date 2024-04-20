@@ -34,7 +34,7 @@ Our release process is as follows:
 8. Create a signed tag `git tag -s -a vX.Y.Z`. In the tag message, write the
    version and the link to the corresponding section of the changelog. Then push
    the tag to GitHub with `git push origin vX.Y.Z`.
-   - The [release workflow][release.yml] will run the `cargo release --execute`
+   - The [release workflow][release.yaml] will run the `cargo release --execute`
    command in a CI worker.
 9. If some crates have not been released, check the cause of the failure and
    act accordingly:
@@ -56,4 +56,4 @@ Our release process is as follows:
 All done! 🎉
 
 [crates.io]: https://crates.io
-[release.yml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yml
+[release.yaml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yaml

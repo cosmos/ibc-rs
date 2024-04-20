@@ -2,7 +2,7 @@ name: CosmWasm Compilation Check
 on:
   pull_request:
     paths:
-      - .github/workflows/cw-check.yml
+      - .github/workflows/cw-check.yaml
       - Cargo.toml
       - Cargo.lock
       - ci/cw-check/**

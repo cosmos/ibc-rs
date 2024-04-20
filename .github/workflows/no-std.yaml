@@ -2,7 +2,7 @@ name: no_std check
 on:
   pull_request:
     paths:
-      - .github/workflows/no-std.yml
+      - .github/workflows/no-std.yaml
       - Cargo.toml
       - Cargo.lock
       - ci/no-std-check/**
