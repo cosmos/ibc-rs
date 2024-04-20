@@ -169,20 +169,19 @@ mod tests {
     #[test]
     fn parse_invalid_connection_id_indexed() {
         // valid connection id with index
-        validate_connection_identifier("connection-0").expect("no error");
-        validate_connection_identifier("connection-123").expect("no error");
-        validate_connection_identifier("connection-18446744073709551615").expect("no error");
+        validate_connection_identifier("connection-0").expect("success");
+        validate_connection_identifier("connection-123").expect("success");
+        validate_connection_identifier("connection-18446744073709551615").expect("success");
     }
 
     #[test]
     fn parse_invalid_connection_id_non_indexed() {
         // invalid indexing for connection id
-        validate_connection_identifier("connection-0123").expect_err("InvalidNamedIndex");
-        validate_connection_identifier("connection0123").expect_err("InvalidNamedIndex");
-        validate_connection_identifier("connection000").expect_err("InvalidNamedIndex");
+        validate_connection_identifier("connection-0123").expect_err("failure");
+        validate_connection_identifier("connection0123").expect_err("failure");
+        validate_connection_identifier("connection000").expect_err("failure");
         // 1 << 64 = 18446744073709551616
-        validate_connection_identifier("connection-18446744073709551616")
-            .expect_err("InvalidNamedIndex");
+        validate_connection_identifier("connection-18446744073709551616").expect_err("failure");
     }
 
     #[test]
@@ -204,19 +203,19 @@ mod tests {
     #[test]
     fn parse_invalid_channel_id_indexed() {
         // valid channel id with index
-        validate_channel_identifier("channel-0").expect("no error");
-        validate_channel_identifier("channel-123").expect("no error");
-        validate_channel_identifier("channel-18446744073709551615").expect("no error");
+        validate_channel_identifier("channel-0").expect("success");
+        validate_channel_identifier("channel-123").expect("success");
+        validate_channel_identifier("channel-18446744073709551615").expect("success");
     }
 
     #[test]
     fn parse_invalid_channel_id_non_indexed() {
         // invalid indexing for channel id
-        validate_channel_identifier("channel-0123").expect_err("InvalidNamedIndex");
-        validate_channel_identifier("channel0123").expect_err("InvalidNamedIndex");
-        validate_channel_identifier("channel000").expect_err("InvalidNamedIndex");
+        validate_channel_identifier("channel-0123").expect_err("failure");
+        validate_channel_identifier("channel0123").expect_err("failure");
+        validate_channel_identifier("channel000").expect_err("failure");
         // 1 << 64 = 18446744073709551616
-        validate_channel_identifier("channel-18446744073709551616").expect_err("InvalidNamedIndex");
+        validate_channel_identifier("channel-18446744073709551616").expect_err("failure");
     }
 
     #[test]
