@@ -61,8 +61,8 @@ jobs:
 
       - name: Fix permissions
         run: |
-          sudo chown -R $USER:$(id -gn) "$(pwd)"
-          sudo chown -R $USER:$(id -gn) "${HOME}/.cargo/registry"
+          sudo chown -R $(id -u):$(id -g) "$(pwd)"/target
+          sudo chown -R $(id -u):$(id -g) "${HOME}/.cargo/registry"
 
       - name: Install `cosmwasm-check` from crates.io
         uses: baptiste0928/cargo-install@v3
