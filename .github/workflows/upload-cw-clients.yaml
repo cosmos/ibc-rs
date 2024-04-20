@@ -35,7 +35,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  upload-tm-cw-client:
+  upload-tendermint-cw-client:
     name: Compile and upload Tendermint CosmWasm client
     runs-on: ubuntu-latest
     steps:
@@ -85,7 +85,7 @@ jobs:
           overwrite: true
 
   # # An example workflow to download the artifact:
-  # download-tm-cw-client:
+  # download-tendermint-cw-client:
   #   name: Download pre-compiled Tendermint CosmWasm client
   #   runs-on: ubuntu-latest
   #   steps:
