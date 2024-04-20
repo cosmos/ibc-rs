@@ -482,6 +482,7 @@ mod tests {
         };
         let pd = PrefixedDenom::from_str(&pd_s)?;
 
+        assert_eq!(pd.to_string(), pd_s);
         assert_eq!(pd.trace_path.to_string(), prefix);
         assert_eq!(pd.base_denom.to_string(), denom);
 
@@ -500,19 +501,6 @@ mod tests {
             format!("{prefix}/")
         };
         PrefixedDenom::from_str(&pd_s).expect("error");
-    }
-
-    #[test]
-    fn test_denom_serde() -> Result<(), TokenTransferError> {
-        let dt_str = "transfer/channel-0/uatom";
-        let dt = PrefixedDenom::from_str(dt_str)?;
-        assert_eq!(dt.to_string(), dt_str, "valid single trace info");
-
-        let dt_str = "transfer/channel-0/transfer/channel-1/uatom";
-        let dt = PrefixedDenom::from_str(dt_str)?;
-        assert_eq!(dt.to_string(), dt_str, "valid multiple trace info");
-
-        Ok(())
     }
 
     #[test]
