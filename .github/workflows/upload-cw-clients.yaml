@@ -43,6 +43,11 @@ jobs:
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
+      - name: Install `cosmwasm-check` from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cosmwasm-check
+
       # `cosmwasm/optimizer` requires `Cargo.lock`. but currently,
       # `Cargo.lock` is not committed, because `ibc-rs` is treated as library.
       - name: Produce `Cargo.lock` file
@@ -58,11 +63,6 @@ jobs:
           -v "$(pwd)"/target:/target \
           -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
           cosmwasm/optimizer:0.15.1 ./ibc-clients/ics07-tendermint/cw-contract
-
-      - name: Install `cosmwasm-check` from crates.io
-        uses: baptiste0928/cargo-install@v3
-        with:
-          crate: cosmwasm-check
 
       - name: Check compiled CosmWasm contract
         working-directory: artifacts
