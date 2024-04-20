@@ -2,7 +2,7 @@ name: Upload CosmWasm clients as Github workflow artifact
 on:
   pull_request:
     paths:
-      - .github/workflows/upload-cw-clients.yml
+      - .github/workflows/upload-cw-clients.yaml
       - Cargo.toml
       - ci/**
       - ibc/**
@@ -17,7 +17,7 @@ on:
   push:
     branches: main
     paths:
-      - .github/workflows/upload-cw-clients.yml
+      - .github/workflows/upload-cw-clients.yaml
       - Cargo.toml
       - ci/**
       - ibc/**
