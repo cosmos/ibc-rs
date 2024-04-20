@@ -24,6 +24,10 @@ use cw_storage_plus::{Bound, Map};
 
 type Checksum = Vec<u8>;
 
+// `Height` can not be used directly in place of `(u64, u64)`
+// as it doesn't implement some cw_storage specific traits.
+// Also a sorted set needs to be maintained. So the key type is set to
+// [Empty](https://book.cosmwasm.com/cross-contract/map-storage.html#maps-as-sets).
 pub const CONSENSUS_STATE_HEIGHT_MAP: Map<'_, (u64, u64), Empty> =
     Map::new(ITERATE_CONSENSUS_STATE_PREFIX);
 
