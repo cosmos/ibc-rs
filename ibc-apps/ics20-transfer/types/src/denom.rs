@@ -300,6 +300,27 @@ pub fn is_receiver_chain_source(
 impl FromStr for PrefixedDenom {
     type Err = TokenTransferError;
 
+    /// Initializes a [`PrefixedDenom`] from a string that adheres to the format
+    /// `{port-id-1/channel-id-1}/{port-id-2/channel-id-2}/.../{port-id-n/channel-id-n}/base-denom`.
+    /// A [`PrefixedDenom`] exhibits a sequence of `{port-id/channel-id}` pairs.
+    /// This sequence makes up the [`TracePath`] of the [`PrefixedDenom`].
+    ///
+    /// This [`PrefixedDenom::from_str`] implementation _left-split-twice_ the argument string
+    /// using `/` delimiter. Then it peeks into the first two segments and attempts to convert
+    /// the first segment into a [`PortId`] and the second into a [`ChannelId`].
+    /// This continues on the third remaining segment in a loop until a
+    /// `{port-id/channel-id}` pair cannot be created from the top two segments.
+    /// The remaining parts of the string are then considered the `BaseDenom`.
+    ///
+    /// For example, given the following denom trace:
+    /// "transfer/channel-75/factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust",
+    /// the first two `/`-delimited segments are `"transfer"` and `"channel-75"`. The
+    /// first is a valid [`PortId`], and the second is a valid [`ChannelId`], so that becomes
+    /// the first `{port-id/channel-id}` pair that gets added as part of the [`TracePath`]
+    /// of the [`PrefixedDenom`]. The next two segments are `"factory"`, a
+    /// valid [`PortId`], and `"stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4"`, and invalid `ChannelId`.
+    /// The loop breaks at this point, resulting in a [`TracePath`] of `"transfer/channel-75"`
+    /// and a [`BaseDenom`] of `"factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"`.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut trace_prefixes = vec![];
 
