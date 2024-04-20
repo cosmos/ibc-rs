@@ -18,7 +18,9 @@ use prost::Message;
 
 use crate::api::ClientType;
 use crate::types::{ContractError, GenesisMetadata, HeightTravel, MigrationPrefix};
-use crate::utils::{decode_height, AnyCodec};
+use crate::utils::AnyCodec;
+use cosmwasm_std::Empty;
+use cw_storage_plus::{Bound, Map};
 
 type Checksum = Vec<u8>;
 
@@ -133,11 +135,10 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
     /// Returns the storage of the context.
     pub fn get_heights(&self) -> Result<Vec<Height>, ClientError> {
-        let iterator = self.storage_ref().range(None, None, Order::Ascending);
-
-        iterator
-            .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()))
-            .map(|(_, value)| decode_height(value))
+        CONSENSUS_STATE_HEIGHT_MAP
+            .keys(self.storage_ref(), None, None, Order::Ascending)
+            .flatten()
+            .map(|(rev_number, rev_height)| Height::new(rev_number, rev_height))
             .collect()
     }
 
@@ -148,22 +149,31 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         height: &Height,
         travel: HeightTravel,
     ) -> Result<Option<Height>, ClientError> {
-        let iteration_key = iteration_key(height.revision_number(), height.revision_height());
-
-        let mut iterator = match travel {
-            HeightTravel::Prev => {
-                self.storage_ref()
-                    .range(None, Some(&iteration_key), Order::Descending)
-            }
-            HeightTravel::Next => {
-                self.storage_ref()
-                    .range(Some(&iteration_key), None, Order::Ascending)
-            }
+        let iterator = match travel {
+            HeightTravel::Prev => CONSENSUS_STATE_HEIGHT_MAP.range(
+                self.storage_ref(),
+                None,
+                Some(Bound::exclusive((
+                    height.revision_number(),
+                    height.revision_height(),
+                ))),
+                Order::Descending,
+            ),
+            HeightTravel::Next => CONSENSUS_STATE_HEIGHT_MAP.range(
+                self.storage_ref(),
+                Some(Bound::exclusive((
+                    height.revision_number(),
+                    height.revision_height(),
+                ))),
+                None,
+                Order::Ascending,
+            ),
         };
 
         iterator
-            .find(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()))
-            .map(|(_, height)| decode_height(height))
+            .flatten()
+            .map(|((rev_number, rev_height), _)| Height::new(rev_number, rev_height))
+            .next()
             .transpose()
     }
 
@@ -194,15 +204,12 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
     pub fn get_metadata(&self) -> Result<Option<Vec<GenesisMetadata>>, ContractError> {
         let mut metadata = Vec::<GenesisMetadata>::new();
 
-        let start_key = ITERATE_CONSENSUS_STATE_PREFIX.to_string().into_bytes();
+        let iterator = CONSENSUS_STATE_HEIGHT_MAP
+            .keys(self.storage_ref(), None, None, Order::Ascending)
+            .flatten();
 
-        let iterator = self
-            .storage_ref()
-            .range(Some(&start_key), None, Order::Ascending)
-            .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()));
-
-        for (_, encoded_height) in iterator {
-            let height = decode_height(encoded_height)?;
+        for (rev_number, rev_height) in iterator {
+            let height = Height::new(rev_number, rev_height)?;
 
             let processed_height_key = self.client_update_height_key(&height);
             metadata.push(GenesisMetadata {
@@ -216,13 +223,17 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
             });
         }
 
-        let iterator = self
-            .storage_ref()
-            .range(Some(&start_key), None, Order::Ascending)
-            .filter(|(key, _)| key.starts_with(ITERATE_CONSENSUS_STATE_PREFIX.as_bytes()));
+        let iterator = CONSENSUS_STATE_HEIGHT_MAP
+            .keys(self.storage_ref(), None, None, Order::Ascending)
+            .flatten();
 
-        for (key, height) in iterator {
-            metadata.push(GenesisMetadata { key, value: height });
+        for (rev_number, rev_height) in iterator {
+            let height = Height::new(rev_number, rev_height)?;
+
+            metadata.push(GenesisMetadata {
+                key: iteration_key(rev_number, rev_height),
+                value: height.encode_vec(),
+            });
         }
 
         Ok(Some(metadata))
