@@ -67,29 +67,17 @@ pub fn validate_prefix_length(
 pub fn validate_named_u64_index(id: &str, name: &str) -> Result<(), Error> {
     let number_s = id
         .strip_prefix(name)
-        .ok_or_else(|| Error::InvalidNamedIndex {
-            id: id.into(),
-            name: name.into(),
-        })?
+        .ok_or_else(|| Error::InvalidPrefix { prefix: id.into() })?
         .strip_prefix('-')
-        .ok_or_else(|| Error::InvalidNamedIndex {
-            id: id.into(),
-            name: name.into(),
-        })?;
+        .ok_or_else(|| Error::InvalidPrefix { prefix: id.into() })?;
 
     if number_s.starts_with('0') && number_s.len() > 1 {
-        return Err(Error::InvalidNamedIndex {
-            id: id.into(),
-            name: name.into(),
-        });
+        return Err(Error::InvalidPrefix { prefix: id.into() });
     }
 
     _ = number_s
         .parse::<u64>()
-        .map_err(|_| Error::InvalidNamedIndex {
-            id: id.into(),
-            name: name.into(),
-        })?;
+        .map_err(|_| Error::InvalidPrefix { prefix: id.into() })?;
 
     Ok(())
 }
