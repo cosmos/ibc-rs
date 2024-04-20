@@ -295,8 +295,8 @@ impl FromStr for PrefixedDenom {
     type Err = TokenTransferError;
 
     /// Initializes a [`PrefixedDenom`] from a string that adheres to the format
-    /// `{port-id-1/channel-id-1}/{port-id-2/channel-id-2}/.../{port-id-n/channel-id-n}/base-denom`.
-    /// A [`PrefixedDenom`] exhibits a sequence of `{port-id/channel-id}` pairs.
+    /// `{1st-port-id/channel-<index>}/{2nd-port-id/channel-<index>}/.../{nth-port-id/channel-<index>}/<base_denom>`.
+    /// A [`PrefixedDenom`] exhibits a sequence of `{ith-port-id/channel-<index>}` pairs.
     /// This sequence makes up the [`TracePath`] of the [`PrefixedDenom`].
     ///
     /// This [`PrefixedDenom::from_str`] implementation _left-split-twice_ the argument string
