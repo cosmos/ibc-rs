@@ -448,6 +448,9 @@ mod tests {
     )]
     #[case("transfer/channel-0", "uatom")]
     #[case("transfer/channel-0/transfer/channel-1", "uatom")]
+    #[case("", "/")]
+    #[case("", "transfer/uatom")]
+    #[case("", "transfer//uatom")]
     // https://github.com/cosmos/ibc-go/blob/e2ad31975f2ede592912b86346b5ebf055c9e05f/modules/apps/transfer/types/trace_test.go#L17-L38
     #[case("", "uatom")]
     #[case("", "uatom/")]
