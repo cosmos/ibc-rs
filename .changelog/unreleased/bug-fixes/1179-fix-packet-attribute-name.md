@@ -1,0 +1,1 @@
+- [ibc-core-channel] Fix receive_packet to recv_packet to match go implementation
