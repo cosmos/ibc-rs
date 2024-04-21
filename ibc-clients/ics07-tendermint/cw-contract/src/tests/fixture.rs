@@ -1,11 +1,10 @@
-use std::ops::Add;
 use std::time::Duration;
 
-use cosmwasm_std::testing::mock_env;
-use cosmwasm_std::{from_json, Deps, DepsMut, Empty, StdError};
+use cosmwasm_std::{from_json, Deps, DepsMut, Empty, Response, StdError, StdResult};
 use ibc_client_cw::types::{
-    CheckForMisbehaviourMsgRaw, ExportMetadataMsg, GenesisMetadata, InstantiateMsg, QueryMsg,
-    QueryResponse, StatusMsg, VerifyClientMessageRaw,
+    CheckForMisbehaviourMsgRaw, ContractError, ExportMetadataMsg, GenesisMetadata, InstantiateMsg,
+    MigrationPrefix, QueryMsg, QueryResponse, StatusMsg, UpdateStateMsgRaw,
+    UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw,
 };
 use ibc_client_cw::utils::AnyCodec;
 use ibc_client_tendermint::client_state::ClientState as TmClientState;
@@ -15,9 +14,10 @@ use ibc_core::client::types::{Height, Status};
 use ibc_core::host::types::identifiers::ChainId;
 use ibc_core::primitives::Timestamp;
 use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
+use tendermint::Time;
 use tendermint_testgen::{Generator, Validator};
 
-use super::helper::{dummy_checksum, dummy_sov_consensus_state};
+use super::helper::{dummy_checksum, dummy_sov_consensus_state, mock_env_with_timestamp_now};
 use crate::entrypoint::TendermintContext;
 
 /// Test fixture
@@ -26,63 +26,70 @@ pub struct Fixture {
     pub chain_id: ChainId,
     pub trusted_timestamp: Timestamp,
     pub trusted_height: Height,
-    pub target_height: Height,
     pub validators: Vec<Validator>,
-    pub migration_mode: bool,
+    pub migration_prefix: MigrationPrefix,
 }
 
 impl Default for Fixture {
     fn default() -> Self {
         Fixture {
             chain_id: ChainId::new("test-chain").unwrap(),
-            // Returns a dummy timestamp for testing purposes. The value corresponds to the
-            // timestamp of the `mock_env()`.
-            trusted_timestamp: Timestamp::from_nanoseconds(1_571_797_419_879_305_533)
-                .expect("never fails"),
+            trusted_timestamp: Timestamp::now(),
             trusted_height: Height::new(0, 5).unwrap(),
-            target_height: Height::new(0, 10).unwrap(),
             validators: vec![
                 Validator::new("1").voting_power(40),
                 Validator::new("2").voting_power(30),
                 Validator::new("3").voting_power(30),
             ],
-            migration_mode: false,
+            migration_prefix: MigrationPrefix::None,
         }
     }
 }
 
 impl Fixture {
-    pub fn migration_mode(mut self) -> Self {
-        self.migration_mode = true;
-        self
+    pub fn set_migration_prefix(&mut self, migration_mode: MigrationPrefix) {
+        self.migration_prefix = migration_mode;
     }
 
     pub fn ctx_ref<'a>(&self, deps: Deps<'a, Empty>) -> TendermintContext<'a> {
-        let mut ctx = TendermintContext::new_ref(deps, mock_env()).expect("never fails");
+        let mut ctx =
+            TendermintContext::new_ref(deps, mock_env_with_timestamp_now()).expect("never fails");
 
-        if self.migration_mode {
-            ctx.set_subject_prefix();
+        match self.migration_prefix {
+            MigrationPrefix::None => {}
+            MigrationPrefix::Subject => {
+                ctx.set_subject_prefix();
+            }
+            MigrationPrefix::Substitute => {
+                ctx.set_substitute_prefix();
+            }
         };
 
         ctx
     }
 
     pub fn ctx_mut<'a>(&self, deps: DepsMut<'a, Empty>) -> TendermintContext<'a> {
-        let mut ctx = TendermintContext::new_mut(deps, mock_env()).expect("never fails");
+        let mut ctx =
+            TendermintContext::new_mut(deps, mock_env_with_timestamp_now()).expect("never fails");
 
-        if self.migration_mode {
-            ctx.set_subject_prefix();
+        match self.migration_prefix {
+            MigrationPrefix::None => {}
+            MigrationPrefix::Subject => {
+                ctx.set_subject_prefix();
+            }
+            MigrationPrefix::Substitute => {
+                ctx.set_substitute_prefix();
+            }
         };
 
         ctx
     }
 
     pub fn dummy_instantiate_msg(&self) -> InstantiateMsg {
-        // Setting the `trusting_period` to 1 second allows the quick client
-        // freeze for the `happy_cw_client_recovery` test.
-
+        // Setting the `trusting_period` to 1 second allows the quick
+        // client expiry for the tests.
         let tm_client_state: TmClientState = ClientStateConfig::builder()
-            .chain_id("test-chain".parse().unwrap())
+            .chain_id(self.chain_id.clone())
             .trusting_period(Duration::from_secs(1))
             .latest_height(self.trusted_height)
             .build()
@@ -99,19 +106,10 @@ impl Fixture {
     }
 
     fn dummy_header(&self, header_height: Height) -> Vec<u8> {
-        // NOTE: since mock context has a fixed timestamp, we only can add up
-        // to allowed clock drift (3s)
-        let future_time = self
-            .trusted_timestamp
-            .add(Duration::from_secs(2))
-            .expect("never fails")
-            .into_tm_time()
-            .expect("Time exists");
-
         let header = tendermint_testgen::Header::new(&self.validators)
             .chain_id(self.chain_id.as_str())
             .height(header_height.revision_height())
-            .time(future_time)
+            .time(Time::now())
             .next_validators(&self.validators)
             .app_hash(vec![0; 32].try_into().expect("never fails"));
 
@@ -129,8 +127,8 @@ impl Fixture {
         Header::encode_to_any_vec(tm_header)
     }
 
-    pub fn dummy_client_message(&self) -> Vec<u8> {
-        self.dummy_header(self.target_height)
+    pub fn dummy_client_message(&self, target_height: Height) -> Vec<u8> {
+        self.dummy_header(target_height)
     }
 
     /// Constructs a dummy misbehaviour message that is one block behind the
@@ -142,7 +140,9 @@ impl Fixture {
     }
 
     pub fn verify_client_message(&self, deps: Deps<'_>, client_message: Vec<u8>) {
-        let resp = self.query(deps, VerifyClientMessageRaw { client_message }.into());
+        let resp = self
+            .query(deps, VerifyClientMessageRaw { client_message }.into())
+            .unwrap();
 
         assert!(resp.is_valid);
         assert!(resp.status.is_none());
@@ -150,31 +150,73 @@ impl Fixture {
     }
 
     pub fn check_for_misbehaviour(&self, deps: Deps<'_>, client_message: Vec<u8>) {
-        let resp = self.query(deps, CheckForMisbehaviourMsgRaw { client_message }.into());
+        let resp = self
+            .query(deps, CheckForMisbehaviourMsgRaw { client_message }.into())
+            .unwrap();
 
         assert!(resp.is_valid);
         assert_eq!(resp.found_misbehaviour, Some(true));
     }
 
     pub fn check_client_status(&self, deps: Deps<'_>, expected: Status) {
-        let resp = self.query(deps, StatusMsg {}.into());
+        let resp = self.query(deps, StatusMsg {}.into()).unwrap();
 
         assert_eq!(resp.status, Some(expected.to_string()));
     }
 
     pub fn get_metadata(&self, deps: Deps<'_>) -> Option<Vec<GenesisMetadata>> {
         self.query(deps, ExportMetadataMsg {}.into())
-            .genesis_metadata
+            .map(|resp| resp.genesis_metadata)
+            .unwrap()
     }
 
-    pub fn query(&self, deps: Deps<'_>, msg: QueryMsg) -> QueryResponse {
+    pub fn query(&self, deps: Deps<'_>, msg: QueryMsg) -> StdResult<QueryResponse> {
         let ctx = self.ctx_ref(deps);
 
         let resp_bytes = ctx
             .query(msg)
-            .map_err(|e| StdError::generic_err(e.to_string()))
+            .map_err(|e| StdError::generic_err(e.to_string()))?;
+
+        from_json(resp_bytes)
+    }
+
+    pub fn create_client(&self, deps_mut: DepsMut<'_>) -> Result<Response, ContractError> {
+        let mut ctx = self.ctx_mut(deps_mut);
+
+        let instantiate_msg = self.dummy_instantiate_msg();
+
+        let data = ctx.instantiate(instantiate_msg)?;
+
+        Ok(Response::default().set_data(data))
+    }
+
+    pub fn update_client(
+        &self,
+        deps_mut: DepsMut<'_>,
+        target_height: Height,
+    ) -> Result<Response, ContractError> {
+        let client_message = self.dummy_client_message(target_height);
+
+        self.verify_client_message(deps_mut.as_ref(), client_message.clone());
+
+        let mut ctx = self.ctx_mut(deps_mut);
+
+        let data = ctx.sudo(UpdateStateMsgRaw { client_message }.into())?;
+
+        Ok(Response::default().set_data(data))
+    }
+
+    pub fn update_client_on_misbehaviour(&self, deps_mut: DepsMut<'_>) -> Response {
+        let client_message = self.dummy_misbehaviour_message();
+
+        self.check_for_misbehaviour(deps_mut.as_ref(), client_message.clone());
+
+        let mut ctx = self.ctx_mut(deps_mut);
+
+        let data = ctx
+            .sudo(UpdateStateOnMisbehaviourMsgRaw { client_message }.into())
             .unwrap();
 
-        from_json(resp_bytes).unwrap()
+        Response::default().set_data(data)
     }
 }
