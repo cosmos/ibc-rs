@@ -140,8 +140,13 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
     pub fn get_heights(&self) -> Result<Vec<Height>, ClientError> {
         CONSENSUS_STATE_HEIGHT_MAP
             .keys(self.storage_ref(), None, None, Order::Ascending)
-            .flatten()
-            .map(|(rev_number, rev_height)| Height::new(rev_number, rev_height))
+            .map(|deserialized_result| {
+                let (rev_number, rev_height) =
+                    deserialized_result.map_err(|e| ClientError::Other {
+                        description: e.to_string(),
+                    })?;
+                Height::new(rev_number, rev_height)
+            })
             .collect()
     }
 
@@ -174,8 +179,13 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         };
 
         iterator
-            .flatten()
-            .map(|((rev_number, rev_height), _)| Height::new(rev_number, rev_height))
+            .map(|deserialized_result| {
+                let ((rev_number, rev_height), _) =
+                    deserialized_result.map_err(|e| ClientError::Other {
+                        description: e.to_string(),
+                    })?;
+                Height::new(rev_number, rev_height)
+            })
             .next()
             .transpose()
     }
@@ -209,10 +219,16 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
         let iterator = CONSENSUS_STATE_HEIGHT_MAP
             .keys(self.storage_ref(), None, None, Order::Ascending)
-            .flatten();
+            .map(|deserialized_result| {
+                let (rev_number, rev_height) =
+                    deserialized_result.map_err(|e| ClientError::Other {
+                        description: e.to_string(),
+                    })?;
+                Height::new(rev_number, rev_height)
+            });
 
-        for (rev_number, rev_height) in iterator {
-            let height = Height::new(rev_number, rev_height)?;
+        for height_result in iterator {
+            let height = height_result?;
 
             let processed_height_key = self.client_update_height_key(&height);
             metadata.push(GenesisMetadata {
@@ -228,13 +244,19 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
         let iterator = CONSENSUS_STATE_HEIGHT_MAP
             .keys(self.storage_ref(), None, None, Order::Ascending)
-            .flatten();
+            .map(|deserialized_result| {
+                let (rev_number, rev_height) =
+                    deserialized_result.map_err(|e| ClientError::Other {
+                        description: e.to_string(),
+                    })?;
+                Height::new(rev_number, rev_height)
+            });
 
-        for (rev_number, rev_height) in iterator {
-            let height = Height::new(rev_number, rev_height)?;
+        for height_result in iterator {
+            let height = height_result?;
 
             metadata.push(GenesisMetadata {
-                key: iteration_key(rev_number, rev_height),
+                key: iteration_key(height.revision_number(), height.revision_height()),
                 value: height.encode_vec(),
             });
         }
