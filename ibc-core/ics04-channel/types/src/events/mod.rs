@@ -34,7 +34,7 @@ const CHANNEL_CLOSE_INIT_EVENT: &str = "channel_close_init";
 const CHANNEL_CLOSE_CONFIRM_EVENT: &str = "channel_close_confirm";
 /// Packet event types
 const SEND_PACKET_EVENT: &str = "send_packet";
-const RECEIVE_PACKET_EVENT: &str = "receive_packet";
+const RECEIVE_PACKET_EVENT: &str = "recv_packet";
 const WRITE_ACK_EVENT: &str = "write_acknowledgement";
 const ACK_PACKET_EVENT: &str = "acknowledge_packet";
 const TIMEOUT_EVENT: &str = "timeout_packet";
