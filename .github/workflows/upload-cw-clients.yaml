@@ -91,4 +91,4 @@ jobs:
       #     repository: cosmos/ibc-rs
       #     run-id: ${{ env.UPLOAD_WASM_RUN_ID }}
       #     github-token: ${{ secrets.GITHUB_TOKEN }}
-      # - run: ls tendermint-cw-client/ibc_client_tendermint_cw.wasm
+      # - run: ls ibc_client_tendermint_cw.wasm
