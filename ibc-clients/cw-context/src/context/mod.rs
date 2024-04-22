@@ -3,7 +3,8 @@ pub mod custom_ctx;
 
 use std::str::FromStr;
 
-use cosmwasm_std::{Deps, DepsMut, Env, Order, Storage};
+use cosmwasm_std::{Deps, DepsMut, Empty, Env, Order, Storage};
+use cw_storage_plus::{Bound, Map};
 use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
 use ibc_core::client::context::client_state::ClientStateCommon;
 use ibc_core::client::types::error::ClientError;
@@ -18,9 +19,17 @@ use prost::Message;
 
 use crate::api::ClientType;
 use crate::types::{ContractError, GenesisMetadata, HeightTravel, MigrationPrefix};
-use crate::utils::{parse_height, AnyCodec};
+use crate::utils::AnyCodec;
 
 type Checksum = Vec<u8>;
+
+/// - [`Height`] can not be used directly as keys in the map,
+/// as it doesn't implement some cw_storage specific traits.
+/// - Only a sorted set is needed. So the value type is set to
+/// [`Empty`] following
+/// ([cosmwasm-book](https://book.cosmwasm.com/cross-contract/map-storage.html#maps-as-sets)).
+pub const CONSENSUS_STATE_HEIGHT_MAP: Map<'_, (u64, u64), Empty> =
+    Map::new(ITERATE_CONSENSUS_STATE_PREFIX);
 
 /// Context is a wrapper around the deps and env that gives access to the
 /// methods under the ibc-rs Validation and Execution traits.
@@ -130,13 +139,16 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
 
     /// Returns the storage of the context.
     pub fn get_heights(&self) -> Result<Vec<Height>, ClientError> {
-        let iterator = self.storage_ref().range(None, None, Order::Ascending);
-
-        let heights: Vec<_> = iterator
-            .filter_map(|(_, value)| parse_height(value).transpose())
-            .collect::<Result<_, _>>()?;
-
-        Ok(heights)
+        CONSENSUS_STATE_HEIGHT_MAP
+            .keys(self.storage_ref(), None, None, Order::Ascending)
+            .map(|deserialized_result| {
+                let (rev_number, rev_height) =
+                    deserialized_result.map_err(|e| ClientError::Other {
+                        description: e.to_string(),
+                    })?;
+                Height::new(rev_number, rev_height)
+            })
+            .collect()
     }
 
     /// Searches for either the earliest next or latest previous height based on
@@ -146,22 +158,37 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
         height: &Height,
         travel: HeightTravel,
     ) -> Result<Option<Height>, ClientError> {
-        let iteration_key = iteration_key(height.revision_number(), height.revision_height());
-
-        let mut iterator = match travel {
-            HeightTravel::Prev => {
-                self.storage_ref()
-                    .range(None, Some(&iteration_key), Order::Descending)
-            }
-            HeightTravel::Next => {
-                self.storage_ref()
-                    .range(Some(&iteration_key), None, Order::Ascending)
-            }
+        let iterator = match travel {
+            HeightTravel::Prev => CONSENSUS_STATE_HEIGHT_MAP.range(
+                self.storage_ref(),
+                None,
+                Some(Bound::exclusive((
+                    height.revision_number(),
+                    height.revision_height(),
+                ))),
+                Order::Descending,
+            ),
+            HeightTravel::Next => CONSENSUS_STATE_HEIGHT_MAP.range(
+                self.storage_ref(),
+                Some(Bound::exclusive((
+                    height.revision_number(),
+                    height.revision_height(),
+                ))),
+                None,
+                Order::Ascending,
+            ),
         };
 
         iterator
+            .map(|deserialized_result| {
+                let ((rev_number, rev_height), _) =
+                    deserialized_result.map_err(|e| ClientError::Other {
+                        description: e.to_string(),
+                    })?;
+                Height::new(rev_number, rev_height)
+            })
             .next()
-            .map_or(Ok(None), |(_, height)| parse_height(height))
+            .transpose()
     }
 
     /// Returns the key for the client update time.
@@ -191,38 +218,48 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
     pub fn get_metadata(&self) -> Result<Option<Vec<GenesisMetadata>>, ContractError> {
         let mut metadata = Vec::<GenesisMetadata>::new();
 
-        let start_key = ITERATE_CONSENSUS_STATE_PREFIX.to_string().into_bytes();
+        let iterator = CONSENSUS_STATE_HEIGHT_MAP
+            .keys(self.storage_ref(), None, None, Order::Ascending)
+            .map(|deserialized_result| {
+                let (rev_number, rev_height) =
+                    deserialized_result.map_err(|e| ClientError::Other {
+                        description: e.to_string(),
+                    })?;
+                Height::new(rev_number, rev_height)
+            });
 
-        let iterator = self
-            .storage_ref()
-            .range(Some(&start_key), None, Order::Ascending);
+        for height_result in iterator {
+            let height = height_result?;
 
-        for (_, encoded_height) in iterator {
-            let height = parse_height(encoded_height)?;
-
-            match height {
-                Some(height) => {
-                    let processed_height_key = self.client_update_height_key(&height);
-                    metadata.push(GenesisMetadata {
-                        key: processed_height_key.clone(),
-                        value: self.retrieve(&processed_height_key)?,
-                    });
-                    let processed_time_key = self.client_update_time_key(&height);
-                    metadata.push(GenesisMetadata {
-                        key: processed_time_key.clone(),
-                        value: self.retrieve(&processed_time_key)?,
-                    });
-                }
-                None => continue,
-            }
+            let processed_height_key = self.client_update_height_key(&height);
+            metadata.push(GenesisMetadata {
+                key: processed_height_key.clone(),
+                value: self.retrieve(&processed_height_key)?,
+            });
+            let processed_time_key = self.client_update_time_key(&height);
+            metadata.push(GenesisMetadata {
+                key: processed_time_key.clone(),
+                value: self.retrieve(&processed_time_key)?,
+            });
         }
 
-        let iterator = self
-            .storage_ref()
-            .range(Some(&start_key), None, Order::Ascending);
+        let iterator = CONSENSUS_STATE_HEIGHT_MAP
+            .keys(self.storage_ref(), None, None, Order::Ascending)
+            .map(|deserialized_result| {
+                let (rev_number, rev_height) =
+                    deserialized_result.map_err(|e| ClientError::Other {
+                        description: e.to_string(),
+                    })?;
+                Height::new(rev_number, rev_height)
+            });
 
-        for (key, height) in iterator {
-            metadata.push(GenesisMetadata { key, value: height });
+        for height_result in iterator {
+            let height = height_result?;
+
+            metadata.push(GenesisMetadata {
+                key: iteration_key(height.revision_number(), height.revision_height()),
+                value: height.encode_vec(),
+            });
         }
 
         Ok(Some(metadata))
