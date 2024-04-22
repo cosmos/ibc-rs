@@ -171,7 +171,6 @@ impl TracePath {
     /// It is analogous to `trim_start_matches` from standard library.
     pub fn trim(s: &str) -> (Self, &str) {
         let mut trace_prefixes = vec![];
-
         let mut remaining_parts = s;
 
         while let Some((trace_prefix, remaining)) = TracePrefix::strip(remaining_parts) {
