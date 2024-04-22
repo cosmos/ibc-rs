@@ -25,7 +25,8 @@ use super::Version;
 use crate::error::ChannelError;
 use crate::packet::Packet;
 
-/// Channel event types
+/// Channel event types corresponding to ibc-go's channel events:
+/// https://github.com/cosmos/ibc-go/blob/c4413c5877f9ef883494da1721cb18caaba7f7f5/modules/core/04-channel/types/events.go#L52-L72
 const CHANNEL_OPEN_INIT_EVENT: &str = "channel_open_init";
 const CHANNEL_OPEN_TRY_EVENT: &str = "channel_open_try";
 const CHANNEL_OPEN_ACK_EVENT: &str = "channel_open_ack";
