@@ -86,12 +86,12 @@ impl TracePrefix {
 
     /// Returns a string slice with [`TracePrefix`] removed.
     ///
-    /// If the string starts a [`TracePrefix`] format, i.e. `{port-id}/channel-{id}/`,
+    /// If the string starts with a [`TracePrefix`], i.e. `{port-id}/channel-{id}/`,
     /// it returns a tuple of the removed [`TracePrefix`] and the substring after the prefix.
     ///
-    /// If the string does not start with a [`TracePrefix`], it returns `None`.
+    /// If the string does not start with a [`TracePrefix`], this method returns `None`.
     ///
-    /// It is analogous to `strip_prefix` from standard library.
+    /// This method is analogous to `strip_prefix` from the standard library.
     pub fn strip(s: &str) -> Option<(Self, &str)> {
         // The below two chained `split_once` calls emulate a virtual `split_twice` call,
         // which is not available in the standard library.
@@ -166,9 +166,9 @@ impl TracePath {
     /// If the string starts with a [`TracePath`], it returns a tuple of the removed
     /// [`TracePath`] and the substring after the [`TracePath`].
     ///
-    /// If the string does not have any [`TracePrefix`], it returns original string.
+    /// If the string does not contain any [`TracePrefix`], it returns the original string.
     ///
-    /// It is analogous to `trim_start_matches` from standard library.
+    /// This method is analogous to `trim_start_matches` from the standard library.
     pub fn trim(s: &str) -> (Self, &str) {
         let mut trace_prefixes = vec![];
         let mut remaining_parts = s;
@@ -179,7 +179,7 @@ impl TracePath {
         }
 
         // reversing is needed, as [`TracePath`] requires quick addition/removal
-        // of prefixes which is performant from the end of a [`Vec`].
+        // of prefixes which is more performant from the end of a [`Vec`].
         trace_prefixes.reverse();
         (Self(trace_prefixes), remaining_parts)
     }
