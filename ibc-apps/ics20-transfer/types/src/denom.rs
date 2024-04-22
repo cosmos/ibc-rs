@@ -91,7 +91,7 @@ impl TracePrefix {
     ///
     /// If the string does not start with a [`TracePrefix`], it returns `None`.
     ///
-    /// It is analogous to `strip_prefix` from standard libray.
+    /// It is analogous to `strip_prefix` from standard library.
     pub fn strip(s: &str) -> Option<(Self, &str)> {
         // The below two chained `split_once` calls emulate a virtual `split_twice` call,
         // which is not available in the standard library.
