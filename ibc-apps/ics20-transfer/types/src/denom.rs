@@ -98,8 +98,8 @@ impl TracePrefix {
         let (port_id_s, remaining) = s.split_once('/')?;
         let (channel_id_s, remaining) = remaining.split_once('/')?;
 
-        let port_id = PortId::from_str(port_id_s).ok()?;
-        let channel_id = ChannelId::from_str(channel_id_s).ok()?;
+        let port_id = port_id_s.parse().ok()?;
+        let channel_id = channel_id_s.parse().ok()?;
 
         Some((Self::new(port_id, channel_id), remaining))
     }
