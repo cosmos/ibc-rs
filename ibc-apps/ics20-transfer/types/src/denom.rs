@@ -83,6 +83,26 @@ impl TracePrefix {
             channel_id,
         }
     }
+
+    /// Returns a string slice with [`TracePrefix`] removed.
+    ///
+    /// If the string starts a [`TracePrefix`] format, i.e. `{port-id}/channel-{id}/`,
+    /// it returns a tuple of the removed [`TracePrefix`] and the substring after the prefix.
+    ///
+    /// If the string does not start with a [`TracePrefix`], it returns `None`.
+    ///
+    /// It is analogous to `strip_prefix` from standard libray.
+    pub fn strip(s: &str) -> Option<(Self, &str)> {
+        // The below two chained `split_once` calls emulate a virtual `split_twice` call,
+        // which is not available in the standard library.
+        let (port_id_s, remaining) = s.split_once('/')?;
+        let (channel_id_s, remaining) = remaining.split_once('/')?;
+
+        let port_id = PortId::from_str(port_id_s).ok()?;
+        let channel_id = ChannelId::from_str(channel_id_s).ok()?;
+
+        Some((Self::new(port_id, channel_id), remaining))
+    }
 }
 
 impl Display for TracePrefix {
@@ -139,6 +159,30 @@ impl TracePath {
     /// Return empty trace path
     pub fn empty() -> Self {
         Self(vec![])
+    }
+
+    /// Returns a string slice with [`TracePath`] or all [`TracePrefix`]es repeatedly removed.
+    ///
+    /// If the string starts with a [`TracePath`], it returns a tuple of the removed
+    /// [`TracePath`] and the substring after the [`TracePath`].
+    ///
+    /// If the string does not have any [`TracePrefix`], it returns original string.
+    ///
+    /// It is analogous to `trim_start_matches` from standard library.
+    pub fn trim(s: &str) -> (Self, &str) {
+        let mut trace_prefixes = vec![];
+
+        let mut remaining_parts = s;
+
+        while let Some((trace_prefix, remaining)) = TracePrefix::strip(remaining_parts) {
+            trace_prefixes.push(trace_prefix);
+            remaining_parts = remaining;
+        }
+
+        // reversing is needed, as [`TracePath`] requires quick addition/removal
+        // of prefixes which is performant from the end of a [`Vec`].
+        trace_prefixes.reverse();
+        (Self(trace_prefixes), remaining_parts)
     }
 }
 
@@ -316,38 +360,7 @@ impl FromStr for PrefixedDenom {
     /// The loop breaks at this point, resulting in a [`TracePath`] of `"transfer/channel-75"`
     /// and a [`BaseDenom`] of `"factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"`.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut trace_prefixes = vec![];
-
-        let mut remaining_parts = s;
-
-        loop {
-            // The below two chained `split_once` calls emulate a virtual `split_twice` call,
-            // which is not available in the standard library.
-            let parsed_prefix = remaining_parts
-                .split_once('/')
-                .and_then(|(port_id_s, remaining)| {
-                    remaining
-                        .split_once('/')
-                        .map(|(channel_id_s, remaining)| (port_id_s, channel_id_s, remaining))
-                })
-                .and_then(|(port_id_s, channel_id_s, remaining)| {
-                    let port_id = PortId::from_str(port_id_s).ok()?;
-                    let channel_id = ChannelId::from_str(channel_id_s).ok()?;
-                    Some((port_id, channel_id, remaining))
-                });
-            match parsed_prefix {
-                Some((port_id, channel_id, remaining)) => {
-                    trace_prefixes.push(TracePrefix::new(port_id, channel_id));
-                    remaining_parts = remaining;
-                }
-                None => break,
-            }
-        }
-
-        // reversing is needed, as [`TracePath`] requires quick addition/removal
-        // of prefixes which is performant from the end of a [`Vec`].
-        trace_prefixes.reverse();
-        let trace_path = TracePath::from(trace_prefixes);
+        let (trace_path, remaining_parts) = TracePath::trim(s);
 
         let base_denom = BaseDenom::from_str(remaining_parts)?;
 
