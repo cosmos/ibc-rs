@@ -418,34 +418,18 @@ mod tests {
 
     use super::*;
 
-    #[test]
-    fn test_denom_validation() -> Result<(), TokenTransferError> {
-        assert!(BaseDenom::from_str("").is_err(), "empty base denom");
-        assert!(BaseDenom::from_str("uatom").is_ok(), "valid base denom");
-        assert!(PrefixedDenom::from_str("").is_err(), "empty denom trace");
-        assert!(
-            PrefixedDenom::from_str("transfer/channel-0/").is_err(),
-            "empty base denom with trace"
-        );
-        assert!(
-            PrefixedDenom::from_str("transfer/channel-0/uatom").is_ok(),
-            "valid single trace info"
-        );
-        assert!(
-            PrefixedDenom::from_str("transfer/channel-0/transfer/channel-1/uatom").is_ok(),
-            "valid multiple trace info"
-        );
+    #[rstest]
+    #[case("uatom")]
+    #[case("atom")]
+    fn test_accepted_denom(#[case] denom_str: &str) {
+        BaseDenom::from_str(denom_str).expect("success");
+    }
 
-        // the followings are valid denom according to `ibc-go`
-        // https://github.com/cosmos/ibc-go/blob/e2ad31975f2ede592912b86346b5ebf055c9e05f/modules/apps/transfer/types/trace_test.go#L17-L38
-        PrefixedDenom::from_str("/uatom").expect("no error");
-        PrefixedDenom::from_str("//uatom").expect("no error");
-        PrefixedDenom::from_str("transfer/").expect("no error");
-        PrefixedDenom::from_str("transfer/atom").expect("no error");
-        PrefixedDenom::from_str("(transfer)/channel-0/uatom").expect("no error");
-        PrefixedDenom::from_str("transfer/(channel-0)/uatom").expect("no error");
-
-        Ok(())
+    #[rstest]
+    #[case("")]
+    #[case(" ")]
+    fn test_rejected_denom(#[case] denom_str: &str) {
+        BaseDenom::from_str(denom_str).expect_err("failure");
     }
 
     #[rstest]
@@ -465,7 +449,13 @@ mod tests {
     #[case("transfer/channel-0/transfer/channel-1", "uatom")]
     #[case("", "/")]
     #[case("", "transfer/uatom")]
+    #[case("", "transfer/atom")]
     #[case("", "transfer//uatom")]
+    #[case("", "/uatom")]
+    #[case("", "//uatom")]
+    #[case("", "transfer/")]
+    #[case("", "(transfer)/channel-0/uatom")]
+    #[case("", "transfer/(channel-0)/uatom")]
     // https://github.com/cosmos/ibc-go/blob/e2ad31975f2ede592912b86346b5ebf055c9e05f/modules/apps/transfer/types/trace_test.go#L17-L38
     #[case("", "uatom")]
     #[case("", "uatom/")]
@@ -508,11 +498,11 @@ mod tests {
     }
 
     #[rstest]
+    #[case("")]
+    #[case("   ")]
     #[case("transfer/channel-1/")]
     #[case("transfer/channel-1/transfer/channel-2/")]
     #[case("transfer/channel-21/transfer/channel-23/  ")]
-    #[case("")]
-    #[case("   ")]
     #[case("transfer/channel-0/")]
     #[should_panic(expected = "EmptyBaseDenom")]
     fn test_prefixed_empty_base_denom(#[case] pd_s: &str) {
