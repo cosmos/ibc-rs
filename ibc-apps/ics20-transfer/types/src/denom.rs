@@ -510,7 +510,9 @@ mod tests {
     #[rstest]
     #[case("transfer/channel-1/")]
     #[case("transfer/channel-1/transfer/channel-2/")]
+    #[case("transfer/channel-21/transfer/channel-23/  ")]
     #[case("")]
+    #[case("   ")]
     #[case("transfer/channel-0/")]
     #[should_panic(expected = "EmptyBaseDenom")]
     fn test_prefixed_empty_base_denom(#[case] pd_s: &str) {
