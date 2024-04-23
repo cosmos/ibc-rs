@@ -9,8 +9,8 @@ crate-type = ["cdylib", "rlib"]
 [dependencies]
 ibc-apps = { path = "../../ibc-apps", default_features = false, features = ["serde", "parity-scale-codec"] }
 ibc-core = { path = "../../ibc-core", features = ["serde", "parity-scale-codec", "schema"] }
-cosmwasm-std = { version = "^1.5.3", default-features = false }
-cosmwasm-schema = { version = "^1.5.3", default-features = false }
+cosmwasm-std = { version = "1.5.4", default-features = false }
+cosmwasm-schema = { version = "1.5.4", default-features = false }
 serde_json =  { package = "serde-json-wasm", version = "^1.0.1", default-features = false }
 thiserror = { version = "^1.0", default-features = false }
 
