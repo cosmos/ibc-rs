@@ -23,8 +23,8 @@ borsh           = { workspace = true, optional = true }
 base64          = { workspace = true, features = ["alloc"] }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-http            = "1.0.0"
-mime            = "0.3.17"
+http            = { version = "1.0.0" }
+mime            = { version = "0.3.17" }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 serde_json      = { workspace = true }
