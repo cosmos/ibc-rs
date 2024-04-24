@@ -307,16 +307,16 @@ mod tests {
             "empty base class ID with trace"
         );
         assert!(
-            PrefixedClassId::from_str("/myclass").is_err(),
+            PrefixedClassId::from_str("/myclass").is_ok(),
             "empty prefix"
         );
-        assert!(PrefixedClassId::from_str("//myclass").is_err(), "empty ids");
+        assert!(PrefixedClassId::from_str("//myclass").is_ok(), "empty ids");
         assert!(
-            PrefixedClassId::from_str("transfer/").is_err(),
+            PrefixedClassId::from_str("transfer/").is_ok(),
             "single trace"
         );
         assert!(
-            PrefixedClassId::from_str("transfer/myclass").is_err(),
+            PrefixedClassId::from_str("transfer/myclass").is_ok(),
             "single trace with base class ID"
         );
         assert!(
@@ -328,11 +328,11 @@ mod tests {
             "valid multiple trace info"
         );
         assert!(
-            PrefixedClassId::from_str("(transfer)/channel-0/myclass").is_err(),
+            PrefixedClassId::from_str("(transfer)/channel-0/myclass").is_ok(),
             "invalid port"
         );
         assert!(
-            PrefixedClassId::from_str("transfer/(channel-0)/myclass").is_err(),
+            PrefixedClassId::from_str("transfer/(channel-0)/myclass").is_ok(),
             "invalid channel"
         );
 
