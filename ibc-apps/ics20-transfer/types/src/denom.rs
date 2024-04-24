@@ -387,7 +387,6 @@ mod tests {
     use super::*;
 
     #[rstest]
-    #[case("")]
     #[case("transfer")]
     #[case("transfer/channel-1/ica")]
     fn test_invalid_raw_demon_trace_parsing(#[case] trace_path: &str) {
@@ -396,7 +395,7 @@ mod tests {
             base_denom: "uatom".to_string(),
         };
 
-        PrefixedDenom::try_from(raw_denom_trace).expect("failure");
+        PrefixedDenom::try_from(raw_denom_trace).expect_err("failure");
     }
 
     #[rstest]
