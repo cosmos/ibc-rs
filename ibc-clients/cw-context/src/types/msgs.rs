@@ -2,7 +2,7 @@
 //! light client.
 use std::str::FromStr;
 
-use cosmwasm_schema::cw_serde;
+use cosmwasm_schema::{cw_serde, QueryResponses};
 use ibc_client_wasm_types::serializer::Base64;
 use ibc_client_wasm_types::Bytes;
 use ibc_core::client::types::proto::v1::Height as RawHeight;
@@ -231,13 +231,18 @@ pub struct MigrateClientStoreMsg {}
 // Implementation of the QueryMsg enum and its variants
 // ------------------------------------------------------------
 
-#[derive(derive_more::From)]
+#[derive(QueryResponses, derive_more::From)]
 #[cw_serde]
 pub enum QueryMsg {
+    #[returns(crate::types::response::QueryResponse)]
     Status(StatusMsg),
+    #[returns(crate::types::response::QueryResponse)]
     ExportMetadata(ExportMetadataMsg),
+    #[returns(crate::types::response::QueryResponse)]
     TimestampAtHeight(TimestampAtHeightMsg),
+    #[returns(crate::types::response::QueryResponse)]
     VerifyClientMessage(VerifyClientMessageRaw),
+    #[returns(crate::types::response::QueryResponse)]
     CheckForMisbehaviour(CheckForMisbehaviourMsgRaw),
 }
 
