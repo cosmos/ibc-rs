@@ -185,54 +185,15 @@ impl TracePath {
     }
 }
 
-impl<'a> TryFrom<Vec<&'a str>> for TracePath {
-    type Error = TokenTransferError;
-
-    fn try_from(v: Vec<&'a str>) -> Result<Self, Self::Error> {
-        if v.len() % 2 != 0 {
-            return Err(TokenTransferError::InvalidTraceLength {
-                len: v.len() as u64,
-            });
-        }
-
-        let mut trace = vec![];
-        // this does not take care of the remainder if the length is not even
-        let id_pairs = v.chunks_exact(2).map(|paths| (paths[0], paths[1]));
-        for (pos, (port_id, channel_id)) in id_pairs.rev().enumerate() {
-            let port_id =
-                PortId::from_str(port_id).map_err(|e| TokenTransferError::InvalidTracePortId {
-                    pos: pos as u64,
-                    validation_error: e,
-                })?;
-            let channel_id = ChannelId::from_str(channel_id).map_err(|e| {
-                TokenTransferError::InvalidTraceChannelId {
-                    pos: pos as u64,
-                    validation_error: e,
-                }
-            })?;
-            trace.push(TracePrefix {
-                port_id,
-                channel_id,
-            });
-        }
-
-        Ok(trace.into())
-    }
-}
-
 impl FromStr for TracePath {
     type Err = TokenTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts = {
-            let parts: Vec<&str> = s.split('/').collect();
-            if parts.len() == 1 && parts[0].trim().is_empty() {
-                vec![]
-            } else {
-                parts
-            }
-        };
-        parts.try_into()
+        let (trace_path, remaining_parts) = TracePath::trim(s);
+        remaining_parts
+            .is_empty()
+            .then_some(trace_path)
+            .ok_or_else(|| TokenTransferError::MalformedTrace(s.to_string()))
     }
 }
 

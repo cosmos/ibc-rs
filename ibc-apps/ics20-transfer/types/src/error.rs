@@ -39,6 +39,8 @@ pub enum TokenTransferError {
         pos: u64,
         validation_error: IdentifierError,
     },
+    /// malformed trace: `{0}`
+    MalformedTrace(String),
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: u64 },
     /// invalid amount error: `{0}`
