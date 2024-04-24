@@ -295,48 +295,50 @@ impl FromStr for ClassData {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
-    #[test]
-    fn test_class_id_validation() -> Result<(), NftTransferError> {
-        assert!(ClassId::from_str("").is_err(), "empty base class ID");
-        assert!(ClassId::from_str("myclass").is_ok(), "valid base class ID");
-        assert!(PrefixedClassId::from_str("").is_err(), "empty class trace");
-        assert!(
-            PrefixedClassId::from_str("transfer/channel-0/").is_err(),
-            "empty base class ID with trace"
-        );
-        assert!(
-            PrefixedClassId::from_str("/myclass").is_ok(),
-            "empty prefix"
-        );
-        assert!(PrefixedClassId::from_str("//myclass").is_ok(), "empty ids");
-        assert!(
-            PrefixedClassId::from_str("transfer/").is_ok(),
-            "single trace"
-        );
-        assert!(
-            PrefixedClassId::from_str("transfer/myclass").is_ok(),
-            "single trace with base class ID"
-        );
-        assert!(
-            PrefixedClassId::from_str("transfer/channel-0/myclass").is_ok(),
-            "valid single trace info"
-        );
-        assert!(
-            PrefixedClassId::from_str("transfer/channel-0/transfer/channel-1/myclass").is_ok(),
-            "valid multiple trace info"
-        );
-        assert!(
-            PrefixedClassId::from_str("(transfer)/channel-0/myclass").is_ok(),
-            "invalid port"
-        );
-        assert!(
-            PrefixedClassId::from_str("transfer/(channel-0)/myclass").is_ok(),
-            "invalid channel"
-        );
+    #[rstest]
+    #[case("myclass")]
+    #[case("transfer/channel-0/myclass")]
+    #[case("transfer/channel-0/transfer/channel-1/myclass")]
+    #[case("(transfer)/channel-0/myclass")]
+    #[case("transfer/(channel-0)/myclass")]
+    fn test_valid_class_id(#[case] class_id: &str) {
+        ClassId::from_str(class_id).expect("success");
+    }
 
-        Ok(())
+    #[rstest]
+    #[case("")]
+    #[case("")]
+    #[case("  ")]
+    fn test_invalid_class_id(#[case] class_id: &str) {
+        ClassId::from_str(class_id).expect_err("failure");
+    }
+
+    #[rstest]
+    #[case("transfer/channel-0/myclass")]
+    #[case("/myclass")]
+    #[case("//myclass")]
+    #[case("transfer/")]
+    #[case("transfer/myclass")]
+    #[case("transfer/channel-0/myclass")]
+    #[case("transfer/channel-0/transfer/channel-1/myclass")]
+    #[case("(transfer)/channel-0/myclass")]
+    #[case("transfer/(channel-0)/myclass")]
+    #[case("transfer/channel-0///")]
+    fn test_valid_prefixed_class_id(#[case] class_id: &str) {
+        PrefixedClassId::from_str(class_id).expect("success");
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case("  ")]
+    #[case("transfer/channel-0/")]
+    #[case("transfer/channel-0/  ")]
+    fn test_invalid_prefixed_class_id(#[case] class_id: &str) {
+        PrefixedClassId::from_str(class_id).expect_err("failure");
     }
 
     #[test]
