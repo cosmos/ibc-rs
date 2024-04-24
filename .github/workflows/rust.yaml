@@ -35,7 +35,6 @@ env:
 
 jobs:
   check-features:
-    if: ${{ github.event_name != 'pull_request' }}
     name: Check features
     runs-on: ubuntu-latest
     timeout-minutes: 60
