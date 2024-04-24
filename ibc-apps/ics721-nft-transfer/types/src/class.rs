@@ -121,19 +121,12 @@ pub fn is_receiver_chain_source(
 impl FromStr for PrefixedClassId {
     type Err = NftTransferError;
 
+    /// The parsing logic is same as [`FromStr`] impl of
+    /// [`PrefixedDenom`](ibc_app_transfer_types::PrefixedDenom) from ICS-20.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts: Vec<&str> = s.split('/').collect();
-        let last_part = parts.pop().expect("split() returned an empty iterator");
+        let (trace_path, remaining_parts) = TracePath::trim(s);
 
-        let (base_class_id, trace_path) = {
-            if last_part == s {
-                (ClassId::from_str(s)?, TracePath::empty())
-            } else {
-                let base_class_id = ClassId::from_str(last_part)?;
-                let trace_path = TracePath::try_from(parts)?;
-                (base_class_id, trace_path)
-            }
-        };
+        let base_class_id = ClassId::from_str(remaining_parts)?;
 
         Ok(Self {
             trace_path,
@@ -147,7 +140,9 @@ impl TryFrom<RawClassTrace> for PrefixedClassId {
 
     fn try_from(value: RawClassTrace) -> Result<Self, Self::Error> {
         let base_class_id = ClassId::from_str(&value.base_class_id)?;
-        let trace_path = TracePath::from_str(&value.path)?;
+        // FIXME: separate `TracePath` error.
+        let trace_path = TracePath::from_str(&value.path)
+            .map_err(|err| NftTransferError::Other(err.to_string()))?;
         Ok(Self {
             trace_path,
             base_class_id,
@@ -175,7 +170,7 @@ impl From<ClassId> for PrefixedClassId {
 
 impl Display for PrefixedClassId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        if self.trace_path.0.is_empty() {
+        if self.trace_path.is_empty() {
             write!(f, "{}", self.base_class_id)
         } else {
             write!(f, "{}/{}", self.trace_path, self.base_class_id)
