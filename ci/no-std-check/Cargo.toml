@@ -6,14 +6,14 @@ resolver = "2"
 
 [dependencies]
 ibc = { path = "../../ibc", default-features = false, features = ["serde"] }
-ibc-proto = { version = "0.42.2", default-features = false, features = [
+ibc-proto = { version = "0.43", default-features = false, features = [
   "parity-scale-codec",
   "borsh",
   "serde",
 ] }
-tendermint = { version = "0.34", default-features = false }
-tendermint-proto = { version = "0.34", default-features = false }
-tendermint-light-client-verifier = { version = "0.34", default-features = false, features = ["rust-crypto"] }
+tendermint = { version = "0.35", default-features = false }
+tendermint-proto = { version = "0.35", default-features = false }
+tendermint-light-client-verifier = { version = "0.35", default-features = false, features = ["rust-crypto"] }
 
 sp-core = { version = "28.0.0", default-features = false, optional = true }
 sp-io = { version = "30.0.0", default-features = false, optional = true }
