@@ -1,26 +1,25 @@
 pub mod fixture;
 pub mod helper;
 
+use std::time::Duration;
+
 use cosmwasm_std::from_json;
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
 use ibc_client_cw::types::{
-    ContractResult, MigrateClientStoreMsg, UpdateStateMsgRaw, UpdateStateOnMisbehaviourMsgRaw,
+    ContractResult, MigrateClientStoreMsg, MigrationPrefix, VerifyClientMessageRaw,
 };
-use ibc_core::client::types::Status;
+use ibc_core::client::types::{Height, Status};
 
-use crate::entrypoint::{instantiate, sudo};
+use crate::entrypoint::sudo;
 use crate::tests::fixture::Fixture;
-use crate::tests::helper::dummy_msg_info;
 
 #[test]
-fn happy_cw_create_client() {
+fn test_cw_create_client_ok() {
     let fxt = Fixture::default();
 
     let mut deps = mock_dependencies();
 
-    let instantiate_msg = fxt.dummy_instantiate_msg();
-
-    let resp = instantiate(deps.as_mut(), mock_env(), dummy_msg_info(), instantiate_msg).unwrap();
+    let resp = fxt.create_client(deps.as_mut()).unwrap();
 
     assert_eq!(0, resp.messages.len());
 
@@ -32,29 +31,20 @@ fn happy_cw_create_client() {
 }
 
 #[test]
-fn happy_cw_update_client() {
+fn test_cw_update_client_ok() {
     let fxt = Fixture::default();
 
     let mut deps = mock_dependencies();
 
     // ------------------- Create client -------------------
 
-    let instantiate_msg = fxt.dummy_instantiate_msg();
-
-    instantiate(deps.as_mut(), mock_env(), dummy_msg_info(), instantiate_msg).unwrap();
+    fxt.create_client(deps.as_mut()).unwrap();
 
     // ------------------- Verify and Update client -------------------
 
-    let client_message = fxt.dummy_client_message();
+    let target_height = Height::new(0, 10).unwrap();
 
-    fxt.verify_client_message(deps.as_ref(), client_message.clone());
-
-    let resp = sudo(
-        deps.as_mut(),
-        mock_env(),
-        UpdateStateMsgRaw { client_message }.into(),
-    )
-    .unwrap();
+    let resp = fxt.update_client(deps.as_mut(), target_height).unwrap();
 
     // ------------------- Check response -------------------
 
@@ -62,41 +52,32 @@ fn happy_cw_update_client() {
 
     let contract_result: ContractResult = from_json(resp.data.unwrap()).unwrap();
 
-    assert_eq!(contract_result.heights, Some(vec![fxt.target_height]));
+    assert_eq!(contract_result.heights, Some(vec![target_height]));
 
     fxt.check_client_status(deps.as_ref(), Status::Active);
 }
 
 #[test]
-fn happy_cw_recovery_client() {
-    let fxt = Fixture::default().migration_mode();
+fn test_cw_recovery_client_ok() {
+    let mut fxt = Fixture::default();
 
     let mut deps = mock_dependencies();
 
-    let mut ctx = fxt.ctx_mut(deps.as_mut());
-
     // ------------------- Create subject client -------------------
 
-    let instantiate_msg = fxt.dummy_instantiate_msg();
+    fxt.set_migration_prefix(MigrationPrefix::Subject);
 
-    ctx.instantiate(instantiate_msg.clone()).unwrap();
+    fxt.create_client(deps.as_mut()).unwrap();
 
     // ------------------- Freeze subject client -------------------
 
-    let client_message = fxt.dummy_misbehaviour_message();
-
-    fxt.check_for_misbehaviour(deps.as_ref(), client_message.clone());
-
-    let mut ctx = fxt.ctx_mut(deps.as_mut());
-
-    ctx.sudo(UpdateStateOnMisbehaviourMsgRaw { client_message }.into())
-        .unwrap();
+    fxt.update_client_on_misbehaviour(deps.as_mut());
 
     // ------------------- Create substitute client -------------------
 
-    ctx.set_substitute_prefix();
+    fxt.set_migration_prefix(MigrationPrefix::Substitute);
 
-    ctx.instantiate(instantiate_msg).unwrap();
+    fxt.create_client(deps.as_mut()).unwrap();
 
     // ------------------- Recover subject client -------------------
 
@@ -105,4 +86,39 @@ fn happy_cw_recovery_client() {
     assert_eq!(0, resp.messages.len());
 
     fxt.check_client_status(deps.as_ref(), Status::Active);
+}
+
+#[test]
+fn test_cw_client_expiry() {
+    let fxt = Fixture::default();
+
+    let mut deps = mock_dependencies();
+
+    // ------------------- Create client -------------------
+
+    fxt.create_client(deps.as_mut()).unwrap();
+
+    // ------------------- Expire client -------------------
+
+    std::thread::sleep(Duration::from_millis(1200));
+
+    // ------------------- Try update client -------------------
+
+    let target_height = Height::new(0, 10).unwrap();
+
+    let client_message = fxt.dummy_client_message(target_height);
+
+    let resp = fxt.query(
+        deps.as_ref(),
+        VerifyClientMessageRaw {
+            client_message: client_message.clone(),
+        }
+        .into(),
+    );
+
+    assert!(resp.is_err());
+
+    // ------------------- Check client status -------------------
+
+    fxt.check_client_status(deps.as_ref(), Status::Expired);
 }
