@@ -196,6 +196,7 @@ impl<'a> TryFrom<Vec<&'a str>> for TracePath {
         }
 
         let mut trace = vec![];
+        // this does not take care of the remainder if the length is not even
         let id_pairs = v.chunks_exact(2).map(|paths| (paths[0], paths[1]));
         for (pos, (port_id, channel_id)) in id_pairs.rev().enumerate() {
             let port_id =
@@ -416,6 +417,19 @@ mod tests {
     use rstest::rstest;
 
     use super::*;
+
+    #[rstest]
+    #[case("")]
+    #[case("transfer")]
+    #[case("transfer/channel-1/ica")]
+    fn test_invalid_raw_demon_trace_parsing(#[case] trace_path: &str) {
+        let raw_denom_trace = RawDenomTrace {
+            path: trace_path.to_string(),
+            base_denom: "uatom".to_string(),
+        };
+
+        PrefixedDenom::try_from(raw_denom_trace).expect("failure");
+    }
 
     #[rstest]
     #[case("uatom")]
