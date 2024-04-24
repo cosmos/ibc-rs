@@ -189,7 +189,14 @@ impl FromStr for TracePath {
     type Err = TokenTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (trace_path, remaining_parts) = TracePath::trim(s);
+        if s.is_empty() {
+            return Ok(TracePath::empty());
+        }
+
+        // This is needed as TracePath trims `{port-id}/{channel-id}/`.
+        let slashed_s = format!("{}/", s);
+
+        let (trace_path, remaining_parts) = TracePath::trim(slashed_s.as_str());
         remaining_parts
             .is_empty()
             .then_some(trace_path)
