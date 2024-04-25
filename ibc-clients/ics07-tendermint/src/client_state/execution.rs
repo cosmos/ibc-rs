@@ -403,11 +403,6 @@ where
 
     let tm_consensus_state = ConsensusStateType::try_from(substitute_consensus_state)?;
 
-    ctx.store_client_state(
-        ClientStatePath::new(subject_client_id.clone()),
-        new_client_state.into(),
-    )?;
-
     ctx.store_consensus_state(
         ClientConsensusStatePath::new(
             subject_client_id.clone(),
@@ -415,6 +410,11 @@ where
             new_client_state.latest_height.revision_height(),
         ),
         tm_consensus_state.into(),
+    )?;
+
+    ctx.store_client_state(
+        ClientStatePath::new(subject_client_id.clone()),
+        new_client_state.into(),
     )?;
 
     ctx.store_update_meta(
