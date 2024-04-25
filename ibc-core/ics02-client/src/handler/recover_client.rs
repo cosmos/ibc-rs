@@ -83,7 +83,7 @@ where
         ctx.get_client_execution_context(),
         &subject_client_id,
         substitute_client_state.into(),
-        substitute_consensus_state.into(),
+        substitute_consensus_state.into_any(),
     )?;
 
     Ok(())

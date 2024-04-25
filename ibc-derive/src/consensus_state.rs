@@ -20,15 +20,16 @@ pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> Token
         quote! {timestamp(cs)},
         imports,
     );
-    let encode_vec_impl = delegate_call_in_match(
+    let into_any_impl = delegate_call_in_match(
         enum_name,
         enum_variants.iter(),
-        quote! {encode_vec(cs)},
+        quote! {into_any(cs)},
         imports,
     );
 
     let CommitmentRoot = imports.commitment_root();
     let ConsensusState = imports.consensus_state();
+    let proto_any = imports.any();
     let Timestamp = imports.timestamp();
 
     quote! {
@@ -45,9 +46,9 @@ pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> Token
                 }
             }
 
-            fn encode_vec(self) -> Vec<u8> {
+            fn into_any(self) -> #proto_any {
                 match self {
-                    #(#encode_vec_impl),*
+                    #(#into_any_impl),*
                 }
             }
         }

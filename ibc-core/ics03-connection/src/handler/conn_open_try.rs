@@ -124,7 +124,7 @@ where
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_a),
-                expected_consensus_state_of_b_on_a.encode_vec(),
+                expected_consensus_state_of_b_on_a.into_any().to_vec(),
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_a,

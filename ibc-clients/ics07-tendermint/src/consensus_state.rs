@@ -90,7 +90,7 @@ impl ConsensusStateTrait for ConsensusState {
         self.0.timestamp.into()
     }
 
-    fn encode_vec(self) -> Vec<u8> {
-        <Self as Protobuf<Any>>::encode_vec(self)
+    fn into_any(self) -> Any {
+        self.into()
     }
 }

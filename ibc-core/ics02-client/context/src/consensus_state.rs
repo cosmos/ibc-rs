@@ -2,6 +2,7 @@
 
 use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::Any;
 use ibc_primitives::Timestamp;
 
 /// Defines methods that all `ConsensusState`s should provide.
@@ -18,5 +19,5 @@ pub trait ConsensusState: Send + Sync {
     /// Serializes the `ConsensusState`. This is expected to be implemented as
     /// first converting to the raw type (i.e. the protobuf definition), and then
     /// serializing that.
-    fn encode_vec(self) -> Vec<u8>;
+    fn into_any(self) -> Any;
 }
