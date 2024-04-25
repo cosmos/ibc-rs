@@ -2,18 +2,7 @@ name: CosmWasm Compilation Check
 on:
   pull_request:
     paths:
-      - .github/workflows/cw-check.yml
-      - Cargo.toml
-      - Cargo.lock
-      - ci/cw-check/**
-  push:
-    tags:
-      - v[0-9]+.*
-    branches:
-      - "release/*"
-      - main
-    paths:
-      - .github/workflows/cw-check.yml
+      - .github/workflows/cw-check.yaml
       - Cargo.toml
       - Cargo.lock
       - ci/cw-check/**
@@ -25,17 +14,49 @@ on:
       - ibc-clients/**
       - ibc-primitives/**
       - ibc-derive/**
-  merge_group:
-    types: [checks_requested]
+  push:
+    tags:
+      - v[0-9]+.*
+    branches:
+      - "release/*"
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main' }}
 
 jobs:
   cw-check:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-      - name: Run cw-check
+
+      # only for caching cargo build artifacts from `cosmwasm/optimizer`
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      - name: Create mount directories
+        run: mkdir -p "${HOME}/.cargo/registry" "$(pwd)"/target
+
+      - name: Compile `cw-check`
         run: |
-          cd ci/cw-check
-          nix-shell --run "cw-check"
+          docker run \
+          -v "$(pwd)":/code \
+          -v "$(pwd)"/target:/target \
+          -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
+          cosmwasm/optimizer:0.15.1 ./ci/cw-check
+
+      - name: Fix permissions
+        run: |
+          sudo chown -R $(id -u):$(id -g) "$(pwd)"/target
+          sudo chown -R $(id -u):$(id -g) "${HOME}/.cargo/registry"
+
+      - name: Install `cosmwasm-check` from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cosmwasm-check
+
+      - name: Check compiled CosmWasm contract
+        working-directory: artifacts
+        run: |
+          sha256sum -c checksums.txt
+          cosmwasm-check cw_check.wasm

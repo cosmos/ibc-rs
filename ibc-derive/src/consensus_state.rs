@@ -29,7 +29,7 @@ pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> Token
 
     let CommitmentRoot = imports.commitment_root();
     let ConsensusState = imports.consensus_state();
-    let proto_any = imports.any();
+    let ProtoAny = imports.any();
     let Timestamp = imports.timestamp();
 
     quote! {
@@ -46,7 +46,7 @@ pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> Token
                 }
             }
 
-            fn into_any(self) -> #proto_any {
+            fn into_any(self) -> #ProtoAny {
                 match self {
                     #(#into_any_impl),*
                 }
