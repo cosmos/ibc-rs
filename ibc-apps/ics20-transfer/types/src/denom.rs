@@ -597,6 +597,25 @@ mod tests {
         assert_eq!(prefixed_denom.to_string(), "uatom");
     }
 
+    #[rstest]
+    #[case("", TracePath::empty(), Some(""))]
+    #[case("transfer", TracePath::empty(), Some("transfer"))]
+    #[case("transfer/", TracePath::empty(), Some("transfer/"))]
+    #[case("transfer/channel-1", TracePath::from(vec![TracePrefix::new("transfer".parse().unwrap(), ChannelId::new(1))]), None)]
+    #[case("transfer/channel-1/", TracePath::from(vec![TracePrefix::new("transfer".parse().unwrap(), ChannelId::new(1))]), Some(""))]
+    #[case("transfer/channel-1/uatom", TracePath::from(vec![TracePrefix::new("transfer".parse().unwrap(), ChannelId::new(1))]), Some("uatom"))]
+    #[case("transfer/channel-1/uatom/", TracePath::from(vec![TracePrefix::new("transfer".parse().unwrap(), ChannelId::new(1))]), Some("uatom/"))]
+    fn test_trace_path_cases(
+        #[case] trace_path_s: &str,
+        #[case] trace_path: TracePath,
+        #[case] remaining: Option<&str>,
+    ) {
+        let (parsed_trace_path, parsed_remaining) = TracePath::trim(trace_path_s);
+
+        assert_eq!(parsed_trace_path, trace_path);
+        assert_eq!(parsed_remaining, remaining);
+    }
+
     #[test]
     fn test_trace_path() -> Result<(), TokenTransferError> {
         assert!(TracePath::from_str("").is_ok(), "empty trace path");
