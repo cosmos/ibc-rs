@@ -89,8 +89,4 @@ impl ConsensusStateTrait for ConsensusState {
     fn timestamp(&self) -> Timestamp {
         self.0.timestamp.into()
     }
-
-    fn into_any(self) -> Any {
-        self.into()
-    }
 }
