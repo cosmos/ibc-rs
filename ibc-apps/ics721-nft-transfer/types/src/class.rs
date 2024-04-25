@@ -124,14 +124,16 @@ impl FromStr for PrefixedClassId {
     /// The parsing logic is same as [`FromStr`] impl of
     /// [`PrefixedDenom`](ibc_app_transfer_types::PrefixedDenom) from ICS-20.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (trace_path, remaining_parts) = TracePath::trim(s);
-
-        let base_class_id = ClassId::from_str(remaining_parts)?;
-
-        Ok(Self {
-            trace_path,
-            base_class_id,
-        })
+        match TracePath::trim(s) {
+            (trace_path, Some(remaining_parts)) => Ok(Self {
+                trace_path,
+                base_class_id: ClassId::from_str(remaining_parts)?,
+            }),
+            (_, None) => Ok(Self {
+                trace_path: TracePath::empty(),
+                base_class_id: ClassId::from_str(s)?,
+            }),
+        }
     }
 }
 

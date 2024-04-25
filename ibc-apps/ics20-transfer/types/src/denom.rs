@@ -86,17 +86,24 @@ impl TracePrefix {
 
     /// Returns a string slice with [`TracePrefix`] removed.
     ///
-    /// If the string starts with a [`TracePrefix`], i.e. `{port-id}/channel-{id}/`,
+    /// If the string starts with a [`TracePrefix`], i.e. `{port-id}/channel-{id}`,
     /// it returns a tuple of the removed [`TracePrefix`] and the substring after the prefix.
+    ///
+    /// If the substring is empty, it returns `None`.
+    /// Otherwise the substring starts with `/`. In that case,
+    /// the leading `/` is stripped and returned.
     ///
     /// If the string does not start with a [`TracePrefix`], this method returns `None`.
     ///
     /// This method is analogous to `strip_prefix` from the standard library.
-    pub fn strip(s: &str) -> Option<(Self, &str)> {
+    pub fn strip(s: &str) -> Option<(Self, Option<&str>)> {
         // The below two chained `split_once` calls emulate a virtual `split_twice` call,
         // which is not available in the standard library.
         let (port_id_s, remaining) = s.split_once('/')?;
-        let (channel_id_s, remaining) = remaining.split_once('/')?;
+        let (channel_id_s, remaining) = remaining
+            .split_once('/')
+            .map(|(a, b)| (a, Some(b)))
+            .unwrap_or_else(|| (remaining, None));
 
         let port_id = port_id_s.parse().ok()?;
         let channel_id = channel_id_s.parse().ok()?;
@@ -166,22 +173,37 @@ impl TracePath {
     /// If the string starts with a [`TracePath`], it returns a tuple of the removed
     /// [`TracePath`] and the substring after the [`TracePath`].
     ///
+    /// If the substring is empty, it returns `None`.
+    /// Otherwise the substring starts with `/`. In that case,
+    /// the leading `/` is stripped and returned.
+    ///
     /// If the string does not contain any [`TracePrefix`], it returns the original string.
     ///
     /// This method is analogous to `trim_start_matches` from the standard library.
-    pub fn trim(s: &str) -> (Self, &str) {
+    pub fn trim(s: &str) -> (Self, Option<&str>) {
+        // We can't use `TracePrefix::empty()` with `TracePrefix::add_prefix()`.
+        // Because we are stripping prefixes in reverse order.
         let mut trace_prefixes = vec![];
-        let mut remaining_parts = s;
+        let mut current_remaining_opt = Some(s);
 
-        while let Some((trace_prefix, remaining)) = TracePrefix::strip(remaining_parts) {
+        loop {
+            let Some(current_remaining_s) = current_remaining_opt else {
+                break;
+            };
+
+            let Some((trace_prefix, next_remaining_opt)) = TracePrefix::strip(current_remaining_s)
+            else {
+                break;
+            };
+
             trace_prefixes.push(trace_prefix);
-            remaining_parts = remaining;
+            current_remaining_opt = next_remaining_opt;
         }
 
-        // reversing is needed, as [`TracePath`] requires quick addition/removal
+        // Reversing is needed, as [`TracePath`] requires quick addition/removal
         // of prefixes which is more performant from the end of a [`Vec`].
         trace_prefixes.reverse();
-        (Self(trace_prefixes), remaining_parts)
+        (Self(trace_prefixes), current_remaining_opt)
     }
 }
 
@@ -193,12 +215,9 @@ impl FromStr for TracePath {
             return Ok(TracePath::empty());
         }
 
-        // This is needed as TracePath trims `{port-id}/{channel-id}/`.
-        let slashed_s = format!("{}/", s);
-
-        let (trace_path, remaining_parts) = TracePath::trim(slashed_s.as_str());
+        let (trace_path, remaining_parts) = TracePath::trim(s);
         remaining_parts
-            .is_empty()
+            .is_none()
             .then_some(trace_path)
             .ok_or_else(|| TokenTransferError::MalformedTrace(s.to_string()))
     }
@@ -328,14 +347,16 @@ impl FromStr for PrefixedDenom {
     /// The loop breaks at this point, resulting in a [`TracePath`] of `"transfer/channel-75"`
     /// and a [`BaseDenom`] of `"factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"`.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let (trace_path, remaining_parts) = TracePath::trim(s);
-
-        let base_denom = BaseDenom::from_str(remaining_parts)?;
-
-        Ok(Self {
-            trace_path,
-            base_denom,
-        })
+        match TracePath::trim(s) {
+            (trace_path, Some(remaining_parts)) => Ok(Self {
+                trace_path,
+                base_denom: BaseDenom::from_str(remaining_parts)?,
+            }),
+            (_, None) => Ok(Self {
+                trace_path: TracePath::empty(),
+                base_denom: BaseDenom::from_str(s)?,
+            }),
+        }
     }
 }
 
