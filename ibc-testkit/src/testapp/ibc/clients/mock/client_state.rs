@@ -343,6 +343,12 @@ where
             ),
             mock_consensus_state.into(),
         )?;
+        ctx.store_update_meta(
+            client_id.clone(),
+            self.latest_height(),
+            ctx.host_timestamp()?,
+            ctx.host_height()?,
+        )?;
 
         Ok(())
     }
