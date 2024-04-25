@@ -4,7 +4,7 @@ use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::msgs::MsgRecoverClient;
 use ibc_core_handler_types::error::ContextError;
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_host::{types::path::ClientConsensusStatePath, ExecutionContext, ValidationContext};
 
 /// Performs the validation steps associated with the client recovery process. This
 /// includes validating that the parameters of the subject and substitute clients match,
@@ -72,11 +72,18 @@ where
 
     let subject_client_state = client_exec_ctx.client_state(&subject_client_id)?;
     let substitute_client_state = client_exec_ctx.client_state(&substitute_client_id)?;
+    let substitute_consensus_state =
+        client_exec_ctx.consensus_state(&ClientConsensusStatePath::new(
+            substitute_client_id.clone(),
+            substitute_client_state.latest_height().revision_number(),
+            substitute_client_state.latest_height().revision_height(),
+        ))?;
 
     subject_client_state.update_on_recovery(
         ctx.get_client_execution_context(),
         &subject_client_id,
         substitute_client_state.into(),
+        substitute_consensus_state.into(),
     )?;
 
     Ok(())
