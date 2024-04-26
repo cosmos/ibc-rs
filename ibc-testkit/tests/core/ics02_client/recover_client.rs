@@ -7,6 +7,7 @@ use ibc::core::client::types::Height;
 use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
+use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::{Signer, Timestamp};
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
@@ -126,9 +127,26 @@ fn test_recover_client_ok() {
 
     assert!(res.is_ok(), "client recovery execution happy path");
 
+    // client state is copied.
     assert_eq!(
         ctx.client_state(&msg.subject_client_id).unwrap(),
         ctx.client_state(&msg.substitute_client_id).unwrap(),
+    );
+
+    // latest consensus state is copied.
+    assert_eq!(
+        ctx.consensus_state(&ClientConsensusStatePath::new(
+            msg.subject_client_id,
+            substitute_height.revision_number(),
+            substitute_height.revision_height(),
+        ))
+        .unwrap(),
+        ctx.consensus_state(&ClientConsensusStatePath::new(
+            msg.substitute_client_id,
+            substitute_height.revision_number(),
+            substitute_height.revision_height(),
+        ))
+        .unwrap(),
     );
 }
 
