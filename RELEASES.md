@@ -47,7 +47,9 @@ Our release process is as follows:
     1. In case of intermittent problems with the registry, try `cargo release`
       locally to publish any missing crates from this release. This step
       requires the appropriate privileges to push crates to [crates.io].
-    2. In case the problems arise from the source files, fix them, bump a new
+    2. If there is any new crate published locally, add
+      [ibcbot](https://crates.io/users/ibcbot) to its owners list.
+    3. In case problems arise from the source files, fix them, bump a new
       patch version (e.g. `v0.48.1`) and repeat the process with its
       corresponding new tag.
 10. Once the tag is pushed, wait for the CI bot to create a GitHub release,
