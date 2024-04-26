@@ -2,8 +2,8 @@ use std::str::FromStr;
 
 use cosmwasm_std::testing::{mock_env, mock_info};
 use cosmwasm_std::{coins, Env, MessageInfo, Timestamp as CwTimestamp};
-use ibc_client_tendermint::types::ConsensusState;
-use ibc_core::primitives::Timestamp as IbcTimestamp;
+use ibc::clients::tendermint::types::ConsensusState;
+use ibc::core::primitives::Timestamp as IbcTimestamp;
 use tendermint::Hash;
 
 pub fn dummy_msg_info() -> MessageInfo {

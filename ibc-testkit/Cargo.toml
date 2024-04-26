@@ -29,18 +29,23 @@ tracing           = { version = "0.1.40", default-features = false }
 typed-builder     = { version = "0.18.0" }
 
 # ibc dependencies
-ibc       = { workspace = true, features = ["std"] }
-ibc-proto = { workspace = true }
+ibc                      = { workspace = true, features = ["std"] }
+ibc-proto                = { workspace = true }
+ibc-client-cw            = { workspace = true }
+ibc-client-tendermint-cw = { workspace = true }
 
 # cosmos dependencies
 tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
-env_logger         = "0.11.0"
+env_logger         = { version = "0.11.0" }
 rstest             = { workspace = true }
 tracing-subscriber = { version = "0.3.17", features = ["fmt", "env-filter", "json"] }
 test-log           = { version = "0.2.13", features = ["trace"] }
+cosmwasm-vm        = { workspace = true }
+hex                = { version = "0.4.2" }
+cosmwasm-std       = { workspace = true }
 
 [features]
 default = ["std"]

@@ -5,13 +5,12 @@ use std::time::Duration;
 
 use cosmwasm_std::from_json;
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
+use fixture::Fixture;
+use ibc::core::client::types::{Height, Status};
 use ibc_client_cw::types::{
     ContractResult, MigrateClientStoreMsg, MigrationPrefix, VerifyClientMessageRaw,
 };
-use ibc_core::client::types::{Height, Status};
-
-use crate::entrypoint::sudo;
-use crate::tests::fixture::Fixture;
+use ibc_client_tendermint_cw::entrypoint::sudo;
 
 #[test]
 fn test_cw_create_client_ok() {
