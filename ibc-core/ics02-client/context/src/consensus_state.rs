@@ -6,8 +6,8 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 use ibc_primitives::Timestamp;
 
-/// Convenient trait to decode a consensus state from an `Any` type and obtain
-/// a handle to the local instance of `ConsensusState`.
+/// Convenient trait to decode a consensus state from an [`Any`] type and obtain
+/// a handle to the local instance of [`ConsensusState`].
 pub trait ConsensusStateDecoder: Into<Any> + TryFrom<Any, Error = ClientError> {}
 
 impl<T> ConsensusStateDecoder for T where T: Into<Any> + TryFrom<Any, Error = ClientError> {}
