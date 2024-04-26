@@ -2,9 +2,9 @@ name: Coverage
 on:
   pull_request:
     paths:
-      - .codecov.yml
-      - .github/workflows/rust.yml
-      - .github/workflows/coverage.yml
+      - .codecov.yaml
+      - .github/workflows/rust.yaml
+      - .github/workflows/coverage.yaml
       - Cargo.toml
       - ci/**
       - ibc/**
@@ -24,7 +24,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: rust-ci-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -43,10 +43,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - name: Install Rust
-        uses: actions-rs/toolchain@v1
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-          override: true
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Install cargo-nextest

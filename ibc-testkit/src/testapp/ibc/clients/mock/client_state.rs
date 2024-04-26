@@ -343,6 +343,12 @@ where
             ),
             mock_consensus_state.into(),
         )?;
+        ctx.store_update_meta(
+            client_id.clone(),
+            self.latest_height(),
+            ctx.host_timestamp()?,
+            ctx.host_height()?,
+        )?;
 
         Ok(())
     }
@@ -440,6 +446,7 @@ where
         ctx: &mut E,
         subject_client_id: &ClientId,
         substitute_client_state: Any,
+        substitute_consensus_state: Any,
     ) -> Result<(), ClientError> {
         let substitute_client_state = MockClientState::try_from(substitute_client_state)?;
 
@@ -452,6 +459,17 @@ where
 
         let host_timestamp = ctx.host_timestamp()?;
         let host_height = ctx.host_height()?;
+
+        let mock_consensus_state = MockConsensusState::try_from(substitute_consensus_state)?;
+
+        ctx.store_consensus_state(
+            ClientConsensusStatePath::new(
+                subject_client_id.clone(),
+                new_mock_client_state.latest_height().revision_number(),
+                new_mock_client_state.latest_height().revision_height(),
+            ),
+            mock_consensus_state.into(),
+        )?;
 
         ctx.store_client_state(
             ClientStatePath::new(subject_client_id.clone()),
