@@ -20,18 +20,19 @@ all-features = true
 [dependencies]
 # external dependencies
 borsh           = { workspace = true, optional = true }
-base64          = { workspace = true }
+base64          = { workspace = true, features = ["alloc"] }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-http            = "1.0.0"
-mime            = "0.3.17"
+http            = { version = "1.0.0" }
+mime            = { version = "0.3.17" }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 serde_json      = { workspace = true }
 
 # ibc dependencies
-ibc-core  = { workspace = true }
-ibc-proto = { workspace = true }
+ibc-core               = { workspace = true }
+ibc-proto              = { workspace = true }
+ibc-app-transfer-types = { workspace = true }
 
 ## parity dependencies
 parity-scale-codec = { workspace = true , optional = true }
@@ -50,27 +51,32 @@ std = [
     "http/std",
     "ibc-core/std",
     "ibc-proto/std",
+    "ibc-app-transfer-types/std",
 ]
 serde = [
     "dep:serde",
     "ibc-core/serde",
     "ibc-proto/serde",
+    "ibc-app-transfer-types/serde",
 ]
 schema = [
     "dep:schemars",
     "ibc-core/schema",
     "ibc-proto/json-schema",
     "serde",
-    "std"
+    "std",
+    "ibc-app-transfer-types/schema",
 ]
 borsh = [
     "dep:borsh",
     "ibc-core/borsh",
-    "ibc-proto/borsh"
+    "ibc-proto/borsh",
+    "ibc-app-transfer-types/borsh",
 ]
 parity-scale-codec = [
     "dep:parity-scale-codec",
     "dep:scale-info",
     "ibc-core/parity-scale-codec",
-    "ibc-proto/parity-scale-codec"
+    "ibc-proto/parity-scale-codec",
+    "ibc-app-transfer-types/parity-scale-codec",
 ]

@@ -47,7 +47,7 @@ pub(crate) fn impl_ClientStateExecution(
         client_state_enum_name,
         enum_variants.iter(),
         opts,
-        quote! { update_on_recovery(cs, ctx, client_id, substitute_client_state) },
+        quote! { update_on_recovery(cs, ctx, client_id, substitute_client_state, substitute_consensus_state) },
         imports,
     );
 
@@ -121,6 +121,7 @@ pub(crate) fn impl_ClientStateExecution(
                 ctx: &mut #E,
                 client_id: &#ClientId,
                 substitute_client_state: #Any,
+                substitute_consensus_state: #Any,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#update_on_recovery_impl),*

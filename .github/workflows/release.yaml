@@ -27,10 +27,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Install cargo-release
-        run: cargo install cargo-release
-      - name: Cache cargo dependencies
-        uses: Swatinem/rust-cache@v2
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Install `cargo-release` from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-release
       - name: Publish crates (dry run)
         run: make check-release
 
@@ -41,10 +44,13 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Install cargo-release
-        run: cargo install cargo-release
-      - name: Cache cargo dependencies
-        uses: Swatinem/rust-cache@v2
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Install `cargo-release` from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cargo-release
       - name: Publish crates
         run: yes | make release
         env:
