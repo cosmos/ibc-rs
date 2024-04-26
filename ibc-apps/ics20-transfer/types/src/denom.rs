@@ -83,6 +83,33 @@ impl TracePrefix {
             channel_id,
         }
     }
+
+    /// Returns a string slice with [`TracePrefix`] removed.
+    ///
+    /// If the string starts with a [`TracePrefix`], i.e. `{port-id}/channel-{id}`,
+    /// it returns a tuple of the removed [`TracePrefix`] and the substring after the prefix.
+    ///
+    /// If the substring is empty, it returns `None`.
+    /// Otherwise the substring starts with `/`. In that case,
+    /// the leading `/` is stripped and returned.
+    ///
+    /// If the string does not start with a [`TracePrefix`], this method returns `None`.
+    ///
+    /// This method is analogous to `strip_prefix` from the standard library.
+    pub fn strip(s: &str) -> Option<(Self, Option<&str>)> {
+        // The below two chained `split_once` calls emulate a virtual `split_twice` call,
+        // which is not available in the standard library.
+        let (port_id_s, remaining) = s.split_once('/')?;
+        let (channel_id_s, remaining) = remaining
+            .split_once('/')
+            .map(|(a, b)| (a, Some(b)))
+            .unwrap_or_else(|| (remaining, None));
+
+        let port_id = port_id_s.parse().ok()?;
+        let channel_id = channel_id_s.parse().ok()?;
+
+        Some((Self::new(port_id, channel_id), remaining))
+    }
 }
 
 impl Display for TracePrefix {
@@ -92,9 +119,10 @@ impl Display for TracePrefix {
 }
 
 /// A full trace path modelled as a collection of `TracePrefix`s.
-// Internally, the `TracePath` is modelled as a `Vec<TracePrefix>` but with the order reversed, i.e.
-// "transfer/channel-0/transfer/channel-1/uatom" => `["transfer/channel-1", "transfer/channel-0"]`
-// This is done for ease of addition/removal of prefixes.
+///
+/// Internally, the `TracePath` is modelled as a `Vec<TracePrefix>` but with the order reversed, i.e.
+/// "transfer/channel-0/transfer/channel-1/uatom" => `["transfer/channel-1", "transfer/channel-0"]`
+/// This is done for ease of addition/removal of prefixes.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -139,39 +167,43 @@ impl TracePath {
     pub fn empty() -> Self {
         Self(vec![])
     }
-}
 
-impl<'a> TryFrom<Vec<&'a str>> for TracePath {
-    type Error = TokenTransferError;
+    /// Returns a string slice with [`TracePath`] or all [`TracePrefix`]es repeatedly removed.
+    ///
+    /// If the string starts with a [`TracePath`], it returns a tuple of the removed
+    /// [`TracePath`] and the substring after the [`TracePath`].
+    ///
+    /// If the substring is empty, it returns `None`.
+    /// Otherwise the substring starts with `/`. In that case,
+    /// the leading `/` is stripped and returned.
+    ///
+    /// If the string does not contain any [`TracePrefix`], it returns the original string.
+    ///
+    /// This method is analogous to `trim_start_matches` from the standard library.
+    pub fn trim(s: &str) -> (Self, Option<&str>) {
+        // We can't use `TracePrefix::empty()` with `TracePrefix::add_prefix()`.
+        // Because we are stripping prefixes in reverse order.
+        let mut trace_prefixes = vec![];
+        let mut current_remaining_opt = Some(s);
 
-    fn try_from(v: Vec<&'a str>) -> Result<Self, Self::Error> {
-        if v.len() % 2 != 0 {
-            return Err(TokenTransferError::InvalidTraceLength {
-                len: v.len() as u64,
-            });
+        loop {
+            let Some(current_remaining_s) = current_remaining_opt else {
+                break;
+            };
+
+            let Some((trace_prefix, next_remaining_opt)) = TracePrefix::strip(current_remaining_s)
+            else {
+                break;
+            };
+
+            trace_prefixes.push(trace_prefix);
+            current_remaining_opt = next_remaining_opt;
         }
 
-        let mut trace = vec![];
-        let id_pairs = v.chunks_exact(2).map(|paths| (paths[0], paths[1]));
-        for (pos, (port_id, channel_id)) in id_pairs.rev().enumerate() {
-            let port_id =
-                PortId::from_str(port_id).map_err(|e| TokenTransferError::InvalidTracePortId {
-                    pos: pos as u64,
-                    validation_error: e,
-                })?;
-            let channel_id = ChannelId::from_str(channel_id).map_err(|e| {
-                TokenTransferError::InvalidTraceChannelId {
-                    pos: pos as u64,
-                    validation_error: e,
-                }
-            })?;
-            trace.push(TracePrefix {
-                port_id,
-                channel_id,
-            });
-        }
-
-        Ok(trace.into())
+        // Reversing is needed, as [`TracePath`] requires quick addition/removal
+        // of prefixes which is more performant from the end of a [`Vec`].
+        trace_prefixes.reverse();
+        (Self(trace_prefixes), current_remaining_opt)
     }
 }
 
@@ -179,15 +211,15 @@ impl FromStr for TracePath {
     type Err = TokenTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts = {
-            let parts: Vec<&str> = s.split('/').collect();
-            if parts.len() == 1 && parts[0].trim().is_empty() {
-                vec![]
-            } else {
-                parts
-            }
-        };
-        parts.try_into()
+        if s.is_empty() {
+            return Ok(TracePath::empty());
+        }
+
+        let (trace_path, remaining_parts) = TracePath::trim(s);
+        remaining_parts
+            .is_none()
+            .then_some(trace_path)
+            .ok_or_else(|| TokenTransferError::MalformedTrace(s.to_string()))
     }
 }
 
@@ -293,24 +325,38 @@ pub fn is_receiver_chain_source(
 impl FromStr for PrefixedDenom {
     type Err = TokenTransferError;
 
+    /// Initializes a [`PrefixedDenom`] from a string that adheres to the format
+    /// `{nth-port-id/channel-<index>}/{(n-1)th-port-id/channel-<index>}/.../{1st-port-id/channel-<index>}/<base_denom>`.
+    /// A [`PrefixedDenom`] exhibits a sequence of `{ith-port-id/channel-<index>}` pairs.
+    /// This sequence makes up the [`TracePath`] of the [`PrefixedDenom`].
+    ///
+    /// This [`PrefixedDenom::from_str`] implementation _left-split-twice_ the argument string
+    /// using `/` delimiter. Then it peeks into the first two segments and attempts to convert
+    /// the first segment into a [`PortId`] and the second into a [`ChannelId`].
+    /// This continues on the third remaining segment in a loop until a
+    /// `{port-id/channel-id}` pair cannot be created from the top two segments.
+    /// The remaining parts of the string are then considered the [`BaseDenom`].
+    ///
+    /// For example, given the following denom trace:
+    /// "transfer/channel-75/factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust",
+    /// the first two `/`-delimited segments are `"transfer"` and `"channel-75"`. The
+    /// first is a valid [`PortId`], and the second is a valid [`ChannelId`], so that becomes
+    /// the first `{port-id/channel-id}` pair that gets added as part of the [`TracePath`]
+    /// of the [`PrefixedDenom`]. The next two segments are `"factory"`, a
+    /// valid [`PortId`], and `"stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4"`, an invalid [`ChannelId`].
+    /// The loop breaks at this point, resulting in a [`TracePath`] of `"transfer/channel-75"`
+    /// and a [`BaseDenom`] of `"factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"`.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts: Vec<&str> = s.split('/').collect();
-        let last_part = parts.pop().expect("split() returned an empty iterator");
-
-        let (base_denom, trace_path) = {
-            if last_part == s {
-                (BaseDenom::from_str(s)?, TracePath::empty())
-            } else {
-                let base_denom = BaseDenom::from_str(last_part)?;
-                let trace_path = TracePath::try_from(parts)?;
-                (base_denom, trace_path)
-            }
-        };
-
-        Ok(Self {
-            trace_path,
-            base_denom,
-        })
+        match TracePath::trim(s) {
+            (trace_path, Some(remaining_parts)) => Ok(Self {
+                trace_path,
+                base_denom: BaseDenom::from_str(remaining_parts)?,
+            }),
+            (_, None) => Ok(Self {
+                trace_path: TracePath::empty(),
+                base_denom: BaseDenom::from_str(s)?,
+            }),
+        }
     }
 }
 
@@ -357,80 +403,217 @@ impl Display for PrefixedDenom {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
-    #[test]
-    fn test_denom_validation() -> Result<(), TokenTransferError> {
-        assert!(BaseDenom::from_str("").is_err(), "empty base denom");
-        assert!(BaseDenom::from_str("uatom").is_ok(), "valid base denom");
-        assert!(PrefixedDenom::from_str("").is_err(), "empty denom trace");
-        assert!(
-            PrefixedDenom::from_str("transfer/channel-0/").is_err(),
-            "empty base denom with trace"
-        );
-        assert!(PrefixedDenom::from_str("/uatom").is_err(), "empty prefix");
-        assert!(PrefixedDenom::from_str("//uatom").is_err(), "empty ids");
-        assert!(
-            PrefixedDenom::from_str("transfer/").is_err(),
-            "single trace"
-        );
-        assert!(
-            PrefixedDenom::from_str("transfer/atom").is_err(),
-            "single trace with base denom"
-        );
-        assert!(
-            PrefixedDenom::from_str("transfer/channel-0/uatom").is_ok(),
-            "valid single trace info"
-        );
-        assert!(
-            PrefixedDenom::from_str("transfer/channel-0/transfer/channel-1/uatom").is_ok(),
-            "valid multiple trace info"
-        );
-        assert!(
-            PrefixedDenom::from_str("(transfer)/channel-0/uatom").is_err(),
-            "invalid port"
-        );
-        assert!(
-            PrefixedDenom::from_str("transfer/(channel-0)/uatom").is_err(),
-            "invalid channel"
-        );
+    #[rstest]
+    #[case("transfer")]
+    #[case("transfer/channel-1/ica")]
+    fn test_invalid_raw_demon_trace_parsing(#[case] trace_path: &str) {
+        let raw_denom_trace = RawDenomTrace {
+            path: trace_path.to_string(),
+            base_denom: "uatom".to_string(),
+        };
+
+        PrefixedDenom::try_from(raw_denom_trace).expect_err("failure");
+    }
+
+    #[rstest]
+    #[case("uatom")]
+    #[case("atom")]
+    fn test_accepted_denom(#[case] denom_str: &str) {
+        BaseDenom::from_str(denom_str).expect("success");
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case(" ")]
+    fn test_rejected_denom(#[case] denom_str: &str) {
+        BaseDenom::from_str(denom_str).expect_err("failure");
+    }
+
+    #[rstest]
+    #[case(
+        "transfer/channel-75",
+        "factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"
+    )]
+    #[case(
+        "transfer/channel-75/transfer/channel-123/transfer/channel-1023/transfer/channel-0",
+        "factory/stars16da2uus9zrsy83h23ur42v3lglg5rmyrpqnju4/dust"
+    )]
+    #[case(
+        "transfer/channel-75/transfer/channel-123/transfer/channel-1023/transfer/channel-0",
+        "//////////////////////dust"
+    )]
+    #[case("transfer/channel-0", "uatom")]
+    #[case("transfer/channel-0/transfer/channel-1", "uatom")]
+    #[case("", "/")]
+    #[case("", "transfer/uatom")]
+    #[case("", "transfer/atom")]
+    #[case("", "transfer//uatom")]
+    #[case("", "/uatom")]
+    #[case("", "//uatom")]
+    #[case("", "transfer/")]
+    #[case("", "(transfer)/channel-0/uatom")]
+    #[case("", "transfer/(channel-0)/uatom")]
+    // https://github.com/cosmos/ibc-go/blob/e2ad31975f2ede592912b86346b5ebf055c9e05f/modules/apps/transfer/types/trace_test.go#L17-L38
+    #[case("", "uatom")]
+    #[case("", "uatom/")]
+    #[case("", "gamm/pool/1")]
+    #[case("", "gamm//pool//1")]
+    #[case("transfer/channel-1", "uatom")]
+    #[case("customtransfer/channel-1", "uatom")]
+    #[case("transfer/channel-1", "uatom/")]
+    #[case(
+        "transfer/channel-1",
+        "erc20/0x85bcBCd7e79Ec36f4fBBDc54F90C643d921151AA"
+    )]
+    #[case("transfer/channel-1", "gamm/pool/1")]
+    #[case("transfer/channel-1", "gamm//pool//1")]
+    #[case("transfer/channel-1/transfer/channel-2", "uatom")]
+    #[case("customtransfer/channel-1/alternativetransfer/channel-2", "uatom")]
+    #[case("", "transfer/uatom")]
+    #[case("", "transfer//uatom")]
+    #[case("", "channel-1/transfer/uatom")]
+    #[case("", "uatom/transfer")]
+    #[case("", "transfer/channel-1")]
+    #[case("transfer/channel-1", "transfer")]
+    #[case("", "transfer/channelToA/uatom")]
+    fn test_strange_but_accepted_prefixed_denom(
+        #[case] prefix: &str,
+        #[case] denom: &str,
+    ) -> Result<(), TokenTransferError> {
+        let pd_s = if prefix.is_empty() {
+            denom.to_owned()
+        } else {
+            format!("{prefix}/{denom}")
+        };
+        let pd = PrefixedDenom::from_str(&pd_s)?;
+
+        assert_eq!(pd.to_string(), pd_s);
+        assert_eq!(pd.trace_path.to_string(), prefix);
+        assert_eq!(pd.base_denom.to_string(), denom);
 
         Ok(())
     }
 
-    #[test]
-    fn test_denom_trace() -> Result<(), TokenTransferError> {
-        assert_eq!(
-            PrefixedDenom::from_str("transfer/channel-0/uatom")?,
-            PrefixedDenom {
-                trace_path: "transfer/channel-0".parse()?,
-                base_denom: "uatom".parse()?
-            },
-            "valid single trace info"
-        );
-        assert_eq!(
-            PrefixedDenom::from_str("transfer/channel-0/transfer/channel-1/uatom")?,
-            PrefixedDenom {
-                trace_path: "transfer/channel-0/transfer/channel-1".parse()?,
-                base_denom: "uatom".parse()?
-            },
-            "valid multiple trace info"
-        );
-
-        Ok(())
+    #[rstest]
+    #[case("")]
+    #[case("   ")]
+    #[case("transfer/channel-1/")]
+    #[case("transfer/channel-1/transfer/channel-2/")]
+    #[case("transfer/channel-21/transfer/channel-23/  ")]
+    #[case("transfer/channel-0/")]
+    #[should_panic(expected = "EmptyBaseDenom")]
+    fn test_prefixed_empty_base_denom(#[case] pd_s: &str) {
+        PrefixedDenom::from_str(pd_s).expect("error");
     }
 
-    #[test]
-    fn test_denom_serde() -> Result<(), TokenTransferError> {
-        let dt_str = "transfer/channel-0/uatom";
-        let dt = PrefixedDenom::from_str(dt_str)?;
-        assert_eq!(dt.to_string(), dt_str, "valid single trace info");
+    #[rstest]
+    fn test_trace_path_order() {
+        let mut prefixed_denom =
+            PrefixedDenom::from_str("customtransfer/channel-1/alternativetransfer/channel-2/uatom")
+                .expect("no error");
 
-        let dt_str = "transfer/channel-0/transfer/channel-1/uatom";
-        let dt = PrefixedDenom::from_str(dt_str)?;
-        assert_eq!(dt.to_string(), dt_str, "valid multiple trace info");
+        assert_eq!(
+            prefixed_denom.trace_path.to_string(),
+            "customtransfer/channel-1/alternativetransfer/channel-2"
+        );
+        assert_eq!(prefixed_denom.base_denom.to_string(), "uatom");
 
-        Ok(())
+        let trace_prefix_1 = TracePrefix::new(
+            "alternativetransfer".parse().unwrap(),
+            "channel-2".parse().unwrap(),
+        );
+
+        let trace_prefix_2 = TracePrefix::new(
+            "customtransfer".parse().unwrap(),
+            "channel-1".parse().unwrap(),
+        );
+
+        let trace_prefix_3 =
+            TracePrefix::new("transferv2".parse().unwrap(), "channel-10".parse().unwrap());
+        let trace_prefix_4 = TracePrefix::new(
+            "transferv3".parse().unwrap(),
+            "channel-101".parse().unwrap(),
+        );
+
+        prefixed_denom.trace_path.add_prefix(trace_prefix_3.clone());
+
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+
+        assert_eq!(
+            prefixed_denom.to_string(),
+            "transferv2/channel-10/customtransfer/channel-1/alternativetransfer/channel-2/uatom"
+        );
+
+        prefixed_denom.trace_path.remove_prefix(&trace_prefix_4);
+
+        assert!(!prefixed_denom.trace_path.is_empty());
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+        assert_eq!(
+            prefixed_denom.to_string(),
+            "transferv2/channel-10/customtransfer/channel-1/alternativetransfer/channel-2/uatom"
+        );
+
+        prefixed_denom.trace_path.remove_prefix(&trace_prefix_3);
+
+        assert!(!prefixed_denom.trace_path.is_empty());
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+        assert_eq!(
+            prefixed_denom.to_string(),
+            "customtransfer/channel-1/alternativetransfer/channel-2/uatom"
+        );
+
+        prefixed_denom.trace_path.remove_prefix(&trace_prefix_2);
+
+        assert!(!prefixed_denom.trace_path.is_empty());
+        assert!(prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+        assert_eq!(
+            prefixed_denom.to_string(),
+            "alternativetransfer/channel-2/uatom"
+        );
+
+        prefixed_denom.trace_path.remove_prefix(&trace_prefix_1);
+
+        assert!(prefixed_denom.trace_path.is_empty());
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_1));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_2));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_3));
+        assert!(!prefixed_denom.trace_path.starts_with(&trace_prefix_4));
+        assert_eq!(prefixed_denom.to_string(), "uatom");
+    }
+
+    #[rstest]
+    #[case("", TracePath::empty(), Some(""))]
+    #[case("transfer", TracePath::empty(), Some("transfer"))]
+    #[case("transfer/", TracePath::empty(), Some("transfer/"))]
+    #[case("transfer/channel-1", TracePath::from(vec![TracePrefix::new("transfer".parse().unwrap(), ChannelId::new(1))]), None)]
+    #[case("transfer/channel-1/", TracePath::from(vec![TracePrefix::new("transfer".parse().unwrap(), ChannelId::new(1))]), Some(""))]
+    #[case("transfer/channel-1/uatom", TracePath::from(vec![TracePrefix::new("transfer".parse().unwrap(), ChannelId::new(1))]), Some("uatom"))]
+    #[case("transfer/channel-1/uatom/", TracePath::from(vec![TracePrefix::new("transfer".parse().unwrap(), ChannelId::new(1))]), Some("uatom/"))]
+    fn test_trace_path_cases(
+        #[case] trace_path_s: &str,
+        #[case] trace_path: TracePath,
+        #[case] remaining: Option<&str>,
+    ) {
+        let (parsed_trace_path, parsed_remaining) = TracePath::trim(trace_path_s);
+
+        assert_eq!(parsed_trace_path, trace_path);
+        assert_eq!(parsed_remaining, remaining);
     }
 
     #[test]

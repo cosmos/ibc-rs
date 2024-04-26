@@ -2,8 +2,8 @@
 use core::fmt::{self, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
-use derive_more::From;
 use http::Uri;
+pub use ibc_app_transfer_types::{TracePath, TracePrefix};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
@@ -52,152 +52,6 @@ impl FromStr for ClassId {
         } else {
             Ok(Self(class_id.to_string()))
         }
-    }
-}
-
-/// Class prefix, the same as ICS-20 TracePrefix
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, Ord, PartialOrd, Eq, PartialEq)]
-pub struct TracePrefix {
-    port_id: PortId,
-    channel_id: ChannelId,
-}
-
-impl TracePrefix {
-    pub fn new(port_id: PortId, channel_id: ChannelId) -> Self {
-        Self {
-            port_id,
-            channel_id,
-        }
-    }
-}
-
-impl Display for TracePrefix {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        write!(f, "{}/{}", self.port_id, self.channel_id)
-    }
-}
-
-/// Class trace path, the same as ICS-20 TracePath
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, Eq, PartialEq, PartialOrd, Ord, From)]
-pub struct TracePath(Vec<TracePrefix>);
-
-impl TracePath {
-    /// Returns true iff this path starts with the specified prefix
-    pub fn starts_with(&self, prefix: &TracePrefix) -> bool {
-        self.0.last().map(|p| p == prefix).unwrap_or(false)
-    }
-
-    /// Removes the specified prefix from the path if there is a match, otherwise does nothing.
-    pub fn remove_prefix(&mut self, prefix: &TracePrefix) {
-        if self.starts_with(prefix) {
-            self.0.pop();
-        }
-    }
-
-    /// Adds the specified prefix to the path.
-    pub fn add_prefix(&mut self, prefix: TracePrefix) {
-        self.0.push(prefix)
-    }
-
-    /// Returns true if the path is empty and false otherwise.
-    pub fn is_empty(&self) -> bool {
-        self.0.is_empty()
-    }
-
-    /// Return empty trace path
-    pub fn empty() -> Self {
-        Self(vec![])
-    }
-}
-
-impl<'a> TryFrom<Vec<&'a str>> for TracePath {
-    type Error = NftTransferError;
-
-    fn try_from(v: Vec<&'a str>) -> Result<Self, Self::Error> {
-        if v.len() % 2 != 0 {
-            return Err(NftTransferError::InvalidTraceLength {
-                len: v.len() as u64,
-            });
-        }
-
-        let mut trace = vec![];
-        let id_pairs = v.chunks_exact(2).map(|paths| (paths[0], paths[1]));
-        for (pos, (port_id, channel_id)) in id_pairs.rev().enumerate() {
-            let port_id =
-                PortId::from_str(port_id).map_err(|e| NftTransferError::InvalidTracePortId {
-                    pos: pos as u64,
-                    validation_error: e,
-                })?;
-            let channel_id = ChannelId::from_str(channel_id).map_err(|e| {
-                NftTransferError::InvalidTraceChannelId {
-                    pos: pos as u64,
-                    validation_error: e,
-                }
-            })?;
-            trace.push(TracePrefix {
-                port_id,
-                channel_id,
-            });
-        }
-
-        Ok(trace.into())
-    }
-}
-
-impl FromStr for TracePath {
-    type Err = NftTransferError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let parts = {
-            let parts: Vec<&str> = s.split('/').collect();
-            if parts.len() == 1 && parts[0].trim().is_empty() {
-                vec![]
-            } else {
-                parts
-            }
-        };
-        parts.try_into()
-    }
-}
-
-impl Display for TracePath {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        let path = self
-            .0
-            .iter()
-            .rev()
-            .map(|prefix| prefix.to_string())
-            .collect::<Vec<String>>()
-            .join("/");
-        write!(f, "{path}")
     }
 }
 
@@ -267,24 +121,19 @@ pub fn is_receiver_chain_source(
 impl FromStr for PrefixedClassId {
     type Err = NftTransferError;
 
+    /// The parsing logic is same as [`FromStr`] impl of
+    /// [`PrefixedDenom`](ibc_app_transfer_types::PrefixedDenom) from ICS-20.
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut parts: Vec<&str> = s.split('/').collect();
-        let last_part = parts.pop().expect("split() returned an empty iterator");
-
-        let (base_class_id, trace_path) = {
-            if last_part == s {
-                (ClassId::from_str(s)?, TracePath::empty())
-            } else {
-                let base_class_id = ClassId::from_str(last_part)?;
-                let trace_path = TracePath::try_from(parts)?;
-                (base_class_id, trace_path)
-            }
-        };
-
-        Ok(Self {
-            trace_path,
-            base_class_id,
-        })
+        match TracePath::trim(s) {
+            (trace_path, Some(remaining_parts)) => Ok(Self {
+                trace_path,
+                base_class_id: ClassId::from_str(remaining_parts)?,
+            }),
+            (_, None) => Ok(Self {
+                trace_path: TracePath::empty(),
+                base_class_id: ClassId::from_str(s)?,
+            }),
+        }
     }
 }
 
@@ -293,7 +142,9 @@ impl TryFrom<RawClassTrace> for PrefixedClassId {
 
     fn try_from(value: RawClassTrace) -> Result<Self, Self::Error> {
         let base_class_id = ClassId::from_str(&value.base_class_id)?;
-        let trace_path = TracePath::from_str(&value.path)?;
+        // FIXME: separate `TracePath` error.
+        let trace_path = TracePath::from_str(&value.path)
+            .map_err(|err| NftTransferError::Other(err.to_string()))?;
         Ok(Self {
             trace_path,
             base_class_id,
@@ -321,7 +172,7 @@ impl From<ClassId> for PrefixedClassId {
 
 impl Display for PrefixedClassId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
-        if self.trace_path.0.is_empty() {
+        if self.trace_path.is_empty() {
             write!(f, "{}", self.base_class_id)
         } else {
             write!(f, "{}/{}", self.trace_path, self.base_class_id)
@@ -446,48 +297,50 @@ impl FromStr for ClassData {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
     use super::*;
 
-    #[test]
-    fn test_class_id_validation() -> Result<(), NftTransferError> {
-        assert!(ClassId::from_str("").is_err(), "empty base class ID");
-        assert!(ClassId::from_str("myclass").is_ok(), "valid base class ID");
-        assert!(PrefixedClassId::from_str("").is_err(), "empty class trace");
-        assert!(
-            PrefixedClassId::from_str("transfer/channel-0/").is_err(),
-            "empty base class ID with trace"
-        );
-        assert!(
-            PrefixedClassId::from_str("/myclass").is_err(),
-            "empty prefix"
-        );
-        assert!(PrefixedClassId::from_str("//myclass").is_err(), "empty ids");
-        assert!(
-            PrefixedClassId::from_str("transfer/").is_err(),
-            "single trace"
-        );
-        assert!(
-            PrefixedClassId::from_str("transfer/myclass").is_err(),
-            "single trace with base class ID"
-        );
-        assert!(
-            PrefixedClassId::from_str("transfer/channel-0/myclass").is_ok(),
-            "valid single trace info"
-        );
-        assert!(
-            PrefixedClassId::from_str("transfer/channel-0/transfer/channel-1/myclass").is_ok(),
-            "valid multiple trace info"
-        );
-        assert!(
-            PrefixedClassId::from_str("(transfer)/channel-0/myclass").is_err(),
-            "invalid port"
-        );
-        assert!(
-            PrefixedClassId::from_str("transfer/(channel-0)/myclass").is_err(),
-            "invalid channel"
-        );
+    #[rstest]
+    #[case("myclass")]
+    #[case("transfer/channel-0/myclass")]
+    #[case("transfer/channel-0/transfer/channel-1/myclass")]
+    #[case("(transfer)/channel-0/myclass")]
+    #[case("transfer/(channel-0)/myclass")]
+    fn test_valid_class_id(#[case] class_id: &str) {
+        ClassId::from_str(class_id).expect("success");
+    }
 
-        Ok(())
+    #[rstest]
+    #[case("")]
+    #[case("")]
+    #[case("  ")]
+    fn test_invalid_class_id(#[case] class_id: &str) {
+        ClassId::from_str(class_id).expect_err("failure");
+    }
+
+    #[rstest]
+    #[case("transfer/channel-0/myclass")]
+    #[case("/myclass")]
+    #[case("//myclass")]
+    #[case("transfer/")]
+    #[case("transfer/myclass")]
+    #[case("transfer/channel-0/myclass")]
+    #[case("transfer/channel-0/transfer/channel-1/myclass")]
+    #[case("(transfer)/channel-0/myclass")]
+    #[case("transfer/(channel-0)/myclass")]
+    #[case("transfer/channel-0///")]
+    fn test_valid_prefixed_class_id(#[case] class_id: &str) {
+        PrefixedClassId::from_str(class_id).expect("success");
+    }
+
+    #[rstest]
+    #[case("")]
+    #[case("  ")]
+    #[case("transfer/channel-0/")]
+    #[case("transfer/channel-0/  ")]
+    fn test_invalid_prefixed_class_id(#[case] class_id: &str) {
+        PrefixedClassId::from_str(class_id).expect_err("failure");
     }
 
     #[test]
@@ -495,7 +348,7 @@ mod tests {
         assert_eq!(
             PrefixedClassId::from_str("transfer/channel-0/myclass")?,
             PrefixedClassId {
-                trace_path: "transfer/channel-0".parse()?,
+                trace_path: "transfer/channel-0".parse().expect("success"),
                 base_class_id: "myclass".parse()?
             },
             "valid single trace info"
@@ -503,7 +356,9 @@ mod tests {
         assert_eq!(
             PrefixedClassId::from_str("transfer/channel-0/transfer/channel-1/myclass")?,
             PrefixedClassId {
-                trace_path: "transfer/channel-0/transfer/channel-1".parse()?,
+                trace_path: "transfer/channel-0/transfer/channel-1"
+                    .parse()
+                    .expect("success"),
                 base_class_id: "myclass".parse()?
             },
             "valid multiple trace info"
@@ -543,21 +398,24 @@ mod tests {
 
         let prefix_1 = TracePrefix::new("transfer".parse().unwrap(), "channel-1".parse().unwrap());
         let prefix_2 = TracePrefix::new("transfer".parse().unwrap(), "channel-0".parse().unwrap());
-        let mut trace_path = TracePath(vec![prefix_1.clone()]);
+        let mut trace_path = TracePath::from(vec![prefix_1.clone()]);
 
         trace_path.add_prefix(prefix_2.clone());
         assert_eq!(
-            TracePath::from_str("transfer/channel-0/transfer/channel-1")?,
+            TracePath::from_str("transfer/channel-0/transfer/channel-1").expect("success"),
             trace_path
         );
         assert_eq!(
-            TracePath(vec![prefix_1.clone(), prefix_2.clone()]),
+            TracePath::from(vec![prefix_1.clone(), prefix_2.clone()]),
             trace_path
         );
 
         trace_path.remove_prefix(&prefix_2);
-        assert_eq!(TracePath::from_str("transfer/channel-1")?, trace_path);
-        assert_eq!(TracePath(vec![prefix_1.clone()]), trace_path);
+        assert_eq!(
+            TracePath::from_str("transfer/channel-1").expect("success"),
+            trace_path
+        );
+        assert_eq!(TracePath::from(vec![prefix_1.clone()]), trace_path);
 
         trace_path.remove_prefix(&prefix_1);
         assert!(trace_path.is_empty());

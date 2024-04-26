@@ -14,7 +14,7 @@ pub fn dummy_conn_open_confirm() -> MsgConnectionOpenConfirm {
 /// Returns a dummy `RawMsgConnectionOpenConfirm` for testing purposes only!
 pub fn dummy_raw_msg_conn_open_confirm() -> RawMsgConnectionOpenConfirm {
     RawMsgConnectionOpenConfirm {
-        connection_id: "srcconnection".to_string(),
+        connection_id: "connection-118".to_string(),
         proof_ack: dummy_proof(),
         proof_height: Some(Height {
             revision_number: 0,

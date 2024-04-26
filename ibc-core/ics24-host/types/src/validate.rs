@@ -1,6 +1,7 @@
 use ibc_primitives::prelude::*;
 
 use crate::error::IdentifierError as Error;
+use crate::identifiers::{ChannelId, ConnectionId};
 
 const VALID_SPECIAL_CHARS: &str = "._+-#[]<>";
 
@@ -61,6 +62,26 @@ pub fn validate_prefix_length(
     validate_identifier_length(prefix, min, max)
 }
 
+/// Checks if the identifier is a valid named u64 index: {name}-{u64}.
+/// Example: "connection-0", "connection-100", "channel-0", "channel-100".
+pub fn validate_named_u64_index(id: &str, name: &str) -> Result<(), Error> {
+    let number_s = id
+        .strip_prefix(name)
+        .ok_or_else(|| Error::InvalidPrefix { prefix: id.into() })?
+        .strip_prefix('-')
+        .ok_or_else(|| Error::InvalidPrefix { prefix: id.into() })?;
+
+    if number_s.starts_with('0') && number_s.len() > 1 {
+        return Err(Error::InvalidPrefix { prefix: id.into() });
+    }
+
+    _ = number_s
+        .parse::<u64>()
+        .map_err(|_| Error::InvalidPrefix { prefix: id.into() })?;
+
+    Ok(())
+}
+
 /// Default validator function for the Client types.
 pub fn validate_client_type(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
@@ -82,7 +103,9 @@ pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
 /// in the ICS-24 spec.
 pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
-    validate_identifier_length(id, 10, 64)
+    validate_identifier_length(id, 10, 64)?;
+    validate_named_u64_index(id, ConnectionId::prefix())?;
+    Ok(())
 }
 
 /// Default validator function for Port identifiers.
@@ -100,7 +123,9 @@ pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
 /// the ICS-24 spec.
 pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
-    validate_identifier_length(id, 8, 64)
+    validate_identifier_length(id, 8, 64)?;
+    validate_named_u64_index(id, ChannelId::prefix())?;
+    Ok(())
 }
 
 #[cfg(test)]
@@ -142,6 +167,24 @@ mod tests {
     }
 
     #[test]
+    fn parse_invalid_connection_id_indexed() {
+        // valid connection id with index
+        validate_connection_identifier("connection-0").expect("success");
+        validate_connection_identifier("connection-123").expect("success");
+        validate_connection_identifier("connection-18446744073709551615").expect("success");
+    }
+
+    #[test]
+    fn parse_invalid_connection_id_non_indexed() {
+        // invalid indexing for connection id
+        validate_connection_identifier("connection-0123").expect_err("failure");
+        validate_connection_identifier("connection0123").expect_err("failure");
+        validate_connection_identifier("connection000").expect_err("failure");
+        // 1 << 64 = 18446744073709551616
+        validate_connection_identifier("connection-18446744073709551616").expect_err("failure");
+    }
+
+    #[test]
     fn parse_invalid_channel_id_min() {
         // invalid channel id, must be at least 8 characters
         let id = validate_channel_identifier("channel");
@@ -155,6 +198,24 @@ mod tests {
             "ihhankr30iy4nna65hjl2wjod7182io1t2s7u3ip3wqtbbn1sl0rgcntqc540r36r",
         );
         assert!(id.is_err())
+    }
+
+    #[test]
+    fn parse_invalid_channel_id_indexed() {
+        // valid channel id with index
+        validate_channel_identifier("channel-0").expect("success");
+        validate_channel_identifier("channel-123").expect("success");
+        validate_channel_identifier("channel-18446744073709551615").expect("success");
+    }
+
+    #[test]
+    fn parse_invalid_channel_id_non_indexed() {
+        // invalid indexing for channel id
+        validate_channel_identifier("channel-0123").expect_err("failure");
+        validate_channel_identifier("channel0123").expect_err("failure");
+        validate_channel_identifier("channel000").expect_err("failure");
+        // 1 << 64 = 18446744073709551616
+        validate_channel_identifier("channel-18446744073709551616").expect_err("failure");
     }
 
     #[test]
@@ -241,5 +302,18 @@ mod tests {
     ) {
         let result = validate_prefix_length(prefix, min, max);
         assert_eq!(result.is_ok(), success);
+    }
+
+    #[rstest]
+    #[case::zero_padded("channel", "001", false)]
+    #[case::only_zero("connection", "000", false)]
+    #[case::zero("channel", "0", true)]
+    #[case::one("connection", "1", true)]
+    #[case::n1234("channel", "1234", true)]
+    #[case::u64_max("chan", "18446744073709551615", true)]
+    #[case::u64_max_plus_1("chan", "18446744073709551616", false)]
+    fn test_named_index_validation(#[case] name: &str, #[case] id: &str, #[case] success: bool) {
+        let result = validate_named_u64_index(format!("{name}-{id}").as_str(), name);
+        assert_eq!(result.is_ok(), success, "{result:?}");
     }
 }

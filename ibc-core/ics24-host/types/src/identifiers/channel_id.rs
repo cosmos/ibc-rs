@@ -88,9 +88,9 @@ impl AsRef<str> for ChannelId {
 /// ```
 /// use core::str::FromStr;
 /// use ibc_core_host_types::identifiers::ChannelId;
-/// let channel_id = ChannelId::from_str("channelId-0");
+/// let channel_id = ChannelId::from_str("channel-0");
 /// assert!(channel_id.is_ok());
-/// channel_id.map(|id| {assert_eq!(&id, "channelId-0")});
+/// channel_id.map(|id| {assert_eq!(&id, "channel-0")});
 /// ```
 impl PartialEq<str> for ChannelId {
     fn eq(&self, other: &str) -> bool {
