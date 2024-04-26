@@ -598,7 +598,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-app-transfer"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "ibc-app-transfer-types",
  "ibc-core",
@@ -607,7 +607,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-app-transfer-types"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -622,14 +622,14 @@ dependencies = [
 
 [[package]]
 name = "ibc-apps"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "ibc-app-transfer",
 ]
 
 [[package]]
 name = "ibc-core"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "ibc-core-channel",
  "ibc-core-client",
@@ -644,7 +644,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-channel"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "ibc-core-channel-types",
  "ibc-core-client",
@@ -658,7 +658,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-channel-types"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -679,7 +679,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "ibc-core-client-context",
  "ibc-core-client-types",
@@ -691,7 +691,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client-context"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -706,7 +706,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client-types"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -724,7 +724,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-commitment-types"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -740,7 +740,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-connection"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "ibc-core-client",
  "ibc-core-connection-types",
@@ -751,7 +751,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-connection-types"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -770,7 +770,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-handler"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "ibc-core-channel",
  "ibc-core-client",
@@ -784,7 +784,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-handler-types"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -806,7 +806,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-host"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -823,7 +823,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-host-types"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -836,7 +836,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-router"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-router-types"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -866,7 +866,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-derive"
-version = "0.6.1"
+version = "0.7.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -875,7 +875,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-primitives"
-version = "0.51.0"
+version = "0.52.0"
 dependencies = [
  "derive_more",
  "displaydoc",
@@ -1644,9 +1644,9 @@ dependencies = [
 
 [[package]]
 name = "zeroize"
-version = "1.8.0"
+version = "1.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63381fa6624bf92130a6b87c0d07380116f80b565c42cf0d754136f0238359ef"
+checksum = "525b4ec142c6b68a2d10f01f7bbf6755599ca3f81ea53b8431b7dd348f5fdb2d"
 dependencies = [
  "zeroize_derive",
 ]
