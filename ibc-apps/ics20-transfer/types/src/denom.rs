@@ -326,7 +326,7 @@ impl FromStr for PrefixedDenom {
     type Err = TokenTransferError;
 
     /// Initializes a [`PrefixedDenom`] from a string that adheres to the format
-    /// `{1st-port-id/channel-<index>}/{2nd-port-id/channel-<index>}/.../{nth-port-id/channel-<index>}/<base_denom>`.
+    /// `{nth-port-id/channel-<index>}/{(n-1)th-port-id/channel-<index>}/.../{1st-port-id/channel-<index>}/<base_denom>`.
     /// A [`PrefixedDenom`] exhibits a sequence of `{ith-port-id/channel-<index>}` pairs.
     /// This sequence makes up the [`TracePath`] of the [`PrefixedDenom`].
     ///
