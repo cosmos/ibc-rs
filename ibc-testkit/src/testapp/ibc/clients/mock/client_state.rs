@@ -495,13 +495,12 @@ impl From<MockConsensusState> for MockClientState {
 
 #[cfg(test)]
 mod test {
-    use ibc::primitives::proto::Any;
-
-    use super::{MockClientState, MockHeader};
-
     #[cfg(feature = "serde")]
     #[test]
     fn test_any_client_state_to_json() {
+        use super::{MockClientState, MockHeader};
+        use ibc::primitives::proto::Any;
+
         let client_state = MockClientState::new(MockHeader::default());
         let expected = r#"{"typeUrl":"/ibc.mock.ClientState","value":"CgQKAhABEIDIr6Al"}"#;
         let json = serde_json::to_string(&Any::from(client_state)).unwrap();
