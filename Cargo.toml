@@ -72,7 +72,7 @@ ibc-apps                    = { version = "0.51.0", path = "./ibc-apps", default
 ibc-primitives              = { version = "0.51.0", path = "./ibc-primitives", default-features = false }
 ibc-testkit                 = { version = "0.51.0", path = "./ibc-testkit", default-features = false }
 
-ibc-derive                  = { version = "0.6.1", path = "./ibc-derive" }
+ibc-derive                  = { version = "0.7.0", path = "./ibc-derive" }
 
 ibc-core-client             = { version = "0.51.0", path = "./ibc-core/ics02-client", default-features = false }
 ibc-core-connection         = { version = "0.51.0", path = "./ibc-core/ics03-connection", default-features = false }
