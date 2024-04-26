@@ -25,6 +25,12 @@ Our release process is as follows:
    the root `Cargo.toml` as well, and push these changes to the release PR.
    - If you released a new version of `ibc-derive` in step 3, make sure to
         update that dependency.
+   - Verify that there is no dev-dependency among the workspace crates,
+     except `ibc-testkit`. This is important, as `cargo-release` ignores
+     dev-dependency edges. You may use `cargo-depgraph`:
+      ```sh
+      cargo depgraph --all-features --workspace-only --dev-deps | dot -Tpng > graph.png
+      ```
 5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
    the documentation compiles and seems up-to-date and coherent. Fix any
    potential issues here and push them to the release PR.
