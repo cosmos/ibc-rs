@@ -498,8 +498,9 @@ mod test {
     #[cfg(feature = "serde")]
     #[test]
     fn test_any_client_state_to_json() {
-        use super::{MockClientState, MockHeader};
         use ibc::primitives::proto::Any;
+
+        use super::{MockClientState, MockHeader};
 
         let client_state = MockClientState::new(MockHeader::default());
         let expected = r#"{"typeUrl":"/ibc.mock.ClientState","value":"CgQKAhABEIDIr6Al"}"#;
