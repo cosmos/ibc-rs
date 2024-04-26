@@ -20,16 +20,9 @@ pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> Token
         quote! {timestamp(cs)},
         imports,
     );
-    let into_any_impl = delegate_call_in_match(
-        enum_name,
-        enum_variants.iter(),
-        quote! {into_any(cs)},
-        imports,
-    );
 
     let CommitmentRoot = imports.commitment_root();
     let ConsensusState = imports.consensus_state();
-    let ProtoAny = imports.any();
     let Timestamp = imports.timestamp();
 
     quote! {
@@ -43,12 +36,6 @@ pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> Token
             fn timestamp(&self) -> #Timestamp {
                 match self {
                     #(#timestamp_impl),*
-                }
-            }
-
-            fn into_any(self) -> #ProtoAny {
-                match self {
-                    #(#into_any_impl),*
                 }
             }
         }
