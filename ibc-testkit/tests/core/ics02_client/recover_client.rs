@@ -176,18 +176,20 @@ fn test_recover_client_ok() {
 
     // latest consensus state is copied.
     assert_eq!(
-        ctx.consensus_state(&ClientConsensusStatePath::new(
-            msg.subject_client_id,
-            substitute_height.revision_number(),
-            substitute_height.revision_height(),
-        ))
-        .unwrap(),
-        ctx.consensus_state(&ClientConsensusStatePath::new(
-            msg.substitute_client_id,
-            substitute_height.revision_number(),
-            substitute_height.revision_height(),
-        ))
-        .unwrap(),
+        ctx.ibc_store()
+            .consensus_state(&ClientConsensusStatePath::new(
+                msg.subject_client_id,
+                substitute_height.revision_number(),
+                substitute_height.revision_height(),
+            ))
+            .unwrap(),
+        ctx.ibc_store()
+            .consensus_state(&ClientConsensusStatePath::new(
+                msg.substitute_client_id,
+                substitute_height.revision_number(),
+                substitute_height.revision_height(),
+            ))
+            .unwrap(),
     );
 }
 

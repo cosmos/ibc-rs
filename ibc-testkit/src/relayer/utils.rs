@@ -75,7 +75,6 @@ where
                 .next()
                 .expect("at least one")
                 .clone()
-                .into()
                 .into(),
             signer,
         }));

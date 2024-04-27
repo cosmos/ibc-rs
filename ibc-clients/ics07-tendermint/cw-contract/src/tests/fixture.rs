@@ -91,7 +91,7 @@ impl Fixture {
         let tm_client_state: TmClientState = ClientStateConfig::builder()
             .trusting_period(Duration::from_secs(1))
             .build()
-            .into_client_state("test-chain".parse().unwrap(), self.trusted_height)
+            .into_client_state(self.chain_id.clone(), self.trusted_height)
             .expect("never fails");
 
         let tm_consensus_state = dummy_sov_consensus_state(self.trusted_timestamp);
