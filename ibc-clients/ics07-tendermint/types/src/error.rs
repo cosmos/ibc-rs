@@ -76,7 +76,7 @@ pub enum Error {
     /// not enough trust because insufficient validators overlap: `{reason}`
     NotEnoughTrustedValsSigned { reason: VotingPowerTally },
     /// verification failed: `{detail}`
-    VerificationError { detail: LightClientErrorDetail },
+    VerificationError { detail: Box<LightClientErrorDetail> },
     /// Processed time or height for the client `{client_id}` at height `{height}` not found
     UpdateMetaDataNotFound { client_id: ClientId, height: Height },
     /// The given hash of the validators does not matches the given hash in the signed header. Expected: `{signed_header_validators_hash}`, got: `{validators_hash}`
@@ -137,7 +137,9 @@ impl IntoResult<(), Error> for Verdict {
         match self {
             Verdict::Success => Ok(()),
             Verdict::NotEnoughTrust(reason) => Err(Error::NotEnoughTrustedValsSigned { reason }),
-            Verdict::Invalid(detail) => Err(Error::VerificationError { detail }),
+            Verdict::Invalid(detail) => Err(Error::VerificationError {
+                detail: Box::new(detail),
+            }),
         }
     }
 }

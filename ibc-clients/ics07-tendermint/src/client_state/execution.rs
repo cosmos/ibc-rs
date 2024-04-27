@@ -65,6 +65,7 @@ where
         ctx: &mut E,
         subject_client_id: &ClientId,
         substitute_client_state: Any,
+        substitute_consensus_state: Any,
     ) -> Result<(), ClientError> {
         let subject_client_state = self.inner().clone();
 
@@ -73,6 +74,7 @@ where
             ctx,
             subject_client_id,
             substitute_client_state,
+            substitute_consensus_state,
         )
     }
 }
@@ -373,10 +375,12 @@ pub fn update_on_recovery<E>(
     ctx: &mut E,
     subject_client_id: &ClientId,
     substitute_client_state: Any,
+    substitute_consensus_state: Any,
 ) -> Result<(), ClientError>
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
 {
     let substitute_client_state = ClientState::try_from(substitute_client_state)?
         .inner()
@@ -396,6 +400,17 @@ where
 
     let host_timestamp = E::host_timestamp(ctx)?;
     let host_height = E::host_height(ctx)?;
+
+    let tm_consensus_state = ConsensusStateType::try_from(substitute_consensus_state)?;
+
+    ctx.store_consensus_state(
+        ClientConsensusStatePath::new(
+            subject_client_id.clone(),
+            new_client_state.latest_height.revision_number(),
+            new_client_state.latest_height.revision_height(),
+        ),
+        tm_consensus_state.into(),
+    )?;
 
     ctx.store_client_state(
         ClientStatePath::new(subject_client_id.clone()),

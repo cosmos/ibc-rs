@@ -1,5 +1,87 @@
 # CHANGELOG
 
+## v0.52.0
+
+*April 26, 2024*
+
+This release adds some exciting changes, improvements, and new features to ibc-rs.
+First and foremost, support for the IBC protocol's [client recovery][client-recovery]
+mechanism has been implemented, which provides a route for frozen and expired IBC clients
+to be re-instated following a successful governance vote. In addition, a new crate,
+`ibc-client-cw`, facilitates CosmWasm contract creation for light clients built using
+`ibc-rs`. Lastly, the ics07 tendermint light client has also been packaged and included
+as a CosmWasm contract.
+
+This release also includes a myriad of other bug-fixes and improvements,
+such as enhancing the portability of ibc-rs's Validation and Execution Context traits,
+as well as fixing an incompatibility with how ibc-rs parses `PrefixDenom`s compared
+to ibc-go, among many others.
+
+The minimum-supported Rust version has been updated to `1.72`. `ibc-proto` has been
+bumped to `0.43`. `tendermint` has been bumped to `0.35`. `ibc-derive` has been
+bumped to `0.7`.
+
+There are no consensus-breaking changes as part of this release.
+
+### BREAKING CHANGES
+
+- [ibc] Enhance portability of custom `Validation/ExecutionContext` traits under
+  ICS-07. They are relocated, along with the rest of the
+  client-relevant context APIs, under ICS-02, with the traits renamed to
+  `ExtClientValidationContext` and `ExtClientExecutionContext` for improved
+  self-description ([\#1163](https://github.com/cosmos/ibc-rs/issues/1163))
+- [ibc-client-tendermint] Simplify custom verifiers usage for Tendermint
+  clients by directly binding with `tendermint_light_client_verifier::Verifier`
+  and removing the unused `TmVerifier` trait.
+  ([\#1168](https://github.com/cosmos/ibc-rs/pull/1168))
+- [ibc] Update minimum supported Rust version to 1.72.
+  ([\#1193](https://github.com/cosmos/ibc-rs/issues/1193))
+
+### BUG FIXES
+
+- [ibc-query] Update standalone query functions to use the specified query
+  height ([\#1154](https://github.com/cosmos/ibc-rs/issues/1154))
+- [ibc-app-transfer] Bring `PrefixedDenom` parsing up to parity with `ibc-go`.
+  ([\#1177](https://github.com/cosmos/ibc-rs/issues/1177))
+- [ibc-app-nft-transfer] Reuse `TracePrefix` and `TracePath` from
+  `ibc-app-transfer-types` when parsing `PrefixedClassId`.
+  ([\#1178](https://github.com/cosmos/ibc-rs/pull/1178))
+- [ibc-core-channel-types] Make receive packet event type identifier consistent
+  with `ibc-go`. ([\#1180](https://github.com/cosmos/ibc-rs/issues/1180))
+
+### FEATURES
+
+- [ibc-core-client] Implement [client recovery][client-recovery] feature.
+  ([\#738](https://github.com/cosmos/ibc-rs/issues/738))
+- [ibc-clients] Introduce CosmWasm context library as `ibc-client-cw` crate to
+  facilitate CosmWasm contract creation for light clients built using `ibc-rs`
+  ([\#1164](https://github.com/cosmos/ibc-rs/issues/1164))
+- [ibc-client-tendermint] Introduce `ibc-client-tendermint-cw` crate
+  implementing CosmWasm contract for ICS-07 Tendermint light client.
+  ([\#1165](https://github.com/cosmos/ibc-rs/issues/1165))
+
+[client-recovery]: https://github.com/cosmos/ibc-go/blob/main/docs/architecture/adr-026-ibc-client-recovery-mechanisms.md
+
+### IMPROVEMENTS
+
+- [ibc-core-commitment-types] Fallible conversion for `ProofSpec`, `LeafOp` and
+  `InnerSpec`. ([\#1108](https://github.com/cosmos/ibc-rs/issues/1108))
+- [ibc-client-tendermint-types] Box header fields inside of Misbehaviour type so
+  that the type is smaller (i.e. trade size of the type for heap memory). This
+  prevents stack overflows on systems with small stack (e.g. Solana).
+  ([\#1145](https://github.com/cosmos/ibc-rs/pull/1145))
+- [ibc-client-tendermint] Decouple the arguments of ICS07 Header/Misbehavior
+  verification functions from the Tendermint client type by flattening and
+  passing only the required fields.
+  ([\#1149](https://github.com/cosmos/ibc-rs/issues/1149))
+- [ibc-query] Add support for querying `upgraded_client/consensus_state` at a
+  given height along with returning their proof of existence in the response.
+  ([\#1152](https://github.com/cosmos/ibc-rs/issues/1152))
+- [ibc-client-tendermint] Add `into_inner()` method to ICS07 `ConsensusState`
+  ([\#1156](https://github.com/cosmos/ibc-rs/pull/1156))
+- Update `ibc-proto` to v0.43.0 and `tendermint` dependencies to v0.35.0.
+  ([\#1171](https://github.com/cosmos/ibc-rs/issues/1171))
+
 ## v0.51.0
 
 *March 26, 2024*

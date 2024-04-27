@@ -126,6 +126,12 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
             SudoMsg::MigrateClientStore(_) => {
                 self.set_substitute_prefix();
                 let substitute_client_state = self.client_state(&client_id)?;
+                let substitute_consensus_state =
+                    self.consensus_state(&ClientConsensusStatePath::new(
+                        client_id.clone(),
+                        substitute_client_state.latest_height().revision_number(),
+                        substitute_client_state.latest_height().revision_height(),
+                    ))?;
 
                 self.set_subject_prefix();
                 client_state.check_substitute(self, substitute_client_state.clone().into())?;
@@ -134,6 +140,7 @@ impl<'a, C: ClientType<'a>> Context<'a, C> {
                     self,
                     &self.client_id(),
                     substitute_client_state.into(),
+                    substitute_consensus_state.into(),
                 )?;
 
                 ContractResult::success()

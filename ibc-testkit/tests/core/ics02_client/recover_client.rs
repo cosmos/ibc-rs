@@ -7,6 +7,7 @@ use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient, MsgRecoverClien
 use ibc::core::client::types::{Height, Status as ClientStatus};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
+use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Signer;
 use ibc_testkit::context::{MockContext, TendermintContext};
@@ -163,6 +164,7 @@ fn test_recover_client_ok() {
     recover_client::execute(ctx.ibc_store_mut(), msg.clone())
         .expect("client recovery execution happy path");
 
+    // client state is copied.
     assert_eq!(
         ctx.ibc_store()
             .client_state(&msg.subject_client_id)
@@ -170,6 +172,22 @@ fn test_recover_client_ok() {
         ctx.ibc_store()
             .client_state(&msg.substitute_client_id)
             .unwrap(),
+    );
+
+    // latest consensus state is copied.
+    assert_eq!(
+        ctx.consensus_state(&ClientConsensusStatePath::new(
+            msg.subject_client_id,
+            substitute_height.revision_number(),
+            substitute_height.revision_height(),
+        ))
+        .unwrap(),
+        ctx.consensus_state(&ClientConsensusStatePath::new(
+            msg.substitute_client_id,
+            substitute_height.revision_number(),
+            substitute_height.revision_height(),
+        ))
+        .unwrap(),
     );
 }
 

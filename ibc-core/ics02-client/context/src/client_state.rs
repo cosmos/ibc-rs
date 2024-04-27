@@ -10,8 +10,8 @@ use ibc_core_host_types::path::Path;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
-/// Convenient trait to decode a client state from an `Any` type and obtain a
-/// handle to the local instance of `ClientState`.
+/// Convenient trait to decode a client state from an [`Any`] type and obtain a
+/// handle to the local instance of [`ClientState`].
 pub trait ClientStateDecoder: Into<Any> + TryFrom<Any, Error = ClientError> {}
 
 impl<T> ClientStateDecoder for T where T: Into<Any> + TryFrom<Any, Error = ClientError> {}
@@ -202,6 +202,7 @@ where
         ctx: &mut E,
         subject_client_id: &ClientId,
         substitute_client_state: Any,
+        substitute_consensus_state: Any,
     ) -> Result<(), ClientError>;
 }
 

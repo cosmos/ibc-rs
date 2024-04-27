@@ -93,8 +93,4 @@ impl ConsensusState for MockConsensusState {
     fn timestamp(&self) -> Timestamp {
         self.header.timestamp
     }
-
-    fn encode_vec(self) -> Vec<u8> {
-        <Self as Protobuf<Any>>::encode_vec(self)
-    }
 }

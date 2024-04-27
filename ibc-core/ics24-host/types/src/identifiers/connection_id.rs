@@ -82,9 +82,9 @@ impl FromStr for ConnectionId {
 /// ```
 /// use core::str::FromStr;
 /// use ibc_core_host_types::identifiers::ConnectionId;
-/// let conn_id = ConnectionId::from_str("connectionId-0");
+/// let conn_id = ConnectionId::from_str("connection-0");
 /// assert!(conn_id.is_ok());
-/// conn_id.map(|id| {assert_eq!(&id, "connectionId-0")});
+/// conn_id.map(|id| {assert_eq!(&id, "connection-0")});
 /// ```
 impl PartialEq<str> for ConnectionId {
     fn eq(&self, other: &str) -> bool {
