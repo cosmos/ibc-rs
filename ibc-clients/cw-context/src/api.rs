@@ -14,5 +14,5 @@ where
     <Self::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
 {
     type ClientState: ClientStateExecution<Context<'a, Self>> + Clone;
-    type ConsensusState: ConsensusStateTrait + Into<Any> + TryFrom<Any>;
+    type ConsensusState: ConsensusStateTrait;
 }
