@@ -153,11 +153,11 @@ pub trait ExtClientExecutionContext: ExtClientValidationContext + ClientExecutio
 
 impl<T> ExtClientExecutionContext for T where T: ExtClientValidationContext + ClientExecutionContext {}
 
-/// General-purpose helper converter enabling `TryInto` and `From` conversions
+/// General-purpose helper converter enabling `TryFrom` and `Into` conversions
 /// primarily intended between an enum and its variants. This usually used by
 /// standalone functions as a trait bound allowing them to obtain the concrete
 /// local type from the enum containing that concrete type as its variant, like
 /// when enum `AnyConsensusState` contains the Tendermint `ConsensusState`.
-pub trait Convertible<C>: TryInto<C> + From<C> {}
+pub trait Convertible<C>: TryFrom<C> + Into<C> {}
 
-impl<T, C> Convertible<C> for T where T: TryInto<C> + From<C> {}
+impl<T, C> Convertible<C> for T where T: TryFrom<C> + Into<C> {}
