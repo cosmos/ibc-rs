@@ -43,6 +43,8 @@ impl ConsensusState {
     }
 }
 
+/// Can't use [`Infallible`](core::convert::Infallible) because TryFrom<Error = ClientError> is required by
+/// [`ConsensusStateDecoder`](ibc_core_client::context::consensus_state::ConsensusStateDecoder).
 impl TryFrom<ConsensusState> for ConsensusStateType {
     type Error = ClientError;
     fn try_from(value: ConsensusState) -> Result<Self, Self::Error> {
