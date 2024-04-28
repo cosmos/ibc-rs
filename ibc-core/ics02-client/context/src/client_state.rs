@@ -12,9 +12,9 @@ use ibc_primitives::proto::Any;
 
 /// Convenient trait to decode a client state from an [`Any`] type and obtain a
 /// handle to the local instance of [`ClientState`].
-pub trait ClientStateDecoder: Into<Any> + TryFrom<Any, Error = ClientError> {}
+pub trait ClientStateDecoder: Into<Any> + TryFrom<Any> {}
 
-impl<T> ClientStateDecoder for T where T: Into<Any> + TryFrom<Any, Error = ClientError> {}
+impl<T> ClientStateDecoder for T where T: Into<Any> + TryFrom<Any> {}
 
 /// `ClientState` methods needed in both validation and execution.
 ///

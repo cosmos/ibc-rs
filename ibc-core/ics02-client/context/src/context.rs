@@ -158,6 +158,6 @@ impl<T> ExtClientExecutionContext for T where T: ExtClientValidationContext + Cl
 /// standalone functions as a trait bound allowing them to obtain the concrete
 /// local type from the enum containing that concrete type as its variant, like
 /// when enum `AnyConsensusState` contains the Tendermint `ConsensusState`.
-pub trait Convertible<C, E>: TryInto<C, Error = E> + From<C> {}
+pub trait Convertible<C>: TryInto<C> + From<C> {}
 
-impl<T, C, E> Convertible<C, E> for T where T: TryInto<C, Error = E> + From<C> {}
+impl<T, C> Convertible<C> for T where T: TryInto<C> + From<C> {}
