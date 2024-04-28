@@ -9,6 +9,6 @@ use crate::context::Context;
 /// their client state and consensus state types into the generic [`Context`]
 /// object.
 pub trait ClientType<'a>: Sized {
-    type ClientState: ClientStateExecution<Context<'a, Self>> + Clone;
+    type ClientState: ClientStateExecution<Context<'a, Self>>;
     type ConsensusState: ConsensusStateTrait + Into<Any> + TryFrom<Any, Error = ClientError>;
 }
