@@ -238,7 +238,7 @@ impl ClientStateCommon for MockClientState {
 impl<V> ClientStateValidation<V> for MockClientState
 where
     V: ClientValidationContext + MockClientContext,
-    V::ConsensusStateRef: ConsensusStateConverter,
+    V::ConsensusStateRef: Convertible<MockConsensusState, ClientError>,
 {
     fn verify_client_message(
         &self,
@@ -324,7 +324,7 @@ impl<E> ClientStateExecution<E> for MockClientState
 where
     E: ClientExecutionContext + MockClientContext,
     E::ClientStateRef: From<Self>,
-    E::ConsensusStateRef: ConsensusStateConverter,
+    E::ConsensusStateRef: Convertible<MockConsensusState, ClientError>,
 {
     fn initialise(
         &self,
