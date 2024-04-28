@@ -43,6 +43,13 @@ impl ConsensusState {
     }
 }
 
+impl TryFrom<ConsensusState> for ConsensusStateType {
+    type Error = ClientError;
+    fn try_from(value: ConsensusState) -> Result<Self, Self::Error> {
+        Ok(value.0)
+    }
+}
+
 impl Protobuf<RawTmConsensusState> for ConsensusState {}
 
 impl TryFrom<RawTmConsensusState> for ConsensusState {
