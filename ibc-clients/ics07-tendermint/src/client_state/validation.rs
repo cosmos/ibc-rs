@@ -21,8 +21,8 @@ use crate::client_state::{verify_header, verify_misbehaviour};
 impl<V> ClientStateValidation<V> for ClientState
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: Convertible<ConsensusStateType>,
-    <V::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
+    ConsensusStateType: Convertible<V::ConsensusStateRef>,
+    <ConsensusStateType as TryFrom<V::ConsensusStateRef>>::Error: Into<ClientError>,
 {
     /// The default verification logic exposed by ibc-rs simply delegates to a
     /// standalone `verify_client_message` function. This is to make it as
@@ -94,8 +94,8 @@ pub fn verify_client_message<V, H>(
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: Convertible<ConsensusStateType>,
-    <V::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
+    ConsensusStateType: Convertible<V::ConsensusStateRef>,
+    <ConsensusStateType as TryFrom<V::ConsensusStateRef>>::Error: Into<ClientError>,
     H: MerkleHash + Sha256Trait + Default,
 {
     match client_message.type_url.as_str() {
@@ -165,8 +165,8 @@ pub fn check_for_misbehaviour<V>(
 ) -> Result<bool, ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: Convertible<ConsensusStateType>,
-    <V::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
+    ConsensusStateType: Convertible<V::ConsensusStateRef>,
+    <ConsensusStateType as TryFrom<V::ConsensusStateRef>>::Error: Into<ClientError>,
 {
     match client_message.type_url.as_str() {
         TENDERMINT_HEADER_TYPE_URL => {
@@ -193,14 +193,14 @@ pub fn status<V>(
 ) -> Result<Status, ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: Convertible<ConsensusStateType>,
-    <V::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
+    ConsensusStateType: Convertible<V::ConsensusStateRef>,
+    <ConsensusStateType as TryFrom<V::ConsensusStateRef>>::Error: Into<ClientError>,
 {
     if client_state.is_frozen() {
         return Ok(Status::Frozen);
     }
 
-    let latest_consensus_state = {
+    let latest_consensus_state: ConsensusStateType = {
         match ctx.consensus_state(&ClientConsensusStatePath::new(
             client_id.clone(),
             client_state.latest_height.revision_number(),
@@ -241,7 +241,7 @@ pub fn check_substitute<V>(
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: Convertible<ConsensusStateType>,
+    ConsensusStateType: Convertible<V::ConsensusStateRef>,
 {
     let ClientStateType {
         latest_height: _,

@@ -22,8 +22,8 @@ pub fn verify_header<V, H>(
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: Convertible<ConsensusStateType>,
-    <V::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
+    ConsensusStateType: Convertible<V::ConsensusStateRef>,
+    <ConsensusStateType as TryFrom<V::ConsensusStateRef>>::Error: Into<ClientError>,
     H: MerkleHash + Sha256 + Default,
 {
     // Checks that the header fields are valid.
@@ -42,7 +42,7 @@ where
                 header.trusted_height.revision_number(),
                 header.trusted_height.revision_height(),
             );
-            let trusted_consensus_state = ctx
+            let trusted_consensus_state: ConsensusStateType = ctx
                 .consensus_state(&trusted_client_cons_state_path)?
                 .try_into()
                 .map_err(Into::into)?;
@@ -109,8 +109,8 @@ pub fn check_for_misbehaviour_on_update<V>(
 ) -> Result<bool, ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: Convertible<ConsensusStateType>,
-    <V::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
+    ConsensusStateType: Convertible<V::ConsensusStateRef>,
+    <ConsensusStateType as TryFrom<V::ConsensusStateRef>>::Error: Into<ClientError>,
 {
     let maybe_existing_consensus_state = {
         let path_at_header_height = ClientConsensusStatePath::new(
@@ -123,7 +123,8 @@ where
     };
 
     if let Some(existing_consensus_state) = maybe_existing_consensus_state {
-        let existing_consensus_state = existing_consensus_state.try_into().map_err(Into::into)?;
+        let existing_consensus_state: ConsensusStateType =
+            existing_consensus_state.try_into().map_err(Into::into)?;
 
         let header_consensus_state = ConsensusStateType::from(header);
 
@@ -141,7 +142,7 @@ where
             if let Some(prev_cs) = maybe_prev_cs {
                 // New header timestamp cannot occur *before* the
                 // previous consensus state's height
-                let prev_cs = prev_cs.try_into().map_err(Into::into)?;
+                let prev_cs: ConsensusStateType = prev_cs.try_into().map_err(Into::into)?;
 
                 if header.signed_header.header().time <= prev_cs.timestamp() {
                     return Ok(true);
@@ -157,7 +158,7 @@ where
             if let Some(next_cs) = maybe_next_cs {
                 // New (untrusted) header timestamp cannot occur *after* next
                 // consensus state's height
-                let next_cs = next_cs.try_into().map_err(Into::into)?;
+                let next_cs: ConsensusStateType = next_cs.try_into().map_err(Into::into)?;
 
                 if header.signed_header.header().time >= next_cs.timestamp() {
                     return Ok(true);

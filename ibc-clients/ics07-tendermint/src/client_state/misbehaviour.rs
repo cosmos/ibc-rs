@@ -28,14 +28,14 @@ pub fn verify_misbehaviour<V, H>(
 ) -> Result<(), ClientError>
 where
     V: ExtClientValidationContext,
-    V::ConsensusStateRef: Convertible<ConsensusStateType>,
-    <V::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
+    ConsensusStateType: Convertible<V::ConsensusStateRef>,
+    <ConsensusStateType as TryFrom<V::ConsensusStateRef>>::Error: Into<ClientError>,
     H: MerkleHash + Sha256 + Default,
 {
     misbehaviour.validate_basic::<H>()?;
 
     let header_1 = misbehaviour.header1();
-    let trusted_consensus_state_1 = {
+    let trusted_consensus_state_1: ConsensusStateType = {
         let consensus_state_path = ClientConsensusStatePath::new(
             client_id.clone(),
             header_1.trusted_height.revision_number(),
@@ -47,7 +47,7 @@ where
     };
 
     let header_2 = misbehaviour.header2();
-    let trusted_consensus_state_2 = {
+    let trusted_consensus_state_2: ConsensusStateType = {
         let consensus_state_path = ClientConsensusStatePath::new(
             client_id.clone(),
             header_2.trusted_height.revision_number(),
