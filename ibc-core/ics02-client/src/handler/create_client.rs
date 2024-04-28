@@ -8,10 +8,12 @@ use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::{ClientStateMut, ClientStateRef, ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::Any;
 
 pub fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
+    <ClientStateRef<Ctx> as TryFrom<Any>>::Error: Into<ClientError>,
 {
     let MsgCreateClient {
         client_state,
@@ -26,7 +28,7 @@ where
 
     let client_val_ctx = ctx.get_client_validation_context();
 
-    let client_state = ClientStateRef::<Ctx>::try_from(client_state)?;
+    let client_state = ClientStateRef::<Ctx>::try_from(client_state).map_err(Into::into)?;
 
     let client_id = client_state.client_type().build_client_id(id_counter);
 
@@ -51,6 +53,7 @@ where
 pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
+    <ClientStateMut<Ctx> as TryFrom<Any>>::Error: Into<ClientError>,
 {
     let MsgCreateClient {
         client_state,
@@ -63,7 +66,7 @@ where
 
     let client_exec_ctx = ctx.get_client_execution_context();
 
-    let client_state = ClientStateMut::<Ctx>::try_from(client_state)?;
+    let client_state = ClientStateMut::<Ctx>::try_from(client_state).map_err(Into::into)?;
 
     let client_type = client_state.client_type();
     let client_id = client_type.build_client_id(id_counter);
