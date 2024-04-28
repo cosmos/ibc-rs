@@ -151,16 +151,6 @@ impl From<MockClientState> for Any {
     }
 }
 
-pub trait ConsensusStateConverter:
-    TryInto<MockConsensusState, Error = ClientError> + From<MockConsensusState>
-{
-}
-
-impl<C> ConsensusStateConverter for C where
-    C: TryInto<MockConsensusState, Error = ClientError> + From<MockConsensusState>
-{
-}
-
 pub trait MockClientContext {
     /// Returns the current timestamp of the local chain.
     fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
