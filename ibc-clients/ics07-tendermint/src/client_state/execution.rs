@@ -15,7 +15,8 @@ impl<E> ClientStateExecution<E> for ClientState
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType>,
+    <E::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
 {
     fn initialise(
         &self,
@@ -93,7 +94,7 @@ pub fn initialise<E>(
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType>,
 {
     let host_timestamp = ExtClientValidationContext::host_timestamp(ctx)?;
     let host_height = ExtClientValidationContext::host_height(ctx)?;
@@ -138,7 +139,8 @@ pub fn update_state<E>(
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType>,
+    <E::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
 {
     let header = TmHeader::try_from(header)?;
     let header_height = header.height();
@@ -237,7 +239,7 @@ pub fn update_on_upgrade<E>(
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType>,
 {
     let mut upgraded_tm_client_state = ClientState::try_from(upgraded_client_state)?;
     let upgraded_tm_cons_state = ConsensusStateType::try_from(upgraded_consensus_state)?;
@@ -317,7 +319,8 @@ pub fn prune_oldest_consensus_state<E>(
 where
     E: ClientExecutionContext + ExtClientValidationContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType>,
+    <E::ConsensusStateRef as TryInto<ConsensusStateType>>::Error: Into<ClientError>,
 {
     let mut heights = ctx.consensus_state_heights(client_id)?;
 
@@ -330,7 +333,7 @@ where
             height.revision_height(),
         );
         let consensus_state = ctx.consensus_state(&client_consensus_state_path)?;
-        let tm_consensus_state = consensus_state.try_into()?;
+        let tm_consensus_state = consensus_state.try_into().map_err(Into::into)?;
 
         let host_timestamp =
             ctx.host_timestamp()?
@@ -380,7 +383,7 @@ pub fn update_on_recovery<E>(
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
-    E::ConsensusStateRef: Convertible<ConsensusStateType, ClientError>,
+    E::ConsensusStateRef: Convertible<ConsensusStateType>,
 {
     let substitute_client_state = ClientState::try_from(substitute_client_state)?
         .inner()
