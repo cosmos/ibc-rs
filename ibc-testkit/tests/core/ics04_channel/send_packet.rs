@@ -4,6 +4,7 @@ use core::time::Duration;
 use ibc::core::channel::handler::send_packet;
 use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State};
 use ibc::core::channel::types::packet::Packet;
+use ibc::core::channel::types::timeout::TimeoutHeight;
 use ibc::core::channel::types::Version;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
@@ -84,6 +85,13 @@ fn send_packet_processing() {
 
     let client_height = Height::new(0, client_raw_height).unwrap();
 
+    let packet_with_no_timeout: Packet = {
+        let mut packet: Packet = dummy_raw_packet(10, 10).try_into().unwrap();
+        packet.timeout_height_on_b = TimeoutHeight::no_timeout();
+        packet.timeout_timestamp_on_b = Timestamp::none();
+        packet
+    };
+
     let tests: Vec<Test> = vec![
         Test {
             name: "Processing fails because no channel exists in the context".to_string(),
@@ -134,6 +142,21 @@ fn send_packet_processing() {
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_timeout_one_before_client_height,
+            want_pass: false,
+        },
+        Test {
+            name: "Packet without height and timestamp timeout".to_string(),
+            ctx: context
+                .clone()
+                .with_client_config(
+                    MockClientConfig::builder()
+                        .latest_height(client_height)
+                        .build(),
+                )
+                .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
+                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
+            packet: packet_with_no_timeout,
             want_pass: false,
         },
         Test {
