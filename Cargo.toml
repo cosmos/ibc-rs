@@ -102,15 +102,15 @@ ibc-client-wasm-types       = { version = "0.52.0", path = "./ibc-clients/ics08-
 ibc-app-transfer-types      = { version = "0.52.0", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 ibc-app-nft-transfer-types  = { version = "0.52.0", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
 
-ibc-proto = { version = "0.43.0", default-features = false }
+ibc-proto = { version = "0.44.0", default-features = false }
 
 # cosmos dependencies
-tendermint                       = { version = "0.35.0", default-features = false }
-tendermint-light-client          = { version = "0.35.0", default-features = false }
-tendermint-light-client-verifier = { version = "0.35.0", default-features = false }
-tendermint-proto                 = { version = "0.35.0", default-features = false }
-tendermint-rpc                   = { version = "0.35.0", default-features = false }
-tendermint-testgen               = { version = "0.35.0", default-features = false }
+tendermint                       = { version = "0.36.0", default-features = false }
+tendermint-light-client          = { version = "0.36.0", default-features = false }
+tendermint-light-client-verifier = { version = "0.36.0", default-features = false }
+tendermint-proto                 = { version = "0.36.0", default-features = false }
+tendermint-rpc                   = { version = "0.36.0", default-features = false }
+tendermint-testgen               = { version = "0.36.0", default-features = false }
 
 # cosmwasm dependencies
 ### Note: Kept at the following version to match the CosmWasm module version
