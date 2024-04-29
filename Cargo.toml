@@ -107,7 +107,7 @@ ibc-proto = { version = "0.43.0", default-features = false }
 # cosmos dependencies
 tendermint                       = { version = "0.35.0", default-features = false }
 tendermint-light-client          = { version = "0.35.0", default-features = false }
-tendermint-light-client-verifier = { version = "0.35.0", default-features = false }
+tendermint-light-client-verifier = { version = "0.36.0", default-features = false }
 tendermint-proto                 = { version = "0.35.0", default-features = false }
 tendermint-rpc                   = { version = "0.35.0", default-features = false }
 tendermint-testgen               = { version = "0.35.0", default-features = false }
