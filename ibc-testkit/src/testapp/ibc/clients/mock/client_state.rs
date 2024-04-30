@@ -495,7 +495,7 @@ mod test {
         use super::{MockClientState, MockHeader};
 
         let client_state = MockClientState::new(MockHeader::default());
-        let expected = r#"{"typeUrl":"/ibc.mock.ClientState","value":"CgQKAhABEIDIr6Al"}"#;
+        let expected = r#"{"typeUrl":"/ibc.mock.ClientState","value":"CgQKAhABEICAkMrSxg4="}"#;
         let json = serde_json::to_string(&Any::from(client_state)).unwrap();
         assert_eq!(json, expected);
 
