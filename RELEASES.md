@@ -31,6 +31,15 @@ Our release process is as follows:
       ```sh
       cargo depgraph --all-features --workspace-only --dev-deps | dot -Tpng > graph.png
       ```
+     The command will generate a graph similar to this:
+     ![alt test](docs/dev-deps-graph.png)
+     The blue lines indicate dev dependencies; there should only be one blue line
+     referring to the `ibc-testkit` dependency. So the above example would result
+     in an unsuccessful release.
+   - In order to resolve such a situation, the dev dependencies other than `ibc-testkit`
+     can be manually released to crates.io first so that the subsequent crates that
+     depend on them can then be released via the release process. For instructions
+     on how to release a crate on crates.io, refer [here](https://doc.rust-lang.org/cargo/reference/publishing.html).
 5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
    the documentation compiles and seems up-to-date and coherent. Fix any
    potential issues here and push them to the release PR.
