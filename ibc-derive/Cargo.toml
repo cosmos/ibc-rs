@@ -11,6 +11,6 @@ description = "Maintained by `ibc-rs`, macros implementations of #[derive(Client
 proc-macro = true
 
 [dependencies]
-syn = "2"
-proc-macro2 = "1"
-quote = "1"
+syn = { version = "2" }
+proc-macro2 = { version = "1"}
+quote = { version = "1" }
