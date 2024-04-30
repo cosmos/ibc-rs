@@ -492,3 +492,22 @@ impl From<MockConsensusState> for MockClientState {
         Self::new(cs.header)
     }
 }
+
+#[cfg(test)]
+mod test {
+    #[cfg(feature = "serde")]
+    #[test]
+    fn test_any_client_state_to_json() {
+        use ibc::primitives::proto::Any;
+
+        use super::{MockClientState, MockHeader};
+
+        let client_state = MockClientState::new(MockHeader::default());
+        let expected = r#"{"typeUrl":"/ibc.mock.ClientState","value":"CgQKAhABEIDIr6Al"}"#;
+        let json = serde_json::to_string(&Any::from(client_state)).unwrap();
+        assert_eq!(json, expected);
+
+        let proto_any = serde_json::from_str::<Any>(expected).unwrap();
+        assert_eq!(proto_any, Any::from(client_state));
+    }
+}
