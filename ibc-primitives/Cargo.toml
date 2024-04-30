@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "README.md"
+
 description  = """
     Maintained by `ibc-rs`, furnishes essential types and traits universally
     utilized in the implementation of diverse IBC modules, encompassing

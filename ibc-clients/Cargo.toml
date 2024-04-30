@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "applications", "tendermint"]
 readme       = "README.md"
+
 description  = """
     Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement
     various IBC light clients, enabling smooth integration with IBC-enabled blockchains.

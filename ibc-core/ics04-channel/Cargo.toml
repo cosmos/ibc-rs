@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "channel"]
 readme       = "./../README.md"
+
 description  = """
     Maintained by `ibc-rs`, contains the implementation of the ICS-04 Channel & Packet Semantics and
     re-exports essential data structures and domain types from `ibc-core-channel-types` crate.

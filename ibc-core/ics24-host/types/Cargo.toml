@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "host", "types"]
 readme       = "./../../README.md"
+
 description  = """
     Maintained by `ibc-rs`, encapsulates essential ICS-24 Host Requirements data structures and domain types,
     as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal applicability

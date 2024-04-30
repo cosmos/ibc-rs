@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "routing"]
 readme       = "./../README.md"
+
 description  = """
     Maintained by `ibc-rs`, contains necessary traits to implement the routing and callback functionality
     (IBC router module) used for connecting the application layer to the transport layer of an IBC enabled chain.

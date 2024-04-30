@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "core"]
 readme       = "README.md"
+
 description  = """
     Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement IBC core (TAO)
     modules, facilitating seamless integration of IBC core business logic into any blockchain system.

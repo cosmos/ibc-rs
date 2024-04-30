@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "applications", "token-transfer"]
 readme       = "README.md"
+
 description  = """
     Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement various
     IBC applications, enabling smooth integration of IBC business logic into any blockchain system.

@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["cosmos", "ibc", "nft", "transfer", "ics721"]
 readme       = "./../README.md"
+
 description  = """
     Maintained by `ibc-rs`, contains the implementation of the ICS-721 Non-Fungible Token Transfer
     application logic and re-exports essential data structures and domain types from

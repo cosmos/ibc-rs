@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "light-client"]
 readme       = "./../README.md"
+
 description  = """
     Maintained by `ibc-rs`, contains the implementation of ICS-02 Client Semantics and
     re-exports essential data structures and domain types from `ibc-core-client-types` crate.

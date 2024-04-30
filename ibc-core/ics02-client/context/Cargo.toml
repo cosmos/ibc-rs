@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "./../../README.md"
+
 description  = """
     Maintaind by `ibc-rs`, contains essential APIs to interface with the host chain's store,
     enabling smooth client state transitions. Additionally, provides necessary traits for

@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "consensus", "cosmos", "ibc"]
 readme       = "README.md"
+
 description  = """
     Maintained by `ibc-rs`, serves as a top-level library that contain a comprehensive set of
     Inter-Blockchain Communication (IBC) implementations, re-exporting data structures and

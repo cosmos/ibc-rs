@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc"]
 readme       = "README.md"
+
 description  = """
     Maintained by `ibc-rs`, delineates standard data structures and domain types of the Inter-Blockchain Communication (IBC) protocol.
     Designed for universal application, enabling diverse projects across IBC ecosystem to build using a shared language.

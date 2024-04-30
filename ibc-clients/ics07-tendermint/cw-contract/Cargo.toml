@@ -8,6 +8,7 @@ rust-version = { workspace = true }
 version      = { workspace = true }
 keywords     = ["ibc", "light-client", "ics07", "tendermint", "CosmWasm"]
 readme       = "./../../README.md"
+
 description  = """
     The ICS-08 CosmWasm contract implementation of the ICS-07 Tendermint light client.
 """

@@ -8,6 +8,7 @@ license      = { workspace = true }
 repository   = { workspace = true }
 keywords     = ["blockchain", "cosmos", "ibc", "tendermint"]
 readme       = "./../../README.md"
+
 description  = """
     Maintained by `ibc-rs`, contains Cosmos-specific helper traits and implementations
     to facilitate IBC integration, ensuring proper interaction with modules/components
