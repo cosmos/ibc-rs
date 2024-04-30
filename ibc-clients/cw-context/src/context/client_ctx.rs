@@ -16,7 +16,11 @@ use crate::api::ClientType;
 use crate::context::CONSENSUS_STATE_HEIGHT_MAP;
 use crate::utils::AnyCodec;
 
-impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C> {
+impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C>
+where
+    <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+{
     type ClientStateRef = C::ClientState;
     type ConsensusStateRef = C::ConsensusState;
 
@@ -83,7 +87,11 @@ impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C> {
     }
 }
 
-impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C> {
+impl<'a, C: ClientType<'a>> ClientExecutionContext for Context<'a, C>
+where
+    <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+{
     type ClientStateMut = C::ClientState;
 
     fn store_client_state(

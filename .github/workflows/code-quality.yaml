@@ -10,7 +10,7 @@ jobs:
       FD_VERSION: 9.0.0
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Whitestapace lints
         run: bash ci/code-quality/whitespace-lints.sh
@@ -19,3 +19,9 @@ jobs:
         uses: crate-ci/typos@v1.19.0 # NOTE: Newer versions detect false positives. Test locally before upgrading.
         with:
           config: ./.github/typos.toml
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - uses: baptiste0928/cargo-install@v3
+        with:
+          crate: taplo-cli
+      - run: taplo fmt --check
