@@ -18,9 +18,10 @@ crate-type = [ "cdylib", "rlib" ]
 
 [dependencies]
 # ibc dependencies
-ibc-core              = { workspace = true }
-ibc-client-cw         = { workspace = true }
-ibc-client-tendermint = { workspace = true }
+ibc-core                    = { workspace = true }
+ibc-client-cw               = { workspace = true }
+ibc-client-tendermint       = { workspace = true }
+ibc-client-tendermint-types = { workspace = true }
 
 # cosmwasm dependencies
 cosmwasm-std = { workspace = true }
@@ -28,7 +29,7 @@ cosmwasm-std = { workspace = true }
 [features]
 default = [ "std" ]
 std = [
-  "ibc-core/std",
-  "ibc-client-cw/std",
-  "ibc-client-tendermint/std",
+    "ibc-core/std",
+    "ibc-client-cw/std",
+    "ibc-client-tendermint/std",
 ]
