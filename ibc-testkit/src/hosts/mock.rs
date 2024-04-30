@@ -42,10 +42,10 @@ impl TestHost for MockHost {
 
     fn generate_block(
         &self,
-        _: Vec<u8>,
+        _commitment_root: Vec<u8>,
         height: u64,
         timestamp: Timestamp,
-        _: &Self::BlockParams,
+        _params: &Self::BlockParams,
     ) -> Self::Block {
         MockHeader {
             height: Height::new(self.chain_id.revision_number(), height).expect("Never fails"),
@@ -73,7 +73,7 @@ impl TestBlock for MockHeader {
         self.timestamp
     }
 
-    fn into_header_with_trusted(self, _: &Self) -> Self::Header {
+    fn into_header_with_trusted(self, _trusted_block: &Self) -> Self::Header {
         self
     }
 }
