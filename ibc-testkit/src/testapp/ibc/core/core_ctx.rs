@@ -391,7 +391,7 @@ where
             .collect::<Result<Vec<_>, _>>()
     }
 
-    /// Connections queries all the IBC connections of a chain.
+    /// Returns all the IBC connection ends of a chain.
     fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, ContextError> {
         let path = "connections".to_owned().into();
 
@@ -420,7 +420,7 @@ where
             .collect()
     }
 
-    /// ClientConnections queries all the connection paths associated with a client.
+    /// Returns all the IBC connection ends associated with a client.
     fn client_connection_ends(
         &self,
         client_id: &ClientId,
@@ -433,7 +433,7 @@ where
             .unwrap_or_default())
     }
 
-    /// Channels queries all the IBC channels of a chain.
+    /// Returns all the IBC channel ends of a chain.
     fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, ContextError> {
         let path = "channelEnds".to_owned().into();
 
@@ -464,7 +464,7 @@ where
             .collect()
     }
 
-    /// PacketCommitments returns all the packet commitments associated with a channel.
+    /// Returns all the packet commitments associated with a channel.
     fn packet_commitments(
         &self,
         channel_end_path: &ChannelEndPath,
@@ -505,8 +505,10 @@ where
             .collect::<Result<Vec<_>, _>>()
     }
 
-    /// PacketAcknowledgements returns all the packet acknowledgements associated with a channel.
-    /// Returns all the packet acknowledgements if sequences is empty.
+    /// Returns the acknowledged packets associated with a channel.
+    ///
+    /// Takes a sequence list as an argument.
+    /// If the list set is empty, it returns all acknowledged packets.
     fn packet_acknowledgements(
         &self,
         channel_end_path: &ChannelEndPath,
@@ -560,8 +562,9 @@ where
             .collect::<Result<Vec<_>, _>>()
     }
 
-    /// UnreceivedPackets returns all the unreceived IBC packets associated with
-    /// a channel and sequences.
+    /// Returns the unreceived IBC packets associated with a channel and sequences.
+    ///
+    /// Takes a sequence list as an argument.
     fn unreceived_packets(
         &self,
         channel_end_path: &ChannelEndPath,
@@ -583,8 +586,10 @@ where
             .collect())
     }
 
-    /// UnreceivedAcks returns all the unreceived IBC acknowledgements associated with a channel and sequences.
-    /// Returns all the unreceived acks if sequences is empty.
+    /// Returns all the unreceived IBC acknowledgements associated with a channel and sequences.
+    ///
+    /// Takes a sequence list as an argument.
+    /// If the list is empty, it Returns all the unreceived acks.
     fn unreceived_acks(
         &self,
         channel_end_path: &ChannelEndPath,
