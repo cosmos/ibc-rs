@@ -1,0 +1,7 @@
+include = [ "taplo.toml", "**/Cargo.toml" ]
+
+[formatting]
+align_entries       = true
+compact_arrays      = false
+array_auto_expand   = false
+array_auto_collapse = false

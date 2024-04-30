@@ -1,14 +1,14 @@
 [package]
-name         = "ibc-client-tendermint"
-version      = { workspace = true }
-authors      = { workspace = true }
-edition      = { workspace = true }
+name = "ibc-client-tendermint"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
 rust-version = { workspace = true }
-license      = { workspace = true }
-repository   = { workspace = true }
-readme       = "./../README.md"
-keywords     = ["blockchain", "consensus", "cosmos", "ibc", "tendermint"]
-description  = """
+license = { workspace = true }
+repository = { workspace = true }
+readme = "./../README.md"
+keywords = [ "blockchain", "consensus", "cosmos", "ibc", "tendermint" ]
+description = """
     Maintained by `ibc-rs`, contains the implementation of the ICS-07 Tendermint Client logic
     and re-exports essential data structures and domain types from `ibc-client-tendermint-types` crate.
 """
@@ -22,60 +22,60 @@ derive_more = { workspace = true }
 serde       = { workspace = true, optional = true }
 
 # ibc dependencies
-ibc-client-tendermint-types      = { workspace = true }
-ibc-core-client                  = { workspace = true }
-ibc-core-commitment-types        = { workspace = true }
-ibc-core-host                    = { workspace = true }
-ibc-core-handler-types           = { workspace = true }
-ibc-primitives                   = { workspace = true }
+ibc-client-tendermint-types = { workspace = true }
+ibc-core-client             = { workspace = true }
+ibc-core-commitment-types   = { workspace = true }
+ibc-core-host               = { workspace = true }
+ibc-core-handler-types      = { workspace = true }
+ibc-primitives              = { workspace = true }
 
 # cosmos dependencies
 tendermint                       = { workspace = true }
-tendermint-light-client-verifier = { workspace = true, features = ["rust-crypto"] }
+tendermint-light-client-verifier = { workspace = true, features = [ "rust-crypto" ] }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "serde/std",
-    "ibc-client-tendermint-types/std",
-    "ibc-core-client/std",
-    "ibc-core-commitment-types/std",
-    "ibc-core-host/std",
-    "ibc-core-handler-types/std",
-    "ibc-primitives/std",
+  "serde/std",
+  "ibc-client-tendermint-types/std",
+  "ibc-core-client/std",
+  "ibc-core-commitment-types/std",
+  "ibc-core-host/std",
+  "ibc-core-handler-types/std",
+  "ibc-primitives/std",
 ]
 serde = [
-    "dep:serde",
-    "ibc-client-tendermint-types/serde",
-    "ibc-core-client/serde",
-    "ibc-core-commitment-types/serde",
-    "ibc-core-host/serde",
-    "ibc-core-handler-types/serde",
-    "ibc-primitives/serde",
+  "dep:serde",
+  "ibc-client-tendermint-types/serde",
+  "ibc-core-client/serde",
+  "ibc-core-commitment-types/serde",
+  "ibc-core-host/serde",
+  "ibc-core-handler-types/serde",
+  "ibc-primitives/serde",
 ]
 schema = [
-    "ibc-client-tendermint-types/schema",
-    "ibc-core-client/schema",
-    "ibc-core-commitment-types/schema",
-    "ibc-core-host/schema",
-    "ibc-core-handler-types/schema",
-    "ibc-primitives/schema",
-    "serde",
-    "std"
+  "ibc-client-tendermint-types/schema",
+  "ibc-core-client/schema",
+  "ibc-core-commitment-types/schema",
+  "ibc-core-host/schema",
+  "ibc-core-handler-types/schema",
+  "ibc-primitives/schema",
+  "serde",
+  "std",
 ]
 borsh = [
-    "ibc-client-tendermint-types/borsh",
-    "ibc-core-client/borsh",
-    "ibc-core-commitment-types/borsh",
-    "ibc-core-host/borsh",
-    "ibc-core-handler-types/borsh",
-    "ibc-primitives/borsh",
+  "ibc-client-tendermint-types/borsh",
+  "ibc-core-client/borsh",
+  "ibc-core-commitment-types/borsh",
+  "ibc-core-host/borsh",
+  "ibc-core-handler-types/borsh",
+  "ibc-primitives/borsh",
 ]
 parity-scale-codec = [
-    "ibc-client-tendermint-types/parity-scale-codec",
-    "ibc-core-client/parity-scale-codec",
-    "ibc-core-commitment-types/parity-scale-codec",
-    "ibc-core-host/parity-scale-codec",
-    "ibc-core-handler-types/parity-scale-codec",
-    "ibc-primitives/parity-scale-codec",
+  "ibc-client-tendermint-types/parity-scale-codec",
+  "ibc-core-client/parity-scale-codec",
+  "ibc-core-commitment-types/parity-scale-codec",
+  "ibc-core-host/parity-scale-codec",
+  "ibc-core-handler-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
 ]
