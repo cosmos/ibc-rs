@@ -30,7 +30,7 @@ pub struct TendermintHost {
     pub chain_id: ChainId,
     /// The chain of blocks underlying this context.
     #[builder(default)]
-    pub history: Vec<TendermintBlock>,
+    pub history: Vec<TmLightBlock>,
 }
 
 impl Default for TendermintHost {
@@ -40,7 +40,7 @@ impl Default for TendermintHost {
 }
 
 impl TestHost for TendermintHost {
-    type Block = TendermintBlock;
+    type Block = TmLightBlock;
     type BlockParams = BlockParams;
     type LightClientParams = ClientStateConfig;
     type ClientState = ClientState;
@@ -60,20 +60,18 @@ impl TestHost for TendermintHost {
         timestamp: Timestamp,
         params: &Self::BlockParams,
     ) -> Self::Block {
-        TendermintBlock(
-            TestgenLightBlock::new_default_with_header(
-                TestgenHeader::new(&params.validators)
-                    .app_hash(commitment_root.try_into().expect("infallible"))
-                    .height(height)
-                    .chain_id(self.chain_id.as_str())
-                    .next_validators(&params.next_validators)
-                    .time(timestamp.into_tm_time().expect("Never fails")),
-            )
-            .validators(&params.validators)
-            .next_validators(&params.next_validators)
-            .generate()
-            .expect("Never fails"),
+        TestgenLightBlock::new_default_with_header(
+            TestgenHeader::new(&params.validators)
+                .app_hash(commitment_root.try_into().expect("infallible"))
+                .height(height)
+                .chain_id(self.chain_id.as_str())
+                .next_validators(&params.next_validators)
+                .time(timestamp.into_tm_time().expect("Never fails")),
         )
+        .validators(&params.validators)
+        .next_validators(&params.next_validators)
+        .generate()
+        .expect("Never fails")
     }
 
     fn generate_client_state(
@@ -101,36 +99,27 @@ impl TestHost for TendermintHost {
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct TendermintBlock(TmLightBlock);
-
-impl TendermintBlock {
-    pub fn inner(&self) -> &TmLightBlock {
-        &self.0
-    }
-}
-
-impl TestBlock for TendermintBlock {
+impl TestBlock for TmLightBlock {
     type Header = TendermintHeader;
 
     fn height(&self) -> Height {
         Height::new(
-            ChainId::from_str(self.0.signed_header.header.chain_id.as_str())
+            ChainId::from_str(self.signed_header.header.chain_id.as_str())
                 .expect("Never fails")
                 .revision_number(),
-            self.0.signed_header.header.height.value(),
+            self.signed_header.header.height.value(),
         )
         .expect("Never fails")
     }
 
     fn timestamp(&self) -> Timestamp {
-        self.0.signed_header.header.time.into()
+        self.signed_header.header.time.into()
     }
 
     fn into_header_with_trusted(self, trusted_block: &Self) -> Self::Header {
         let mut header = TendermintHeader::from(self.clone());
         header.set_trusted_height(trusted_block.height());
-        header.set_trusted_next_validators_set(trusted_block.inner().validators.clone());
+        header.set_trusted_next_validators_set(trusted_block.validators.clone());
         header
     }
 }
@@ -217,15 +206,15 @@ impl From<TendermintHeader> for ConsensusState {
     }
 }
 
-impl From<TendermintBlock> for TendermintHeader {
-    fn from(block: TendermintBlock) -> Self {
+impl From<TmLightBlock> for TendermintHeader {
+    fn from(block: TmLightBlock) -> Self {
         let trusted_height = block.height();
 
         let TmLightBlock {
             signed_header,
             validators: validator_set,
             ..
-        } = block.0;
+        } = block;
 
         let trusted_next_validator_set = validator_set.clone();
 

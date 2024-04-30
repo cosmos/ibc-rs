@@ -467,7 +467,6 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
         .expect("no error")
-        .inner()
         .next_validators
         .clone();
 
@@ -566,7 +565,6 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
         .expect("no error")
-        .inner()
         .next_validators
         .clone();
 
@@ -574,7 +572,6 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
     let mistrusted_next_validator_set = ctx_b
         .host_block(&client_height.increment())
         .expect("no error")
-        .inner()
         .next_validators
         .clone();
 
@@ -673,7 +670,6 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
         .expect("no error")
-        .inner()
         .next_validators
         .clone();
 
@@ -770,7 +766,6 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
         .expect("no error")
-        .inner()
         .next_validators
         .clone();
 
@@ -867,7 +862,6 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
         .expect("no error")
-        .inner()
         .next_validators
         .clone();
 
@@ -1511,7 +1505,6 @@ fn test_client_update_max_clock_drift() {
     let trusted_next_validator_set = ctx_b
         .host_block(&client_height)
         .expect("no error")
-        .inner()
         .next_validators
         .clone();
 
