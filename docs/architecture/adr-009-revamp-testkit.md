@@ -198,7 +198,7 @@ key.
 So the `MockContext` is finalized as:
 
 ```rs
-pub struct MockGenericContext<S, H>
+pub struct MockContext<S, H>
 where
     S: ProvableStore + Debug,
     H: TestHost
@@ -306,15 +306,34 @@ and
 [`hosts/tendermint.rs`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/hosts/tendermint.rs#L42)
 respectively.
 
-#### MockGenericContext
+#### Renaming `MockContext` to `StoreGenericTestContext`
 
-[`MockGenericContext`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/context.rs#L34-L52)
-is actually what is described as `MockContext` in the ADR. For simplicity, we
-defined `MockContext` to
-[have a concrete store](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/context.rs#L54-L55)
-implementation.
+There was confusion about what is a _Test_ component and what is a _Mock_
+component. We have `MockContext` with `MockClient` and `TendermintClient`.
+
+To avoid this confusion, we renamed `MockContext` to `StoreGenericTestContext`.
+This means that going forward all our general frameworks and traits should have
+`Test` in their name. But a dummy concrete implementation of these traits may
+have `Mock` in their name.
+
+#### StoreGenericTestContext
+
+[`StoreGenericTestContext`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/context.rs#L34-L52)
+is actually what is described as `MockContext` in the ADR. For convenience, we
+defined `TestContext` to have a concrete store implementation -
+[`MockStore`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/context.rs#L55-L56).
 
 ```rs
+// A mock store type using basecoin-storage implementations.
 pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
-pub type MockContext<H> = MockGenericContext<MockStore, H>;
+
+pub type TestContext<H> = StoreGenericTestContext<MockStore, H>;
+```
+
+With this, we can now define `MockContext` which uses `MockStore` and `MockHost`
+and `TendermintContext` which uses `MockStore` and `TendermintHost`.
+
+```rs
+pub type MockContext = TestContext<MockHost>;
+pub type TendermintContext = TestContext<TendermintHost>;
 ```
