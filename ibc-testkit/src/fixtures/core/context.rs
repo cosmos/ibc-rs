@@ -68,11 +68,11 @@ where
 
         // store is at height 0; no block
 
-        context.advance_with_genesis_block(genesis_timestamp, &Default::default());
+        context.advance_genesis_height(genesis_timestamp, &Default::default());
 
         // store is at height 1; one block
 
-        context = context.advance_block_up_to(
+        context = context.advance_block_up_to_height(
             params
                 .latest_height
                 .sub(params.block_params_history.len() as u64)
@@ -80,7 +80,7 @@ where
         );
 
         for block_params in params.block_params_history {
-            context.advance_with_block_params(params.block_time, &block_params);
+            context.advance_height_with_params(params.block_time, &block_params);
         }
 
         assert_eq!(

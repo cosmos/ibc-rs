@@ -258,7 +258,7 @@ fn test_consensus_state_pruning() {
 
         let update_height = ctx.latest_height();
 
-        ctx.advance_block();
+        ctx.advance_height();
 
         let block = ctx.host_block(&update_height).unwrap().clone();
         let mut block = block.into_header();
@@ -1439,7 +1439,7 @@ fn test_expired_client() {
     while ctx.ibc_store.host_timestamp().expect("no error")
         < (timestamp + trusting_period).expect("no error")
     {
-        ctx.advance_block();
+        ctx.advance_height();
     }
 
     let client_state = ctx.ibc_store.client_state(&client_id).unwrap();
@@ -1494,11 +1494,11 @@ fn test_client_update_max_clock_drift() {
     while ctx_b.ibc_store.host_timestamp().expect("no error")
         < (ctx_a.ibc_store.host_timestamp().expect("no error") + max_clock_drift).expect("no error")
     {
-        ctx_b.advance_block();
+        ctx_b.advance_height();
     }
 
     // include current block
-    ctx_b.advance_block();
+    ctx_b.advance_height();
 
     let update_height = ctx_b.latest_height();
 

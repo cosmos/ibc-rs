@@ -120,7 +120,7 @@ where
     .expect("successfully created send_packet");
 
     // send_packet wasn't committed, hence produce a block
-    relayer.get_ctx_a_mut().advance_block();
+    relayer.get_ctx_a_mut().advance_height();
 
     // retrieve the send_packet event
     let Some(IbcEvent::SendPacket(send_packet_event)) = relayer

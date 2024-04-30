@@ -122,7 +122,7 @@ where
     }
 
     /// Advances the host chain height to the given target height.
-    pub fn advance_block_up_to(mut self, target_height: Height) -> Self {
+    pub fn advance_block_up_to_height(mut self, target_height: Height) -> Self {
         let latest_height = self.host.latest_height();
         if target_height.revision_number() != latest_height.revision_number() {
             panic!("Cannot advance history of the chain to a different revision number!")
@@ -131,7 +131,7 @@ where
         } else {
             // Repeatedly advance the host chain height till we hit the desired height
             while self.host.latest_height().revision_height() < target_height.revision_height() {
-                self.advance_block()
+                self.advance_height()
             }
         }
         self
@@ -139,13 +139,13 @@ where
 
     /// Advance the first height of the host chain by generating a genesis block.
     ///
-    /// This method is exactly the same as [`Self::advance_with_block_params`].
+    /// This method is exactly the same as [`Self::advance_genesis_height`].
     /// But it bootstraps the genesis block by height 1 and `genesis_time`.
     ///
     /// The method starts and ends with [`Self::end_block`] and [`Self::begin_block`], just
-    /// like the [`Self::advance_with_block_params`], so that it can advance to next height
-    /// i.e. height 2 - just by calling [`Self::advance_with_block_params`].
-    pub fn advance_with_genesis_block(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
+    /// like the [`Self::advance_height_with_params`], so that it can advance to next height
+    /// i.e. height 2 - just by calling [`Self::advance_height_with_params`].
+    pub fn advance_genesis_height(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
         self.end_block();
 
         // commit multi store
@@ -216,28 +216,29 @@ where
             .expect("no error");
     }
 
-    /// Produces the next block for the host chain by first committing the state of
-    /// the host's multi store, and then generating a new block that is added to
-    /// the host's block history.
-    pub fn produce_block(&mut self, block_time: Duration, params: &H::BlockParams) {
+    /// Commit store state to the current block of the host chain by:
+    /// - Committing the state to the context's multi store.
+    /// - Generating a new block with the commitment.
+    /// - Adding the generated block to the host's block history.
+    pub fn commit_state_to_host(&mut self, block_time: Duration, params: &H::BlockParams) {
         // commit the multi store
         let multi_store_commitment = self.multi_store.commit().expect("no error");
-        // generate a new block
+        // generate a new block and add it to the block history
         self.host
-            .advance_block(multi_store_commitment, block_time, params);
+            .commit_block(multi_store_commitment, block_time, params);
     }
 
-    /// Advances the host chain by ending the current block, producing a new block, and
+    /// Advances the host chain height by ending the current block, producing a new block, and
     /// beginning the next block.
-    pub fn advance_with_block_params(&mut self, block_time: Duration, params: &H::BlockParams) {
+    pub fn advance_height_with_params(&mut self, block_time: Duration, params: &H::BlockParams) {
         self.end_block();
-        self.produce_block(block_time, params);
+        self.commit_state_to_host(block_time, params);
         self.begin_block();
     }
 
-    /// Convenience method to advance the host chain using default parameters.
-    pub fn advance_block(&mut self) {
-        self.advance_with_block_params(
+    /// Convenience method to advance the host chain height using default parameters.
+    pub fn advance_height(&mut self) {
+        self.advance_height_with_params(
             Duration::from_secs(DEFAULT_BLOCK_TIME_SECS),
             &Default::default(),
         )
@@ -478,7 +479,7 @@ where
         self.dispatch(msg)
             .map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
-        self.advance_block();
+        self.advance_height();
         Ok(())
     }
 
@@ -569,7 +570,7 @@ mod tests {
                 let current_height = test.ctx.latest_height();
 
                 // After advancing the chain's height, the context should still be valid.
-                test.ctx.advance_block();
+                test.ctx.advance_height();
                 assert!(
                     test.ctx.host.validate().is_ok(),
                     "failed in test [{}] {} while validating context {:?}",

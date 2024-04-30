@@ -64,8 +64,8 @@ pub trait TestHost: Default + Debug + Sized {
     /// Add a block to the host chain.
     fn push_block(&mut self, block: Self::Block);
 
-    /// Advance the host chain, by extending the history of blocks.
-    fn advance_block(
+    /// Commit a block with commitment root to the blockchain, by extending the history of blocks.
+    fn commit_block(
         &mut self,
         commitment_root: Vec<u8>,
         block_time: Duration,
