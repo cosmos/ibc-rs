@@ -6,9 +6,10 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "core"]
+keywords     = [ "blockchain", "cosmos", "ibc", "core" ]
 readme       = "README.md"
-description  = """
+
+description = """
     Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement IBC core (TAO)
     modules, facilitating seamless integration of IBC core business logic into any blockchain system.
 """
@@ -28,56 +29,56 @@ ibc-derive                = { workspace = true }
 ibc-primitives            = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "ibc-core-client/std",
-    "ibc-core-connection/std",
-    "ibc-core-channel/std",
-    "ibc-core-commitment-types/std",
-    "ibc-core-host/std",
-    "ibc-core-router/std",
-    "ibc-core-handler/std",
-    "ibc-primitives/std",
+  "ibc-core-client/std",
+  "ibc-core-connection/std",
+  "ibc-core-channel/std",
+  "ibc-core-commitment-types/std",
+  "ibc-core-host/std",
+  "ibc-core-router/std",
+  "ibc-core-handler/std",
+  "ibc-primitives/std",
 ]
 serde = [
-    "ibc-core-client/serde",
-    "ibc-core-connection/serde",
-    "ibc-core-channel/serde",
-    "ibc-core-commitment-types/serde",
-    "ibc-core-host/serde",
-    "ibc-core-router/serde",
-    "ibc-core-handler/serde",
-    "ibc-primitives/serde",
+  "ibc-core-client/serde",
+  "ibc-core-connection/serde",
+  "ibc-core-channel/serde",
+  "ibc-core-commitment-types/serde",
+  "ibc-core-host/serde",
+  "ibc-core-router/serde",
+  "ibc-core-handler/serde",
+  "ibc-primitives/serde",
 ]
 borsh = [
-    "ibc-core-client/borsh",
-    "ibc-core-connection/borsh",
-    "ibc-core-channel/borsh",
-    "ibc-core-commitment-types/borsh",
-    "ibc-core-host/borsh",
-    "ibc-core-router/borsh",
-    "ibc-core-handler/borsh",
-    "ibc-primitives/borsh",
+  "ibc-core-client/borsh",
+  "ibc-core-connection/borsh",
+  "ibc-core-channel/borsh",
+  "ibc-core-commitment-types/borsh",
+  "ibc-core-host/borsh",
+  "ibc-core-router/borsh",
+  "ibc-core-handler/borsh",
+  "ibc-primitives/borsh",
 ]
 schema = [
-    "ibc-core-client/schema",
-    "ibc-core-connection/schema",
-    "ibc-core-channel/schema",
-    "ibc-core-commitment-types/schema",
-    "ibc-core-host/schema",
-    "ibc-core-router/schema",
-    "ibc-core-handler/schema",
-    "ibc-primitives/schema",
-    "serde",
-    "std"
+  "ibc-core-client/schema",
+  "ibc-core-connection/schema",
+  "ibc-core-channel/schema",
+  "ibc-core-commitment-types/schema",
+  "ibc-core-host/schema",
+  "ibc-core-router/schema",
+  "ibc-core-handler/schema",
+  "ibc-primitives/schema",
+  "serde",
+  "std",
 ]
 parity-scale-codec = [
-    "ibc-core-client/parity-scale-codec",
-    "ibc-core-connection/parity-scale-codec",
-    "ibc-core-channel/parity-scale-codec",
-    "ibc-core-commitment-types/parity-scale-codec",
-    "ibc-core-host/parity-scale-codec",
-    "ibc-core-router/parity-scale-codec",
-    "ibc-core-handler/parity-scale-codec",
-    "ibc-primitives/parity-scale-codec",
+  "ibc-core-client/parity-scale-codec",
+  "ibc-core-connection/parity-scale-codec",
+  "ibc-core-channel/parity-scale-codec",
+  "ibc-core-commitment-types/parity-scale-codec",
+  "ibc-core-host/parity-scale-codec",
+  "ibc-core-router/parity-scale-codec",
+  "ibc-core-handler/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
 ]

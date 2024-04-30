@@ -7,13 +7,14 @@ use prost::Message;
 pub trait AnyCodec {
     fn decode_any_vec<C>(data: Vec<u8>) -> Result<C, ClientError>
     where
-        C: TryFrom<Any, Error = ClientError>,
+        C: TryFrom<Any>,
+        <C as TryFrom<Any>>::Error: Into<ClientError>,
     {
         let raw = Any::decode(&mut data.as_slice()).map_err(|e| ClientError::Other {
             description: e.to_string(),
         })?;
 
-        C::try_from(raw)
+        C::try_from(raw).map_err(Into::into)
     }
 
     fn encode_to_any_vec<C>(value: C) -> Vec<u8>
@@ -24,4 +25,4 @@ pub trait AnyCodec {
     }
 }
 
-impl<T> AnyCodec for T where T: TryFrom<Any, Error = ClientError> + Into<Any> {}
+impl<T> AnyCodec for T where T: TryFrom<Any> + Into<Any> {}

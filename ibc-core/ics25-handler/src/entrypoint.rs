@@ -9,7 +9,9 @@ use ibc_core_channel::handler::{
 use ibc_core_channel::types::msgs::{
     channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
 };
+use ibc_core_client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc_core_client::handler::{create_client, update_client, upgrade_client};
+use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
 use ibc_core_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
@@ -20,6 +22,7 @@ use ibc_core_handler_types::msgs::MsgEnvelope;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::router::Router;
 use ibc_core_router::types::error::RouterError;
+use ibc_primitives::proto::Any;
 
 /// Entrypoint which performs both validation and message execution
 pub fn dispatch<Ctx>(
@@ -29,6 +32,9 @@ pub fn dispatch<Ctx>(
 ) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
+    <<Ctx::V as ClientValidationContext>::ClientStateRef as TryFrom<Any>>::Error: Into<ClientError>,
+    <<Ctx::E as ClientExecutionContext>::ClientStateMut as TryFrom<Any>>::Error: Into<ClientError>,
+    <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
 {
     validate(ctx, router, msg.clone())?;
     execute(ctx, router, msg)
@@ -45,6 +51,8 @@ where
 pub fn validate<Ctx>(ctx: &Ctx, router: &impl Router, msg: MsgEnvelope) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
+    <<Ctx::V as ClientValidationContext>::ClientStateRef as TryFrom<Any>>::Error: Into<ClientError>,
+    <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
 {
     match msg {
         MsgEnvelope::Client(msg) => match msg {
@@ -121,6 +129,7 @@ pub fn execute<Ctx>(
 ) -> Result<(), ContextError>
 where
     Ctx: ExecutionContext,
+    <<Ctx::E as ClientExecutionContext>::ClientStateMut as TryFrom<Any>>::Error: Into<ClientError>,
 {
     match msg {
         MsgEnvelope::Client(msg) => match msg {

@@ -1,24 +1,24 @@
 use std::time::Duration;
 
 use cosmwasm_std::{from_json, Deps, DepsMut, Empty, Response, StdError, StdResult};
+use ibc::clients::tendermint::client_state::ClientState as TmClientState;
+use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
+use ibc::clients::tendermint::types::Header;
+use ibc::core::client::types::{Height, Status};
+use ibc::core::host::types::identifiers::ChainId;
+use ibc::core::primitives::Timestamp;
 use ibc_client_cw::types::{
     CheckForMisbehaviourMsgRaw, ContractError, ExportMetadataMsg, GenesisMetadata, InstantiateMsg,
     MigrationPrefix, QueryMsg, QueryResponse, StatusMsg, UpdateStateMsgRaw,
     UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw,
 };
 use ibc_client_cw::utils::AnyCodec;
-use ibc_client_tendermint::client_state::ClientState as TmClientState;
-use ibc_client_tendermint::consensus_state::ConsensusState as TmConsensusState;
-use ibc_client_tendermint::types::Header;
-use ibc_core::client::types::{Height, Status};
-use ibc_core::host::types::identifiers::ChainId;
-use ibc_core::primitives::Timestamp;
+use ibc_client_tendermint_cw::entrypoint::TendermintContext;
 use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
 use tendermint::Time;
 use tendermint_testgen::{Generator, Validator};
 
 use super::helper::{dummy_checksum, dummy_sov_consensus_state, mock_env_with_timestamp_now};
-use crate::entrypoint::TendermintContext;
 
 /// Test fixture
 #[derive(Clone, Debug)]

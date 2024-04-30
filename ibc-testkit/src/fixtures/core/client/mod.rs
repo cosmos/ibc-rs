@@ -96,14 +96,16 @@ mod tests {
             assert_eq!(t.expected_keys.len(), t.event.attributes.len());
             for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
-                    e.key, t.expected_keys[i],
+                    e.key_str().unwrap(),
+                    t.expected_keys[i],
                     "key mismatch for {:?}",
                     t.event_kind
                 );
             }
             for (i, e) in t.event.attributes.iter().enumerate() {
                 assert_eq!(
-                    e.value, t.expected_values[i],
+                    e.value_str().unwrap(),
+                    t.expected_values[i],
                     "value mismatch for {:?}",
                     t.event_kind
                 );

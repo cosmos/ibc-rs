@@ -8,7 +8,11 @@ use crate::context::Context;
 /// Enables users to integrate their implemented light client by introducing
 /// their client state and consensus state types into the generic [`Context`]
 /// object.
-pub trait ClientType<'a>: Sized {
+pub trait ClientType<'a>: Sized
+where
+    <Self::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    <Self::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+{
     type ClientState: ClientStateExecution<Context<'a, Self>> + Clone;
-    type ConsensusState: ConsensusStateTrait + Into<Any> + TryFrom<Any, Error = ClientError>;
+    type ConsensusState: ConsensusStateTrait;
 }
