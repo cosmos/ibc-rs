@@ -51,16 +51,18 @@ Currently, we are using `Mock` and `SyntheticTendermint` variants of
 enum as host environments. To manage these two different environments, we also
 introduced
 [`HostBlocks`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L72-75)
-for encapsulating the possible host variants that need to be covered by `ibc-testkit`.
+for encapsulating the possible host variants that need to be covered by
+`ibc-testkit`.
 
-However, this creates friction in the case when we need to add new host variants. It creates the same
-problem that the `ibc-derive` crate was designed to solve for `ClientState` and
-`ConsensusState` types, namely: dispatching methods to underlying variants of a top-level enum.
-But, a concrete `MockContext` will always have a unique `HostType` and its corresponding `HostBlocks`.
-So we can refactor `HostTypes` and `HockBlocks` with a generic `TestHost` trait that
-maintains its corresponding types e.g. `Block` types, via associated types.
-Finally, we generalize the `MockContext` once more to use this `TestHost` trait
-instead of a concrete enum variant.
+However, this creates friction in the case when we need to add new host
+variants. It creates the same problem that the `ibc-derive` crate was designed
+to solve for `ClientState` and `ConsensusState` types, namely: dispatching
+methods to underlying variants of a top-level enum. But, a concrete
+`MockContext` will always have a unique `HostType` and its corresponding
+`HostBlocks`. So we can refactor `HostTypes` and `HockBlocks` with a generic
+`TestHost` trait that maintains its corresponding types e.g. `Block` types, via
+associated types. Finally, we generalize the `MockContext` once more to use this
+`TestHost` trait instead of a concrete enum variant.
 
 This `TestHost` trait should be responsible for generating blocks, headers,
 client, and consensus states specific to that host environment.
@@ -142,11 +144,17 @@ pub trait TestHeader: Clone + Debug + Into<Any> {
 
 ### 3. Decoupling IbcContext and Host environment
 
-Currently, `MockContext` implements the top-level [validation](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-core/ics25-handler/src/entrypoint.rs#L45) and [execution](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-core/ics25-handler/src/entrypoint.rs#L112) contexts of
-`ibc-rs`, as opposed to the more granular contexts of each of the individual handlers. It contains other host-specific data e.g. `host_chain_id`,
-`block_time` - that are not directly relevant to the IBC context. If we think
-of `MockContext` as a real blockchain context, the `MockContext` represents the top-
-level runtime; it contains `MockIbcStore`, which is a more appropriate candidate to implement the validation and execution contexts than the `MockContext` itself.
+Currently, `MockContext` implements the top-level
+[validation](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-core/ics25-handler/src/entrypoint.rs#L45)
+and
+[execution](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-core/ics25-handler/src/entrypoint.rs#L112)
+contexts of `ibc-rs`, as opposed to the more granular contexts of each of the
+individual handlers. It contains other host-specific data e.g. `host_chain_id`,
+`block_time` - that are not directly relevant to the IBC context. If we think of
+`MockContext` as a real blockchain context, the `MockContext` represents the
+top- level runtime; it contains `MockIbcStore`, which is a more appropriate
+candidate to implement the validation and execution contexts than the
+`MockContext` itself.
 
 With this, the `MockContext` contains two decoupled parts - the host and the IBC
 module.
@@ -179,8 +187,8 @@ where
 
 With the new proof generation capabilities, we can now test the Tendermint light
 clients. But we need our proofs to be ICS23 compatible. ICS23 expects the IBC
-store root to be committed at a commitment prefix at a top-level store in the host
-environment.
+store root to be committed at a commitment prefix at a top-level store in the
+host environment.
 
 For this, we add an extra store in `MockContext` where the `MockIbcStore`
 commits its storage root at its
@@ -252,7 +260,8 @@ To achieve blockchain-like interfaces, we removed `max_history_size` and
 
 Also to minimize verbosity while writing tests (as Rust doesn't support default
 arguments to function parameters), we want to use some parameter builders. For
-that, we can use the [`TypedBuilder`](https://crates.io/crates/typed-builder) crate.
+that, we can use the [`TypedBuilder`](https://crates.io/crates/typed-builder)
+crate.
 
 ## Status
 
@@ -264,15 +273,16 @@ This ADR pays the technical debt of the existing testing framework.
 
 ### Positive
 
-Future tests will be more readable and maintainable. The test framework
-becomes modular and leverages Rust's trait system. `ibc-rs` users may
-benefit from this framework, which allows them to test their host implementations of `ibc-rs` components.
+Future tests will be more readable and maintainable. The test framework becomes
+modular and leverages Rust's trait system. `ibc-rs` users may benefit from this
+framework, which allows them to test their host implementations of `ibc-rs`
+components.
 
 ### Negative
 
 This requires a significant refactoring of the existing tests. Since this may
-take some time, the parallel development on the `main` branch may conflict with this
-work.
+take some time, the parallel development on the `main` branch may conflict with
+this work.
 
 ## References
 
