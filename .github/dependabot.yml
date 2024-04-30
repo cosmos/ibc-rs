@@ -7,11 +7,23 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "tendermint*"
+      - dependency-name: "ibc*"
+      - dependency-name: "cosmwasm*"
   - package-ecosystem: "cargo"
     directory: "ci/no-std-check"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "tendermint*"
+      - dependency-name: "ibc*"
+      - dependency-name: "cosmwasm*"
   - package-ecosystem: "cargo"
     directory: "ci/cw-check"
     schedule:
       interval: "weekly"
+    ignore:
+      - dependency-name: "tendermint*"
+      - dependency-name: "ibc*"
+      - dependency-name: "cosmwasm*"
