@@ -83,10 +83,10 @@ pub trait TestHost: Default + Debug + Sized {
     type LightClientParams: Debug + Default;
 
     /// The history of blocks produced by the host chain.
-    fn history(&self) -> &VecDeque<Self::Block>;
+    fn history(&self) -> &Vec<Self::Block>;
 
-    /// Triggers the advancing of the host chain by extending the history of blocks (or headers).
-    fn advance_block(
+    /// Commit a block with commitment root to the blockchain, by extending the history of blocks.
+    fn commit_block(
         &mut self,
         commitment_root: Vec<u8>,
         block_time: Duration,
