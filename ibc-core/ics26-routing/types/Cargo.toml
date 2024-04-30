@@ -6,10 +6,10 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "routing", "types"]
+keywords     = [ "blockchain", "cosmos", "ibc", "routing", "types" ]
 readme       = "./../../README.md"
 
-description  = """
+description = """
     Maintained by `ibc-rs`, encapsulates essential ICS-26 Routing Module data structures and domain types,
     as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal applicability
     to facilitate development and integration across diverse IBC-enabled projects.
@@ -28,9 +28,9 @@ serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-core-host-types    = { workspace = true }
-ibc-primitives         = { workspace = true }
-ibc-proto              = {workspace = true }
+ibc-core-host-types = { workspace = true }
+ibc-primitives      = { workspace = true }
+ibc-proto           = { workspace = true }
 
 # cosmos dependencies
 tendermint = { workspace = true }
@@ -40,41 +40,41 @@ parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "displaydoc/std",
-    "serde/std",
-    "subtle-encoding/std",
-    "ibc-primitives/std",
-    "ibc-core-host-types/std",
-    "ibc-proto/std",
-    "tendermint/std",
+  "displaydoc/std",
+  "serde/std",
+  "subtle-encoding/std",
+  "ibc-primitives/std",
+  "ibc-core-host-types/std",
+  "ibc-proto/std",
+  "tendermint/std",
 ]
 serde = [
-    "dep:serde",
-    "ibc-primitives/serde",
-    "ibc-core-host-types/serde",
-    "ibc-primitives/serde",
-    "ibc-proto/serde",
+  "dep:serde",
+  "ibc-primitives/serde",
+  "ibc-core-host-types/serde",
+  "ibc-primitives/serde",
+  "ibc-proto/serde",
 ]
 borsh = [
-    "dep:borsh",
-    "ibc-core-host-types/borsh",
-    "ibc-primitives/borsh",
-    "ibc-proto/borsh",
+  "dep:borsh",
+  "ibc-core-host-types/borsh",
+  "ibc-primitives/borsh",
+  "ibc-proto/borsh",
 ]
 schema = [
-    "dep:schemars",
-    "ibc-core-host-types/schema",
-    "ibc-primitives/schema",
-    "ibc-proto/json-schema",
-    "serde",
-    "std"
+  "dep:schemars",
+  "ibc-core-host-types/schema",
+  "ibc-primitives/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
 ]
 parity-scale-codec = [
-    "dep:parity-scale-codec",
-    "dep:scale-info",
-    "ibc-core-host-types/parity-scale-codec",
-    "ibc-primitives/parity-scale-codec",
-    "ibc-proto/parity-scale-codec",
+  "dep:parity-scale-codec",
+  "dep:scale-info",
+  "ibc-core-host-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+  "ibc-proto/parity-scale-codec",
 ]

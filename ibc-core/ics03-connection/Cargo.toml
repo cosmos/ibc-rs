@@ -6,10 +6,10 @@ edition      = { workspace = true }
 rust-version = { workspace = true }
 license      = { workspace = true }
 repository   = { workspace = true }
-keywords     = ["blockchain", "cosmos", "ibc", "connection"]
+keywords     = [ "blockchain", "cosmos", "ibc", "connection" ]
 readme       = "./../README.md"
 
-description  = """
+description = """
     Maintained by `ibc-rs`, contains the implementation of the ICS-03 Connection Semantics and
     re-exports essential data structures and domain types from `ibc-core-connection-types` crate.
 """
@@ -25,41 +25,41 @@ ibc-core-handler-types    = { workspace = true }
 ibc-primitives            = { workspace = true }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "ibc-core-client/std",
-    "ibc-core-connection-types/std",
-    "ibc-core-host/std",
-    "ibc-core-handler-types/std",
-    "ibc-primitives/std",
+  "ibc-core-client/std",
+  "ibc-core-connection-types/std",
+  "ibc-core-host/std",
+  "ibc-core-handler-types/std",
+  "ibc-primitives/std",
 ]
 serde = [
-    "ibc-core-client/serde",
-    "ibc-core-connection-types/serde",
-    "ibc-core-host/serde",
-    "ibc-core-handler-types/serde",
-    "ibc-primitives/serde",
+  "ibc-core-client/serde",
+  "ibc-core-connection-types/serde",
+  "ibc-core-host/serde",
+  "ibc-core-handler-types/serde",
+  "ibc-primitives/serde",
 ]
 schema = [
-    "ibc-core-client/schema",
-    "ibc-core-connection-types/schema",
-    "ibc-core-host/schema",
-    "ibc-core-handler-types/schema",
-    "ibc-primitives/schema",
-    "serde",
-    "std"
+  "ibc-core-client/schema",
+  "ibc-core-connection-types/schema",
+  "ibc-core-host/schema",
+  "ibc-core-handler-types/schema",
+  "ibc-primitives/schema",
+  "serde",
+  "std",
 ]
 borsh = [
-    "ibc-core-client/borsh",
-    "ibc-core-connection-types/borsh",
-    "ibc-core-host/borsh",
-    "ibc-core-handler-types/borsh",
-    "ibc-primitives/borsh",
+  "ibc-core-client/borsh",
+  "ibc-core-connection-types/borsh",
+  "ibc-core-host/borsh",
+  "ibc-core-handler-types/borsh",
+  "ibc-primitives/borsh",
 ]
 parity-scale-codec = [
-    "ibc-core-client/parity-scale-codec",
-    "ibc-core-connection-types/parity-scale-codec",
-    "ibc-core-host/parity-scale-codec",
-    "ibc-core-handler-types/parity-scale-codec",
-    "ibc-primitives/parity-scale-codec",
+  "ibc-core-client/parity-scale-codec",
+  "ibc-core-connection-types/parity-scale-codec",
+  "ibc-core-host/parity-scale-codec",
+  "ibc-core-handler-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
 ]
