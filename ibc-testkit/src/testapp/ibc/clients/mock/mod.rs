@@ -6,5 +6,5 @@ pub mod misbehaviour;
 
 /// Re-exports mock proto types from the `ibc-proto` crate
 pub mod proto {
-    pub use ::ibc_proto::ibc::mock::*;
+    pub use ibc_proto::ibc::mock::*;
 }
