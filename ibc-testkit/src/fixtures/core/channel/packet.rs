@@ -225,7 +225,7 @@ mod tests {
                 name: "Missing both timeout height and timestamp".to_string(),
                 raw: RawPacket {
                     timeout_height: None,
-                    ..raw_packet_no_timeout_of_timestamp
+                    ..raw_packet_no_timeout_timestamp
                 },
                 want_pass: false,
             }
