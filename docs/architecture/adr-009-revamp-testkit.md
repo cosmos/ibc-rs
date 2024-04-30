@@ -35,8 +35,8 @@ To achieve this, we have broken down the proposal into sub-proposals:
 
 The current framework uses `HashMap` and `HashSet` to store data. This works for
 many test scenarios, but it fails to test proof-sensitive scenarios. Because of
-this, we don't have any connection, channel handshake, or packet relay tests that
-cover the Tendermint light client.
+this, we don't have any connection, channel handshake, or packet relay tests
+that cover the Tendermint light client.
 
 We generalize
 [`MockContext`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/types.rs#L103)
@@ -123,7 +123,8 @@ pub trait TestBlock: Clone + Debug {
     fn into_header(self) -> Self::Header;
 }
 
-/// TestHeader is a trait that defines the interface for a header produced by a host blockchain.
+/// TestHeader is a trait that defines the interface for a header
+/// submitted by relayer from the host blockchain.
 pub trait TestHeader: Clone + Debug + Into<Any> {
     /// The type of consensus state can be extracted from the header.
     type ConsensusState: ConsensusState + Into<AnyConsensusState> + From<Self> + Clone + Debug;
