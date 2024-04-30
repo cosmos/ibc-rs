@@ -11,7 +11,7 @@ updates:
       - dependency-name: "tendermint*"
       - dependency-name: "ibc*"
       - dependency-name: "cosmwasm*"
-      - dependency-name: "cw-*"
+      - dependency-name: "cw*"
   - package-ecosystem: "cargo"
     directory: "ci/no-std-check"
     schedule:
@@ -20,7 +20,7 @@ updates:
       - dependency-name: "tendermint*"
       - dependency-name: "ibc*"
       - dependency-name: "cosmwasm*"
-      - dependency-name: "cw-*"
+      - dependency-name: "cw*"
   - package-ecosystem: "cargo"
     directory: "ci/cw-check"
     schedule:
@@ -29,4 +29,4 @@ updates:
       - dependency-name: "tendermint*"
       - dependency-name: "ibc*"
       - dependency-name: "cosmwasm*"
-      - dependency-name: "cw-*"
+      - dependency-name: "cw*"
