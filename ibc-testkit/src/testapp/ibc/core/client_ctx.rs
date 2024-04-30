@@ -92,7 +92,7 @@ where
     ) -> Result<Option<Self::ConsensusStateRef>, ContextError> {
         let path = format!("clients/{client_id}/consensusStates")
             .try_into()
-            .unwrap(); // safety - path must be valid since ClientId and height are valid Identifiers
+            .expect("Must be valid path: ClientId and height are valid Identifiers");
 
         let keys = self.store.get_keys(&path);
         let found_path = keys.into_iter().find_map(|path| {
@@ -127,7 +127,7 @@ where
     ) -> Result<Option<Self::ConsensusStateRef>, ContextError> {
         let path = format!("clients/{client_id}/consensusStates")
             .try_into()
-            .unwrap(); // safety - path must be valid since ClientId and height are valid Identifiers
+            .expect("Must be valid path: ClientId and height are valid Identifiers");
 
         let keys = self.store.get_keys(&path);
         let found_path = keys.into_iter().rev().find_map(|path| {
