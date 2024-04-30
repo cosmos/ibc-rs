@@ -1,5 +1,6 @@
 use cosmwasm_std::{to_json_binary, Binary};
 use ibc_core::client::context::prelude::*;
+use ibc_core::client::types::error::ClientError;
 use ibc_core::host::types::path::ClientConsensusStatePath;
 use ibc_core::primitives::proto::Any;
 use prost::Message;
@@ -13,12 +14,16 @@ use crate::types::{
     VerifyUpgradeAndUpdateStateMsg,
 };
 
-impl<'a, C: ClientType<'a>> Context<'a, C> {
+impl<'a, C: ClientType<'a>> Context<'a, C>
+where
+    <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+{
     /// Instantiates a new client with the given [`InstantiateMsg`] message.
     pub fn instantiate(&mut self, msg: InstantiateMsg) -> Result<Binary, ContractError> {
         let any = Any::decode(&mut msg.client_state.as_slice())?;
 
-        let client_state = C::ClientState::try_from(any)?;
+        let client_state = C::ClientState::try_from(any).map_err(Into::into)?;
 
         let any_consensus_state = Any::decode(&mut msg.consensus_state.as_slice())?;
 

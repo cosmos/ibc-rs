@@ -33,7 +33,11 @@ pub const CONSENSUS_STATE_HEIGHT_MAP: Map<'_, (u64, u64), Empty> =
 
 /// Context is a wrapper around the deps and env that gives access to the
 /// methods under the ibc-rs Validation and Execution traits.
-pub struct Context<'a, C: ClientType<'a>> {
+pub struct Context<'a, C: ClientType<'a>>
+where
+    <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+{
     deps: Option<Deps<'a>>,
     deps_mut: Option<DepsMut<'a>>,
     env: Env,
@@ -43,7 +47,11 @@ pub struct Context<'a, C: ClientType<'a>> {
     client_type: std::marker::PhantomData<C>,
 }
 
-impl<'a, C: ClientType<'a>> Context<'a, C> {
+impl<'a, C: ClientType<'a>> Context<'a, C>
+where
+    <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+{
     /// Constructs a new Context object with the given deps and env.
     pub fn new_ref(deps: Deps<'a>, env: Env) -> Result<Self, ContractError> {
         let client_id = ClientId::from_str(env.contract.address.as_str())?;
@@ -303,7 +311,11 @@ pub trait StorageRef {
     fn storage_ref(&self) -> &dyn Storage;
 }
 
-impl<'a, C: ClientType<'a>> StorageRef for Context<'a, C> {
+impl<'a, C: ClientType<'a>> StorageRef for Context<'a, C>
+where
+    <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+{
     fn storage_ref(&self) -> &dyn Storage {
         match self.deps {
             Some(ref deps) => deps.storage,
@@ -319,7 +331,11 @@ pub trait StorageMut: StorageRef {
     fn storage_mut(&mut self) -> &mut dyn Storage;
 }
 
-impl<'a, C: ClientType<'a>> StorageMut for Context<'a, C> {
+impl<'a, C: ClientType<'a>> StorageMut for Context<'a, C>
+where
+    <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+{
     fn storage_mut(&mut self) -> &mut dyn Storage {
         match self.deps_mut {
             Some(ref mut deps) => deps.storage,

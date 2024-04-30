@@ -6,13 +6,18 @@ use ibc_core::client::types::Height;
 use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::identifiers::ClientId;
 use ibc_core::host::types::path::ClientConsensusStatePath;
+use ibc_core::primitives::proto::Any;
 use ibc_core::primitives::Timestamp;
 
 use super::Context;
 use crate::api::ClientType;
 use crate::types::HeightTravel;
 
-impl<'a, C: ClientType<'a>> ExtClientValidationContext for Context<'a, C> {
+impl<'a, C: ClientType<'a>> ExtClientValidationContext for Context<'a, C>
+where
+    <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+{
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         let time = self.env().block.time;
 
