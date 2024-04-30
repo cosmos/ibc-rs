@@ -228,7 +228,8 @@ impl ClientStateCommon for MockClientState {
 impl<V> ClientStateValidation<V> for MockClientState
 where
     V: ClientValidationContext + MockClientContext,
-    V::ConsensusStateRef: Convertible<MockConsensusState, ClientError>,
+    MockConsensusState: Convertible<V::ConsensusStateRef>,
+    <MockConsensusState as TryFrom<V::ConsensusStateRef>>::Error: Into<ClientError>,
 {
     fn verify_client_message(
         &self,
@@ -278,13 +279,13 @@ where
             return Ok(Status::Frozen);
         }
 
-        let latest_consensus_state = {
+        let latest_consensus_state: MockConsensusState = {
             match ctx.consensus_state(&ClientConsensusStatePath::new(
                 client_id.clone(),
                 self.latest_height().revision_number(),
                 self.latest_height().revision_height(),
             )) {
-                Ok(cs) => cs.try_into()?,
+                Ok(cs) => cs.try_into().map_err(Into::into)?,
                 // if the client state does not have an associated consensus state for its latest height
                 // then it must be expired
                 Err(_) => return Ok(Status::Expired),
@@ -314,7 +315,8 @@ impl<E> ClientStateExecution<E> for MockClientState
 where
     E: ClientExecutionContext + MockClientContext,
     E::ClientStateRef: From<Self>,
-    E::ConsensusStateRef: Convertible<MockConsensusState, ClientError>,
+    MockConsensusState: Convertible<E::ConsensusStateRef>,
+    <MockConsensusState as TryFrom<E::ConsensusStateRef>>::Error: Into<ClientError>,
 {
     fn initialise(
         &self,
@@ -322,7 +324,7 @@ where
         client_id: &ClientId,
         consensus_state: Any,
     ) -> Result<(), ClientError> {
-        let mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
+        let mock_consensus_state: MockConsensusState = consensus_state.try_into()?;
 
         ctx.store_client_state(ClientStatePath::new(client_id.clone()), (*self).into())?;
         ctx.store_consensus_state(
@@ -401,7 +403,7 @@ where
         upgraded_consensus_state: Any,
     ) -> Result<Height, ClientError> {
         let new_client_state = Self::try_from(upgraded_client_state)?;
-        let new_consensus_state = MockConsensusState::try_from(upgraded_consensus_state)?;
+        let new_consensus_state: MockConsensusState = upgraded_consensus_state.try_into()?;
 
         let latest_height = new_client_state.latest_height();
 
@@ -450,7 +452,7 @@ where
         let host_timestamp = ctx.host_timestamp()?;
         let host_height = ctx.host_height()?;
 
-        let mock_consensus_state = MockConsensusState::try_from(substitute_consensus_state)?;
+        let mock_consensus_state: MockConsensusState = substitute_consensus_state.try_into()?;
 
         ctx.store_consensus_state(
             ClientConsensusStatePath::new(
