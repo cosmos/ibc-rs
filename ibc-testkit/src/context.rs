@@ -83,30 +83,37 @@ where
     H: TestHost,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
+    /// Returns a immutable reference to the IBC store.
     pub fn ibc_store(&self) -> &MockIbcStore<S> {
         &self.ibc_store
     }
 
+    /// Returns a mutable reference to the IBC store.
     pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S> {
         &mut self.ibc_store
     }
 
+    /// Returns a immutable reference to the IBC router.
     pub fn ibc_router(&self) -> &MockRouter {
         &self.ibc_router
     }
 
+    /// Returns a mutable reference to the IBC router.
     pub fn ibc_router_mut(&mut self) -> &mut MockRouter {
         &mut self.ibc_router
     }
 
+    /// Returns the block at the given height from the host chain, if exists.
     pub fn host_block(&self, target_height: &Height) -> Option<H::Block> {
         self.host.get_block(target_height)
     }
 
+    /// Returns the latest block from the host chain.
     pub fn query_latest_block(&self) -> Option<H::Block> {
         self.host.get_block(&self.latest_height())
     }
 
+    /// Returns the latest height of client state for the given [`ClientId`].
     pub fn light_client_latest_height(&self, client_id: &ClientId) -> Height {
         self.ibc_store
             .client_state(client_id)
@@ -114,6 +121,7 @@ where
             .latest_height()
     }
 
+    /// Advances the host chain height to the given target height.
     pub fn advance_block_up_to(mut self, target_height: Height) -> Self {
         let latest_height = self.host.latest_height();
         if target_height.revision_number() != latest_height.revision_number() {
@@ -129,13 +137,23 @@ where
         self
     }
 
-    pub fn generate_genesis_block(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
+    /// Advance the first height of the host chain by generating a genesis block.
+    ///
+    /// This method is exactly the same as [`Self::advance_with_block_params`].
+    /// But it bootstraps the genesis block by height 1 and `genesis_time`.
+    ///
+    /// The method starts and ends with [`Self::end_block`] and [`Self::begin_block`], just
+    /// like the [`Self::advance_with_block_params`], so that it can advance to next height
+    /// i.e. height 2 - just by calling [`Self::advance_with_block_params`].
+    pub fn advance_with_genesis_block(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
         self.end_block();
 
         // commit multi store
         let multi_store_commitment = self.multi_store.commit().expect("no error");
 
         // generate a genesis block
+        // this is basically self.host.produce_block() but with
+        // block height 1 and block timestamp `genesis_time`.
         let genesis_block =
             self.host
                 .generate_block(multi_store_commitment, 1, genesis_time, params);
@@ -146,6 +164,10 @@ where
         self.begin_block();
     }
 
+    /// Begin a new block on the context.
+    ///
+    /// This method book keeps the data from last block,
+    /// and prepares the context for the next block.
     pub fn begin_block(&mut self) {
         let consensus_state = self
             .host
@@ -174,6 +196,9 @@ where
         );
     }
 
+    /// End the current block on the context.
+    ///
+    /// This method commits the state of the IBC store and the host's multi store.
     pub fn end_block(&mut self) {
         // commit ibc store
         let ibc_store_commitment = self.ibc_store.end_block().expect("no error");
@@ -202,12 +227,15 @@ where
             .advance_block(multi_store_commitment, block_time, params);
     }
 
+    /// Advances the host chain by ending the current block, producing a new block, and
+    /// beginning the next block.
     pub fn advance_with_block_params(&mut self, block_time: Duration, params: &H::BlockParams) {
         self.end_block();
         self.produce_block(block_time, params);
         self.begin_block();
     }
 
+    /// Convenience method to advance the host chain using default parameters.
     pub fn advance_block(&mut self) {
         self.advance_with_block_params(
             Duration::from_secs(DEFAULT_BLOCK_TIME_SECS),
@@ -215,6 +243,7 @@ where
         )
     }
 
+    /// Returns the latest height of the host chain.
     pub fn latest_height(&self) -> Height {
         let latest_ibc_height = self.ibc_store.host_height().expect("Never fails");
         let latest_host_height = self.host.latest_height();
@@ -225,10 +254,12 @@ where
         latest_ibc_height
     }
 
+    /// Returns the latest timestamp of the host chain.
     pub fn latest_timestamp(&self) -> Timestamp {
         self.host.latest_block().timestamp()
     }
 
+    /// Returns the timestamp at the given height.
     pub fn timestamp_at(&self, height: Height) -> Timestamp {
         self.host
             .get_block(&height)
@@ -236,6 +267,7 @@ where
             .timestamp()
     }
 
+    /// Bootstraps the context with a client state and its corresponding [`ClientId`].
     pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
         let client_state_path = ClientStatePath::new(client_id.clone());
         self.ibc_store
@@ -244,6 +276,7 @@ where
         self
     }
 
+    /// Bootstraps the context with a consensus state and its corresponding [`ClientId`] and [`Height`].
     pub fn with_consensus_state(
         mut self,
         client_id: &ClientId,
@@ -300,6 +333,7 @@ where
         }
     }
 
+    /// Bootstrap a light client with ClientState and its ConsensusState(s) to this context.
     pub fn with_light_client<RH>(
         mut self,
         client_id: &ClientId,
@@ -326,7 +360,9 @@ where
         self
     }
 
-    /// Associates a connection to this context.
+    /// Bootstraps a IBC connection to this context.
+    ///
+    /// This does not bootstrap any light client.
     pub fn with_connection(
         mut self,
         connection_id: ConnectionId,
@@ -339,7 +375,9 @@ where
         self
     }
 
-    /// Associates a channel (in an arbitrary state) to this context.
+    /// Bootstraps a IBC channel to this context.
+    ///
+    /// This does not bootstrap any corresponding IBC connection or light client.
     pub fn with_channel(
         mut self,
         port_id: PortId,
@@ -353,6 +391,9 @@ where
         self
     }
 
+    /// Bootstraps a send sequence to this context.
+    ///
+    /// This does not bootstrap any corresponding IBC channel, connection or light client.
     pub fn with_send_sequence(
         mut self,
         port_id: PortId,
@@ -366,6 +407,9 @@ where
         self
     }
 
+    /// Bootstraps a receive sequence to this context.
+    ///
+    /// This does not bootstrap any corresponding IBC channel, connection or light client.
     pub fn with_recv_sequence(
         mut self,
         port_id: PortId,
@@ -379,6 +423,9 @@ where
         self
     }
 
+    /// Bootstraps a ack sequence to this context.
+    ///
+    /// This does not bootstrap any corresponding IBC channel, connection or light client.
     pub fn with_ack_sequence(
         mut self,
         port_id: PortId,
@@ -392,6 +439,9 @@ where
         self
     }
 
+    /// Bootstraps a packet commitment to this context.
+    ///
+    /// This does not bootstrap any corresponding IBC channel, connection or light client.
     pub fn with_packet_commitment(
         mut self,
         port_id: PortId,
@@ -406,14 +456,17 @@ where
         self
     }
 
+    /// Calls [`validate`] function on [`MsgEnvelope`] using the context's IBC store and router.
     pub fn validate(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
         validate(&self.ibc_store, &self.ibc_router, msg)
     }
 
+    /// Calls [`execute`] function on [`MsgEnvelope`] using the context's IBC store and router.
     pub fn execute(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
         execute(&mut self.ibc_store, &mut self.ibc_router, msg)
     }
 
+    /// Calls [`dispatch`] function on [`MsgEnvelope`] using the context's IBC store and router.
     pub fn dispatch(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
         dispatch(&mut self.ibc_store, &mut self.ibc_router, msg)
     }
@@ -429,10 +482,12 @@ where
         Ok(())
     }
 
+    /// Returns all the events that have been emitted by the context's IBC store.
     pub fn get_events(&self) -> Vec<IbcEvent> {
         self.ibc_store.events.lock().clone()
     }
 
+    /// Returns all the logs that have been emitted by the context's IBC store.
     pub fn get_logs(&self) -> Vec<String> {
         self.ibc_store.logs.lock().clone()
     }
