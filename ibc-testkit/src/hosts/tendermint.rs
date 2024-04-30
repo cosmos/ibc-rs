@@ -159,6 +159,8 @@ impl Default for BlockParams {
     }
 }
 
+/// This wrapper type is needed to implement
+/// [`From`] traits [`Header`] to foreign types.
 #[derive(Debug, Clone)]
 pub struct TendermintHeader(Header);
 
