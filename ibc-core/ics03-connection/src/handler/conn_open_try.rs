@@ -1,5 +1,6 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenTry`.;
 use ibc_core_client::context::prelude::*;
+use ibc_core_client::types::error::ClientError;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenTry;
 use ibc_core_connection_types::msgs::MsgConnectionOpenTry;
@@ -12,12 +13,13 @@ use ibc_core_host::types::path::{
 };
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
-use ibc_primitives::proto::Protobuf;
+use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
 
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
+    <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
     validate_impl(ctx_b, &msg, &vars)
@@ -30,13 +32,14 @@ fn validate_impl<Ctx>(
 ) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
+    <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
     let client_val_ctx_b = ctx_b.get_client_validation_context();
 
     let client_state_of_b_on_a =
-        Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone())?;
+        Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone()).map_err(Into::into)?;
 
     ctx_b.validate_self_client(client_state_of_b_on_a)?;
 

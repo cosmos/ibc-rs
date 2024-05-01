@@ -1,14 +1,14 @@
 [package]
-name         = "ibc-query"
-version      = { workspace = true }
-authors      = { workspace = true }
-edition      = { workspace = true }
+name = "ibc-query"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
 rust-version = { workspace = true }
-license      = { workspace = true }
-repository   = { workspace = true }
-readme       = "README.md"
-keywords     = ["blockchain", "cosmos", "ibc", "rpc", "grpc"]
-description  = """
+license = { workspace = true }
+repository = { workspace = true }
+readme = "README.md"
+keywords = [ "blockchain", "cosmos", "ibc", "rpc", "grpc" ]
+description = """
     Maintained by `ibc-rs`, contains essential IBC query types, utility functions and
     gRPC service implementations for the IBC core.
 """
@@ -16,30 +16,29 @@ description  = """
 [dependencies]
 # external dependencies
 displaydoc = { version = "0.2", default-features = false }
-schemars   = { workspace = true , optional = true }
+schemars   = { workspace = true, optional = true }
 serde      = { workspace = true, optional = true }
 tonic      = { version = "0.11" }
 
 # ibc dependencies
 ibc       = { workspace = true }
-ibc-proto = { workspace = true, features = ["server"] }
+ibc-proto = { workspace = true, features = [ "server" ] }
 
 [features]
-default = ["std"]
+default = [ "std" ]
 std = [
-    "ibc/std",
-    "ibc-proto/std",
+  "ibc/std",
+  "ibc-proto/std",
 ]
 serde = [
-    "dep:serde",
-    "ibc/serde",
-    "ibc-proto/serde",
+  "dep:serde",
+  "ibc/serde",
+  "ibc-proto/serde",
 ]
 schema = [
-    "dep:schemars",
-    "ibc/schema",
-    "ibc-proto/json-schema",
-    "serde",
-    "std",
+  "dep:schemars",
+  "ibc/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
 ]
-

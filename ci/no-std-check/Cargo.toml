@@ -1,24 +1,24 @@
 [package]
-name = "no-std-check"
-version = "0.1.0"
-edition = "2021"
+name     = "no-std-check"
+version  = "0.1.0"
+edition  = "2021"
 resolver = "2"
 
 [dependencies]
-ibc = { path = "../../ibc", default-features = false, features = ["serde"] }
-ibc-proto = { version = "0.43", default-features = false, features = [
+ibc = { path = "../../ibc", default-features = false, features = [ "serde" ] }
+ibc-proto = { version = "0.44", default-features = false, features = [
   "parity-scale-codec",
   "borsh",
   "serde",
 ] }
-tendermint = { version = "0.35", default-features = false }
-tendermint-proto = { version = "0.35", default-features = false }
-tendermint-light-client-verifier = { version = "0.35", default-features = false, features = ["rust-crypto"] }
+tendermint = { version = "0.36", default-features = false }
+tendermint-proto = { version = "0.36", default-features = false }
+tendermint-light-client-verifier = { version = "0.36", default-features = false, features = [ "rust-crypto" ] }
 
-sp-core = { version = "32.0", default-features = false, optional = true }
-sp-io = { version = "34.0", default-features = false, optional = true }
+sp-core    = { version = "32.0", default-features = false, optional = true }
+sp-io      = { version = "34.0", default-features = false, optional = true }
 sp-runtime = { version = "35.0", default-features = false, optional = true }
-sp-std = { version = "14.0", default-features = false, optional = true }
+sp-std     = { version = "14.0", default-features = false, optional = true }
 
 # The indirect dependency `syn` 2.0.4 has a bug that causes
 # compilation errors in `tendermint`. This is fixed in 2.0.5.
@@ -26,6 +26,6 @@ sp-std = { version = "14.0", default-features = false, optional = true }
 syn = ">=2.0.5"
 
 [features]
-panic-handler = []
-use-substrate = ["sp-core", "sp-io", "sp-runtime", "sp-std"]
-substrate-std = ["sp-core/std", "sp-io/std", "sp-runtime/std", "sp-std/std"]
+panic-handler = [  ]
+use-substrate = [ "sp-core", "sp-io", "sp-runtime", "sp-std" ]
+substrate-std = [ "sp-core/std", "sp-io/std", "sp-runtime/std", "sp-std/std" ]

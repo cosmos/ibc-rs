@@ -8,7 +8,7 @@ install-tools: ## Install development tools including nightly rustfmt, cargo-hac
 	rustup component add rustfmt --toolchain nightly
 	cargo install cargo-hack
 	cargo install cargo-release
-	cargo install typos-cli
+	cargo install typos-cli taplo-cli
 
 lint: ## Lint the code using rustfmt, clippy and whitespace lints.
 	cargo +nightly fmt --all --check
@@ -16,6 +16,7 @@ lint: ## Lint the code using rustfmt, clippy and whitespace lints.
 	cargo clippy --all-targets --no-default-features
 	typos --config $(CURDIR)/.github/typos.toml
 	bash ./ci/code-quality/whitespace-lints.sh
+	taplo fmt --check
 
 check-features: ## Check that project compiles with all combinations of features.
 	cargo hack check --workspace --feature-powerset --exclude-features default
@@ -36,10 +37,10 @@ test: ## Run tests with all features and without default features.
 	cargo test --all-targets --no-default-features
 
 check-release: ## Check that the release build compiles.
-	cargo release --workspace --no-push --no-tag --no-publish --exclude ibc-derive
+	cargo release --workspace --no-push --no-tag --no-publish --exclude ibc-derive --exclude ibc-client-tendermint-cw
 
 release: ## Perform an actual release and publishes to crates.io.
-	cargo release --workspace --no-push --no-tag --exclude ibc-derive --allow-branch HEAD --execute
+	cargo release --workspace --no-push --no-tag --exclude ibc-derive --exclude ibc-client-tendermint-cw --allow-branch HEAD --execute
 
 build-tendermint-cw: ## Build the WASM file for the ICS-07 Tendermint light client.
 	@echo "Building the WASM file for the ICS-07 Tendermint light client"
