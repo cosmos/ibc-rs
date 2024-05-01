@@ -28,7 +28,7 @@ cosmwasm-std = { workspace = true }
 [features]
 default = [ "std" ]
 std = [
-    "ibc-core/std",
-    "ibc-client-cw/std",
-    "ibc-client-tendermint/std",
+  "ibc-core/std",
+  "ibc-client-cw/std",
+  "ibc-client-tendermint/std",
 ]
