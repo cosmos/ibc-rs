@@ -5,7 +5,6 @@ use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
 use ibc::apps::transfer::types::packet::PacketData;
 use ibc::apps::transfer::types::PrefixedCoin;
 use ibc::core::channel::types::packet::Packet;
-use ibc::core::channel::types::timeout::TimeoutHeight;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
@@ -103,11 +102,14 @@ where
     };
 
     // packet with ibc metadata
+    // either height timeout or timestamp timeout must be set
     let msg = MsgTransfer {
         port_id_on_a: PortId::transfer(),
         chan_id_on_a: chan_id_on_a.clone(),
         packet_data,
-        timeout_height_on_b: TimeoutHeight::Never,
+        // setting timeout height to 10 blocks from B's current height.
+        timeout_height_on_b: relayer.get_ctx_b().latest_height().add(10).into(),
+        // not setting timeout timestamp.
         timeout_timestamp_on_b: Timestamp::none(),
     };
 
