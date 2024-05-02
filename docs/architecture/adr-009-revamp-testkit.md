@@ -175,13 +175,19 @@ where
     S: ProvableStore + Debug,
     H: TestHost,
 {
+    // Access ibc module store
     pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S>;
-    pub fn host_mut(&mut self) -> &mut H;
 
-    pub fn generate_genesis_block(&mut self, genesis_time: Timestamp);
+    // Advance the first block height.
+    pub fn advance_genesis_height(&mut self, genesis_time: Timestamp);
+    // Routine procedures at the beginning of a block
+    // Just after committing last block state.
     pub fn begin_block(&mut self);
+    // Advance the current block height.
+    pub fn advance_block_height(&mut self, block_time: Duration);
+    // Routine procedures at the end of a block
+    // Just before committing current block state.
     pub fn end_block(&mut self);
-    pub fn produce_block(&mut self, block_time: Duration);
 }
 ```
 

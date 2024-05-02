@@ -103,7 +103,7 @@ where
     /// Advances the block height on `A` until it catches up with the latest timestamp on `B`.
     pub fn sync_clock_on_a(ctx_a: &mut TestContext<A>, ctx_b: &TestContext<B>) {
         while ctx_b.latest_timestamp() > ctx_a.latest_timestamp() {
-            ctx_a.advance_height();
+            ctx_a.advance_block_height();
         }
     }
 

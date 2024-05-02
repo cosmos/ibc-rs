@@ -80,7 +80,7 @@ where
         );
 
         for block_params in params.block_params_history {
-            context.advance_height_with_params(params.block_time, &block_params);
+            context.advance_block_height_with_params(params.block_time, &block_params);
         }
 
         assert_eq!(

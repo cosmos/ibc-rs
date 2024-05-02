@@ -131,7 +131,7 @@ where
         } else {
             // Repeatedly advance the host chain height till we hit the desired height
             while self.host.latest_height().revision_height() < target_height.revision_height() {
-                self.advance_height()
+                self.advance_block_height()
             }
         }
         self
@@ -231,15 +231,19 @@ where
 
     /// Advances the host chain height by ending the current block, producing a new block, and
     /// beginning the next block.
-    pub fn advance_height_with_params(&mut self, block_time: Duration, params: &H::BlockParams) {
+    pub fn advance_block_height_with_params(
+        &mut self,
+        block_time: Duration,
+        params: &H::BlockParams,
+    ) {
         self.end_block();
         self.commit_state_to_host(block_time, params);
         self.begin_block();
     }
 
     /// Convenience method to advance the host chain height using default parameters.
-    pub fn advance_height(&mut self) {
-        self.advance_height_with_params(
+    pub fn advance_block_height(&mut self) {
+        self.advance_block_height_with_params(
             Duration::from_secs(DEFAULT_BLOCK_TIME_SECS),
             &Default::default(),
         )
@@ -480,7 +484,7 @@ where
         self.dispatch(msg)
             .map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
-        self.advance_height();
+        self.advance_block_height();
         Ok(())
     }
 
@@ -571,7 +575,7 @@ mod tests {
                 let current_height = test.ctx.latest_height();
 
                 // After advancing the chain's height, the context should still be valid.
-                test.ctx.advance_height();
+                test.ctx.advance_block_height();
                 assert!(
                     test.ctx.host.validate().is_ok(),
                     "failed in test [{}] {} while validating context {:?}",
