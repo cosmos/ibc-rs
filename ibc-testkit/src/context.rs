@@ -166,8 +166,9 @@ where
 
     /// Begin a new block on the context.
     ///
-    /// This method book keeps the data from last block,
-    /// and prepares the context for the next block.
+    /// This method commits the required metadata from the last block generation
+    /// and consensus, and prepares the context for the next block. This includes
+    /// the latest consensus state and the latest IBC commitment proof.
     pub fn begin_block(&mut self) {
         let consensus_state = self
             .host
