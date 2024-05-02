@@ -157,6 +157,7 @@ fn routing_module_and_keepers() {
 
     let msg_transfer_no_timeout_or_timestamp = MsgTransferConfig::builder()
         .packet_data(packet_data.clone())
+        // Timestamp::from_nanoseconds(0) and Timestamp::none() are equivalent
         .timeout_timestamp_on_b(Timestamp::from_nanoseconds(0).unwrap())
         .build();
 
@@ -348,13 +349,13 @@ fn routing_module_and_keepers() {
         Test {
             name: "Transfer message no timeout".to_string(),
             msg: msg_transfer_no_timeout.into(),
-            want_pass: true,
+            want_pass: false,
             state_check: None,
         },
         Test {
             name: "Transfer message no timeout nor timestamp".to_string(),
             msg: msg_transfer_no_timeout_or_timestamp.into(),
-            want_pass: true,
+            want_pass: false,
             state_check: None,
         },
         //ICS04-close channel
