@@ -84,7 +84,7 @@ mod tests {
 
         let proof_height = 10;
         let default_raw_packet = dummy_raw_packet(proof_height, 1000);
-        let raw_packet_no_timeout_or_timestamp = dummy_raw_packet(10, 0);
+        let raw_packet_no_timeout_timestamp = dummy_raw_packet(10, 0);
 
         let mut raw_packet_invalid_timeout_height = dummy_raw_packet(0, 10);
         raw_packet_invalid_timeout_height.timeout_height = Some(RawHeight {
@@ -101,8 +101,8 @@ mod tests {
             Test {
                 // Note: ibc-go currently (July 2022) incorrectly rejects this
                 // case, even though it is allowed in ICS-4.
-                name: "Packet with no timeout of timestamp".to_string(),
-                raw: raw_packet_no_timeout_or_timestamp.clone(),
+                name: "Packet with no timeout timestamp".to_string(),
+                raw: raw_packet_no_timeout_timestamp.clone(),
                 want_pass: true,
             },
             Test {
@@ -225,7 +225,7 @@ mod tests {
                 name: "Missing both timeout height and timestamp".to_string(),
                 raw: RawPacket {
                     timeout_height: None,
-                    ..raw_packet_no_timeout_or_timestamp
+                    ..raw_packet_no_timeout_timestamp
                 },
                 want_pass: false,
             }

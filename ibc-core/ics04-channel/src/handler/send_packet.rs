@@ -30,6 +30,10 @@ pub fn send_packet_validate(
     ctx_a: &impl SendPacketValidationContext,
     packet: &Packet,
 ) -> Result<(), ContextError> {
+    if !packet.timeout_height_on_b.is_set() && !packet.timeout_timestamp_on_b.is_set() {
+        return Err(ContextError::PacketError(PacketError::MissingTimeout));
+    }
+
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
