@@ -140,12 +140,10 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet without height and timestamp timeout".to_string(),
-            ctx: context
-                .clone()
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
