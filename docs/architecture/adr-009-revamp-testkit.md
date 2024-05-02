@@ -18,16 +18,18 @@ To overcome this, we need to improve our test framework such that it allows:
 
 - testing different implementations and traits.
 - composition of succinct tests with useful `util` methods.
-- validating of code paths that were not easily testable before, i.e. Merkle proof generation.
-- simulating a more realistic IBC workflow, using real IBC and relayer interfaces.
+- validating code paths that were not easily testable before, i.e. Merkle proof
+  generation.
+- simulating a more realistic IBC workflow, using real IBC and relayer
+  interfaces.
 
 ## Decision
 
 The main goal of this proposal is to create a test framework that is modular and
 closer to a real blockchain environment. This should also make the existing
-tests more succinct and readable. Instead of bootstrapping the mock data that tests use, we should
-use valid steps to generate it - so that we know the exact steps to reach a
-state to reproduce in a real environment.
+tests more succinct and readable. Instead of bootstrapping the mock data that
+tests use, we should use valid steps to generate it - so that we know the exact
+steps to reach a state to reproduce in a real environment.
 
 To achieve this, we have broken down the proposal into sub-proposals:
 
@@ -152,7 +154,7 @@ contexts of `ibc-rs`, as opposed to the more granular contexts of each of the
 individual handlers. It contains other host-specific data e.g. `host_chain_id`,
 `block_time` - that are not directly relevant to the IBC context. If we think of
 `MockContext` as a real blockchain context, the `MockContext` represents the
-top- level runtime; it contains `MockIbcStore`, which is a more appropriate
+top-level runtime; it contains `MockIbcStore`, which is a more appropriate
 candidate to implement the validation and execution contexts for than the
 `MockContext` itself.
 
@@ -231,8 +233,10 @@ where
 ```
 
 The storing of the IBC store root at the IBC commitment prefix happens in the
-`end_block` procedure. `produce_block` commits the main store, produces a block with its latest root, and pushes the block to the blockchain. The storing of proofs and host consensus states happens in the
-`begin_block` of the `MockContext`.
+`end_block` procedure. `produce_block` commits the main store, produces a block
+with its latest root, and pushes the block to the blockchain. The storing of
+proofs and host consensus states happens in the `begin_block` of the
+`MockContext`.
 
 ### 6. Integration Tests via `RelayerContext`
 
