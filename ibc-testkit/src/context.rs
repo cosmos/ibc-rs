@@ -131,7 +131,7 @@ where
         } else {
             // Repeatedly advance the host chain height till we hit the desired height
             while self.host.latest_height().revision_height() < target_height.revision_height() {
-                self.advance_height()
+                self.advance_block_height()
             }
         }
         self
@@ -143,8 +143,8 @@ where
     /// But it bootstraps the genesis block by height 1 and `genesis_time`.
     ///
     /// The method starts and ends with [`Self::end_block`] and [`Self::begin_block`], just
-    /// like the [`Self::advance_height_with_params`], so that it can advance to next height
-    /// i.e. height 2 - just by calling [`Self::advance_height_with_params`].
+    /// like the [`Self::advance_block_height_with_params`], so that it can advance to next height
+    /// i.e. height 2 - just by calling [`Self::advance_block_height_with_params`].
     pub fn advance_genesis_height(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
         self.end_block();
 
@@ -166,8 +166,9 @@ where
 
     /// Begin a new block on the context.
     ///
-    /// This method book keeps the data from last block,
-    /// and prepares the context for the next block.
+    /// This method commits the required metadata from the last block generation
+    /// and consensus, and prepares the context for the next block. This includes
+    /// the latest consensus state and the latest IBC commitment proof.
     pub fn begin_block(&mut self) {
         let consensus_state = self
             .host
@@ -230,15 +231,19 @@ where
 
     /// Advances the host chain height by ending the current block, producing a new block, and
     /// beginning the next block.
-    pub fn advance_height_with_params(&mut self, block_time: Duration, params: &H::BlockParams) {
+    pub fn advance_block_height_with_params(
+        &mut self,
+        block_time: Duration,
+        params: &H::BlockParams,
+    ) {
         self.end_block();
         self.commit_state_to_host(block_time, params);
         self.begin_block();
     }
 
     /// Convenience method to advance the host chain height using default parameters.
-    pub fn advance_height(&mut self) {
-        self.advance_height_with_params(
+    pub fn advance_block_height(&mut self) {
+        self.advance_block_height_with_params(
             Duration::from_secs(DEFAULT_BLOCK_TIME_SECS),
             &Default::default(),
         )
@@ -479,7 +484,7 @@ where
         self.dispatch(msg)
             .map_err(RelayerError::TransactionFailed)?;
         // Create a new block.
-        self.advance_height();
+        self.advance_block_height();
         Ok(())
     }
 
@@ -570,7 +575,7 @@ mod tests {
                 let current_height = test.ctx.latest_height();
 
                 // After advancing the chain's height, the context should still be valid.
-                test.ctx.advance_height();
+                test.ctx.advance_block_height();
                 assert!(
                     test.ctx.host.validate().is_ok(),
                     "failed in test [{}] {} while validating context {:?}",

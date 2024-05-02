@@ -100,7 +100,7 @@ fn setup_client_recovery_fixture(
 
     // Let the subject client state expire.
     while ctx.latest_timestamp() <= subject_client_trusted_timestamp {
-        ctx.advance_height();
+        ctx.advance_block_height();
     }
 
     // at this point, the subject client should be expired.

@@ -138,7 +138,8 @@ pub trait TestBlock: Clone + Debug {
     }
 }
 
-/// TestHeader is a trait that defines the interface for a header corresponding to a host blockchain.
+/// TestHeader is a trait that defines the interface for a header
+/// submitted by relayer from the host blockchain.
 pub trait TestHeader: Clone + Debug + Into<Any> {
     /// The type of consensus state can be extracted from the header.
     type ConsensusState: ConsensusState + Into<AnyConsensusState> + From<Self> + Clone + Debug;
