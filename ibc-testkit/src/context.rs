@@ -143,8 +143,8 @@ where
     /// But it bootstraps the genesis block by height 1 and `genesis_time`.
     ///
     /// The method starts and ends with [`Self::end_block`] and [`Self::begin_block`], just
-    /// like the [`Self::advance_height_with_params`], so that it can advance to next height
-    /// i.e. height 2 - just by calling [`Self::advance_height_with_params`].
+    /// like the [`Self::advance_block_height_with_params`], so that it can advance to next height
+    /// i.e. height 2 - just by calling [`Self::advance_block_height_with_params`].
     pub fn advance_genesis_height(&mut self, genesis_time: Timestamp, params: &H::BlockParams) {
         self.end_block();
 
