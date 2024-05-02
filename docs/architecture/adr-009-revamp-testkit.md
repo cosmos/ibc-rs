@@ -7,25 +7,25 @@
 ## Context
 
 The current framework in the IBC testkit uses
-[existing types and injects state or dependency
+[existing types and injects state and/or dependencies
 manually](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/tests/core/ics02_client/update_client.rs#L574-L578).
 Sometimes, it uses
-[semantically wrong data as mock data](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/types.rs#L320).
+[semantically incorrect data as mock data](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/testapp/ibc/core/types.rs#L320).
 Because of this, tests with customizable steps and fixed fixtures became ad-hoc
 and unmaintainable.
 
-To overcome this, we need to improve our test framework that allows:
+To overcome this, we need to improve our test framework such that it allows:
 
-- testing different implementations (traits).
-- succinct tests (useful `util` methods).
-- improving test coverage (i.e. validating Merkle proof generation).
-- integration tests exercising the IBC workflow (relayer-like interface)
+- testing different implementations and traits.
+- composition of succinct tests with useful `util` methods.
+- validating of code paths that were not easily testable before, i.e. Merkle proof generation.
+- simulating a more realistic IBC workflow, using real IBC and relayer interfaces.
 
 ## Decision
 
 The main goal of this proposal is to create a test framework that is modular and
-closer to the real blockchain environment. This should also make the existing
-tests succinct and readable. Instead of bootstrapping the mock data, we should
+closer to a real blockchain environment. This should also make the existing
+tests more succinct and readable. Instead of bootstrapping the mock data that tests use, we should
 use valid steps to generate it - so that we know the exact steps to reach a
 state to reproduce in a real environment.
 
@@ -46,7 +46,7 @@ default implementations, we can use the IAVL Merkle store implementation from
 
 ### 2. Modularize the host environment
 
-Currently, we are using `Mock` and `SyntheticTendermint` variants of
+Currently, we are using `Mock` and `SyntheticTendermint` variants of the
 [`HostType`](https://github.com/cosmos/ibc-rs/blob/v0.51.0/ibc-testkit/src/hosts/block.rs#L33-L36)
 enum as host environments. To manage these two different environments, we also
 introduced
@@ -153,7 +153,7 @@ individual handlers. It contains other host-specific data e.g. `host_chain_id`,
 `block_time` - that are not directly relevant to the IBC context. If we think of
 `MockContext` as a real blockchain context, the `MockContext` represents the
 top- level runtime; it contains `MockIbcStore`, which is a more appropriate
-candidate to implement the validation and execution contexts than the
+candidate to implement the validation and execution contexts for than the
 `MockContext` itself.
 
 With this, the `MockContext` contains two decoupled parts - the host and the IBC
@@ -231,7 +231,7 @@ where
 ```
 
 The storing of the IBC store root at the IBC commitment prefix happens in the
-end block. The storing of proofs and host consensus states happens in the
+`end_block` procedure. `produce_block` commits the main store, produces a block with its latest root, and pushes the block to the blockchain. The storing of proofs and host consensus states happens in the
 `begin_block` of the `MockContext`.
 
 ### 6. Integration Tests via `RelayerContext`
