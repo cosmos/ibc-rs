@@ -80,6 +80,7 @@ ibc-core-channel    = { version = "0.52.0", path = "./ibc-core/ics04-channel", d
 ibc-core-host       = { version = "0.52.0", path = "./ibc-core/ics24-host", default-features = false }
 ibc-core-handler    = { version = "0.52.0", path = "./ibc-core/ics25-handler", default-features = false }
 ibc-core-router     = { version = "0.52.0", path = "./ibc-core/ics26-routing", default-features = false }
+ibc-query           = { version = "0.52.0", path = "./ibc-query", default-features = false }
 
 ibc-client-cw            = { version = "0.52.0", path = "./ibc-clients/cw-context", default-features = false }
 ibc-client-tendermint    = { version = "0.52.0", path = "./ibc-clients/ics07-tendermint", default-features = false }

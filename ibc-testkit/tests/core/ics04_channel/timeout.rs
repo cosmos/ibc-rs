@@ -13,23 +13,25 @@ use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
-use ibc::core::host::ExecutionContext;
+use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::primitives::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
 
 struct Fixture {
     ctx: MockContext,
     pub router: MockRouter,
+    client_id: ClientId,
     client_height: Height,
     msg: MsgTimeout,
     packet_commitment: PacketCommitment,
     conn_end_on_a: ConnectionEnd,
     chan_end_on_a_ordered: ChannelEnd,
     chan_end_on_a_unordered: ChannelEnd,
-    client_id: ClientId,
 }
 
 #[fixture]
@@ -37,19 +39,19 @@ fn fixture() -> Fixture {
     let client_id = ClientId::new("07-tendermint", 0).expect("no error");
 
     let client_height = Height::new(0, 2).unwrap();
-    let ctx = MockContext::default().with_client_config(
-        MockClientConfig::builder()
-            .latest_height(client_height)
-            .build(),
+    let ctx = MockContext::default().with_light_client(
+        &ClientId::new("07-tendermint", 0).expect("no error"),
+        LightClientState::<MockHost>::with_latest_height(client_height),
     );
 
     let client_height = Height::new(0, 2).unwrap();
 
     let router = MockRouter::new_with_transfer();
 
+    // in case of timeout, timeout timestamp should be less than host's timestamp
+    let timeout_timestamp = ctx.latest_timestamp().nanoseconds() - 1;
     let msg_proof_height = 2;
     let msg_timeout_height = 5;
-    let timeout_timestamp = Timestamp::now().nanoseconds();
 
     let msg = MsgTimeout::try_from(dummy_raw_msg_timeout(
         msg_proof_height,
@@ -84,7 +86,7 @@ fn fixture() -> Fixture {
         ConnectionCounterparty::new(
             client_id.clone(),
             Some(ConnectionId::zero()),
-            CommitmentPrefix::empty(),
+            CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
         ConnectionVersion::compatibles(),
         ZERO_DURATION,
@@ -94,13 +96,13 @@ fn fixture() -> Fixture {
     Fixture {
         ctx,
         router,
+        client_id,
         client_height,
         msg,
         packet_commitment,
         conn_end_on_a,
         chan_end_on_a_ordered,
         chan_end_on_a_unordered,
-        client_id,
     }
 }
 
@@ -113,13 +115,12 @@ fn timeout_fail_no_channel(fixture: Fixture) {
         client_height,
         ..
     } = fixture;
-    let ctx = ctx.with_client_config(
-        MockClientConfig::builder()
-            .latest_height(client_height)
-            .build(),
+    let ctx = ctx.with_light_client(
+        &ClientId::new("07-tendermint", 0).expect("no error"),
+        LightClientState::<MockHost>::with_latest_height(client_height),
     );
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_err(),
@@ -136,12 +137,13 @@ fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
         chan_end_on_a_unordered,
         conn_end_on_a,
         packet_commitment,
+        client_id,
         ..
     } = fixture;
 
     let packet = msg.packet.clone();
 
-    let ctx = ctx
+    let mut ctx = ctx
         .with_channel(
             PortId::transfer(),
             ChannelId::zero(),
@@ -155,9 +157,19 @@ fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
             packet_commitment,
         );
 
+    let consensus_state_path = ClientConsensusStatePath::new(
+        client_id,
+        msg.proof_height_on_b.revision_number(),
+        msg.proof_height_on_b.revision_height(),
+    );
+
+    ctx.ibc_store
+        .delete_consensus_state(consensus_state_path)
+        .expect("consensus state exists");
+
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
             res.is_err(),
@@ -174,7 +186,6 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         chan_end_on_a_unordered,
         conn_end_on_a,
         client_height,
-        client_id,
         ..
     } = fixture;
 
@@ -190,11 +201,10 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
 
     let packet = msg.packet.clone();
 
-    let mut ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
-                .latest_height(client_height)
-                .build(),
+    let ctx = ctx
+        .with_light_client(
+            &ClientId::new("07-tendermint", 0).expect("no error"),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(
@@ -209,17 +219,9 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.store_update_meta(
-        client_id,
-        client_height,
-        Timestamp::from_nanoseconds(5).unwrap(),
-        Height::new(0, 4).unwrap(),
-    )
-    .unwrap();
-
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
             res.is_err(),
@@ -248,7 +250,7 @@ fn timeout_success_no_packet_commitment(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),
@@ -266,17 +268,15 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
         conn_end_on_a,
         packet_commitment,
         client_height,
-        client_id,
         ..
     } = fixture;
 
     let packet = msg.packet.clone();
 
-    let mut ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
-                .latest_height(client_height)
-                .build(),
+    let ctx = ctx
+        .with_light_client(
+            &ClientId::new("07-tendermint", 0).expect("no error"),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(
@@ -291,18 +291,9 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.get_client_execution_context()
-        .store_update_meta(
-            client_id,
-            client_height,
-            Timestamp::from_nanoseconds(1000).unwrap(),
-            Height::new(0, 5).unwrap(),
-        )
-        .unwrap();
-
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(res.is_ok(), "Good parameters for unordered channels")
 }
@@ -317,17 +308,15 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
         conn_end_on_a,
         packet_commitment,
         client_height,
-        client_id,
         ..
     } = fixture;
 
     let packet = msg.packet.clone();
 
-    let mut ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
-                .latest_height(client_height)
-                .build(),
+    let ctx = ctx
+        .with_light_client(
+            &ClientId::new("07-tendermint", 0).expect("no error"),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a_ordered)
@@ -338,17 +327,9 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
             packet_commitment,
         );
 
-    ctx.store_update_meta(
-        client_id,
-        client_height,
-        Timestamp::from_nanoseconds(1000).unwrap(),
-        Height::new(0, 4).unwrap(),
-    )
-    .unwrap();
-
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&ctx, &router, msg_envelope);
+    let res = validate(&ctx.ibc_store, &router, msg_envelope);
 
     assert!(res.is_ok(), "Good parameters for unordered channels")
 }
@@ -380,7 +361,7 @@ fn timeout_unordered_chan_execute(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok());
 
@@ -418,7 +399,7 @@ fn timeout_ordered_chan_execute(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_envelope);
 
     assert!(res.is_ok());
 

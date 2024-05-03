@@ -10,11 +10,13 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_try;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
 use test_log::test;
 
@@ -83,15 +85,13 @@ fn chan_open_try_validate_happy_path(fixture: Fixture) {
     } = fixture;
 
     let ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
-                .client_id(client_id_on_b.clone())
-                .latest_height(Height::new(0, proof_height).unwrap())
-                .build(),
+        .with_light_client(
+            &client_id_on_b,
+            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
 
-    let res = validate(&ctx, &router, msg);
+    let res = validate(&ctx.ibc_store, &router, msg);
 
     assert!(res.is_ok(), "Validation success: happy path")
 }
@@ -110,19 +110,17 @@ fn chan_open_try_execute_happy_path(fixture: Fixture) {
     } = fixture;
 
     let mut ctx = ctx
-        .with_client_config(
-            MockClientConfig::builder()
-                .client_id(client_id_on_b.clone())
-                .latest_height(Height::new(0, proof_height).unwrap())
-                .build(),
+        .with_light_client(
+            &client_id_on_b,
+            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
 
-    let res = execute(&mut ctx, &mut router, msg);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg);
 
     assert!(res.is_ok(), "Execution success: happy path");
 
-    assert_eq!(ctx.channel_counter().unwrap(), 1);
+    assert_eq!(ctx.ibc_store.channel_counter().unwrap(), 1);
 
     let ibc_events = ctx.get_events();
 
@@ -141,7 +139,7 @@ fn chan_open_try_fail_no_connection(fixture: Fixture) {
         ctx, router, msg, ..
     } = fixture;
 
-    let res = validate(&ctx, &router, msg);
+    let res = validate(&ctx.ibc_store, &router, msg);
 
     assert!(
         res.is_err(),
@@ -161,7 +159,7 @@ fn chan_open_try_fail_no_client_state(fixture: Fixture) {
     } = fixture;
     let ctx = ctx.with_connection(conn_id_on_b, conn_end_on_b);
 
-    let res = validate(&ctx, &router, msg);
+    let res = validate(&ctx.ibc_store, &router, msg);
 
     assert!(
         res.is_err(),

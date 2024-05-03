@@ -33,6 +33,10 @@ ibc                      = { workspace = true, features = [ "std" ] }
 ibc-proto                = { workspace = true }
 ibc-client-cw            = { workspace = true }
 ibc-client-tendermint-cw = { workspace = true }
+ibc-query                = { workspace = true }
+
+# basecoin dependencies
+basecoin-store = { git = "https://github.com/informalsystems/basecoin-rs", rev = "8496b3f" }
 
 # cosmos dependencies
 tendermint         = { workspace = true }

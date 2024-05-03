@@ -7,13 +7,15 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::connection::{
     dummy_msg_conn_open_init, msg_conn_open_init_with_counterparty_conn_id,
     msg_conn_open_with_version,
 };
 use ibc_testkit::fixtures::{Expect, Fixture};
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use test_log::test;
 
 enum Ctx {
@@ -31,7 +33,7 @@ enum Msg {
 fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConnectionOpenInit> {
     let msg_default = dummy_msg_conn_open_init();
     let msg = match msg_variant {
-        Msg::Default => msg_default.clone(),
+        Msg::Default => msg_default,
         Msg::NoVersion => msg_conn_open_with_version(msg_default, None),
         Msg::BadVersion => {
             msg_conn_open_with_version(msg_default, Some("random identifier 424242"))
@@ -41,13 +43,15 @@ fn conn_open_init_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConn
 
     let ctx_default = MockContext::default();
     let ctx = match ctx_variant {
-        Ctx::WithClient => ctx_default.with_client_config(
-            MockClientConfig::builder()
-                .client_id(msg.client_id_on_a.clone())
-                .latest_height(Height::new(0, 10).unwrap())
-                .build(),
-        ),
-        _ => ctx_default,
+        Ctx::WithClient => {
+            ctx_default
+                .with_light_client(
+                    &msg.client_id_on_a,
+                    LightClientState::<MockHost>::with_latest_height(Height::new(0, 10).unwrap()),
+                )
+                .ibc_store
+        }
+        _ => ctx_default.ibc_store,
     };
 
     Fixture { ctx, msg }
@@ -82,7 +86,7 @@ fn conn_open_init_execute(
             assert!(res.is_err(), "{err_msg}")
         }
         Expect::Success => {
-            let ibc_events = fxt.ctx.get_events();
+            let ibc_events = fxt.ctx.events.lock();
 
             assert!(res.is_ok(), "{err_msg}");
 
@@ -127,7 +131,7 @@ fn conn_open_init_no_context() {
 fn conn_open_init_no_version() {
     let mut fxt = conn_open_init_fixture(Ctx::WithClient, Msg::NoVersion);
     conn_open_init_validate(&fxt, Expect::Success);
-    let expected_version = ValidationContext::get_compatible_versions(&fxt.ctx.clone());
+    let expected_version = ValidationContext::get_compatible_versions(&fxt.ctx);
     conn_open_init_execute(&mut fxt, Expect::Success, expected_version);
 }
 #[test]

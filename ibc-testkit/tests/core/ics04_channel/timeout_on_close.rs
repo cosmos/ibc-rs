@@ -2,7 +2,6 @@ use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State}
 use ibc::core::channel::types::commitment::{compute_packet_commitment, PacketCommitment};
 use ibc::core::channel::types::msgs::{MsgTimeoutOnClose, PacketMsg};
 use ibc::core::channel::types::Version;
-use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::version::Version as ConnectionVersion;
@@ -12,11 +11,12 @@ use ibc::core::connection::types::{
 use ibc::core::entrypoint::validate;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
-use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout_on_close;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
 
 pub struct Fixture {
@@ -33,10 +33,9 @@ fn fixture() -> Fixture {
     let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
 
     let client_height = Height::new(0, 2).unwrap();
-    let context = MockContext::default().with_client_config(
-        MockClientConfig::builder()
-            .latest_height(client_height)
-            .build(),
+    let context = MockContext::default().with_light_client(
+        &ClientId::new("07-tendermint", 0).expect("no error"),
+        LightClientState::<MockHost>::with_latest_height(client_height),
     );
     let router = MockRouter::new_with_transfer();
 
@@ -68,9 +67,9 @@ fn fixture() -> Fixture {
         ConnectionState::Open,
         default_client_id.clone(),
         ConnectionCounterparty::new(
-            default_client_id.clone(),
+            default_client_id,
             Some(ConnectionId::zero()),
-            CommitmentPrefix::empty(),
+            CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
         ConnectionVersion::compatibles(),
         ZERO_DURATION,
@@ -98,7 +97,7 @@ fn timeout_on_close_fail_no_channel(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_err(),
@@ -123,7 +122,7 @@ fn timeout_on_close_success_no_packet_commitment(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),
@@ -133,8 +132,6 @@ fn timeout_on_close_success_no_packet_commitment(fixture: Fixture) {
 
 #[rstest]
 fn timeout_on_close_success_happy_path(fixture: Fixture) {
-    let default_client_id = ClientId::new("07-tendermint", 0).expect("no error");
-
     let Fixture {
         context,
         router,
@@ -144,7 +141,7 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
         chan_end_on_a,
         ..
     } = fixture;
-    let mut context = context
+    let context = context
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
@@ -154,19 +151,9 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
             packet_commitment,
         );
 
-    context
-        .get_client_execution_context()
-        .store_update_meta(
-            default_client_id,
-            Height::new(0, 2).unwrap(),
-            Timestamp::from_nanoseconds(5000).unwrap(),
-            Height::new(0, 5).unwrap(),
-        )
-        .unwrap();
-
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),

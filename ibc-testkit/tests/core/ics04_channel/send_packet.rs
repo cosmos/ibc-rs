@@ -15,8 +15,10 @@ use ibc::core::connection::types::{
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::hosts::MockHost;
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use test_log::test;
 
 #[test]
@@ -29,8 +31,6 @@ fn send_packet_processing() {
         packet: Packet,
         want_pass: bool,
     }
-
-    let context = MockContext::default();
 
     let chan_end_on_a = ChannelEnd::new(
         State::Open,
@@ -45,9 +45,9 @@ fn send_packet_processing() {
         ConnectionState::Open,
         default_client_id.clone(),
         ConnectionCounterparty::new(
-            default_client_id.clone(),
+            default_client_id,
             Some(ConnectionId::zero()),
-            CommitmentPrefix::empty(),
+            CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
         ConnectionVersion::compatibles(),
         ZERO_DURATION,
@@ -95,18 +95,16 @@ fn send_packet_processing() {
     let tests: Vec<Test> = vec![
         Test {
             name: "Processing fails because no channel exists in the context".to_string(),
-            ctx: context.clone(),
+            ctx: MockContext::default(),
             packet: packet.clone(),
             want_pass: false,
         },
         Test {
             name: "Good parameters".to_string(),
-            ctx: context
-                .clone()
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
@@ -116,12 +114,10 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height same as destination chain height".to_string(),
-            ctx: context
-                .clone()
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
@@ -131,12 +127,10 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout height one more than destination chain height".to_string(),
-            ctx: context
-                .clone()
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
@@ -146,12 +140,10 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet without height and timestamp timeout".to_string(),
-            ctx: context
-                .clone()
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
@@ -161,11 +153,10 @@ fn send_packet_processing() {
         },
         Test {
             name: "Packet timeout due to timestamp".to_string(),
-            ctx: context
-                .with_client_config(
-                    MockClientConfig::builder()
-                        .latest_height(client_height)
-                        .build(),
+            ctx: MockContext::default()
+                .with_light_client(
+                    &ClientId::new("07-tendermint", 0).expect("no error"),
+                    LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a)
                 .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
@@ -178,7 +169,7 @@ fn send_packet_processing() {
     .collect();
 
     for mut test in tests {
-        let res = send_packet(&mut test.ctx, test.packet.clone());
+        let res = send_packet(&mut test.ctx.ibc_store, test.packet.clone());
         // Additionally check the events and the output objects in the result.
         match res {
             Ok(()) => {
@@ -187,7 +178,7 @@ fn send_packet_processing() {
                         "send_packet: test passed but was supposed to fail for test: {}, \nparams {:?} {:?}",
                         test.name,
                         test.packet.clone(),
-                        test.ctx.clone()
+                        test.ctx
                     );
 
                 let ibc_events = test.ctx.get_events();
@@ -208,7 +199,7 @@ fn send_packet_processing() {
                     "send_packet: did not pass test: {}, \nparams {:?} {:?} error: {:?}",
                     test.name,
                     test.packet.clone(),
-                    test.ctx.clone(),
+                    test.ctx,
                     e,
                 );
             }

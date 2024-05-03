@@ -10,22 +10,23 @@ mod recv_packet;
 mod timeout;
 mod timeout_on_close;
 
-pub use acknowledgement::*;
-pub use chan_close_confirm::*;
-pub use chan_close_init::*;
-pub use chan_open_ack::*;
-pub use chan_open_confirm::*;
-pub use chan_open_init::*;
-pub use chan_open_try::*;
 use ibc::core::channel::types::proto::v1::{
     Channel as RawChannel, Counterparty as RawCounterparty,
 };
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc::primitives::prelude::*;
-pub use packet::*;
-pub use recv_packet::*;
-pub use timeout::*;
-pub use timeout_on_close::*;
+
+pub use self::acknowledgement::*;
+pub use self::chan_close_confirm::*;
+pub use self::chan_close_init::*;
+pub use self::chan_open_ack::*;
+pub use self::chan_open_confirm::*;
+pub use self::chan_open_init::*;
+pub use self::chan_open_try::*;
+pub use self::packet::*;
+pub use self::recv_packet::*;
+pub use self::timeout::*;
+pub use self::timeout_on_close::*;
 
 /// Returns a dummy `RawCounterparty`, for testing purposes only!
 /// Can be optionally parametrized with a specific channel identifier.

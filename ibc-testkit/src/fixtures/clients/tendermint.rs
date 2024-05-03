@@ -1,6 +1,7 @@
 use core::str::FromStr;
 use core::time::Duration;
 
+use basecoin_store::avl::get_proof_spec as basecoin_proof_spec;
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::error::{Error as ClientError, Error};
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
@@ -15,6 +16,7 @@ use ibc::core::commitment_types::specs::ProofSpecs;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use tendermint::block::Header as TmHeader;
+use typed_builder::TypedBuilder;
 
 /// Returns a dummy tendermint `ClientState` by given `frozen_height`, for testing purposes only!
 pub fn dummy_tm_client_state_from_raw(frozen_height: RawHeight) -> Result<TmClientState, Error> {
@@ -64,9 +66,8 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
     }
 }
 
-#[derive(typed_builder::TypedBuilder, Debug)]
+#[derive(TypedBuilder, Debug)]
 pub struct ClientStateConfig {
-    pub chain_id: ChainId,
     #[builder(default = TrustThreshold::ONE_THIRD)]
     pub trust_level: TrustThreshold,
     #[builder(default = Duration::from_secs(64000))]
@@ -74,9 +75,8 @@ pub struct ClientStateConfig {
     #[builder(default = Duration::from_secs(128_000))]
     pub unbonding_period: Duration,
     #[builder(default = Duration::from_millis(3000))]
-    max_clock_drift: Duration,
-    pub latest_height: Height,
-    #[builder(default = ProofSpecs::cosmos())]
+    pub max_clock_drift: Duration,
+    #[builder(default = vec![basecoin_proof_spec(); 2].try_into().expect("no error"))]
     pub proof_specs: ProofSpecs,
     #[builder(default)]
     pub upgrade_path: Vec<String>,
@@ -84,23 +84,30 @@ pub struct ClientStateConfig {
     allow_update: AllowUpdate,
 }
 
-impl TryFrom<ClientStateConfig> for TmClientState {
-    type Error = ClientError;
+impl Default for ClientStateConfig {
+    fn default() -> Self {
+        Self::builder().build()
+    }
+}
 
-    fn try_from(config: ClientStateConfig) -> Result<Self, Self::Error> {
-        let client_state = ClientStateType::new(
-            config.chain_id,
-            config.trust_level,
-            config.trusting_period,
-            config.unbonding_period,
-            config.max_clock_drift,
-            config.latest_height,
-            config.proof_specs,
-            config.upgrade_path,
-            config.allow_update,
-        )?;
-
-        Ok(TmClientState::from(client_state))
+impl ClientStateConfig {
+    pub fn into_client_state(
+        self,
+        chain_id: ChainId,
+        latest_height: Height,
+    ) -> Result<TmClientState, ClientError> {
+        Ok(ClientStateType::new(
+            chain_id,
+            self.trust_level,
+            self.trusting_period,
+            self.unbonding_period,
+            self.max_clock_drift,
+            latest_height,
+            self.proof_specs,
+            self.upgrade_path,
+            self.allow_update,
+        )?
+        .into())
     }
 }
 
@@ -146,7 +153,7 @@ pub fn dummy_ics07_header() -> Header {
 
     // Build a set of validators.
     // Below are test values inspired form `test_validator_set()` in tendermint-rs.
-    let v1: ValidatorInfo = ValidatorInfo::new(
+    let v1 = ValidatorInfo::new(
         PublicKey::from_raw_ed25519(
             &hex::decode_upper("F349539C7E5EF7C49549B09C4BFC2335318AB0FE51FBFAA2433B4F13E816F4A7")
                 .expect("Never fails"),

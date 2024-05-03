@@ -421,7 +421,6 @@ trait ExecutionContext {
 
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
-    /// Should never fail.
     fn increase_client_counter(&mut self);
 
     /// Called upon successful client update.
@@ -452,7 +451,6 @@ trait ExecutionContext {
 
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter which keeps track of how many connections have been created.
-    /// Should never fail.
     fn increase_connection_counter(&mut self);
 
     fn store_packet_commitment(
@@ -514,7 +512,6 @@ trait ExecutionContext {
 
     /// Called upon channel identifier creation (Init or Try message processing).
     /// Increases the counter which keeps track of how many channels have been created.
-    /// Should never fail.
     fn increase_channel_counter(&mut self);
 
     /// Ibc events

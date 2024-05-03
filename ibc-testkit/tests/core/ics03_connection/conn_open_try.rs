@@ -6,11 +6,13 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_try;
-use ibc_testkit::fixtures::core::context::MockContextConfig;
+use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientState};
 use test_log::test;
 
 enum Ctx {
@@ -26,13 +28,10 @@ enum Msg {
 }
 
 fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConnectionOpenTry> {
-    let max_history_size = 5;
+    let retained_history_size = 5;
     let client_cons_state_height = 10;
     let host_chain_height = Height::new(0, 35).unwrap();
-    let pruned_height = host_chain_height
-        .sub(max_history_size + 1)
-        .unwrap()
-        .revision_height();
+    let pruned_height = host_chain_height.sub(retained_history_size + 1).unwrap();
 
     let msg = match msg_variant {
         Msg::Default => dummy_msg_conn_open_try(
@@ -43,26 +42,33 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
             client_cons_state_height,
             host_chain_height.increment().revision_height(),
         ),
-        Msg::HeightOld => dummy_msg_conn_open_try(client_cons_state_height, pruned_height),
+        Msg::HeightOld => {
+            dummy_msg_conn_open_try(client_cons_state_height, pruned_height.revision_height())
+        }
         Msg::ProofHeightMissing => dummy_msg_conn_open_try(
             client_cons_state_height - 1,
             host_chain_height.revision_height(),
         ),
     };
 
-    let ctx_new = MockContextConfig::builder()
-        .max_history_size(max_history_size)
+    let ctx_new = TestContextConfig::builder()
         .latest_height(host_chain_height)
-        .build();
+        .build::<MockContext>();
     let ctx = match ctx_variant {
-        Ctx::Default => MockContext::default(),
-        Ctx::WithClient => ctx_new.with_client_config(
-            MockClientConfig::builder()
-                .client_id(msg.client_id_on_b.clone())
-                .latest_height(Height::new(0, client_cons_state_height).unwrap())
-                .build(),
-        ),
+        Ctx::Default => DefaultIbcStore::default(),
+        Ctx::WithClient => {
+            ctx_new
+                .with_light_client(
+                    &msg.client_id_on_b,
+                    LightClientState::<MockHost>::with_latest_height(
+                        Height::new(0, client_cons_state_height).unwrap(),
+                    ),
+                )
+                .ibc_store
+        }
     };
+
+    ctx.prune_host_consensus_states_till(&pruned_height);
     Fixture { ctx, msg }
 }
 
@@ -95,7 +101,7 @@ fn conn_open_try_execute(fxt: &mut Fixture<MsgConnectionOpenTry>, expect: Expect
 
             assert_eq!(fxt.ctx.connection_counter().unwrap(), 1);
 
-            let ibc_events = fxt.ctx.get_events();
+            let ibc_events = fxt.ctx.events.lock();
 
             assert_eq!(ibc_events.len(), 2);
 

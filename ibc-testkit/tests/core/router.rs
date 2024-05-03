@@ -1,3 +1,5 @@
+use core::ops::Add;
+
 use ibc::apps::transfer::handler::send_transfer;
 use ibc::apps::transfer::types::error::TokenTransferError;
 use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
@@ -20,6 +22,7 @@ use ibc::core::host::types::path::CommitmentPath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::applications::transfer::{
     extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
 };
@@ -33,13 +36,13 @@ use ibc_testkit::fixtures::core::connection::{
     dummy_msg_conn_open_ack, dummy_msg_conn_open_init, dummy_msg_conn_open_init_with_client_id,
     dummy_msg_conn_open_try, msg_conn_open_try_with_client_id,
 };
+use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
 use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::MockContext;
 use test_log::test;
 
 #[test]
@@ -87,14 +90,23 @@ fn routing_module_and_keepers() {
     let upgrade_client_height_second = Height::new(1, 1).unwrap();
 
     // We reuse this same context across all tests. Nothing in particular needs parametrizing.
-    let mut ctx = MockContext::default();
+    let mut ctx = TestContextConfig::builder()
+        // a future timestamp, so that submitted packets are considered from past
+        // not more than 5 secs, as later dummy_raw_msg_timeout_on_close(*, 5) is used
+        .latest_timestamp(
+            Timestamp::now()
+                .add(core::time::Duration::from_secs(4))
+                .unwrap(),
+        )
+        .build::<MockContext>();
 
     let mut router = MockRouter::new_with_transfer();
 
+    let header = MockHeader::new(start_client_height).with_current_timestamp();
+
     let create_client_msg = MsgCreateClient::new(
-        MockClientState::new(MockHeader::new(start_client_height).with_current_timestamp()).into(),
-        MockConsensusState::new(MockHeader::new(start_client_height).with_current_timestamp())
-            .into(),
+        MockClientState::new(header).into(),
+        MockConsensusState::new(header).into(),
         default_signer.clone(),
     );
 
@@ -156,7 +168,7 @@ fn routing_module_and_keepers() {
         .build();
 
     let msg_transfer_no_timeout_or_timestamp = MsgTransferConfig::builder()
-        .packet_data(packet_data.clone())
+        .packet_data(packet_data)
         // Timestamp::from_nanoseconds(0) and Timestamp::none() are equivalent
         .timeout_timestamp_on_b(Timestamp::from_nanoseconds(0).unwrap())
         .build();
@@ -181,7 +193,7 @@ fn routing_module_and_keepers() {
 
     // First, create a client..
     let res = dispatch(
-        &mut ctx,
+        &mut ctx.ibc_store,
         &mut router,
         MsgEnvelope::Client(ClientMsg::CreateClient(create_client_msg.clone())),
     );
@@ -318,12 +330,13 @@ fn routing_module_and_keepers() {
             msg: MsgEnvelope::Packet(PacketMsg::Ack(msg_ack_packet.clone())).into(),
             want_pass: true,
             state_check: Some(Box::new(move |ctx| {
-                ctx.get_packet_commitment(&CommitmentPath::new(
-                    &msg_ack_packet.packet.port_id_on_a,
-                    &msg_ack_packet.packet.chan_id_on_a,
-                    msg_ack_packet.packet.seq_on_a,
-                ))
-                .is_err()
+                ctx.ibc_store
+                    .get_packet_commitment(&CommitmentPath::new(
+                        &msg_ack_packet.packet.port_id_on_a,
+                        &msg_ack_packet.packet.chan_id_on_a,
+                        msg_ack_packet.packet.seq_on_a,
+                    ))
+                    .is_err()
             })),
         },
         Test {
@@ -404,8 +417,8 @@ fn routing_module_and_keepers() {
 
     for test in tests {
         let res = match test.msg.clone() {
-            TestMsg::Ics26(msg) => dispatch(&mut ctx, &mut router, msg).map(|_| ()),
-            TestMsg::Ics20(msg) => send_transfer(&mut ctx, &mut DummyTransferModule, msg)
+            TestMsg::Ics26(msg) => dispatch(&mut ctx.ibc_store, &mut router, msg),
+            TestMsg::Ics20(msg) => send_transfer(&mut ctx.ibc_store, &mut DummyTransferModule, msg)
                 .map_err(|e: TokenTransferError| ChannelError::AppModule {
                     description: e.to_string(),
                 })

@@ -2,7 +2,6 @@ use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State}
 use ibc::core::channel::types::msgs::{MsgRecvPacket, PacketMsg};
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::Version;
-use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::version::Version as ConnectionVersion;
@@ -13,13 +12,13 @@ use ibc::core::entrypoint::{execute, validate};
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
-use ibc::core::host::ExecutionContext;
 use ibc::core::primitives::*;
+use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
-use ibc_testkit::relayer::context::RelayerContext;
+use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{MockClientConfig, MockContext};
+use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
 use test_log::test;
 
@@ -42,7 +41,7 @@ fn fixture() -> Fixture {
 
     let router = MockRouter::new_with_transfer();
 
-    let host_height = context.query_latest_height().unwrap().increment();
+    let host_height = context.latest_height().increment();
 
     let client_height = host_height.increment();
 
@@ -66,7 +65,7 @@ fn fixture() -> Fixture {
         ConnectionCounterparty::new(
             client_id.clone(),
             Some(ConnectionId::zero()),
-            CommitmentPrefix::empty(),
+            CommitmentPrefix::try_from(vec![0]).expect("no error"),
         ),
         ConnectionVersion::compatibles(),
         ZERO_DURATION,
@@ -96,7 +95,7 @@ fn recv_packet_fail_no_channel(fixture: Fixture) {
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_err(),
@@ -114,16 +113,14 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
         chan_end_on_b,
         client_height,
         host_height,
-        client_id,
         ..
     } = fixture;
 
     let packet = &msg.packet;
-    let mut context = context
-        .with_client_config(
-            MockClientConfig::builder()
-                .latest_height(client_height)
-                .build(),
+    let context = context
+        .with_light_client(
+            &ClientId::new("07-tendermint", 0).expect("no error"),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(
@@ -136,7 +133,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
             packet.chan_id_on_b.clone(),
             1.into(),
         )
-        .with_height(host_height)
+        .advance_block_up_to_height(host_height)
         // This `with_recv_sequence` is required for ordered channels
         .with_recv_sequence(
             packet.port_id_on_b.clone(),
@@ -144,19 +141,9 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
             packet.seq_on_a,
         );
 
-    context
-        .get_client_execution_context()
-        .store_update_meta(
-            client_id,
-            client_height,
-            Timestamp::from_nanoseconds(1000).unwrap(),
-            Height::new(0, 5).unwrap(),
-        )
-        .unwrap();
-
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_ok(),
@@ -198,17 +185,16 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg_packet_old));
 
     let context = context
-        .with_client_config(
-            MockClientConfig::builder()
-                .latest_height(client_height)
-                .build(),
+        .with_light_client(
+            &ClientId::new("07-tendermint", 0).expect("no error"),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b)
         .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into())
-        .with_height(host_height);
+        .advance_block_up_to_height(host_height);
 
-    let res = validate(&context, &router, msg_envelope);
+    let res = validate(&context.ibc_store, &router, msg_envelope);
 
     assert!(
         res.is_err(),
@@ -228,17 +214,16 @@ fn recv_packet_execute_happy_path(fixture: Fixture) {
         ..
     } = fixture;
     let mut ctx = context
-        .with_client_config(
-            MockClientConfig::builder()
-                .latest_height(client_height)
-                .build(),
+        .with_light_client(
+            &ClientId::new("07-tendermint", 0).expect("no error"),
+            LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b);
 
     let msg_env = MsgEnvelope::from(PacketMsg::from(msg));
 
-    let res = execute(&mut ctx, &mut router, msg_env);
+    let res = execute(&mut ctx.ibc_store, &mut router, msg_env);
 
     assert!(res.is_ok());
 

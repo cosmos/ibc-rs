@@ -89,11 +89,9 @@ impl Fixture {
         // Setting the `trusting_period` to 1 second allows the quick
         // client expiry for the tests.
         let tm_client_state: TmClientState = ClientStateConfig::builder()
-            .chain_id(self.chain_id.clone())
             .trusting_period(Duration::from_secs(1))
-            .latest_height(self.trusted_height)
             .build()
-            .try_into()
+            .into_client_state(self.chain_id.clone(), self.trusted_height)
             .expect("never fails");
 
         let tm_consensus_state = dummy_sov_consensus_state(self.trusted_timestamp);
