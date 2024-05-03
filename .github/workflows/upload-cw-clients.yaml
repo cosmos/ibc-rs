@@ -1,4 +1,4 @@
-name: Upload CosmWasm clients as Github workflow artifact
+name: Upload precompiled CosmWasm clients
 on:
   pull_request:
     paths:
@@ -36,7 +36,7 @@ concurrency:
 
 jobs:
   upload-tendermint-cw-client:
-    name: Compile and upload Tendermint CosmWasm client
+    name: Upload precompiled Tendermint CosmWasm client
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
