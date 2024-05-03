@@ -138,13 +138,15 @@ where
                         substitute_client_state.latest_height().revision_height(),
                     ))?;
 
+                let substitute_client_state_any = substitute_client_state.into();
+
                 self.set_subject_prefix();
-                client_state.check_substitute(self, substitute_client_state.clone().into())?;
+                client_state.check_substitute(self, substitute_client_state_any.clone())?;
 
                 client_state.update_on_recovery(
                     self,
                     &self.client_id(),
-                    substitute_client_state.into(),
+                    substitute_client_state_any,
                     substitute_consensus_state.into(),
                 )?;
 

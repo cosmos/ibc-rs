@@ -13,6 +13,6 @@ where
     <Self::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
     <Self::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
 {
-    type ClientState: ClientStateExecution<Context<'a, Self>> + Clone;
+    type ClientState: ClientStateExecution<Context<'a, Self>>;
     type ConsensusState: ConsensusStateTrait;
 }

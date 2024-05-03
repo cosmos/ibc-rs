@@ -43,6 +43,12 @@ impl ConsensusState {
     }
 }
 
+impl From<ConsensusState> for ConsensusStateType {
+    fn from(value: ConsensusState) -> Self {
+        value.0
+    }
+}
+
 impl Protobuf<RawTmConsensusState> for ConsensusState {}
 
 impl TryFrom<RawTmConsensusState> for ConsensusState {
