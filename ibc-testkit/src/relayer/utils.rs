@@ -1,6 +1,7 @@
 use alloc::string::String;
 use core::marker::PhantomData;
 use core::time::Duration;
+use ibc::core::channel::types::timeout::TimeoutHeight;
 
 use ibc::core::channel::types::acknowledgement::Acknowledgement;
 use ibc::core::channel::types::channel::Order;
@@ -991,6 +992,47 @@ where
             signer.clone(),
         );
 
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+            ctx_b,
+            ctx_a,
+            client_id_on_b,
+            signer.clone(),
+        );
+    }
+
+    /// Times out a packet from an IBC application on `A` to `B` using the IBC packet relay protocol.
+    pub fn timeout_packet_on_a(
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &mut TestContext<B>,
+        packet: Packet,
+        client_id_on_a: ClientId,
+        client_id_on_b: ClientId,
+        signer: Signer,
+    ) {
+        // packet is passed from module
+
+        let TimeoutHeight::At(timeout_height) = packet.timeout_height_on_b else {
+            panic!("timeout height is set")
+        };
+
+        // progress `B`'s block height to the timeout height.
+        // packet is timed out at the timeout height + 1
+        while ctx_b.latest_height() <= timeout_height {
+            ctx_b.advance_block_height();
+        }
+
+        // update client on `A` with the latest header from `B`.
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
+            ctx_a,
+            ctx_b,
+            client_id_on_a.clone(),
+            signer.clone(),
+        );
+
+        // timeout the packet on `A`.
+        TypedRelayerOps::<A, B>::packet_timeout_on_a(ctx_a, ctx_b, packet.clone(), signer.clone());
+
+        // `A` has progressed; update client on `B` with the latest header from `A`.
         TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
