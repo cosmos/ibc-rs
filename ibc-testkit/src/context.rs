@@ -2,7 +2,7 @@ use core::fmt::Debug;
 use core::time::Duration;
 
 use basecoin_store::context::ProvableStore;
-use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore};
+use basecoin_store::impls::InMemoryStore;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::PacketCommitment;
 use ibc::core::client::context::client_state::ClientStateValidation;
@@ -53,7 +53,7 @@ where
 }
 
 /// A mock store type using basecoin-storage implementations.
-pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
+pub type MockStore = InMemoryStore;
 /// A [`StoreGenericTestContext`] using [`MockStore`].
 pub type TestContext<H> = StoreGenericTestContext<MockStore, H>;
 /// A [`StoreGenericTestContext`] using [`MockStore`] and [`MockHost`].

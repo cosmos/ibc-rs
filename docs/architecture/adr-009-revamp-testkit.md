@@ -335,7 +335,7 @@ defined `TestContext` to have a concrete store implementation -
 
 ```rs
 // A mock store type using basecoin-storage implementations.
-pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
+pub type MockStore = InMemoryStore;
 
 pub type TestContext<H> = StoreGenericTestContext<MockStore, H>;
 ```

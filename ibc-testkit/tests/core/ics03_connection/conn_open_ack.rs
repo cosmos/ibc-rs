@@ -1,6 +1,5 @@
 use core::str::FromStr;
 
-use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore};
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::connection::types::error::ConnectionError;
@@ -20,7 +19,7 @@ use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{LightClientState, MockIbcStore};
+use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientState};
 use test_log::test;
 
 enum Ctx {
@@ -168,7 +167,7 @@ fn conn_open_ack_execute(fxt: &mut Fixture<MsgConnectionOpenAck>, expect: Expect
             let IbcEvent::OpenAckConnection(conn_open_try_event) = event else {
                 unreachable!()
             };
-            let conn_end = <MockIbcStore<RevertibleStore<GrowingStore<InMemoryStore>>> as ValidationContext>::connection_end(
+            let conn_end = <DefaultIbcStore as ValidationContext>::connection_end(
                 &fxt.ctx,
                 conn_open_try_event.conn_id_on_a(),
             )
