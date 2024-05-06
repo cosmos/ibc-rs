@@ -192,21 +192,16 @@ pub struct ClassUri(
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshSerialize for ClassUri {
-    fn serialize<W: borsh::maybestd::io::Write>(
-        &self,
-        writer: &mut W,
-    ) -> borsh::maybestd::io::Result<()> {
+    fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
         borsh::BorshSerialize::serialize(&self.to_string(), writer)
     }
 }
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshDeserialize for ClassUri {
-    fn deserialize_reader<R: borsh::maybestd::io::Read>(
-        reader: &mut R,
-    ) -> borsh::maybestd::io::Result<Self> {
+    fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
         let uri = String::deserialize_reader(reader)?;
-        Ok(ClassUri::from_str(&uri).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
+        Ok(ClassUri::from_str(&uri).map_err(|_| borsh::io::ErrorKind::Other)?)
     }
 }
 

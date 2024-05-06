@@ -222,7 +222,7 @@ impl<'de> Deserialize<'de> for ChainId {
 
 #[cfg(feature = "borsh")]
 mod borsh_impls {
-    use borsh::maybestd::io::{self, Error, ErrorKind, Read};
+    use borsh::io::{self, Error, ErrorKind, Read};
     use borsh::BorshDeserialize;
 
     use super::*;
