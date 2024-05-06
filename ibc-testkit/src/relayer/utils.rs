@@ -1,7 +1,6 @@
 use alloc::string::String;
 use core::marker::PhantomData;
 use core::time::Duration;
-use ibc::core::channel::types::timeout::TimeoutHeight;
 
 use ibc::core::channel::types::acknowledgement::Acknowledgement;
 use ibc::core::channel::types::channel::Order;
@@ -11,6 +10,7 @@ use ibc::core::channel::types::msgs::{
     MsgTimeoutOnClose, PacketMsg,
 };
 use ibc::core::channel::types::packet::Packet;
+use ibc::core::channel::types::timeout::TimeoutHeight;
 use ibc::core::channel::types::Version as ChannelVersion;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
