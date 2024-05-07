@@ -407,4 +407,55 @@ where
             signer,
         )
     }
+
+    /// Timeouts a packet from the second context to the first context,
+    /// because of the channel is closed.
+    pub fn timeout_packet_on_channel_close_on_a(&mut self, packet: Packet, signer: Signer) {
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_a,
+                &packet.chan_id_on_a,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_b,
+                &packet.chan_id_on_b,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedRelayerOps::<A, B>::timeout_packet_on_channel_close_on_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            packet,
+            client_id_on_a,
+            client_id_on_b,
+            signer,
+        )
+    }
 }
