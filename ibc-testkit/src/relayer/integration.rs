@@ -153,6 +153,18 @@ where
     // continue packet relay starting from recv_packet at B
     relayer.send_packet_on_a(packet, signer.clone());
 
+    // retrieve the ack_packet event
+    let Some(IbcEvent::AcknowledgePacket(_)) = relayer
+        .get_ctx_a()
+        .ibc_store()
+        .events
+        .lock()
+        .last()
+        .cloned()
+    else {
+        panic!("unexpected event")
+    };
+
     // timeout packet from A to B
 
     // generate packet for DummyTransferModule
@@ -215,6 +227,18 @@ where
     // timeout the packet on A; never relay the packet to B
     relayer.timeout_packet_on_a(packet.clone(), signer.clone());
 
+    // retrieve the timeout_packet event
+    let Some(IbcEvent::TimeoutPacket(_)) = relayer
+        .get_ctx_a()
+        .ibc_store()
+        .events
+        .lock()
+        .last()
+        .cloned()
+    else {
+        panic!("unexpected event")
+    };
+
     // timeout packet from A to B; using close channel
 
     // generate packet for DummyTransferModule
@@ -276,6 +300,18 @@ where
 
     // timeout the packet on A; never relay the packet to B
     relayer.timeout_packet_on_channel_close_on_a(packet.clone(), signer.clone());
+
+    // retrieve the timeout_packet event
+    let Some(IbcEvent::TimeoutPacket(_)) = relayer
+        .get_ctx_a()
+        .ibc_store()
+        .events
+        .lock()
+        .last()
+        .cloned()
+    else {
+        panic!("unexpected event")
+    };
 }
 
 #[cfg(test)]
