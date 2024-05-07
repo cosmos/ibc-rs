@@ -1040,4 +1040,47 @@ where
             signer.clone(),
         );
     }
+
+    /// Times out a packet from an IBC application on `A` to `B` after closing the channel.
+    pub fn timeout_packet_on_channel_close_on_a(
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &mut TestContext<B>,
+        packet: Packet,
+        client_id_on_a: ClientId,
+        client_id_on_b: ClientId,
+        signer: Signer,
+    ) {
+        // packet is passed from module
+
+        // close the channel on `A`.
+        TypedRelayerOps::<A, B>::close_channel_on_a(
+            ctx_a,
+            ctx_b,
+            client_id_on_a.clone(),
+            packet.chan_id_on_a.clone(),
+            packet.port_id_on_a.clone(),
+            client_id_on_b.clone(),
+            packet.chan_id_on_b.clone(),
+            packet.port_id_on_b.clone(),
+            signer.clone(),
+        );
+
+        // timeout the packet on `A`.
+        TypedRelayerOps::<A, B>::packet_timeout_on_close_on_a(
+            ctx_a,
+            ctx_b,
+            packet.clone(),
+            packet.chan_id_on_b.clone(),
+            packet.port_id_on_b.clone(),
+            signer.clone(),
+        );
+
+        // `A` has progressed; update client on `B` with the latest header from `A`.
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+            ctx_b,
+            ctx_a,
+            client_id_on_b,
+            signer.clone(),
+        );
+    }
 }
