@@ -950,7 +950,7 @@ where
 
         ctx_a.deliver(msg_for_a).expect("success");
 
-        let Some(IbcEvent::ChannelClosed(_)) = ctx_a.ibc_store().events.lock().last().cloned()
+        let Some(IbcEvent::TimeoutPacket(_)) = ctx_a.ibc_store().events.lock().last().cloned()
         else {
             panic!("unexpected event")
         };
