@@ -468,13 +468,13 @@ where
         chan_id_on_a: ChannelId,
         signer: Signer,
     ) -> Packet {
-        use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
-
         use ibc::apps::transfer::handler::send_transfer;
         use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
         use ibc::apps::transfer::types::packet::PacketData;
         use ibc::core::handler::types::events::IbcEvent;
         use ibc::primitives::Timestamp;
+
+        use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
 
         // generate packet for DummyTransferModule
         let packet_data = PacketData {
