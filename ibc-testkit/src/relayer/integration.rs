@@ -9,7 +9,9 @@ use crate::relayer::context::RelayerContext;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
 /// Integration test for IBC implementation. This test creates clients,
-/// connections, channels, and sends packets between two [`TestHost`]s. This uses
+/// connections, channels between two [`TestHost`]s.
+///
+/// If `serde` feature is enabled, this also exercises packet relay between [`TestHost`]s. This uses
 /// [`DummyTransferModule`](crate::testapp::ibc::applications::transfer::types::DummyTransferModule)
 /// to simulate the transfer of tokens between two contexts.
 pub fn ibc_integration_test<A, B>()
@@ -83,71 +85,80 @@ where
     assert_eq!(chan_id_on_a, ChannelId::new(1));
     assert_eq!(chan_id_on_b, ChannelId::new(1));
 
-    // ------------------------
-    // send packet from A to B
-    // ------------------------
+    #[cfg(feature = "serde")]
+    {
+        {
+            // ------------------------
+            // send packet from A to B
+            // ------------------------
 
-    let packet =
-        relayer.send_packet_via_dummy_transfer_module_on_a(chan_id_on_a.clone(), signer.clone());
+            let packet = relayer
+                .send_packet_via_dummy_transfer_module_on_a(chan_id_on_a.clone(), signer.clone());
 
-    // continue packet relay starting from recv_packet at B
-    relayer.send_packet_on_a(packet, signer.clone());
+            // continue packet relay starting from recv_packet at B
+            relayer.send_packet_on_a(packet, signer.clone());
 
-    // retrieve the ack_packet event
-    let Some(IbcEvent::AcknowledgePacket(_)) = relayer
-        .get_ctx_a()
-        .ibc_store()
-        .events
-        .lock()
-        .last()
-        .cloned()
-    else {
-        panic!("unexpected event")
-    };
+            // retrieve the ack_packet event
+            let Some(IbcEvent::AcknowledgePacket(_)) = relayer
+                .get_ctx_a()
+                .ibc_store()
+                .events
+                .lock()
+                .last()
+                .cloned()
+            else {
+                panic!("unexpected event")
+            };
+        }
 
-    // --------------------------
-    // timeout packet from A to B
-    // --------------------------
+        {
+            // --------------------------
+            // timeout packet from A to B
+            // --------------------------
 
-    let packet =
-        relayer.send_packet_via_dummy_transfer_module_on_a(chan_id_on_a.clone(), signer.clone());
+            let packet = relayer
+                .send_packet_via_dummy_transfer_module_on_a(chan_id_on_a.clone(), signer.clone());
 
-    // timeout the packet on A; never relay the packet to B
-    relayer.timeout_packet_on_a(packet.clone(), signer.clone());
+            // timeout the packet on A; never relay the packet to B
+            relayer.timeout_packet_on_a(packet.clone(), signer.clone());
 
-    // retrieve the timeout_packet event
-    let Some(IbcEvent::TimeoutPacket(_)) = relayer
-        .get_ctx_a()
-        .ibc_store()
-        .events
-        .lock()
-        .last()
-        .cloned()
-    else {
-        panic!("unexpected event")
-    };
+            // retrieve the timeout_packet event
+            let Some(IbcEvent::TimeoutPacket(_)) = relayer
+                .get_ctx_a()
+                .ibc_store()
+                .events
+                .lock()
+                .last()
+                .cloned()
+            else {
+                panic!("unexpected event")
+            };
+        }
 
-    // ------------------------------------------------
-    // timeout packet from A to B; using closed channel
-    // ------------------------------------------------
+        {
+            // ------------------------------------------------
+            // timeout packet from A to B; using closed channel
+            // ------------------------------------------------
 
-    let packet =
-        relayer.send_packet_via_dummy_transfer_module_on_a(chan_id_on_a.clone(), signer.clone());
+            let packet = relayer
+                .send_packet_via_dummy_transfer_module_on_a(chan_id_on_a.clone(), signer.clone());
 
-    // timeout the packet on A; never relay the packet to B
-    relayer.timeout_packet_on_channel_close_on_a(packet.clone(), signer.clone());
+            // timeout the packet on A; never relay the packet to B
+            relayer.timeout_packet_on_channel_close_on_a(packet.clone(), signer.clone());
 
-    // retrieve the timeout_packet event
-    let Some(IbcEvent::TimeoutPacket(_)) = relayer
-        .get_ctx_a()
-        .ibc_store()
-        .events
-        .lock()
-        .last()
-        .cloned()
-    else {
-        panic!("unexpected event")
-    };
+            // retrieve the timeout_packet event
+            let Some(IbcEvent::TimeoutPacket(_)) = relayer
+                .get_ctx_a()
+                .ibc_store()
+                .events
+                .lock()
+                .last()
+                .cloned()
+            else {
+                panic!("unexpected event")
+            };
+        }
+    }
 }
 
 #[cfg(test)]

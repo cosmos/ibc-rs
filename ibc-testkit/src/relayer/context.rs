@@ -1,4 +1,3 @@
-use ibc::apps::transfer::handler::send_transfer;
 use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
 use ibc::apps::transfer::types::packet::PacketData;
 use ibc::core::channel::types::packet::Packet;
@@ -465,6 +464,9 @@ where
     }
 
     /// Submit a packet via [`DummyTransferModule`] on the first context.
+    ///
+    /// Requires `serde` feature because of [`ibc::apps::transfer::handler::send_transfer`].
+    #[cfg(feature = "serde")]
     pub fn send_packet_via_dummy_transfer_module_on_a(
         &mut self,
         chan_id_on_a: ChannelId,
@@ -491,7 +493,7 @@ where
         };
 
         // module creates the send_packet
-        send_transfer(
+        ibc::apps::transfer::handler::send_transfer(
             self.get_ctx_a_mut().ibc_store_mut(),
             &mut DummyTransferModule,
             msg,
