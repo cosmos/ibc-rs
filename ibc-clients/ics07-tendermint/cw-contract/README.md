@@ -1,4 +1,4 @@
-# CosmWasm Contract
+# `cw-contract` crate
 
 This crate showcases a barebones CosmWasm contract implementation utilizing the `ibc-client-cw`
 crate, which exposes the requisite interfaces needed to implement contracts on top of `ibc-rs`.
