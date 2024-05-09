@@ -459,7 +459,9 @@ where
         )
     }
 
-    /// Submit a packet via [`DummyTransferModule`] on the first context.
+    /// Submit a packet via
+    /// [`DummyTransferModule`](crate::testapp::ibc::applications::transfer::types::DummyTransferModule)
+    /// on the first context.
     ///
     /// Requires `serde` feature because of [`ibc::apps::transfer::handler::send_transfer`].
     #[cfg(feature = "serde")]
