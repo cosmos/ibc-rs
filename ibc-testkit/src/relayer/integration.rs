@@ -8,9 +8,10 @@ use crate::hosts::{HostClientState, TestHost};
 use crate::relayer::context::RelayerContext;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
-/// Integration test for IBC implementation.
-/// This test creates clients, connections, channels, and sends packets between two [`TestHost`]s.
-/// This uses [`DummyTransferModule`] to simulate the transfer of tokens between two contexts.
+/// Integration test for IBC implementation. This test creates clients,
+/// connections, channels, and sends packets between two [`TestHost`]s. This uses
+/// [`DummyTransferModule`](crate::testapp::ibc::applications::transfer::types::DummyTransferModule)
+/// to simulate the transfer of tokens between two contexts.
 pub fn ibc_integration_test<A, B>()
 where
     A: TestHost,
