@@ -10,7 +10,7 @@ use ibc_primitives::prelude::*;
 
 /// Top-level error
 #[derive(Debug, Display, From)]
-pub enum ContextError {
+pub enum ProtocolError {
     /// ICS02 Client error: {0}
     ClientError(ClientError),
     /// ICS03 Connection error: {0}
@@ -23,10 +23,10 @@ pub enum ContextError {
     RouterError(RouterError),
 }
 
-impl From<ContextError> for ClientError {
-    fn from(context_error: ContextError) -> Self {
+impl From<ProtocolError> for ClientError {
+    fn from(context_error: ProtocolError) -> Self {
         match context_error {
-            ContextError::ClientError(e) => e,
+            ProtocolError::ClientError(e) => e,
             _ => ClientError::Other {
                 description: context_error.to_string(),
             },
@@ -35,7 +35,7 @@ impl From<ContextError> for ClientError {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for ContextError {
+impl std::error::Error for ProtocolError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
             Self::ClientError(e) => Some(e),

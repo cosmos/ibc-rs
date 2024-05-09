@@ -3,13 +3,13 @@ pub mod clients;
 pub mod core;
 use alloc::fmt::Debug;
 
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::ProtocolError;
 use ibc::core::primitives::prelude::*;
 
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 pub enum Expect {
     Success,
-    Failure(Option<ContextError>),
+    Failure(Option<ProtocolError>),
 }
 
 #[derive(Debug)]
@@ -23,7 +23,7 @@ impl<M: Debug> Fixture<M> {
         &self,
         expect: &Expect,
         process: &str,
-        res: &Result<(), ContextError>,
+        res: &Result<(), ProtocolError>,
     ) -> String {
         let base_error = match expect {
             Expect::Success => "step failed!",

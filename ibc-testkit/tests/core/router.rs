@@ -14,7 +14,7 @@ use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient, MsgUpdateClient
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::msgs::ConnectionMsg;
 use ibc::core::entrypoint::dispatch;
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::ProtocolError;
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ConnectionId;
@@ -422,7 +422,7 @@ fn routing_module_and_keepers() {
                 .map_err(|e: TokenTransferError| ChannelError::AppModule {
                     description: e.to_string(),
                 })
-                .map_err(ContextError::from),
+                .map_err(ProtocolError::from),
         };
 
         assert_eq!(

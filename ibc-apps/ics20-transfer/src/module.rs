@@ -6,7 +6,7 @@ use ibc_core::channel::types::acknowledgement::{Acknowledgement, Acknowledgement
 use ibc_core::channel::types::channel::{Counterparty, Order};
 use ibc_core::channel::types::packet::Packet;
 use ibc_core::channel::types::Version;
-use ibc_core::handler::types::error::ContextError;
+use ibc_core::handler::types::error::ProtocolError;
 use ibc_core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
@@ -43,7 +43,7 @@ pub fn on_chan_open_init_validate(
     if !version.is_empty() {
         version
             .verify_is_expected(Version::new(VERSION.to_string()))
-            .map_err(ContextError::from)?;
+            .map_err(ProtocolError::from)?;
     }
 
     Ok(())
@@ -79,7 +79,7 @@ pub fn on_chan_open_try_validate(
 
     counterparty_version
         .verify_is_expected(Version::new(VERSION.to_string()))
-        .map_err(ContextError::from)?;
+        .map_err(ProtocolError::from)?;
 
     Ok(())
 }
@@ -104,7 +104,7 @@ pub fn on_chan_open_ack_validate(
 ) -> Result<(), TokenTransferError> {
     counterparty_version
         .verify_is_expected(Version::new(VERSION.to_string()))
-        .map_err(ContextError::from)?;
+        .map_err(ProtocolError::from)?;
 
     Ok(())
 }

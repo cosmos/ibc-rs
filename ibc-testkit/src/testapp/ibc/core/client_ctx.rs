@@ -7,7 +7,7 @@ use ibc::core::client::context::{
 };
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::ProtocolError;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, PortId};
 use ibc::core::host::types::path::{
     ClientConsensusStatePath, ClientStatePath, ClientUpdateHeightPath, ClientUpdateTimePath, Path,
@@ -37,11 +37,11 @@ impl<S> MockClientContext for MockIbcStore<S>
 where
     S: ProvableStore + Debug,
 {
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+    fn host_timestamp(&self) -> Result<Timestamp, ProtocolError> {
         ValidationContext::host_timestamp(self)
     }
 
-    fn host_height(&self) -> Result<Height, ContextError> {
+    fn host_height(&self) -> Result<Height, ProtocolError> {
         ValidationContext::host_height(self)
     }
 }
@@ -50,16 +50,16 @@ impl<S> ExtClientValidationContext for MockIbcStore<S>
 where
     S: ProvableStore + Debug,
 {
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+    fn host_timestamp(&self) -> Result<Timestamp, ProtocolError> {
         ValidationContext::host_timestamp(self)
     }
 
-    fn host_height(&self) -> Result<Height, ContextError> {
+    fn host_height(&self) -> Result<Height, ProtocolError> {
         ValidationContext::host_height(self)
     }
 
     /// Returns the list of heights at which the consensus state of the given client was updated.
-    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError> {
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ProtocolError> {
         let path = format!("clients/{}/consensusStates", client_id)
             .try_into()
             .map_err(|_| ClientError::Other {
@@ -89,7 +89,7 @@ where
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError> {
+    ) -> Result<Option<Self::ConsensusStateRef>, ProtocolError> {
         let path = format!("clients/{client_id}/consensusStates").into();
 
         let keys = self.store.get_keys(&path);
@@ -122,7 +122,7 @@ where
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError> {
+    ) -> Result<Option<Self::ConsensusStateRef>, ProtocolError> {
         let path = format!("clients/{client_id}/consensusStates").into();
 
         let keys = self.store.get_keys(&path);
@@ -159,7 +159,7 @@ where
     type ClientStateRef = AnyClientState;
     type ConsensusStateRef = AnyConsensusState;
 
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError> {
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ProtocolError> {
         Ok(self
             .client_state_store
             .get(StoreHeight::Pending, &ClientStatePath(client_id.clone()))
@@ -171,7 +171,7 @@ where
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<AnyConsensusState, ContextError> {
+    ) -> Result<AnyConsensusState, ProtocolError> {
         let height = Height::new(
             client_cons_state_path.revision_number,
             client_cons_state_path.revision_height,
@@ -194,7 +194,7 @@ where
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<(Timestamp, Height), ContextError> {
+    ) -> Result<(Timestamp, Height), ProtocolError> {
         let client_update_time_path = ClientUpdateTimePath::new(
             client_id.clone(),
             height.revision_number(),
@@ -235,7 +235,7 @@ where
         &mut self,
         client_state_path: ClientStatePath,
         client_state: Self::ClientStateRef,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         self.client_state_store
             .set(client_state_path, client_state)
             .map_err(|_| ClientError::Other {
@@ -250,7 +250,7 @@ where
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Self::ConsensusStateRef,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         self.consensus_state_store
             .set(consensus_state_path, consensus_state)
             .map_err(|_| ClientError::Other {
@@ -262,7 +262,7 @@ where
     fn delete_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         self.consensus_state_store.delete(consensus_state_path);
         Ok(())
     }
@@ -273,7 +273,7 @@ where
         &mut self,
         client_id: ClientId,
         height: Height,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         let client_update_time_path = ClientUpdateTimePath::new(
             client_id.clone(),
             height.revision_number(),
@@ -299,7 +299,7 @@ where
         height: Height,
         host_timestamp: Timestamp,
         host_height: Height,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         let client_update_time_path = ClientUpdateTimePath::new(
             client_id.clone(),
             height.revision_number(),

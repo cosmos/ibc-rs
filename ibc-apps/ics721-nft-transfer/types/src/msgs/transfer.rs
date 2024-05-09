@@ -2,7 +2,7 @@
 
 use ibc_core::channel::types::error::PacketError;
 use ibc_core::channel::types::timeout::TimeoutHeight;
-use ibc_core::handler::types::error::ContextError;
+use ibc_core::handler::types::error::ProtocolError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Timestamp;
@@ -54,16 +54,16 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
         let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_msg.timeout_timestamp)
             .map_err(PacketError::InvalidPacketTimestamp)
-            .map_err(ContextError::from)?;
+            .map_err(ProtocolError::from)?;
 
         let timeout_height_on_b: TimeoutHeight = raw_msg
             .timeout_height
             .try_into()
-            .map_err(ContextError::from)?;
+            .map_err(ProtocolError::from)?;
 
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !timeout_height_on_b.is_set() && !timeout_timestamp_on_b.is_set() {
-            return Err(ContextError::from(PacketError::MissingTimeout))?;
+            return Err(ProtocolError::from(PacketError::MissingTimeout))?;
         }
 
         let memo = if raw_msg.memo.is_empty() {

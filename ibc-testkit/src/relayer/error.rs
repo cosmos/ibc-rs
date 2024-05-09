@@ -1,7 +1,7 @@
 use displaydoc::Display;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::error::ConnectionError;
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::ProtocolError;
 use ibc::core::host::types::identifiers::ClientId;
 
 #[derive(Debug, Display)]
@@ -21,7 +21,7 @@ pub enum RelayerError {
         destination_height: Height,
     },
     /// transaction processing by modules failed error: `{0}`
-    TransactionFailed(ContextError),
+    TransactionFailed(ProtocolError),
     /// connection error: `{0}`
     Connection(ConnectionError),
 }

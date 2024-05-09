@@ -4,7 +4,7 @@ use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, State};
 use ibc_core_channel_types::events::OpenInit;
 use ibc_core_channel_types::msgs::MsgChannelOpenInit;
 use ibc_core_client::context::prelude::*;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::ProtocolError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ChannelId;
 use ibc_core_host::types::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
@@ -16,7 +16,7 @@ pub fn chan_open_init_validate<ValCtx>(
     ctx_a: &ValCtx,
     module: &dyn Module,
     msg: MsgChannelOpenInit,
-) -> Result<(), ContextError>
+) -> Result<(), ProtocolError>
 where
     ValCtx: ValidationContext,
 {
@@ -39,7 +39,7 @@ pub fn chan_open_init_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgChannelOpenInit,
-) -> Result<(), ContextError>
+) -> Result<(), ProtocolError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -107,7 +107,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenInit) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenInit) -> Result<(), ProtocolError>
 where
     Ctx: ValidationContext,
 {

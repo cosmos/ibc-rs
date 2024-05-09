@@ -10,7 +10,7 @@ use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::{dispatch, execute, validate};
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::ProtocolError;
 use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId, Sequence};
@@ -463,17 +463,17 @@ where
     }
 
     /// Calls [`validate`] function on [`MsgEnvelope`] using the context's IBC store and router.
-    pub fn validate(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+    pub fn validate(&mut self, msg: MsgEnvelope) -> Result<(), ProtocolError> {
         validate(&self.ibc_store, &self.ibc_router, msg)
     }
 
     /// Calls [`execute`] function on [`MsgEnvelope`] using the context's IBC store and router.
-    pub fn execute(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+    pub fn execute(&mut self, msg: MsgEnvelope) -> Result<(), ProtocolError> {
         execute(&mut self.ibc_store, &mut self.ibc_router, msg)
     }
 
     /// Calls [`dispatch`] function on [`MsgEnvelope`] using the context's IBC store and router.
-    pub fn dispatch(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+    pub fn dispatch(&mut self, msg: MsgEnvelope) -> Result<(), ProtocolError> {
         dispatch(&mut self.ibc_store, &mut self.ibc_router, msg)
     }
 

@@ -9,7 +9,7 @@ use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::error::CommitmentError;
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::ProtocolError;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::{ClientConsensusStatePath, NextClientSequencePath};
@@ -127,7 +127,7 @@ fn test_invalid_frozen_tm_client_creation() {
 
     assert!(matches!(
         res,
-        Err(ContextError::ClientError(ClientError::ClientFrozen { .. }))
+        Err(ProtocolError::ClientError(ClientError::ClientFrozen { .. }))
     ))
 }
 

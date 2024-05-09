@@ -4,7 +4,7 @@ use ibc_core_channel_types::channel::ChannelEnd;
 use ibc_core_channel_types::commitment::PacketCommitment;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::ConnectionEnd;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::ProtocolError;
 use ibc_core_handler_types::events::IbcEvent;
 use ibc_core_host::types::identifiers::{ConnectionId, Sequence};
 use ibc_core_host::types::path::{ChannelEndPath, CommitmentPath, SeqSendPath};
@@ -19,13 +19,15 @@ pub trait SendPacketValidationContext {
     fn get_client_validation_context(&self) -> &Self::V;
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
-    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError>;
+    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ProtocolError>;
 
     /// Returns the ConnectionState for the given identifier `connection_id`.
-    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, ContextError>;
+    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, ProtocolError>;
 
-    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
-        -> Result<Sequence, ContextError>;
+    fn get_next_sequence_send(
+        &self,
+        seq_send_path: &SeqSendPath,
+    ) -> Result<Sequence, ProtocolError>;
 }
 
 impl<T> SendPacketValidationContext for T
@@ -38,18 +40,18 @@ where
         self.get_client_validation_context()
     }
 
-    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
+    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ProtocolError> {
         self.channel_end(channel_end_path)
     }
 
-    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
+    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, ProtocolError> {
         self.connection_end(connection_id)
     }
 
     fn get_next_sequence_send(
         &self,
         seq_send_path: &SeqSendPath,
-    ) -> Result<Sequence, ContextError> {
+    ) -> Result<Sequence, ProtocolError> {
         self.get_next_sequence_send(seq_send_path)
     }
 }
@@ -60,19 +62,19 @@ pub trait SendPacketExecutionContext: SendPacketValidationContext {
         &mut self,
         seq_send_path: &SeqSendPath,
         seq: Sequence,
-    ) -> Result<(), ContextError>;
+    ) -> Result<(), ProtocolError>;
 
     fn store_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
-    ) -> Result<(), ContextError>;
+    ) -> Result<(), ProtocolError>;
 
     /// Ibc events
-    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError>;
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ProtocolError>;
 
     /// Logging facility
-    fn log_message(&mut self, message: String) -> Result<(), ContextError>;
+    fn log_message(&mut self, message: String) -> Result<(), ProtocolError>;
 }
 
 impl<T> SendPacketExecutionContext for T
@@ -83,7 +85,7 @@ where
         &mut self,
         seq_send_path: &SeqSendPath,
         seq: Sequence,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         self.store_next_sequence_send(seq_send_path, seq)
     }
 
@@ -91,15 +93,15 @@ where
         &mut self,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         self.store_packet_commitment(commitment_path, commitment)
     }
 
-    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError> {
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ProtocolError> {
         self.emit_ibc_event(event)
     }
 
-    fn log_message(&mut self, message: String) -> Result<(), ContextError> {
+    fn log_message(&mut self, message: String) -> Result<(), ProtocolError> {
         self.log_message(message)
     }
 }

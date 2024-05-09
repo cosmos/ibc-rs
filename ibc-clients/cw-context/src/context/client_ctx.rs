@@ -5,7 +5,7 @@ use ibc_client_wasm_types::consensus_state::ConsensusState as WasmConsensusState
 use ibc_core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc_core::client::types::error::ClientError;
 use ibc_core::client::types::Height;
-use ibc_core::handler::types::error::ContextError;
+use ibc_core::handler::types::error::ProtocolError;
 use ibc_core::host::types::identifiers::ClientId;
 use ibc_core::host::types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_core::primitives::proto::{Any, Protobuf};
@@ -24,7 +24,7 @@ where
     type ClientStateRef = C::ClientState;
     type ConsensusStateRef = C::ConsensusState;
 
-    fn client_state(&self, _client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError> {
+    fn client_state(&self, _client_id: &ClientId) -> Result<Self::ClientStateRef, ProtocolError> {
         let client_state_value = self.retrieve(ClientStatePath::leaf())?;
 
         let any_wasm: WasmClientState = Protobuf::<Any>::decode(client_state_value.as_slice())
@@ -40,7 +40,7 @@ where
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::ConsensusStateRef, ContextError> {
+    ) -> Result<Self::ConsensusStateRef, ProtocolError> {
         let consensus_state_value = self.retrieve(client_cons_state_path.leaf())?;
 
         let any_wasm: WasmConsensusState =
@@ -55,7 +55,7 @@ where
         &self,
         _client_id: &ClientId,
         height: &Height,
-    ) -> Result<(Timestamp, Height), ContextError> {
+    ) -> Result<(Timestamp, Height), ProtocolError> {
         let time_key = self.client_update_time_key(height);
 
         let time_vec = self.retrieve(time_key)?;
@@ -98,7 +98,7 @@ where
         &mut self,
         _client_state_path: ClientStatePath,
         client_state: Self::ClientStateMut,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         let prefixed_key = self.prefixed_key(ClientStatePath::leaf());
 
         let encoded_client_state = self.encode_client_state(client_state)?;
@@ -112,7 +112,7 @@ where
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Self::ConsensusStateRef,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         let prefixed_key = self.prefixed_key(consensus_state_path.leaf());
 
         let encoded_consensus_state = C::ConsensusState::encode_to_any_vec(consensus_state);
@@ -132,7 +132,7 @@ where
     fn delete_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         let prefixed_key = self.prefixed_key(consensus_state_path.leaf());
 
         self.remove(prefixed_key);
@@ -146,7 +146,7 @@ where
         height: Height,
         host_timestamp: Timestamp,
         host_height: Height,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         let time_key = self.client_update_time_key(&height);
 
         let prefixed_time_key = self.prefixed_key(time_key);
@@ -180,7 +180,7 @@ where
         &mut self,
         _client_id: ClientId,
         height: Height,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), ProtocolError> {
         let time_key = self.client_update_time_key(&height);
 
         let prefixed_time_key = self.prefixed_key(time_key);

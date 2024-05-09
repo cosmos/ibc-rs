@@ -4,7 +4,7 @@ use ibc_core_channel_types::error::{ChannelError, PacketError};
 use ibc_core_channel_types::msgs::MsgTimeoutOnClose;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::ProtocolError;
 use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
@@ -12,7 +12,7 @@ use ibc_core_host::ValidationContext;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ContextError>
+pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ProtocolError>
 where
     Ctx: ValidationContext,
 {
@@ -154,10 +154,12 @@ where
                 )
             }
             Order::None => {
-                return Err(ContextError::ChannelError(ChannelError::InvalidOrderType {
-                    expected: "Channel ordering cannot be None".to_string(),
-                    actual: chan_end_on_a.ordering.to_string(),
-                }))
+                return Err(ProtocolError::ChannelError(
+                    ChannelError::InvalidOrderType {
+                        expected: "Channel ordering cannot be None".to_string(),
+                        actual: chan_end_on_a.ordering.to_string(),
+                    },
+                ))
             }
         };
 

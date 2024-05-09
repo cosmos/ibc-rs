@@ -2,7 +2,7 @@ use cosmwasm_std::StdError;
 use derive_more::{Display, From};
 use ibc_core::client::types::error::ClientError;
 use ibc_core::commitment_types::error::CommitmentError;
-use ibc_core::handler::types::error::ContextError;
+use ibc_core::handler::types::error::ProtocolError;
 use ibc_core::host::types::error::IdentifierError;
 use ibc_core::host::types::path::PathError;
 use prost::DecodeError;
@@ -12,7 +12,7 @@ pub enum ContractError {
     #[display(fmt = "CosmWasm standard error: {_0}")]
     Std(StdError),
     #[display(fmt = "IBC validation/execution context error: {_0}")]
-    Context(ContextError),
+    Context(ProtocolError),
     #[display(fmt = "IBC commitment error: {_0}")]
     Commitment(CommitmentError),
     #[display(fmt = "IBC identifier error: {_0}")]
@@ -31,6 +31,6 @@ impl From<ContractError> for StdError {
 
 impl From<ClientError> for ContractError {
     fn from(err: ClientError) -> ContractError {
-        ContractError::Context(ContextError::ClientError(err))
+        ContractError::Context(ProtocolError::ClientError(err))
     }
 }

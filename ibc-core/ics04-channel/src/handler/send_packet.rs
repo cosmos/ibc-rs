@@ -4,7 +4,7 @@ use ibc_core_channel_types::error::PacketError;
 use ibc_core_channel_types::events::SendPacket;
 use ibc_core_channel_types::packet::Packet;
 use ibc_core_client::context::prelude::*;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::ProtocolError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
@@ -20,7 +20,7 @@ use crate::context::{SendPacketExecutionContext, SendPacketValidationContext};
 pub fn send_packet(
     ctx_a: &mut impl SendPacketExecutionContext,
     packet: Packet,
-) -> Result<(), ContextError> {
+) -> Result<(), ProtocolError> {
     send_packet_validate(ctx_a, &packet)?;
     send_packet_execute(ctx_a, packet)
 }
@@ -29,9 +29,9 @@ pub fn send_packet(
 pub fn send_packet_validate(
     ctx_a: &impl SendPacketValidationContext,
     packet: &Packet,
-) -> Result<(), ContextError> {
+) -> Result<(), ProtocolError> {
     if !packet.timeout_height_on_b.is_set() && !packet.timeout_timestamp_on_b.is_set() {
-        return Err(ContextError::PacketError(PacketError::MissingTimeout));
+        return Err(ProtocolError::PacketError(PacketError::MissingTimeout));
     }
 
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
@@ -105,7 +105,7 @@ pub fn send_packet_validate(
 pub fn send_packet_execute(
     ctx_a: &mut impl SendPacketExecutionContext,
     packet: Packet,
-) -> Result<(), ContextError> {
+) -> Result<(), ProtocolError> {
     {
         let seq_send_path_on_a = SeqSendPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
         let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;

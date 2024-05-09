@@ -3,7 +3,7 @@
 use ibc_core::client::context::prelude::*;
 use ibc_core::client::types::error::ClientError;
 use ibc_core::client::types::Height;
-use ibc_core::handler::types::error::ContextError;
+use ibc_core::handler::types::error::ProtocolError;
 use ibc_core::host::types::identifiers::ClientId;
 use ibc_core::host::types::path::ClientConsensusStatePath;
 use ibc_core::primitives::proto::Any;
@@ -18,7 +18,7 @@ where
     <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
     <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
 {
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+    fn host_timestamp(&self) -> Result<Timestamp, ProtocolError> {
         let time = self.env().block.time;
 
         let host_timestamp =
@@ -29,13 +29,13 @@ where
         Ok(host_timestamp)
     }
 
-    fn host_height(&self) -> Result<Height, ContextError> {
+    fn host_height(&self) -> Result<Height, ProtocolError> {
         let host_height = Height::new(0, self.env().block.height)?;
 
         Ok(host_height)
     }
 
-    fn consensus_state_heights(&self, _client_id: &ClientId) -> Result<Vec<Height>, ContextError> {
+    fn consensus_state_heights(&self, _client_id: &ClientId) -> Result<Vec<Height>, ProtocolError> {
         let heights = self.get_heights()?;
 
         Ok(heights)
@@ -44,7 +44,7 @@ where
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError> {
+    ) -> Result<Option<Self::ConsensusStateRef>, ProtocolError> {
         let next_height = self.get_adjacent_height(height, HeightTravel::Next)?;
 
         match next_height {
@@ -64,7 +64,7 @@ where
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError> {
+    ) -> Result<Option<Self::ConsensusStateRef>, ProtocolError> {
         let prev_height = self.get_adjacent_height(height, HeightTravel::Prev)?;
 
         match prev_height {

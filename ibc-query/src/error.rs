@@ -4,14 +4,14 @@ use displaydoc::Display;
 use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::connection::types::error::ConnectionError;
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::ProtocolError;
 use ibc::core::host::types::error::IdentifierError;
 use tonic::Status;
 
 #[derive(Debug, Display)]
 pub enum QueryError {
     /// Context error: {0}
-    ContextError(ContextError),
+    ContextError(ProtocolError),
     /// Identifier error: {0}
     IdentifierError(IdentifierError),
     /// Proof not found: {0}
@@ -41,33 +41,33 @@ impl From<QueryError> for Status {
     }
 }
 
-impl From<ContextError> for QueryError {
-    fn from(e: ContextError) -> Self {
+impl From<ProtocolError> for QueryError {
+    fn from(e: ProtocolError) -> Self {
         Self::ContextError(e)
     }
 }
 
 impl From<ClientError> for QueryError {
     fn from(e: ClientError) -> Self {
-        Self::ContextError(ContextError::ClientError(e))
+        Self::ContextError(ProtocolError::ClientError(e))
     }
 }
 
 impl From<ConnectionError> for QueryError {
     fn from(e: ConnectionError) -> Self {
-        Self::ContextError(ContextError::ConnectionError(e))
+        Self::ContextError(ProtocolError::ConnectionError(e))
     }
 }
 
 impl From<ChannelError> for QueryError {
     fn from(e: ChannelError) -> Self {
-        Self::ContextError(ContextError::ChannelError(e))
+        Self::ContextError(ProtocolError::ChannelError(e))
     }
 }
 
 impl From<PacketError> for QueryError {
     fn from(e: PacketError) -> Self {
-        Self::ContextError(ContextError::PacketError(e))
+        Self::ContextError(ProtocolError::PacketError(e))
     }
 }
 

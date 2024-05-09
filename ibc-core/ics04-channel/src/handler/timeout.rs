@@ -5,7 +5,7 @@ use ibc_core_channel_types::events::{ChannelClosed, TimeoutPacket};
 use ibc_core_channel_types::msgs::{MsgTimeout, MsgTimeoutOnClose};
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::ProtocolError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
@@ -25,7 +25,7 @@ pub fn timeout_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
     module: &dyn Module,
     timeout_msg_type: TimeoutMsgType,
-) -> Result<(), ContextError>
+) -> Result<(), ProtocolError>
 where
     ValCtx: ValidationContext,
 {
@@ -41,14 +41,14 @@ where
 
     module
         .on_timeout_packet_validate(&packet, &signer)
-        .map_err(ContextError::PacketError)
+        .map_err(ProtocolError::PacketError)
 }
 
 pub fn timeout_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
     module: &mut dyn Module,
     timeout_msg_type: TimeoutMsgType,
-) -> Result<(), ContextError>
+) -> Result<(), ProtocolError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -126,7 +126,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ProtocolError>
 where
     Ctx: ValidationContext,
 {
@@ -244,7 +244,7 @@ where
                 )
             }
             Order::None => {
-                return Err(ContextError::ChannelError(ChannelError::InvalidOrderType {
+                return Err(ProtocolError::ChannelError(ChannelError::InvalidOrderType {
                     expected: "Channel ordering cannot be None".to_string(),
                     actual: chan_end_on_a.ordering.to_string(),
                 }))

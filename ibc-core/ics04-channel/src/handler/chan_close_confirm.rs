@@ -6,7 +6,7 @@ use ibc_core_channel_types::events::CloseConfirm;
 use ibc_core_channel_types::msgs::MsgChannelCloseConfirm;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::ProtocolError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
 use ibc_core_host::{ExecutionContext, ValidationContext};
@@ -18,7 +18,7 @@ pub fn chan_close_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
     module: &dyn Module,
     msg: MsgChannelCloseConfirm,
-) -> Result<(), ContextError>
+) -> Result<(), ProtocolError>
 where
     ValCtx: ValidationContext,
 {
@@ -33,7 +33,7 @@ pub fn chan_close_confirm_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgChannelCloseConfirm,
-) -> Result<(), ContextError>
+) -> Result<(), ProtocolError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -61,7 +61,7 @@ where
                 .counterparty()
                 .channel_id
                 .clone()
-                .ok_or(ContextError::ChannelError(ChannelError::Other {
+                .ok_or(ProtocolError::ChannelError(ChannelError::Other {
                 description:
                     "internal error: ChannelEnd doesn't have a counterparty channel id in CloseInit"
                         .to_string(),
@@ -91,7 +91,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelCloseConfirm) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelCloseConfirm) -> Result<(), ProtocolError>
 where
     Ctx: ValidationContext,
 {
