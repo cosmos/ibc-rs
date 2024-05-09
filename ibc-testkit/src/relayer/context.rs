@@ -1,17 +1,13 @@
-use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
-use ibc::apps::transfer::types::packet::PacketData;
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::client::context::client_state::ClientStateValidation;
-use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::types::path::ChannelEndPath;
 use ibc::core::host::ValidationContext;
-use ibc::primitives::{Signer, Timestamp};
+use ibc::primitives::Signer;
 
 use crate::context::TestContext;
 use crate::hosts::{HostClientState, TestHost};
 use crate::relayer::utils::TypedRelayerOps;
-use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
 /// A relayer context that allows interaction between two [`TestContext`] instances.
@@ -472,6 +468,14 @@ where
         chan_id_on_a: ChannelId,
         signer: Signer,
     ) -> Packet {
+        use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
+
+        use ibc::apps::transfer::handler::send_transfer;
+        use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
+        use ibc::apps::transfer::types::packet::PacketData;
+        use ibc::core::handler::types::events::IbcEvent;
+        use ibc::primitives::Timestamp;
+
         // generate packet for DummyTransferModule
         let packet_data = PacketData {
             token: "1000uibc".parse().expect("valid prefixed coin"),
@@ -493,7 +497,7 @@ where
         };
 
         // module creates the send_packet
-        ibc::apps::transfer::handler::send_transfer(
+        send_transfer(
             self.get_ctx_a_mut().ibc_store_mut(),
             &mut DummyTransferModule,
             msg,

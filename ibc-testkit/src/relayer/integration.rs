@@ -1,5 +1,4 @@
 use ibc::core::client::context::client_state::ClientStateValidation;
-use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 
 use crate::context::TestContext;
@@ -87,6 +86,8 @@ where
 
     #[cfg(feature = "serde")]
     {
+        use ibc::core::handler::types::events::IbcEvent;
+
         {
             // ------------------------
             // send packet from A to B
