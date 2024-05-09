@@ -8,7 +8,8 @@ use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_router_types::error::RouterError;
 use ibc_primitives::prelude::*;
 
-/// Top-level error
+/// The top-level internal error type that encapsulates all ibc-rs errors
+/// that are not meant to be handled by users.
 #[derive(Debug, Display, From)]
 pub enum ProtocolError {
     /// ICS02 Client error: {0}
@@ -24,11 +25,11 @@ pub enum ProtocolError {
 }
 
 impl From<ProtocolError> for ClientError {
-    fn from(context_error: ProtocolError) -> Self {
-        match context_error {
+    fn from(protocol_error: ProtocolError) -> Self {
+        match protocol_error {
             ProtocolError::ClientError(e) => e,
             _ => ClientError::Other {
-                description: context_error.to_string(),
+                description: protocol_error.to_string(),
             },
         }
     }
