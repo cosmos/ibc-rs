@@ -93,11 +93,11 @@ where
             // send packet from A to B
             // ------------------------
 
-            let packet = relayer
-                .send_packet_via_dummy_transfer_module_on_a(chan_id_on_a.clone(), signer.clone());
+            let packet =
+                relayer.send_dummy_transfer_packet_on_a(chan_id_on_a.clone(), signer.clone());
 
-            // continue packet relay starting from recv_packet at B
-            relayer.send_packet_on_a(packet, signer.clone());
+            // continue packet relay; submitting recv_packet at B
+            relayer.submit_packet_on_b(packet, signer.clone());
 
             // retrieve the ack_packet event
             let Some(IbcEvent::AcknowledgePacket(_)) = relayer
@@ -117,11 +117,11 @@ where
             // timeout packet from A to B
             // --------------------------
 
-            let packet = relayer
-                .send_packet_via_dummy_transfer_module_on_a(chan_id_on_a.clone(), signer.clone());
+            let packet =
+                relayer.send_dummy_transfer_packet_on_a(chan_id_on_a.clone(), signer.clone());
 
-            // timeout the packet on A; never relay the packet to B
-            relayer.timeout_packet_on_a(packet.clone(), signer.clone());
+            // timeout the packet on B; by never submitting the packet to B
+            relayer.timeout_packet_from_a(packet.clone(), signer.clone());
 
             // retrieve the timeout_packet event
             let Some(IbcEvent::TimeoutPacket(_)) = relayer
@@ -141,11 +141,11 @@ where
             // timeout packet from A to B; using closed channel
             // ------------------------------------------------
 
-            let packet = relayer
-                .send_packet_via_dummy_transfer_module_on_a(chan_id_on_a.clone(), signer.clone());
+            let packet =
+                relayer.send_dummy_transfer_packet_on_a(chan_id_on_a.clone(), signer.clone());
 
-            // timeout the packet on A; never relay the packet to B
-            relayer.timeout_packet_on_channel_close_on_a(packet.clone(), signer.clone());
+            // timeout the packet on B; close the corresponding channel
+            relayer.timeout_packet_from_a_on_channel_close(packet.clone(), signer.clone());
 
             // retrieve the timeout_packet event
             let Some(IbcEvent::TimeoutPacket(_)) = relayer

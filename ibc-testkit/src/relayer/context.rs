@@ -306,9 +306,11 @@ where
         )
     }
 
-    /// Sends a packet from the first context to the second context.
+    /// Sends a packet from the first context to the second context by
+    /// submitting on receive packet on the second context.
+    ///
     /// The IBC packet is created by an IBC application on the first context.
-    pub fn send_packet_on_a(&mut self, packet: Packet, signer: Signer) {
+    pub fn submit_packet_on_b(&mut self, packet: Packet, signer: Signer) {
         let conn_id_on_a = self
             .ctx_a
             .ibc_store()
@@ -347,7 +349,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<A, B>::send_packet_on_a(
+        TypedRelayerOps::<A, B>::submit_packet_on_b(
             &mut self.ctx_a,
             &mut self.ctx_b,
             packet,
@@ -357,9 +359,11 @@ where
         )
     }
 
-    /// Timeouts a packet from the first context to the second context.
+    /// Times out a packet from the first context to the second context by
+    /// waiting for timeout period and then sending timeout packet on first context.
+    ///
     /// The IBC packet is created by an IBC application on the first context.
-    pub fn timeout_packet_on_a(&mut self, packet: Packet, signer: Signer) {
+    pub fn timeout_packet_from_a(&mut self, packet: Packet, signer: Signer) {
         let conn_id_on_a = self
             .ctx_a
             .ibc_store()
@@ -398,7 +402,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<A, B>::timeout_packet_on_a(
+        TypedRelayerOps::<A, B>::timeout_packet_from_a(
             &mut self.ctx_a,
             &mut self.ctx_b,
             packet,
@@ -408,9 +412,11 @@ where
         )
     }
 
-    /// Timeouts a packet from the second context to the first context,
-    /// because of the channel is closed.
-    pub fn timeout_packet_on_channel_close_on_a(&mut self, packet: Packet, signer: Signer) {
+    /// Timeouts a packet from the first context on the second context by closing the
+    /// corresponding channel is closed and then sending a timeout packet on the first context.
+    ///
+    /// The IBC packet is created by an IBC application on the first context.
+    pub fn timeout_packet_from_a_on_channel_close(&mut self, packet: Packet, signer: Signer) {
         let conn_id_on_a = self
             .ctx_a
             .ibc_store()
@@ -449,7 +455,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<A, B>::timeout_packet_on_channel_close_on_a(
+        TypedRelayerOps::<A, B>::timeout_packet_from_a_on_channel_close(
             &mut self.ctx_a,
             &mut self.ctx_b,
             packet,
@@ -459,13 +465,13 @@ where
         )
     }
 
-    /// Submit a packet via
+    /// Submit a
     /// [`DummyTransferModule`](crate::testapp::ibc::applications::transfer::types::DummyTransferModule)
-    /// on the first context.
+    /// packet on the first context.
     ///
     /// Requires `serde` feature because of [`ibc::apps::transfer::handler::send_transfer`].
     #[cfg(feature = "serde")]
-    pub fn send_packet_via_dummy_transfer_module_on_a(
+    pub fn send_dummy_transfer_packet_on_a(
         &mut self,
         chan_id_on_a: ChannelId,
         signer: Signer,

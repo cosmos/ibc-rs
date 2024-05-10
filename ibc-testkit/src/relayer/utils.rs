@@ -957,7 +957,7 @@ where
     }
 
     /// Sends a packet from an IBC application on `A` to `B` using the IBC packet relay protocol.
-    pub fn send_packet_on_a(
+    pub fn submit_packet_on_b(
         ctx_a: &mut TestContext<A>,
         ctx_b: &mut TestContext<B>,
         packet: Packet,
@@ -1000,8 +1000,8 @@ where
         );
     }
 
-    /// Times out a packet from an IBC application on `A` to `B` using the IBC packet relay protocol.
-    pub fn timeout_packet_on_a(
+    /// Times out a packet from an IBC application on `A` to `B` after waiting timeout period.
+    pub fn timeout_packet_from_a(
         ctx_a: &mut TestContext<A>,
         ctx_b: &mut TestContext<B>,
         packet: Packet,
@@ -1042,7 +1042,7 @@ where
     }
 
     /// Times out a packet from an IBC application on `A` to `B` after closing the channel.
-    pub fn timeout_packet_on_channel_close_on_a(
+    pub fn timeout_packet_from_a_on_channel_close(
         ctx_a: &mut TestContext<A>,
         ctx_b: &mut TestContext<B>,
         packet: Packet,
