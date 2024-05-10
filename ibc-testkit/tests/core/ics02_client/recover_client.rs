@@ -284,6 +284,6 @@ fn test_recover_client_with_matching_heights() {
         signer,
     };
 
-    dbg!(recover_client::validate(ctx.ibc_store(), msg))
+    recover_client::validate(ctx.ibc_store(), msg)
         .expect_err("expected client recovery validation to fail");
 }
