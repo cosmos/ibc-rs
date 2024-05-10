@@ -306,9 +306,11 @@ where
         )
     }
 
-    /// Sends a packet from the first context to the second context.
+    /// Sends a packet from the first context to the second context by
+    /// submitting on receive packet on the second context.
+    ///
     /// The IBC packet is created by an IBC application on the first context.
-    pub fn send_packet_on_a(&mut self, packet: Packet, signer: Signer) {
+    pub fn submit_packet_on_b(&mut self, packet: Packet, signer: Signer) {
         let conn_id_on_a = self
             .ctx_a
             .ibc_store()
@@ -347,7 +349,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<A, B>::send_packet_on_a(
+        TypedRelayerOps::<A, B>::submit_packet_on_b(
             &mut self.ctx_a,
             &mut self.ctx_b,
             packet,
@@ -355,5 +357,188 @@ where
             client_id_on_b,
             signer,
         )
+    }
+
+    /// Times out a packet from the first context to the second context by
+    /// waiting for timeout period and then sending timeout packet on first context.
+    ///
+    /// The IBC packet is created by an IBC application on the first context.
+    pub fn timeout_packet_from_a(&mut self, packet: Packet, signer: Signer) {
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_a,
+                &packet.chan_id_on_a,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_b,
+                &packet.chan_id_on_b,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedRelayerOps::<A, B>::timeout_packet_from_a(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            packet,
+            client_id_on_a,
+            client_id_on_b,
+            signer,
+        )
+    }
+
+    /// Timeouts a packet from the first context on the second context by closing the
+    /// corresponding channel is closed and then sending a timeout packet on the first context.
+    ///
+    /// The IBC packet is created by an IBC application on the first context.
+    pub fn timeout_packet_from_a_on_channel_close(&mut self, packet: Packet, signer: Signer) {
+        let conn_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_a,
+                &packet.chan_id_on_a,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let conn_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .channel_end(&ChannelEndPath::new(
+                &packet.port_id_on_b,
+                &packet.chan_id_on_b,
+            ))
+            .expect("connection exists")
+            .connection_hops()[0]
+            .clone();
+
+        let client_id_on_a = self
+            .ctx_a
+            .ibc_store()
+            .connection_end(&conn_id_on_a)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        let client_id_on_b = self
+            .ctx_b
+            .ibc_store()
+            .connection_end(&conn_id_on_b)
+            .expect("connection exists")
+            .client_id()
+            .clone();
+
+        TypedRelayerOps::<A, B>::timeout_packet_from_a_on_channel_close(
+            &mut self.ctx_a,
+            &mut self.ctx_b,
+            packet,
+            client_id_on_a,
+            client_id_on_b,
+            signer,
+        )
+    }
+
+    /// Submit a
+    /// [`DummyTransferModule`](crate::testapp::ibc::applications::transfer::types::DummyTransferModule)
+    /// packet on the first context.
+    ///
+    /// Requires `serde` feature because of [`ibc::apps::transfer::handler::send_transfer`].
+    #[cfg(feature = "serde")]
+    pub fn send_dummy_transfer_packet_on_a(
+        &mut self,
+        chan_id_on_a: ChannelId,
+        signer: Signer,
+    ) -> Packet {
+        use ibc::apps::transfer::handler::send_transfer;
+        use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
+        use ibc::apps::transfer::types::packet::PacketData;
+        use ibc::core::handler::types::events::IbcEvent;
+        use ibc::primitives::Timestamp;
+
+        use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
+
+        // generate packet for DummyTransferModule
+        let packet_data = PacketData {
+            token: "1000uibc".parse().expect("valid prefixed coin"),
+            sender: signer.clone(),
+            receiver: signer.clone(),
+            memo: "sample memo".into(),
+        };
+
+        // packet with ibc metadata
+        // either height timeout or timestamp timeout must be set
+        let msg = MsgTransfer {
+            port_id_on_a: PortId::transfer(),
+            chan_id_on_a: chan_id_on_a.clone(),
+            packet_data,
+            // setting timeout height to 10 blocks from B's current height.
+            timeout_height_on_b: self.get_ctx_b().latest_height().add(10).into(),
+            // not setting timeout timestamp.
+            timeout_timestamp_on_b: Timestamp::none(),
+        };
+
+        // module creates the send_packet
+        send_transfer(
+            self.get_ctx_a_mut().ibc_store_mut(),
+            &mut DummyTransferModule,
+            msg,
+        )
+        .expect("successfully created send_packet");
+
+        // send_packet wasn't committed, hence produce a block
+        self.get_ctx_a_mut().advance_block_height();
+
+        // retrieve the send_packet event
+        let Some(IbcEvent::SendPacket(send_packet_event)) = self
+            .get_ctx_a()
+            .ibc_store()
+            .events
+            .lock()
+            .iter()
+            .rev()
+            .nth(2)
+            .cloned()
+        else {
+            panic!("unexpected event")
+        };
+
+        // create the IBC packet type
+        Packet {
+            port_id_on_a: send_packet_event.port_id_on_a().clone(),
+            chan_id_on_a: send_packet_event.chan_id_on_a().clone(),
+            seq_on_a: *send_packet_event.seq_on_a(),
+            data: send_packet_event.packet_data().to_vec(),
+            timeout_height_on_b: *send_packet_event.timeout_height_on_b(),
+            timeout_timestamp_on_b: *send_packet_event.timeout_timestamp_on_b(),
+            port_id_on_b: send_packet_event.port_id_on_b().clone(),
+            chan_id_on_b: send_packet_event.chan_id_on_b().clone(),
+        }
     }
 }

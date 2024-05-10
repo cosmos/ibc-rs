@@ -304,16 +304,16 @@ The following provides the concrete implementations of the proposed changes:
 #### MockIbcStore
 
 The modified `MockIbcStore` with Merkle store lives at
-[`testapp/ibc/core/types.rs`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/testapp/ibc/core/types.rs#L43-L96).
+[`testapp/ibc/core/types.rs`](https://github.com/cosmos/ibc-rs/blob/main/ibc-testkit/src/testapp/ibc/core/types.rs#L43-L96).
 
 #### TestHost
 
 The Rust trait lives at
-[`hosts/mod.rs`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/hosts/mod.rs#L27).
+[`hosts/mod.rs`](https://github.com/cosmos/ibc-rs/blob/main/ibc-testkit/src/hosts/mod.rs#L27).
 The `Mock` and `Tendermint` host implementations live in
-[`hosts/mock.rs`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/hosts/mock.rs#L30)
+[`hosts/mock.rs`](https://github.com/cosmos/ibc-rs/blob/main/ibc-testkit/src/hosts/mock.rs#L30)
 and
-[`hosts/tendermint.rs`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/hosts/tendermint.rs#L42)
+[`hosts/tendermint.rs`](https://github.com/cosmos/ibc-rs/blob/main/ibc-testkit/src/hosts/tendermint.rs#L42)
 respectively.
 
 #### Renaming `MockContext` to `StoreGenericTestContext`
@@ -328,14 +328,14 @@ have `Mock` in their name.
 
 #### StoreGenericTestContext
 
-[`StoreGenericTestContext`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/context.rs#L34-L52)
+[`StoreGenericTestContext`](https://github.com/cosmos/ibc-rs/blob/main/ibc-testkit/src/context.rs#L34-L52)
 is actually what is described as `MockContext` in the ADR. For convenience, we
 defined `TestContext` to have a concrete store implementation -
-[`MockStore`](https://github.com/cosmos/ibc-rs/blob/feat/refactor-testkit/ibc-testkit/src/context.rs#L55-L56).
+[`MockStore`](https://github.com/cosmos/ibc-rs/blob/main/ibc-testkit/src/context.rs#L55-L56).
 
 ```rs
 // A mock store type using basecoin-storage implementations.
-pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
+pub type MockStore = InMemoryStore;
 
 pub type TestContext<H> = StoreGenericTestContext<MockStore, H>;
 ```
