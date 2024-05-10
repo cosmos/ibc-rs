@@ -1,6 +1,6 @@
 # `ibc-client-tendermint-cw` crate
 
-This crate showcases how to reuse `ibc-rs` light clients as a
+This crate showcases how to reuse an `ibc-rs` light client as a
 [CosmWasm contract](https://github.com/cosmos/ibc/blob/main/spec/client/ics-008-wasm-client/README.md)
 utilizing the `ibc-client-cw` crate.
 
@@ -8,7 +8,7 @@ The `ibc-client-cw` crate exposes the requisite types and traits needed to reuse
 the `ibc-rs` light clients. Notably, it offers a
 [`ClientType`](https://docs.rs/ibc-client-cw/latest/ibc_client_cw/api/trait.ClientType.html)
 trait, which requires two associated types: `ClientState` and `ConsensusState`.
-These types take any type that implements the
+These types take any type that implement the
 [`ClientStateExecution`](https://docs.rs/ibc-core/latest/ibc_core/client/context/client_state/trait.ClientStateExecution.html)
 and
 [`ConsensusState`](https://docs.rs/ibc-core/latest/ibc_core/client/context/consensus_state/trait.ConsensusState.html)
@@ -67,5 +67,5 @@ pub fn query(deps: Deps<'_>, env: Env, msg: QueryMsg) -> Result<Binary, Contract
 }
 ```
 
-The above snippets compile into a fully working CosmWasm contract implementing
+The above snippets compile into a fully working CosmWasm contract that implements the
 Tendermint IBC light client.
