@@ -28,9 +28,9 @@ Our release process is as follows:
    - Verify that there is no dev-dependency among the workspace crates. This is
      important, as `cargo-release` ignores dev-dependency edges. You may use
      `cargo-depgraph`:
-      ```sh
-      cargo depgraph --all-features --workspace-only --dev-deps | dot -Tpng > graph.png
-      ```
+     ```sh
+     cargo depgraph --all-features --workspace-only --dev-deps | dot -Tpng > graph.png
+     ```
      The command will generate a graph similar to this:
      ![alt test](docs/dev-deps-graph.png) The dev dependencies are colored with
      blue arrows. Currently, there are no blue arrows, i.e. there is no dev
