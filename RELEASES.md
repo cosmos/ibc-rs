@@ -25,17 +25,19 @@ Our release process is as follows:
    the root `Cargo.toml` as well, and push these changes to the release PR.
    - If you released a new version of `ibc-derive` in step 3, make sure to
         update that dependency.
-   - Verify that there is no dev-dependency among the workspace crates,
-     except `ibc-testkit`. This is important, as `cargo-release` ignores
-     dev-dependency edges. You may use `cargo-depgraph`:
+   - Verify that there is no dev-dependency among the workspace crates. This is
+     important, as `cargo-release` ignores dev-dependency edges. You may use
+     `cargo-depgraph`:
       ```sh
       cargo depgraph --all-features --workspace-only --dev-deps | dot -Tpng > graph.png
       ```
      The command will generate a graph similar to this:
-     ![alt test](docs/dev-deps-graph.png)
-     The blue lines indicate dev dependencies; there should only be one blue line
-     referring to the `ibc-testkit` dependency. So the above example would result
-     in an unsuccessful release.
+     ![alt test](docs/dev-deps-graph.png) The dev dependencies are colored with
+     blue arrows. Currently, there are no blue arrows, i.e. there is no dev
+     dependency among the IBC crates. It is advised to avoid any dev dependency
+     because of release order complicacy (except maybe inside `ibc-testkit`, as
+     it is the top crate that depends on `ibc` crate and no other crate depends
+     on it).
    - In order to resolve such a situation, the dev dependencies other than `ibc-testkit`
      can be manually released to crates.io first so that the subsequent crates that
      depend on them can then be released via the release process. For instructions
