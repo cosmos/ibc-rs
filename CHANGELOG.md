@@ -42,7 +42,7 @@ version was reverted back to 1.71.1.
 - [ibc-testkit] Major refactor of the `ibc-testkit` via
   [ADR-09](https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/adr-009-revamp-testkit.md).
   ([\#1109](https://github.com/cosmos/ibc-rs/issues/1109))
-- [ibc-core] Replace fixed `ClientError` associated type restriction with a
+- [ibc-core] Replace fixed `ClientError` associated type restriction with an
   `Into<ClientError>` trait bound.
   ([\#1203](https://github.com/cosmos/ibc-rs/issues/1203))
 - Update `ibc-proto` to v0.44.0 and `tendermint` dependencies to v0.36.0.
