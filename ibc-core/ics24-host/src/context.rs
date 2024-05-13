@@ -30,7 +30,7 @@ pub trait ValidationContext {
     /// The consensus state type for the host chain.
     type HostConsensusState: ConsensusState;
     /// The error type for the host chain.
-    type Error;
+    type Error: From<ProtocolError>;
 
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
@@ -90,7 +90,8 @@ pub trait ValidationContext {
         let version = pick_version(
             &self.get_compatible_versions(),
             counterparty_candidate_versions,
-        )?;
+        )
+        .map_err(Into::into)?;
         Ok(version)
     }
 
