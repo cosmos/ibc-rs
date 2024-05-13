@@ -36,7 +36,7 @@ ibc-client-tendermint-cw = { workspace = true }
 ibc-query                = { workspace = true }
 
 # basecoin dependencies
-basecoin-store = { git = "https://github.com/informalsystems/basecoin-rs", rev = "2dd5b95" }
+basecoin-store = { version = "0.1.0" }
 
 # cosmos dependencies
 tendermint         = { workspace = true }
