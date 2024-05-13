@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## v0.53.0
+
+*May 13, 2024*
+
+This release overhauls the `ibc-testkit` crate such that it is now able to:
+
+- simulate more realistic IBC workflows by utilizing real IBC and relayer
+  interfaces (as opposed to mocked versions)
+- validate code paths that were not easily testable beforehand, such as Merkle
+  proof generation
+- compose tests in a much more succinct and readable fashion
+
+Note that the drastic changes made to `ibc-testkit`'s structs and types are
+breaking changes.
+
+For more information and background context on the changes to `ibc-testkit` and
+the rationale behind the overhaul, please refer to [ADR 009][adr-009].
+
+This release also includes two fixes. One is to reject packets without height
+and timestamp timeout. The other is to correct the proof verification logic for
+a `PacketTimeout` due to a closed channel, which was verifying an incorrect
+field. It also bumps the minimum-supported version of `ibc-proto` to 0.44, and
+the version of `tendermint` to 0.36. Note that the minimum-supported Rust
+version was reverted back to 1.71.1.
+
+[adr-009]: https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/adr-009-revamp-testkit.md
+
+### BUG FIXES
+
+- [ibc-core] Reject IBC packets without height and timestamp timeout.
+  ([\#1198](https://github.com/cosmos/ibc-rs/issues/1198))
+- [ibc-core] Fix proof verification for `PacketTimeout` on a closed channel.
+  ([\#1217](https://github.com/cosmos/ibc-rs/issues/1217))
+
+### IMPROVEMENTS
+
+- [ibc-testkit] Replace `HostBlock` and `HostType` enums with a `Host` trait to
+  eliminate manual delegations by utilizing monomorphization.
+  ([\#1044](https://github.com/cosmos/ibc-rs/issues/1044))
+- [ibc-testkit] Major refactor of the `ibc-testkit` via
+  [ADR-09](https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/adr-009-revamp-testkit.md).
+  ([\#1109](https://github.com/cosmos/ibc-rs/issues/1109))
+- [ibc-core] Replace fixed `ClientError` associated type restriction with an
+  `Into<ClientError>` trait bound.
+  ([\#1203](https://github.com/cosmos/ibc-rs/issues/1203))
+- Update `ibc-proto` to v0.44.0 and `tendermint` dependencies to v0.36.0.
+  ([\#1212](https://github.com/cosmos/ibc-rs/issues/1212))
+- Revert Rust minimum supported version to `1.71.1`.
+  ([\#1206](https://github.com/cosmos/ibc-rs/pull/1206))
+
 ## v0.52.0
 
 *April 26, 2024*
