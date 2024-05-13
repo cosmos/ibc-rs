@@ -18,6 +18,8 @@ behind the overhaul, please refer to [ADR 009][adr-009].
 This release also includes a fix to the proof verification logic for `PacketTimeout`s, which was verifying an incorrect field. It also bumps the minimum-supported version of `ibc-proto` to 0.44, and the version of `tendermint` to 0.36. Note that the minimum-supported Rust version was reverted back to
 1.71.1.
 
+There are no consensus-breaking changes included in this release.
+
 [adr-009]: https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/adr-009-revamp-testkit.md
 
 ### BUG FIXES
