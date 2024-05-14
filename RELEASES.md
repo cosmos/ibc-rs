@@ -43,14 +43,16 @@ Our release process is as follows:
      subsequent crates that depend on them can then be released via the release
      process. For instructions on how to release a crate on crates.io, refer
      [here](https://doc.rust-lang.org/cargo/reference/publishing.html).
-5. Beware of [crates-io rate limit][cargo-release-rate-limit]. For publishing
-   new crates it is 5 and for publishing existing crates it is 30. But the
-   number of our crates has reached 31. So we publish a leaf crate,
-   `ibc-primitives`, by hand and release the rest of the 30 crates via CI.
-   - Release `ibc-primitives` now by running:
+5. Beware of [crates-io rate limit][cargo-release-rate-limit]. It is 5 for
+   publishing new crates and 30 for publishing existing crates. But the number
+   of our crates has reached 31. So we publish a leaf crate, `ibc-primitives`
+   manually and release the rest of the 30 crates via CI.
+   - Release `ibc-primitives` by running:
    ```sh
    cargo release -p ibc-primitives --no-push --no-tag --allow-branch main --execute
    ```
+   - Validate the number of crates that need to be released via CI, it can not
+     be more than 30.
    - There should be a 10 minutes delay between the release of `ibc-primitives`
      and the release of the rest of the crates on CI.
    - If new crates are added, we need to recompute the set of crates that we
