@@ -43,29 +43,41 @@ Our release process is as follows:
      subsequent crates that depend on them can then be released via the release
      process. For instructions on how to release a crate on crates.io, refer
      [here](https://doc.rust-lang.org/cargo/reference/publishing.html).
-5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
+5. Beware of [crates-io rate limit][cargo-release-rate-limit]. For publishing
+   new crates it is 5 and for publishing existing crates it is 30. But the
+   number of our crates has reached 31. So we publish a leaf crate,
+   `ibc-primitives`, by hand and release the rest of the 30 crates via CI.
+   - Release `ibc-primitives` now by running:
+   ```sh
+   cargo release -p ibc-primitives --no-push --no-tag --allow-branch main --execute
+   ```
+   - There should be a 10 minutes delay between the release of `ibc-primitives`
+     and the release of the rest of the crates on CI.
+   - If new crates are added, we need to recompute the set of crates that we
+     want to release via CI. The rest must be released manually.
+6. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
    the documentation compiles and seems up-to-date and coherent. Fix any
    potential issues here and push them to the release PR.
-6. Mark the PR as **Ready for Review** and incorporate feedback on the release.
+7. Mark the PR as **Ready for Review** and incorporate feedback on the release.
    Once approved, merge the PR.
-7. Checkout the `main` and pull it with
+8. Checkout the `main` and pull it with
    `git checkout main && git pull origin main`.
-8. Create a signed tag `git tag -s -a vX.Y.Z`. In the tag message, write the
+9. Create a signed tag `git tag -s -a vX.Y.Z`. In the tag message, write the
    version and the link to the corresponding section of the changelog. Then push
    the tag to GitHub with `git push origin vX.Y.Z`.
    - The [release workflow][release.yaml] will run the `cargo release --execute`
      command in a CI worker.
-9. If some crates have not been released, check the cause of the failure and act
-   accordingly:
-   1. In case of intermittent problems with the registry, try `cargo release`
-      locally to publish any missing crates from this release. This step
-      requires the appropriate privileges to push crates to [crates.io].
-   2. If there is any new crate published locally, add
-      [ibcbot](https://crates.io/users/ibcbot) to its owners list.
-   3. In case problems arise from the source files, fix them, bump a new patch
-      version (e.g. `v0.48.1`) and repeat the process with its corresponding new
-      tag.
-10. Once the tag is pushed, wait for the CI bot to create a GitHub release, then
+10. If some crates have not been released, check the cause of the failure and
+    act accordingly:
+    1. In case of intermittent problems with the registry, try `cargo release`
+       locally to publish any missing crates from this release. This step
+       requires the appropriate privileges to push crates to [crates.io].
+    2. If there is any new crate published locally, add
+       [ibcbot](https://crates.io/users/ibcbot) to its owners list.
+    3. In case problems arise from the source files, fix them, bump a new patch
+       version (e.g. `v0.48.1`) and repeat the process with its corresponding
+       new tag.
+11. Once the tag is pushed, wait for the CI bot to create a GitHub release, then
     update the release description and append:
     `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`
 
@@ -80,3 +92,4 @@ All done! 🎉
 
 [crates.io]: https://crates.io
 [release.yaml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yaml
+[cargo-release-rate-limit]: https://github.com/crate-ci/cargo-release/blob/4b09269/src/steps/mod.rs#L214-L268
