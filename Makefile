@@ -37,7 +37,7 @@ test: ## Run tests with all features and without default features.
 	cargo test --all-targets --no-default-features
 
 check-release: ## Check that the release build compiles.
-	cargo release --workspace --no-push --no-tag --no-publish \
+	cargo release --workspace --no-push --no-tag \
 		--exclude ibc-derive \
 		--exclude ibc-primitives \
 		--exclude ibc-client-tendermint-cw
