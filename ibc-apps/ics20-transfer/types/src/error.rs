@@ -13,8 +13,8 @@ use uint::FromDecStrErr;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
-    /// context error: `{0}`
-    ContextError(ProtocolError),
+    /// IBC protocol error: `{0}`
+    Ibc(ProtocolError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
     /// insufficient funds: tried to send `{send_attempt}`, sender only has `{available_funds}`
@@ -85,7 +85,7 @@ pub enum TokenTransferError {
 impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::ContextError(e) => Some(e),
+            Self::Ibc(e) => Some(e),
             Self::InvalidIdentifier(e)
             | Self::InvalidTracePortId {
                 validation_error: e,
@@ -110,7 +110,7 @@ impl From<Infallible> for TokenTransferError {
 
 impl From<ProtocolError> for TokenTransferError {
     fn from(err: ProtocolError) -> TokenTransferError {
-        Self::ContextError(err)
+        Self::Ibc(err)
     }
 }
 
