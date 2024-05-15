@@ -10,7 +10,7 @@ use ibc_core_host::{ClientStateMut, ClientStateRef, ExecutionContext, Validation
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ProtocolError>
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), Ctx::Error>
 where
     Ctx: ValidationContext,
     <ClientStateRef<Ctx> as TryFrom<Any>>::Error: Into<ClientError>,
@@ -32,6 +32,7 @@ where
 
     let client_id = client_state.client_type().build_client_id(id_counter);
 
+    // Need to be able to convert a `ClientError` into a `Ctx::Error`
     let status = client_state.status(client_val_ctx, &client_id)?;
 
     if status.is_frozen() {
