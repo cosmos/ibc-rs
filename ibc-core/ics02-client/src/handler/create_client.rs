@@ -4,7 +4,6 @@ use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::CreateClient;
 use ibc_core_client_types::msgs::MsgCreateClient;
-use ibc_core_handler_types::error::ProtocolError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::{ClientStateMut, ClientStateRef, ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
@@ -13,6 +12,7 @@ use ibc_primitives::proto::Any;
 pub fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), Ctx::Error>
 where
     Ctx: ValidationContext,
+    Ctx::Error: From<ClientError>,
     <ClientStateRef<Ctx> as TryFrom<Any>>::Error: Into<ClientError>,
 {
     let MsgCreateClient {
@@ -51,9 +51,10 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ProtocolError>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), Ctx::Error>
 where
     Ctx: ExecutionContext,
+    Ctx::Error: From<ClientError>,
     <ClientStateMut<Ctx> as TryFrom<Any>>::Error: Into<ClientError>,
 {
     let MsgCreateClient {
