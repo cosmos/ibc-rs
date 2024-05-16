@@ -12,7 +12,7 @@ pub enum ContractError {
     #[display(fmt = "CosmWasm standard error: {_0}")]
     Std(StdError),
     #[display(fmt = "IBC validation/execution context error: {_0}")]
-    Context(ProtocolError),
+    Ibc(ProtocolError),
     #[display(fmt = "IBC commitment error: {_0}")]
     Commitment(CommitmentError),
     #[display(fmt = "IBC identifier error: {_0}")]

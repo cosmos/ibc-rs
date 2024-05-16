@@ -3,6 +3,7 @@
 use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::msgs::MsgRecoverClient;
+use ibc_core_handler_types::error::ProtocolError;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 
@@ -13,7 +14,7 @@ use ibc_core_host::{ExecutionContext, ValidationContext};
 pub fn validate<Ctx>(ctx: &Ctx, msg: MsgRecoverClient) -> Result<(), Ctx::Error>
 where
     Ctx: ValidationContext,
-    Ctx::Error: From<ClientError>,
+    Ctx::Error: From<ClientError> + From<ProtocolError>,
 {
     let signer = msg.signer;
     let subject_client_id = msg.subject_client_id.clone();
@@ -65,7 +66,7 @@ where
 pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgRecoverClient) -> Result<(), Ctx::Error>
 where
     Ctx: ExecutionContext,
-    Ctx::Error: From<ClientError>,
+    Ctx::Error: From<ClientError> + From<ProtocolError>,
 {
     let subject_client_id = msg.subject_client_id.clone();
     let substitute_client_id = msg.substitute_client_id.clone();

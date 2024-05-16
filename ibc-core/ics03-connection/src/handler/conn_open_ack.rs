@@ -15,22 +15,24 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ProtocolError>
+pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), Ctx::Error>
 where
     Ctx: ValidationContext,
+    Ctx::Error: From<ClientError> + From<ProtocolError>,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
-    validate_impl(ctx_a, &msg, &vars)
+    validate_impl(ctx_a, &msg, &vars).map_err(Into::into)
 }
 
 fn validate_impl<Ctx>(
     ctx_a: &Ctx,
     msg: &MsgConnectionOpenAck,
     vars: &LocalVars,
-) -> Result<(), ProtocolError>
+) -> Result<(), Ctx::Error>
 where
     Ctx: ValidationContext,
+    Ctx::Error: From<ClientError> + From<ProtocolError>,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
