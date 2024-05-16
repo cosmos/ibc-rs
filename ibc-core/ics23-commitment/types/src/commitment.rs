@@ -141,7 +141,6 @@ impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, PartialEq, Eq, Hash)]
 pub struct CommitmentPrefix {
@@ -191,5 +190,19 @@ impl serde::Serialize for CommitmentPrefix {
         S: serde::Serializer,
     {
         format!("{self:?}").serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for CommitmentPrefix {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let prefix_str = String::deserialize(deserializer)?;
+
+        Ok(CommitmentPrefix {
+            bytes: Vec::from(prefix_str.as_bytes()),
+        })
     }
 }
