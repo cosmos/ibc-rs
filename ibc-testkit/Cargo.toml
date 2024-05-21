@@ -28,9 +28,9 @@ subtle-encoding = { workspace = true }
 typed-builder   = { version = "0.18.0" }
 
 # ibc dependencies
-ibc                      = { workspace = true, features = [ "std" ] }
-ibc-proto                = { workspace = true }
-ibc-query                = { workspace = true }
+ibc       = { workspace = true, features = [ "std" ] }
+ibc-proto = { workspace = true }
+ibc-query = { workspace = true }
 
 # basecoin dependencies
 basecoin-store = { version = "0.1.0" }
@@ -40,8 +40,8 @@ tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
-hex                = { version = "0.4.2" }
-rstest             = { workspace = true }
+hex    = { version = "0.4.2" }
+rstest = { workspace = true }
 
 [features]
 default = [ "std" ]
