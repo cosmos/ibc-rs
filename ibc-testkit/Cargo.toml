@@ -24,15 +24,11 @@ parking_lot     = { version = "0.12.1", default-features = false }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 serde_json      = { workspace = true, optional = true }
-subtle-encoding = { workspace = true }
-tracing         = { version = "0.1.40", default-features = false }
 typed-builder   = { version = "0.18.0" }
 
 # ibc dependencies
 ibc                      = { workspace = true, features = [ "std" ] }
 ibc-proto                = { workspace = true }
-ibc-client-cw            = { workspace = true }
-ibc-client-tendermint-cw = { workspace = true }
 ibc-query                = { workspace = true }
 
 # basecoin dependencies
