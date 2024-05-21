@@ -1,0 +1,57 @@
+[package]
+name = "tests-integration"
+version = "0.1.0"
+authors = { workspace = true }
+license = { workspace = true }
+edition = { workspace = true }
+repository = { workspace = true }
+readme = "README.md"
+keywords = [ "blockchain", "consensus", "cosmos", "ibc", "tendermint" ]
+publish = false
+description = """
+    Integration tests that make use of the types types exposed by `ibc-testkit`. These tests also
+    depend upon the other IBC crates. They live in a separate crate that is not meant to be published
+    so as to avoid circular dependencies.
+"""
+
+[dependencies]
+# external dependencies
+doc-comment     = "0.3.3"
+serde           = { workspace = true, optional = true }
+serde_json      = { workspace = true, optional = true }
+subtle-encoding = { workspace = true }
+tracing         = { version = "0.1.40", default-features = false }
+
+# ibc dependencies
+ibc                      = { workspace = true, features = [ "std" ] }
+ibc-client-cw            = { workspace = true }
+ibc-client-tendermint-cw = { workspace = true }
+ibc-query                = { workspace = true }
+ibc-testkit              = { workspace = true }
+
+# basecoin dependencies
+basecoin-store = { version = "0.1.0" }
+
+# cosmos dependencies
+tendermint         = { workspace = true }
+tendermint-testgen = { workspace = true }
+
+[dev_dependencies]
+cosmwasm-std = { workspace = true }
+hex          = { version = "0.4.2" }
+rstest       = { workspace = true }
+test-log     = { version = "0.2.13", features = [ "trace" ] }
+
+[features]
+default = [ "std" ]
+std = [
+  "serde/std",
+  "serde_json/std",
+  "ibc/std",
+  "tendermint/std",
+]
+serde = [
+  "dep:serde",
+  "ibc/serde",
+  "serde_json",
+]
