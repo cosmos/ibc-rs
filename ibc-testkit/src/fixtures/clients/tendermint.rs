@@ -117,7 +117,7 @@ pub fn dummy_tendermint_header() -> tendermint::block::Header {
 
     serde_json::from_str::<SignedHeader>(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/tests/data/json/signed_header.json"
+        "/../tests-integration/tests/data/json/signed_header.json"
     )))
     .expect("Never fails")
     .header
@@ -147,7 +147,7 @@ pub fn dummy_ics07_header() -> Header {
     // Build a SignedHeader from a JSON file.
     let shdr = serde_json::from_str::<SignedHeader>(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/tests/data/json/signed_header.json"
+        "/../tests-integration/tests/data/json/signed_header.json"
     )))
     .expect("Never fails");
 

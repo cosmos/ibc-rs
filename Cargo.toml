@@ -35,6 +35,7 @@ members = [
   "ibc",
   "ibc-query",
   "ibc-testkit",
+  "tests-integration",
 ]
 exclude = [
   "ci/cw-check",

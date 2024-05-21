@@ -394,7 +394,7 @@ pub(crate) mod serde_tests {
     fn serialization_roundtrip_no_proof() {
         let json_data = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../ibc-testkit/tests/data/json/client_state.json"
+            "/../../../tests-integration/tests/data/json/client_state.json"
         ));
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }
@@ -403,7 +403,7 @@ pub(crate) mod serde_tests {
     fn serialization_roundtrip_with_proof() {
         let json_data = include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../../../ibc-testkit/tests/data/json/client_state_proof.json"
+            "/../../../tests-integration/tests/data/json/client_state_proof.json"
         ));
         test_serialization_roundtrip::<AbciQuery>(json_data);
     }
