@@ -23,11 +23,16 @@ subtle-encoding = { workspace = true }
 tracing         = { version = "0.1.40", default-features = false }
 
 # ibc dependencies
-ibc                      = { workspace = true, features = [ "std" ] }
-ibc-client-cw            = { workspace = true }
-ibc-client-tendermint-cw = { workspace = true }
-ibc-query                = { workspace = true }
-ibc-testkit              = { workspace = true }
+ibc                         = { workspace = true, features = [ "std" ] }
+ibc-core-client-types       = { workspace = true }
+ibc-core-commitment-types   = { workspace = true }
+ibc-client-cw               = { workspace = true }
+ibc-client-tendermint-cw    = { workspace = true }
+ibc-client-tendermint-types = { workspace = true }
+ibc-core-host-types         = { workspace = true }
+ibc-primitives              = { workspace = true }
+ibc-query                   = { workspace = true }
+ibc-testkit                 = { workspace = true }
 
 # basecoin dependencies
 basecoin-store = { version = "0.1.0" }
@@ -37,10 +42,11 @@ tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [dev_dependencies]
-cosmwasm-std = { workspace = true }
-hex          = { version = "0.4.2" }
-rstest       = { workspace = true }
-test-log     = { version = "0.2.13", features = [ "trace" ] }
+cosmwasm-std   = { workspace = true }
+hex            = { version = "0.4.2" }
+rstest         = { workspace = true }
+test-log       = { version = "0.2.13", features = [ "trace" ] }
+tendermint-rpc = { workspace = true }
 
 [features]
 default = [ "std" ]
