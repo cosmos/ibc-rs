@@ -46,4 +46,3 @@ hex            = { version = "0.4.2" }
 rstest         = { workspace = true }
 test-log       = { version = "0.2.13", features = [ "trace" ] }
 tendermint-rpc = { workspace = true }
-
