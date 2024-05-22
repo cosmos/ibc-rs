@@ -1,14 +1,6 @@
 #[cfg(all(test, feature = "serde"))]
 mod tests {
-    use core::time::Duration;
-
-    use ibc_client_tendermint_types::error::Error;
-    use ibc_client_tendermint_types::{AllowUpdate, ClientState, TrustThreshold};
-    use ibc_core_client_types::Height;
-    use ibc_core_commitment_types::specs::ProofSpecs;
-    use ibc_core_host_types::identifiers::ChainId;
-    use ibc_primitives::ZERO_DURATION;
-    use ibc_testkit::fixtures::clients::tendermint::test_serialization_roundtrip;
+    use ibc_testkit::utils::test_serialization_roundtrip;
     use tendermint_rpc::endpoint::abci_query::AbciQuery;
 
     #[test]
