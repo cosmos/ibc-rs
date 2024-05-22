@@ -32,6 +32,7 @@ where
     let serialized = serde_json::to_string(&parsed0);
     assert!(serialized.is_ok());
     let serialized = serialized.expect("should not fail");
+    assert_eq!(serialized, json_data);
 
     let parsed1 = serde_json::from_str::<T>(&serialized);
     assert!(parsed1.is_ok());
