@@ -128,7 +128,7 @@ where
             .into_response()
     }
 
-    /// Returns all the acknowledgements if sequences is omitted.
+    /// Returns all the acknowledgements if sequences are omitted.
     async fn packet_acknowledgements(
         &self,
         request: Request<QueryPacketAcknowledgementsRequest>,
@@ -137,7 +137,7 @@ where
             .into_response()
     }
 
-    /// Returns all the unreceived packets if sequences is omitted.
+    /// Returns all the unreceived packets if sequences are omitted.
     async fn unreceived_packets(
         &self,
         request: Request<QueryUnreceivedPacketsRequest>,
@@ -145,7 +145,7 @@ where
         query_unreceived_packets(&self.ibc_context, &request.try_into_domain()?)?.into_response()
     }
 
-    /// Returns all the unreceived acknowledgements if sequences is omitted.
+    /// Returns all the unreceived acknowledgements if sequences are omitted.
     async fn unreceived_acks(
         &self,
         request: Request<QueryUnreceivedAcksRequest>,

@@ -25,7 +25,7 @@ pub struct MsgAcknowledgement {
     pub acknowledgement: Acknowledgement,
     /// Proof of packet acknowledgement on the receiving chain
     pub proof_acked_on_b: CommitmentProofBytes,
-    /// Height at which the commitment proof in this message were taken
+    /// Height at which the commitment proof in this message was taken
     pub proof_height_on_b: Height,
     pub signer: Signer,
 }

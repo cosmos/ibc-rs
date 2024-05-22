@@ -647,7 +647,7 @@ where
     }
 
     /// Called upon client creation.
-    /// Increases the counter which keeps track of how many clients have been created.
+    /// Increases the counter, that keeps track of how many clients have been created.
     fn increase_client_counter(&mut self) -> Result<(), ContextError> {
         let current_sequence = self
             .client_counter
@@ -699,7 +699,7 @@ where
     }
 
     /// Called upon connection identifier creation (Init or Try process).
-    /// Increases the counter which keeps track of how many connections have been created.
+    /// Increases the counter, that keeps track of how many connections have been created.
     fn increase_connection_counter(&mut self) -> Result<(), ContextError> {
         let current_sequence = self
             .conn_counter

@@ -11,7 +11,7 @@ use crate::upgrade_proposal::{UpgradeClientProposal, UpgradeExecutionContext, Up
 ///
 /// It clears both IBC client and consensus states if a previous plan was set.
 /// Then it will schedule an upgrade and finally set the upgraded client state
-/// in upgrade store.
+/// in the upgrade store.
 pub fn execute_upgrade_client_proposal<Ctx>(
     ctx: &mut Ctx,
     proposal: UpgradeProposal,

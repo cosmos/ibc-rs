@@ -52,7 +52,7 @@ pub enum Error {
     MissingUnbondingPeriod,
     /// negative max clock drift
     NegativeMaxClockDrift,
-    /// missing latest height
+    /// missing the latest height
     MissingLatestHeight,
     /// invalid raw header error: `{0}`
     InvalidRawHeader(TendermintError),
@@ -79,7 +79,7 @@ pub enum Error {
     VerificationError { detail: Box<LightClientErrorDetail> },
     /// Processed time or height for the client `{client_id}` at height `{height}` not found
     UpdateMetaDataNotFound { client_id: ClientId, height: Height },
-    /// The given hash of the validators does not matches the given hash in the signed header. Expected: `{signed_header_validators_hash}`, got: `{validators_hash}`
+    /// The given hash of the validators does not match the given hash in the signed header. Expected: `{signed_header_validators_hash}`, got: `{validators_hash}`
     MismatchValidatorsHashes {
         validators_hash: Hash,
         signed_header_validators_hash: Hash,
@@ -91,7 +91,7 @@ pub enum Error {
     },
     /// headers block hashes are equal
     MisbehaviourHeadersBlockHashesEqual,
-    /// headers are not at same height and are monotonically increasing
+    /// headers are not at the same height and are monotonically increasing
     MisbehaviourHeadersNotAtSameHeight,
 }
 

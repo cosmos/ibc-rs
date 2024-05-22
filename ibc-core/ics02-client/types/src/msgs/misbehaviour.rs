@@ -28,7 +28,7 @@ pub const SUBMIT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMis
 pub struct MsgSubmitMisbehaviour {
     /// client unique identifier
     pub client_id: ClientId,
-    /// misbehaviour used for freezing the light client
+    /// misbehaviour, used for freezing the light client
     pub misbehaviour: ProtoAny,
     /// signer address
     pub signer: Signer,

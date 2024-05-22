@@ -67,7 +67,7 @@ pub trait NftTransferValidationContext {
     /// Validates that the tokens can be escrowed successfully.
     ///
     /// The owner of the NFT should be checked in this validation.
-    /// `memo` field allows to incorporate additional contextual details in the
+    /// `memo` field allows incorporating additional contextual details in the
     /// escrow validation.
     fn escrow_nft_validate(
         &self,
@@ -109,7 +109,7 @@ pub trait NftTransferValidationContext {
     /// Validates the sender account and the coin input before burning.
     ///
     /// The owner of the NFT should be checked in this validation.
-    /// `memo` field allows to incorporate additional contextual details in the
+    /// `memo` field allows incorporating additional contextual details in the
     /// burn validation.
     fn burn_nft_validate(
         &self,
@@ -153,7 +153,7 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
 
     /// Executes the escrow of the NFT in a user account.
     ///
-    /// `memo` field allows to incorporate additional contextual details in the
+    /// `memo` field allows incorporating additional contextual details in the
     /// escrow execution.
     fn escrow_nft_execute(
         &mut self,
@@ -187,7 +187,7 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
 
     /// Executes burning of the NFT in a user account.
     ///
-    /// `memo` field allows to incorporate additional contextual details in the
+    /// `memo` field allows incorporating additional contextual details in the
     /// burn execution.
     fn burn_nft_execute(
         &mut self,

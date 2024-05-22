@@ -150,7 +150,7 @@ pub trait ExecutionContext: ValidationContext {
     fn get_client_execution_context(&mut self) -> &mut Self::E;
 
     /// Called upon client creation.
-    /// Increases the counter which keeps track of how many clients have been created.
+    /// Increases the counter, that keeps track of how many clients have been created.
     fn increase_client_counter(&mut self) -> Result<(), ContextError>;
 
     /// Stores the given connection_end at path
@@ -230,7 +230,7 @@ pub trait ExecutionContext: ValidationContext {
     ) -> Result<(), ContextError>;
 
     /// Called upon channel identifier creation (Init or Try message processing).
-    /// Increases the counter which keeps track of how many channels have been created.
+    /// Increases the counter, that keeps track of how many channels have been created.
     fn increase_channel_counter(&mut self) -> Result<(), ContextError>;
 
     /// Emit the given IBC event

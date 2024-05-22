@@ -27,7 +27,7 @@ pub fn dummy_msg_recv_packet(
 }
 
 /// Returns a dummy `RawMsgRecvPacket`, for testing purposes only! The `height`
-/// parametrizes both the proof height as well as the timeout height.
+/// parametrizes the proof height as well as the timeout height.
 pub fn dummy_raw_msg_recv_packet(height: u64) -> RawMsgRecvPacket {
     let timestamp = Timestamp::now().add(Duration::from_secs(9));
     RawMsgRecvPacket {
