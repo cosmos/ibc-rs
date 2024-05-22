@@ -117,7 +117,7 @@ pub fn dummy_tendermint_header() -> tendermint::block::Header {
 
     serde_json::from_str::<SignedHeader>(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/../tests-integration/tests/data/json/signed_header.json"
+        "/src/data/json/signed_header.json"
     )))
     .expect("Never fails")
     .header
