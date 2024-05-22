@@ -16,6 +16,8 @@ use ibc::core::host::types::path::{ClientConsensusStatePath, NextClientSequenceP
 use ibc::core::host::{ClientStateRef, ValidationContext};
 use ibc_query::core::context::ProvableContext;
 use ibc_testkit::context::{MockContext, TendermintContext};
+#[cfg(feature = "serde")]
+use ibc_testkit::fixtures::clients::tendermint::dummy_tendermint_header;
 use ibc_testkit::fixtures::clients::tendermint::dummy_tm_client_state_from_header;
 use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
@@ -28,9 +30,6 @@ use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, MockIbcStore};
 use test_log::test;
-
-#[cfg(feature = "serde")]
-use ibc_testkit::fixtures::clients::tendermint::dummy_tendermint_header;
 
 #[test]
 fn test_create_client_ok() {
