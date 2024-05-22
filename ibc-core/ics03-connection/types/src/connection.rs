@@ -488,7 +488,7 @@ impl State {
         }
     }
 
-    /// Parses the State out from a i32.
+    /// Parses the State out from an i32.
     pub fn from_i32(s: i32) -> Result<Self, ConnectionError> {
         match s {
             0 => Ok(Self::Uninitialized),
@@ -502,13 +502,13 @@ impl State {
         }
     }
 
-    /// Returns whether or not this connection state is `Open`.
+    /// Returns if this connection state is `Open`.
     pub fn is_open(self) -> bool {
         self == State::Open
     }
 
-    /// Returns whether or not this connection with this state
-    /// has progressed less or the same than the argument.
+    /// Returns if this connection with this state
+    /// has progressed less than or the same as the argument.
     ///
     /// # Example
     /// ```rust,ignore

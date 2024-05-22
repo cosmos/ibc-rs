@@ -43,7 +43,7 @@ pub enum TokenTransferError {
     MalformedTrace(String),
     /// trace length must be even but got: `{len}`
     InvalidTraceLength { len: u64 },
-    /// invalid amount error: `{0}`
+    /// invalid amount: `{0}`
     InvalidAmount(FromDecStrErr),
     /// invalid token
     InvalidToken,
@@ -75,7 +75,7 @@ pub enum TokenTransferError {
     UnknownMsgType { msg_type: String },
     /// invalid coin string: `{coin}`
     InvalidCoin { coin: String },
-    /// decoding raw bytes as UTF8 string error: `{0}`
+    /// decoding raw bytes as UTF-8 string error: `{0}`
     Utf8Decode(Utf8Error),
     /// other error: `{0}`
     Other(String),

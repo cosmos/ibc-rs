@@ -75,7 +75,7 @@ pub mod derive {
     /// - `#[execution(<YourClientExecutionContext>)]`
     ///
     /// The argument to the `validation` or `execution` attributes may contain
-    /// lifetimes or generic types and even that types might be bounded by
+    /// lifetimes or generic types, and even that types might be bounded by
     /// traits. For instance:
     ///
     /// - `#[validation(Context<S>)]`

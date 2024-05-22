@@ -32,7 +32,7 @@ impl ClientType {
         validate_client_type(client_type).map(|()| Self(client_type.into()))
     }
 
-    /// Constructs a new [`ClientId`] with this types client type and given
+    /// Constructs a new [`ClientId`] with this type of client type and given
     /// `counter`.
     ///
     /// This is equivalent to `ClientId::new(self.as_str(), counter)` but

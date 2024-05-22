@@ -4,7 +4,7 @@
 //! Therefore, some ready-to-use Query structs for each layer of the client,
 //! connection, and channel have been implemented and exposed by this crate.
 //!
-//! The provided structs includes blanket implementation of their corresponding
+//! The provided structs include blanket implementation of their corresponding
 //! gRPC service traits, if the host implements the following _context_ traits:
 //! - [`ValidationContext`](ibc::core::host::ValidationContext)
 //! - [`ProvableContext`](crate::core::context::ProvableContext)

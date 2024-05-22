@@ -1,4 +1,4 @@
-//! Defines the main channel, port and packet error types
+//! Defines the main channel, port, and packet error types
 
 use displaydoc::Display;
 use ibc_core_client_types::{error as client_error, Height};
@@ -101,7 +101,7 @@ pub enum PacketError {
     PacketReceiptNotFound { sequence: Sequence },
     /// The stored commitment of the packet `{sequence}` is incorrect
     IncorrectPacketCommitment { sequence: Sequence },
-    /// implementation specific error
+    /// implementation-specific error
     ImplementationSpecific,
     /// Undefined counterparty connection for `{connection_id}`
     UndefinedConnectionCounterparty { connection_id: ConnectionId },

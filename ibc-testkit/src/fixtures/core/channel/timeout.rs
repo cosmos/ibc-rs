@@ -5,7 +5,7 @@ use super::{dummy_proof, dummy_raw_packet};
 use crate::fixtures::core::signer::dummy_bech32_account;
 
 /// Returns a dummy `RawMsgTimeout`, for testing purposes only!
-/// The `height` parametrizes both the proof height as well as the timeout height.
+/// The `height` parametrizes the proof height as well as the timeout height.
 pub fn dummy_raw_msg_timeout(
     proof_height: u64,
     timeout_height: u64,

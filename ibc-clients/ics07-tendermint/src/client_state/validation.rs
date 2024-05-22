@@ -137,8 +137,8 @@ where
 /// 1 - fork:
 /// Assumes at least one consensus state before the fork point exists. Let
 /// existing consensus states on chain B be: [Sn,.., Sf, Sf-1, S0] with
-/// `Sf-1` being the most recent state before fork. Chain A is queried for a
-/// header `Hf'` at `Sf.height` and if it is different than the `Hf` in the
+/// `Sf-1` being the most recent state before the fork. Chain A is queried for
+/// a header `Hf'` at `Sf.height` and if it is different from the `Hf` in the
 /// event for the client update (the one that has generated `Sf` on chain),
 /// then the two headers are included in the evidence and submitted. Note
 /// that in this case the headers are different but have the same height.

@@ -27,7 +27,7 @@ pub trait ClientStateCommon: Convertible<Any> {
     /// Type of client associated with this state (eg. Tendermint)
     fn client_type(&self) -> ClientType;
 
-    /// Latest height the client was updated to
+    /// The latest height the client was updated to
     fn latest_height(&self) -> Height;
 
     /// Validate that the client is at a sufficient height
@@ -36,7 +36,7 @@ pub trait ClientStateCommon: Convertible<Any> {
     /// Verify the upgraded client and consensus states and validate proofs
     /// against the given root.
     ///
-    /// NOTE: proof heights are not included as upgrade to a new revision is
+    /// NOTE: proof heights are not included, as upgrade to a new revision is
     /// expected to pass only on the last height committed by the current
     /// revision. Clients are responsible for ensuring that the planned last
     /// height of the current revision is somehow encoded in the proof
@@ -205,7 +205,7 @@ where
 
 /// Primary client trait. Defines all the methods that clients must implement.
 ///
-/// `ClientState` is broken up in 3 separate traits to avoid needing to use
+/// `ClientState` is broken up into 3 separate traits to avoid needing to use
 /// fully qualified syntax for every method call (see ADR 7 for more details).
 /// One only needs to implement [`ClientStateCommon`], [`ClientStateValidation`]
 /// and [`ClientStateExecution`]; a blanket implementation will automatically

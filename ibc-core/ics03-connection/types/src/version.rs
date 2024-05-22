@@ -112,7 +112,7 @@ impl Display for Version {
 /// selects the first version with a version identifier that is supported by the
 /// counterparty. The returned version contains a feature set with the
 /// intersection of the features supported by the source and counterparty
-/// chains. If the feature set intersection is nil then the search for a
+/// chains. If the feature set intersection is nil, the search for a
 /// compatible version continues. This function is called in the `conn_open_try`
 /// handshake procedure.
 ///

@@ -1562,7 +1562,7 @@ where
 
 /// Serves to test both ICS-26 `dispatch` & `build_client_update_datagram` functions.
 /// Implements a "ping pong" of client update messages, so that two chains repeatedly
-/// process a client update message and update their height in succession.
+/// process a client update message and update their height in sequence.
 #[rstest]
 fn client_update_ping_pong() {
     let chain_a_start_height = Height::new(1, 11).unwrap();

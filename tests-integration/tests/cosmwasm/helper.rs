@@ -25,8 +25,8 @@ pub fn dummy_sov_consensus_state(timestamp: IbcTimestamp) -> ConsensusState {
     )
 }
 
-/// Returns a mock environment with the current timestamp. This is define to use
-/// for testing client expiry and other time-sensitive operations.
+/// Returns a mock environment with the current timestamp. This is defined
+/// to be used for testing client expiry and other time-sensitive operations.
 pub fn mock_env_with_timestamp_now() -> Env {
     let mut env = mock_env();
     let now_nanos = IbcTimestamp::now().nanoseconds();

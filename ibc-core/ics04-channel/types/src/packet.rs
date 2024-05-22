@@ -129,7 +129,7 @@ impl Packet {
     /// event is timed-out relative to the current state of the
     /// destination chain.
     ///
-    /// Checks both for time-out relative to the destination chain's
+    /// Checks for time-out relative to the destination chain's
     /// current timestamp `dst_chain_ts` as well as relative to
     /// the height `dst_chain_height`.
     ///

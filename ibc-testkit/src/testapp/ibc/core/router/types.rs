@@ -12,7 +12,7 @@ use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
 pub struct MockRouter {
     pub router: BTreeMap<ModuleId, Arc<dyn Module>>,
 
-    /// Maps ports to the the module that owns it
+    /// Maps ports to the module that owns it
     pub port_to_module: BTreeMap<PortId, ModuleId>,
 }
 

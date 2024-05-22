@@ -6,7 +6,7 @@
 //!
 //! One departure from ICS3 is that we abstract the three counterparty fields (connection id,
 //! prefix, and client id) into a single field of type `Counterparty`; this applies to messages
-//! `MsgConnectionOpenInit` and `MsgConnectionOpenTry`. One other difference with regards to
+//! `MsgConnectionOpenInit` and `MsgConnectionOpenTry`. One other difference with regard to
 //! abstraction is that all proof-related attributes in a message are encapsulated in `Proofs` type.
 //!
 //! Another difference to ICS3 specs is that each message comprises an additional field called

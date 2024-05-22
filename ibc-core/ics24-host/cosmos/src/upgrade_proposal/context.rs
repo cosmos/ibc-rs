@@ -22,7 +22,7 @@ pub type UpgradedConsensusStateRef<T> =
 pub trait UpgradeValidationContext {
     type V: ClientValidationContext;
 
-    /// Returns the upgrade plan that is scheduled and not have been executed yet.
+    /// Returns the upgrade plan that is scheduled and has not been executed yet.
     fn upgrade_plan(&self) -> Result<Plan, UpgradeClientError>;
 
     /// Returns the upgraded client state at the specified upgrade path.

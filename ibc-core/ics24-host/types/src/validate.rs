@@ -90,7 +90,7 @@ pub fn validate_client_type(id: &str) -> Result<(), Error> {
 
 /// Default validator function for Client identifiers.
 ///
-/// A valid client identifier must be between 9-64 characters as specified in
+/// A valid client identifier must be between 9-64 characters, as specified in
 /// the ICS-24 spec.
 pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
@@ -99,7 +99,7 @@ pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
 
 /// Default validator function for Connection identifiers.
 ///
-/// A valid connection identifier must be between 10-64 characters as specified
+/// A valid connection identifier must be between 10-64 characters, as specified
 /// in the ICS-24 spec.
 pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
@@ -110,7 +110,7 @@ pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
 
 /// Default validator function for Port identifiers.
 ///
-/// A valid port identifier must be between 2-128 characters as specified in the
+/// A valid port identifier must be between 2-128 characters, as specified in the
 /// ICS-24 spec.
 pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
@@ -119,7 +119,7 @@ pub fn validate_port_identifier(id: &str) -> Result<(), Error> {
 
 /// Default validator function for Channel identifiers.
 ///
-/// A valid channel identifier must be between 8-64 characters as specified in
+/// A valid channel identifier must be between 8-64 characters, as specified in
 /// the ICS-24 spec.
 pub fn validate_channel_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;

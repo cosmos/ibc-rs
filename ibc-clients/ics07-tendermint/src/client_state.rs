@@ -27,7 +27,7 @@ pub use misbehaviour::*;
 pub use update_client::*;
 pub use validation::*;
 
-/// Newtype wrapper around the `ClientState` type imported from the
+/// Newtype wrapper around the `ClientState` type, imported from the
 /// `ibc-client-tendermint-types` crate. This wrapper exists so that we can
 /// bypass Rust's orphan rules and implement traits from
 /// `ibc::core::client::context` on the `ClientState` type.
