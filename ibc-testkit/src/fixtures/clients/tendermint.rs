@@ -15,8 +15,6 @@ use ibc::core::client::types::Height;
 use ibc::core::commitment_types::specs::ProofSpecs;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
-#[cfg(feature = "serde")]
-use serde::{de::DeserializeOwned, Serialize};
 use tendermint::block::Header as TmHeader;
 use typed_builder::TypedBuilder;
 
@@ -172,26 +170,6 @@ pub fn dummy_ics07_header() -> Header {
         trusted_height: Height::min(0),
         trusted_next_validator_set: vs,
     }
-}
-
-#[cfg(feature = "serde")]
-pub fn test_serialization_roundtrip<T>(json_data: &str)
-where
-    T: core::fmt::Debug + PartialEq + Serialize + DeserializeOwned,
-{
-    let parsed0 = serde_json::from_str::<T>(json_data);
-    assert!(parsed0.is_ok());
-    let parsed0 = parsed0.expect("should not fail");
-
-    let serialized = serde_json::to_string(&parsed0);
-    assert!(serialized.is_ok());
-    let serialized = serialized.expect("should not fail");
-
-    let parsed1 = serde_json::from_str::<T>(&serialized);
-    assert!(parsed1.is_ok());
-    let parsed1 = parsed1.expect("should not fail");
-
-    assert_eq!(parsed0, parsed1);
 }
 
 #[cfg(all(test, feature = "serde"))]
