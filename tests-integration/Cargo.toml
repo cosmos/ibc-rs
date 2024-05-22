@@ -16,7 +16,6 @@ description = """
 
 [dependencies]
 # external dependencies
-doc-comment     = "0.3.3"
 serde           = { workspace = true, optional = true }
 serde_json      = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
