@@ -621,7 +621,7 @@ where
         };
     }
 
-    /// `A` initiates the channel closing with the other end on `B`.
+    /// `A` initiates the channel closing, with the other end on `B`.
     /// `A` stops processing the channel.
     pub fn channel_close_init_on_a(
         ctx_a: &mut TestContext<A>,

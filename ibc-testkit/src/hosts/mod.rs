@@ -30,7 +30,7 @@ pub trait TestHost: Default + Debug + Sized {
     /// The type of client state produced by the host.
     type ClientState: Into<AnyClientState> + Debug;
 
-    /// The type of block parameters to produce a block.
+    /// The type of block parameter to produce a block.
     type BlockParams: Debug + Default;
 
     /// The type of light client parameters to produce a light client state.

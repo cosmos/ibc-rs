@@ -1,7 +1,7 @@
 //! Re-exports data structures of various specifications within the
 //! Inter-Blockchain Communication (IBC) protocol. Designed for universal
-//! application, enabling diverse projects across IBC ecosystem to build using a
-//! shared language.
+//! application, enabling diverse projects across the IBC ecosystem to
+//! build using a shared language.
 #![no_std]
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used))]

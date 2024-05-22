@@ -34,22 +34,22 @@ where
         Self { ctx_a, ctx_b }
     }
 
-    /// Returns immutable reference to the first context.
+    /// Returns an immutable reference to the first context.
     pub fn get_ctx_a(&self) -> &TestContext<A> {
         &self.ctx_a
     }
 
-    /// Returns immutable reference to the second context.
+    /// Returns an immutable reference to the second context.
     pub fn get_ctx_b(&self) -> &TestContext<B> {
         &self.ctx_b
     }
 
-    /// Returns mutable reference to the first context.
+    /// Returns a mutable reference to the first context.
     pub fn get_ctx_a_mut(&mut self) -> &mut TestContext<A> {
         &mut self.ctx_a
     }
 
-    /// Returns mutable reference to the second context.
+    /// Returns a mutable reference to the second context.
     pub fn get_ctx_b_mut(&mut self) -> &mut TestContext<B> {
         &mut self.ctx_b
     }
@@ -359,8 +359,8 @@ where
         )
     }
 
-    /// Times out a packet from the first context to the second context by
-    /// waiting for timeout period and then sending timeout packet on first context.
+    /// Times out a packet from the first context to the second context by waiting
+    /// for the timeout period and then sending a timeout packet to the first context.
     ///
     /// The IBC packet is created by an IBC application on the first context.
     pub fn timeout_packet_from_a(&mut self, packet: Packet, signer: Signer) {
@@ -412,8 +412,8 @@ where
         )
     }
 
-    /// Timeouts a packet from the first context on the second context by closing the
-    /// corresponding channel is closed and then sending a timeout packet on the first context.
+    /// Timeouts a packet from the first context to the second context by closing the
+    /// corresponding channel is closed and then sending a timeout packet to the first context.
     ///
     /// The IBC packet is created by an IBC application on the first context.
     pub fn timeout_packet_from_a_on_channel_close(&mut self, packet: Packet, signer: Signer) {

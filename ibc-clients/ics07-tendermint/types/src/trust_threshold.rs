@@ -12,7 +12,7 @@ use tendermint::trust_threshold::TrustThresholdFraction;
 /// [`TrustThreshold`] defines the level of trust that a client has
 /// towards a set of validators of a chain.
 ///
-/// A trust threshold is represented as a fraction, i.e., a numerator and
+/// A trust threshold is represented as a fraction, i.e., a numerator
 /// and a denominator.
 /// A typical trust threshold is 1/3 in practice.
 /// This type accepts even a value of 0, (numerator = 0, denominator = 0),

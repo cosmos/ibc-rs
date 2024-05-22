@@ -21,9 +21,9 @@ pub const CONN_OPEN_ACK_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionO
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenAck {
-    /// ConnectionId that chain A has chosen for it's ConnectionEnd
+    /// ConnectionId that chain A has chosen for its ConnectionEnd
     pub conn_id_on_a: ConnectionId,
-    /// ConnectionId that chain B has chosen for it's ConnectionEnd
+    /// ConnectionId that chain B has chosen for its ConnectionEnd
     pub conn_id_on_b: ConnectionId,
     /// ClientState of client tracking chain A on chain B
     pub client_state_of_a_on_b: Any,

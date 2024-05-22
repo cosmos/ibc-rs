@@ -220,7 +220,7 @@ impl From<RawUpgradedClientStateRequest> for QueryUpgradedClientStateRequest {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedConsensusStateRequest {
-    /// Height at which the chain is scheduled to halt for upgrade.
+    /// The height at which the chain is scheduled to halt for upgrade.
     pub upgrade_height: Option<Height>,
     /// The height at which to query the upgraded consensus state. If not
     /// provided, the latest height should be used.

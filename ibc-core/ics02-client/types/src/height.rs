@@ -158,7 +158,7 @@ pub enum HeightError {
     },
     /// attempted to parse an invalid zero height
     ZeroHeight,
-    /// the height(`{raw_height}`) is not valid format, this format must be used: \[revision_number\]-\[revision_height\]
+    /// the height(`{raw_height}`) is not a valid format, this format must be used: \[revision_number\]-\[revision_height\]
     InvalidFormat { raw_height: String },
 }
 
