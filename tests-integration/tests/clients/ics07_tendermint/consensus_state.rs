@@ -1,4 +1,4 @@
-#[cfg(all(test, feature = "serde"))]
+#[cfg(feature = "serde")]
 mod tests {
     use ibc_testkit::fixtures::clients::tendermint::test_serialization_roundtrip;
     use tendermint_rpc::endpoint::abci_query::AbciQuery;

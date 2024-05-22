@@ -22,7 +22,7 @@ subtle-encoding = { workspace = true }
 tracing         = { version = "0.1.40", default-features = false }
 
 # ibc dependencies
-ibc                         = { workspace = true, features = [ "std" ] }
+ibc                         = { workspace = true, features = [ "std", "serde" ] }
 ibc-core-client-types       = { workspace = true }
 ibc-core-commitment-types   = { workspace = true }
 ibc-client-cw               = { workspace = true }
@@ -47,15 +47,3 @@ rstest         = { workspace = true }
 test-log       = { version = "0.2.13", features = [ "trace" ] }
 tendermint-rpc = { workspace = true }
 
-[features]
-default = [ "std" ]
-std = [
-  "serde/std",
-  "serde_json/std",
-  "ibc/std",
-  "tendermint/std",
-  "dep:serde",
-  "ibc/serde",
-  "ibc-testkit/serde",
-  "dep:serde_json",
-]
