@@ -49,8 +49,6 @@ std = [
   "serde_json/std",
   "ibc/std",
   "tendermint/std",
-]
-serde = [
   "dep:serde",
   "ibc/serde",
   "ibc-testkit/serde",
