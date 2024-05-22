@@ -57,5 +57,5 @@ std = [
   "dep:serde",
   "ibc/serde",
   "ibc-testkit/serde",
-  "serde_json",
+  "dep:serde_json",
 ]
