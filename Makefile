@@ -37,10 +37,16 @@ test: ## Run tests with all features and without default features.
 	cargo test --all-targets --no-default-features
 
 check-release: ## Check that the release build compiles.
-	cargo release --workspace --no-push --no-tag --no-publish --exclude ibc-derive --exclude ibc-client-tendermint-cw
+	cargo release --workspace --no-push --no-tag \
+		--exclude ibc-derive \
+		--exclude ibc-primitives \
+		--exclude ibc-client-tendermint-cw
 
 release: ## Perform an actual release and publishes to crates.io.
-	cargo release --workspace --no-push --no-tag --exclude ibc-derive --exclude ibc-client-tendermint-cw --allow-branch HEAD --execute
+	cargo release --workspace --no-push --no-tag --allow-branch HEAD --execute \
+		--exclude ibc-derive \
+		--exclude ibc-primitives \
+		--exclude ibc-client-tendermint-cw
 
 build-tendermint-cw: ## Build the WASM file for the ICS-07 Tendermint light client.
 	@echo "Building the WASM file for the ICS-07 Tendermint light client"
