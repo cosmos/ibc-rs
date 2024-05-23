@@ -18,7 +18,7 @@ subtle-encoding = { workspace = true }
 tracing         = { version = "0.1.40", default-features = false }
 
 # ibc dependencies
-ibc                         = { workspace = true, features = [ "std" ] }
+ibc                         = { workspace = true }
 ibc-core-client-types       = { workspace = true }
 ibc-core-commitment-types   = { workspace = true }
 ibc-client-cw               = { workspace = true }
