@@ -30,3 +30,7 @@ updates:
       - dependency-name: "ibc*"
       - dependency-name: "cosmwasm*"
       - dependency-name: "cw*"
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
