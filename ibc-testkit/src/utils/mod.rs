@@ -1,4 +1,6 @@
 use ibc::primitives::Timestamp;
+#[cfg(feature = "serde")]
+use serde::{de::DeserializeOwned, Serialize};
 use tendermint::Time;
 
 /// Returns a `Timestamp` representation of the beginning of year 2023.
@@ -14,4 +16,27 @@ pub fn year_2023() -> Timestamp {
     Time::from_unix_timestamp(1_672_531_200, 0)
         .expect("should be a valid time")
         .into()
+}
+
+/// Utility function that asserts that the given JSON input can be
+/// serialized into and deserialized from the specified type `T`.
+#[cfg(feature = "serde")]
+pub fn test_serialization_roundtrip<T>(json_data: &str)
+where
+    T: core::fmt::Debug + PartialEq + Serialize + DeserializeOwned,
+{
+    let parsed0 = serde_json::from_str::<T>(json_data);
+    assert!(parsed0.is_ok());
+    let parsed0 = parsed0.expect("should not fail");
+
+    let serialized = serde_json::to_string(&parsed0);
+    assert!(serialized.is_ok());
+    let serialized = serialized.expect("should not fail");
+    assert_eq!(serialized, json_data);
+
+    let parsed1 = serde_json::from_str::<T>(&serialized);
+    assert!(parsed1.is_ok());
+    let parsed1 = parsed1.expect("should not fail");
+
+    assert_eq!(parsed0, parsed1);
 }

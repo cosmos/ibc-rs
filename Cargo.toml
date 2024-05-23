@@ -35,6 +35,9 @@ members = [
   "ibc",
   "ibc-query",
   "ibc-testkit",
+
+  # internal crates that are not published
+  "tests-integration",
 ]
 exclude = [
   "ci/cw-check",
