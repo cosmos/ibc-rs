@@ -78,7 +78,9 @@ where
 
     fn validate_self_client(
         &self,
-        client_state_of_host_on_counterparty: Self::HostClientState,
+        client_state_of_host_on_counterparty: Self::ClientStateWrapperAtAnyCounterParty<
+            Self::HostClientState,
+        >,
     ) -> Result<(), ContextError> {
         if client_state_of_host_on_counterparty.is_frozen() {
             return Err(ClientError::ClientFrozen {
