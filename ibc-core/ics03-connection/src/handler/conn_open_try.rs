@@ -48,8 +48,7 @@ where
         Ctx::ClientStateWrapperAtAnyCounterParty::<Ctx::HostClientState>::try_from(
             msg.client_state_of_b_on_a.clone(),
         )
-        .map_err(Into::into)?
-        .into();
+        .map_err(Into::into)?;
 
     ctx_b.validate_self_client(client_state_of_b_on_a)?;
 
