@@ -30,6 +30,22 @@ pub trait ValidationContext {
     /// The consensus state type for the host chain.
     type HostConsensusState: ConsensusState;
 
+    /// ClientState wrapper at counter party chains.
+    ///
+    /// In normal cases, this is identity.
+    /// ```rust,ignore
+    /// type ClientStateWrapperAtAnyCounterParty<CS> = CS;
+    /// ```
+    ///
+    /// But there are cases, e.g., ICS-008 enabled ibc-go, where the client state
+    /// is wrapped before storing. So we need to unwrap it appropriately.
+    ///
+    /// Note: we need `associated_type_defaults` to make this optional.
+    /// ```rust,ignore
+    /// type ClientStateWrapperAtAnyCounterParty<CS>: Into<CS> = CS;
+    /// ```
+    type ClientStateWrapperAtAnyCounterParty<CS>: Into<CS>;
+
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
 
