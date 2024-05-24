@@ -55,7 +55,11 @@ where
     let client_val_ctx_a = ctx_a.get_client_validation_context();
 
     let client_state_of_a_on_b =
-        Ctx::HostClientState::try_from(msg.client_state_of_a_on_b.clone()).map_err(Into::into)?;
+        Ctx::ClientStateWrapperAtAnyCounterParty::<Ctx::HostClientState>::try_from(
+            msg.client_state_of_a_on_b.clone(),
+        )
+        .map_err(Into::into)?
+        .into();
 
     ctx_a.validate_self_client(client_state_of_a_on_b)?;
 

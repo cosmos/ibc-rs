@@ -36,13 +36,20 @@ fn validate_impl<Ctx>(
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState>: TryFrom<Any>,
+    <Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState> as TryFrom<Any>>::Error:
+        Into<ClientError>,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
     let client_val_ctx_b = ctx_b.get_client_validation_context();
 
     let client_state_of_b_on_a =
-        Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone()).map_err(Into::into)?;
+        Ctx::ClientStateWrapperAtAnyCounterParty::<Ctx::HostClientState>::try_from(
+            msg.client_state_of_b_on_a.clone(),
+        )
+        .map_err(Into::into)?
+        .into();
 
     ctx_b.validate_self_client(client_state_of_b_on_a)?;
 
