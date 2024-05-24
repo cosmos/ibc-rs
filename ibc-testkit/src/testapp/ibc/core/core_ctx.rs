@@ -41,6 +41,7 @@ where
     type V = Self;
     type HostClientState = AnyClientState;
     type HostConsensusState = AnyConsensusState;
+    type ClientStateWrapperAtAnyCounterParty<V> = V;
 
     fn host_height(&self) -> Result<Height, ContextError> {
         Ok(Height::new(
