@@ -80,7 +80,9 @@ pub trait ValidationContext {
     /// in the `ibc-core/ics24-host` module.
     fn validate_self_client(
         &self,
-        client_state_of_host_on_counterparty: Self::HostClientState,
+        client_state_of_host_on_counterparty: Self::ClientStateWrapperAtAnyCounterParty<
+            Self::HostClientState,
+        >,
     ) -> Result<(), ContextError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
