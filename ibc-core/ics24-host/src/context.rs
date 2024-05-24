@@ -42,9 +42,9 @@ pub trait ValidationContext {
     ///
     /// Note: we need `associated_type_defaults` to make this optional.
     /// ```rust,ignore
-    /// type ClientStateWrapperAtAnyCounterParty<CS>: Into<CS> = CS;
+    /// type ClientStateWrapperAtAnyCounterParty<CS> = CS;
     /// ```
-    type ClientStateWrapperAtAnyCounterParty<CS>: Into<CS>;
+    type ClientStateWrapperAtAnyCounterParty<CS>;
 
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
