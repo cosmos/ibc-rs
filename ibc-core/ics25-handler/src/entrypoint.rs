@@ -35,6 +35,9 @@ where
     <<Ctx::V as ClientValidationContext>::ClientStateRef as TryFrom<Any>>::Error: Into<ClientError>,
     <<Ctx::E as ClientExecutionContext>::ClientStateMut as TryFrom<Any>>::Error: Into<ClientError>,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState>: TryFrom<Any>,
+    <Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState> as TryFrom<Any>>::Error:
+        Into<ClientError>,
 {
     validate(ctx, router, msg.clone())?;
     execute(ctx, router, msg)
@@ -53,6 +56,9 @@ where
     Ctx: ValidationContext,
     <<Ctx::V as ClientValidationContext>::ClientStateRef as TryFrom<Any>>::Error: Into<ClientError>,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState>: TryFrom<Any>,
+    <Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState> as TryFrom<Any>>::Error:
+        Into<ClientError>,
 {
     match msg {
         MsgEnvelope::Client(msg) => match msg {

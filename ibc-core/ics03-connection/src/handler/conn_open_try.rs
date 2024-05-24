@@ -20,6 +20,9 @@ pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), Conte
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState>: TryFrom<Any>,
+    <Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState> as TryFrom<Any>>::Error:
+        Into<ClientError>,
 {
     let vars = LocalVars::new(ctx_b, &msg)?;
     validate_impl(ctx_b, &msg, &vars)
