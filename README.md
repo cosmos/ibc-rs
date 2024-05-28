@@ -73,6 +73,30 @@ development.
 - [IBC Go implementation][ibc-go]
 - [Protobuf definitions in Rust][ibc-proto-rs]
 
+## `ibc-rs` in the wild
+
+|  # | Use-Case               |     Team      | Used-Modules |                 Links                 |          Phase           |
+| -: | ---------------------- | :-----------: | ------------ | :-----------------------------------: | :----------------------: |
+|  1 | Solana                 | ComposableFin | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
+|  2 | Ethereum               | ComposableFin | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
+|  3 | Polkadot               | ComposableFin | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
+|  4 | Nomic                  |     Nomic     | all          |        [Nomic network][nomic]         | :hourglass_flowing_sand: |
+|  5 | Namada                 |     Anoma     | all          |           [Namada][namada]            | :hourglass_flowing_sand: |
+|  6 | Sovereign integration  |   Informal    | all          |      [`sovereign-ibc`][sov-ibc]       | :hourglass_flowing_sand: |
+|  7 | Testing Hermes Relayer |   Informal    | all          |     [`basecoin-rs`][basecoin-rs]      |    :white_check_mark:    |
+|  8 | Substrate pallet       |    Octopus    | all          | [Substrate IBC Pallet][substrate-ibc] |     :grey_question:      |
+|  9 | ZK-IBC                 | SuccinctLabs  | all          |           [ZK-IBC][zk-ibc]            |     :grey_question:      |
+| 10 | Starkenet              |   Informal    | -            |                   -                   |          :eyes:          |
+
+[pica-network]: https://www.picasso.network
+[nomic]: https://www.nomic.io
+[namada]: https://namada.net
+[basecoin-rs]: https://github.com/informalsystems/basecoin-rs
+[hermes]: https://hermes.informal.systems
+[sov-ibc]: https://github.com/informalsystems/sovereign-ibc
+[substrate-ibc]: https://github.com/octopus-network/substrate-ibc
+[zk-ibc]: https://www.zkibc.com
+
 ## License
 
 Copyright © 2022 Informal Systems Inc. and ibc-rs authors.
