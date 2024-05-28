@@ -44,7 +44,7 @@ impl ChainId {
     /// based on their requirements.
     ///
     /// If the chain identifier is in the {chain name}-{revision number} format,
-    /// the revision number is parsed. Otherwise, revision number is set to 0.
+    /// the revision number is parsed. Otherwise, the revision number is set to 0.
     ///
     /// ```
     /// use ibc_core_host_types::identifiers::ChainId;

@@ -42,7 +42,7 @@ impl From<Vec<u8>> for PacketCommitment {
     }
 }
 
-/// Acknowledgement commitment to be stored
+/// Acknowledgement of commitment to be stored
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -106,7 +106,7 @@ pub fn compute_ack_commitment(ack: &Acknowledgement) -> AcknowledgementCommitmen
 
 /// Helper function to hash a byte slice using SHA256.
 ///
-/// Note that computing commitments with anything other than SHA256 will
+/// Note that computing commitments with anything apart from SHA256 will
 /// break the Merkle proofs of the IBC provable store.
 fn hash(data: &[u8]) -> [u8; 32] {
     use sha2::Digest;

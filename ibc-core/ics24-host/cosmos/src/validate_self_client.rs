@@ -132,16 +132,16 @@ pub trait ValidateSelfClientContext {
         Ok(())
     }
 
-    /// Returns the host chain id
+    /// Returns the chain id of the host
     fn chain_id(&self) -> &ChainId;
 
     /// Returns the host current height
     fn host_current_height(&self) -> Height;
 
-    /// Returns the host proof specs
+    /// Returns the proof specs of the host
     fn proof_specs(&self) -> &ProofSpecs;
 
-    /// Returns the host unbonding period
+    /// Returns the unbonding period of the host
     fn unbonding_period(&self) -> Duration;
 
     /// Returns the host upgrade path. May be empty.

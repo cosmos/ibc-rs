@@ -21,7 +21,7 @@ pub trait TokenTransferValidationContext {
 
     /// Validates that the tokens can be escrowed successfully.
     ///
-    /// `memo` field allows to incorporate additional contextual details in the
+    /// `memo` field allows incorporating additional contextual details in the
     /// escrow validation.
     fn escrow_coins_validate(
         &self,
@@ -50,7 +50,7 @@ pub trait TokenTransferValidationContext {
 
     /// Validates the sender account and the coin input before burning.
     ///
-    /// `memo` field allows to incorporate additional contextual details in the
+    /// `memo` field allows incorporating additional contextual details in the
     /// burn validation.
     fn burn_coins_validate(
         &self,
@@ -70,7 +70,7 @@ pub trait TokenTransferValidationContext {
 pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
     /// Executes the escrow of the tokens in a user account.
     ///
-    /// `memo` field allows to incorporate additional contextual details in the
+    /// `memo` field allows incorporating additional contextual details in the
     /// escrow execution.
     fn escrow_coins_execute(
         &mut self,
@@ -99,7 +99,7 @@ pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
 
     /// Executes burning of the tokens in a user account.
     ///
-    /// `memo` field allows to incorporate additional contextual details in the
+    /// `memo` field allows incorporating additional contextual details in the
     /// burn execution.
     fn burn_coins_execute(
         &mut self,

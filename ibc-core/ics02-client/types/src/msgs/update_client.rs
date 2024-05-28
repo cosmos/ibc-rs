@@ -13,7 +13,7 @@ pub const UPDATE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 
 /// Represents the message that triggers the update of an on-chain (IBC) client
 /// either with new headers, or evidence of misbehaviour.
-/// Note that some types of misbehaviour can be detected when a headers
+/// Note that some types of misbehaviour can be detected when the headers
 /// are updated (`UpdateKind::UpdateClient`).
 #[cfg_attr(
     feature = "borsh",

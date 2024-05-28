@@ -19,7 +19,7 @@ pub const CONN_OPEN_CONFIRM_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnect
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenConfirm {
-    /// ConnectionId that chain B has chosen for it's ConnectionEnd
+    /// ConnectionId that chain B has chosen for its ConnectionEnd
     pub conn_id_on_b: ConnectionId,
     /// proof of ConnectionEnd stored on Chain A during ConnOpenInit
     pub proof_conn_end_on_a: CommitmentProofBytes,

@@ -1,4 +1,4 @@
-//! Encapsulates essential data structures facilitating the seamless
+//! Encapsulates essential data structures, facilitating the seamless
 //! interaction between an implemented IBC module using ibc-rs and the
 //! underlying host blockchain.
 #![no_std]

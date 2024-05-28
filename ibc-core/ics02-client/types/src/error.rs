@@ -97,7 +97,7 @@ pub enum ClientError {
     Ics23Verification(CommitmentError),
     /// misbehaviour handling failed with reason: `{reason}`
     MisbehaviourHandlingFailure { reason: String },
-    /// client specific error: `{description}`
+    /// client-specific error: `{description}`
     ClientSpecific { description: String },
     /// client counter overflow error
     CounterOverflow,

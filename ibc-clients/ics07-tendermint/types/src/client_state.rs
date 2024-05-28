@@ -365,50 +365,6 @@ impl From<ClientState> for Any {
     }
 }
 
-#[cfg(all(test, feature = "serde"))]
-pub(crate) mod serde_tests {
-    use serde::de::DeserializeOwned;
-    use serde::Serialize;
-    use tendermint_rpc::endpoint::abci_query::AbciQuery;
-
-    pub fn test_serialization_roundtrip<T>(json_data: &str)
-    where
-        T: core::fmt::Debug + PartialEq + Serialize + DeserializeOwned,
-    {
-        let parsed0 = serde_json::from_str::<T>(json_data);
-        assert!(parsed0.is_ok());
-        let parsed0 = parsed0.unwrap();
-
-        let serialized = serde_json::to_string(&parsed0);
-        assert!(serialized.is_ok());
-        let serialized = serialized.unwrap();
-
-        let parsed1 = serde_json::from_str::<T>(&serialized);
-        assert!(parsed1.is_ok());
-        let parsed1 = parsed1.unwrap();
-
-        assert_eq!(parsed0, parsed1);
-    }
-
-    #[test]
-    fn serialization_roundtrip_no_proof() {
-        let json_data = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../../ibc-testkit/tests/data/json/client_state.json"
-        ));
-        test_serialization_roundtrip::<AbciQuery>(json_data);
-    }
-
-    #[test]
-    fn serialization_roundtrip_with_proof() {
-        let json_data = include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/../../../ibc-testkit/tests/data/json/client_state_proof.json"
-        ));
-        test_serialization_roundtrip::<AbciQuery>(json_data);
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -23,7 +23,7 @@ use crate::utils::AnyCodec;
 
 type Checksum = Vec<u8>;
 
-/// - [`Height`] can not be used directly as keys in the map,
+/// - [`Height`] cannot be used directly as keys in the map,
 /// as it doesn't implement some cw_storage specific traits.
 /// - Only a sorted set is needed. So the value type is set to
 /// [`Empty`] following
@@ -31,8 +31,8 @@ type Checksum = Vec<u8>;
 pub const CONSENSUS_STATE_HEIGHT_MAP: Map<'_, (u64, u64), Empty> =
     Map::new(ITERATE_CONSENSUS_STATE_PREFIX);
 
-/// Context is a wrapper around the deps and env that gives access to the
-/// methods under the ibc-rs Validation and Execution traits.
+/// Context is a wrapper around the deps and env that provides access
+/// to the methods under the ibc-rs Validation and Execution traits.
 pub struct Context<'a, C: ClientType<'a>>
 where
     <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,

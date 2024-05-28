@@ -16,7 +16,7 @@ use tendermint_light_client_verifier::Verifier;
 
 use crate::types::Header;
 
-/// Determines whether or not two conflicting headers at the same height would
+/// Determines if two conflicting headers at the same height would
 /// have convinced the light client.
 pub fn verify_misbehaviour<V, H>(
     ctx: &V,

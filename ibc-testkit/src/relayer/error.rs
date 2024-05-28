@@ -8,13 +8,13 @@ use ibc::core::host::types::identifiers::ClientId;
 pub enum RelayerError {
     /// client state on destination chain not found, (client id: `{client_id}`)
     ClientStateNotFound { client_id: ClientId },
-    /// the client on destination chain is already up-to-date (client id: `{client_id}`, source height: `{source_height}`, dest height: `{destination_height}`)
+    /// the client on the destination chain is already up-to-date (client id: `{client_id}`, source height: `{source_height}`, dest height: `{destination_height}`)
     ClientAlreadyUpToDate {
         client_id: ClientId,
         source_height: Height,
         destination_height: Height,
     },
-    /// the client on destination chain is at a higher height (client id: `{client_id}`, source height: `{source_height}`, dest height: `{destination_height}`)
+    /// the client on the destination chain is at a higher height (client id: `{client_id}`, source height: `{source_height}`, dest height: `{destination_height}`)
     ClientAtHigherHeight {
         client_id: ClientId,
         source_height: Height,

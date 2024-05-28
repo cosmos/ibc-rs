@@ -25,38 +25,28 @@ schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 serde_json      = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
-tracing         = { version = "0.1.40", default-features = false }
 typed-builder   = { version = "0.18.0" }
 
 # ibc dependencies
-ibc                      = { workspace = true, features = [ "std" ] }
-ibc-proto                = { workspace = true }
-ibc-client-cw            = { workspace = true }
-ibc-client-tendermint-cw = { workspace = true }
-ibc-query                = { workspace = true }
+ibc       = { workspace = true, features = [ "std" ] }
+ibc-proto = { workspace = true }
+ibc-query = { workspace = true }
 
 # basecoin dependencies
-basecoin-store = { git = "https://github.com/informalsystems/basecoin-rs", rev = "8496b3f" }
+basecoin-store = { version = "0.1.0" }
 
 # cosmos dependencies
 tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
-env_logger         = { version = "0.11.0" }
-tracing-subscriber = { version = "0.3.17", features = [ "fmt", "env-filter", "json" ] }
-test-log           = { version = "0.2.13", features = [ "trace" ] }
-hex                = { version = "0.4.2" }
-rstest             = { workspace = true }
-cosmwasm-vm        = { workspace = true }
-cosmwasm-std       = { workspace = true }
+hex    = { version = "0.4.2" }
+rstest = { workspace = true }
 
 [features]
 default = [ "std" ]
 std = [
   "serde/std",
-  "tracing/std",
-  "tracing-subscriber/std",
   "serde_json/std",
   "ibc/std",
   "ibc-proto/std",

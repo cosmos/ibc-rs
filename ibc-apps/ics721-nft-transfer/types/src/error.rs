@@ -86,7 +86,7 @@ pub enum NftTransferError {
     DecodeRawMsg { reason: String },
     /// unknown msg type: `{msg_type}`
     UnknownMsgType { msg_type: String },
-    /// decoding raw bytes as UTF8 string error: `{0}`
+    /// decoding raw bytes as UTF-8 string error: `{0}`
     Utf8Decode(Utf8Error),
     /// other error: `{0}`
     Other(String),

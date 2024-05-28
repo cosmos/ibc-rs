@@ -2,7 +2,7 @@ use core::fmt::Debug;
 use core::time::Duration;
 
 use basecoin_store::context::ProvableStore;
-use basecoin_store::impls::{GrowingStore, InMemoryStore, RevertibleStore};
+use basecoin_store::impls::InMemoryStore;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::PacketCommitment;
 use ibc::core::client::context::client_state::ClientStateValidation;
@@ -53,7 +53,7 @@ where
 }
 
 /// A mock store type using basecoin-storage implementations.
-pub type MockStore = RevertibleStore<GrowingStore<InMemoryStore>>;
+pub type MockStore = InMemoryStore;
 /// A [`StoreGenericTestContext`] using [`MockStore`].
 pub type TestContext<H> = StoreGenericTestContext<MockStore, H>;
 /// A [`StoreGenericTestContext`] using [`MockStore`] and [`MockHost`].
@@ -83,7 +83,7 @@ where
     H: TestHost,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
-    /// Returns a immutable reference to the IBC store.
+    /// Returns an immutable reference to the IBC store.
     pub fn ibc_store(&self) -> &MockIbcStore<S> {
         &self.ibc_store
     }
@@ -93,7 +93,7 @@ where
         &mut self.ibc_store
     }
 
-    /// Returns a immutable reference to the IBC router.
+    /// Returns an immutable reference to the IBC router.
     pub fn ibc_router(&self) -> &MockRouter {
         &self.ibc_router
     }
@@ -139,7 +139,7 @@ where
 
     /// Advance the first height of the host chain by generating a genesis block.
     ///
-    /// This method is exactly the same as [`Self::advance_genesis_height`].
+    /// This method is same as [`Self::advance_genesis_height`].
     /// But it bootstraps the genesis block by height 1 and `genesis_time`.
     ///
     /// The method starts and ends with [`Self::end_block`] and [`Self::begin_block`], just
@@ -366,7 +366,7 @@ where
         self
     }
 
-    /// Bootstraps a IBC connection to this context.
+    /// Bootstraps an IBC connection to this context.
     ///
     /// This does not bootstrap any light client.
     pub fn with_connection(
@@ -381,7 +381,7 @@ where
         self
     }
 
-    /// Bootstraps a IBC channel to this context.
+    /// Bootstraps an IBC channel to this context.
     ///
     /// This does not bootstrap any corresponding IBC connection or light client.
     pub fn with_channel(
@@ -429,7 +429,7 @@ where
         self
     }
 
-    /// Bootstraps a ack sequence to this context.
+    /// Bootstraps an ack sequence to this context.
     ///
     /// This does not bootstrap any corresponding IBC channel, connection or light client.
     pub fn with_ack_sequence(
@@ -479,7 +479,7 @@ where
 
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
-    /// Used in testing the Ics18 algorithms, hence this may return a Ics18Error.
+    /// Used in testing the Ics18 algorithms, hence this may return an Ics18Error.
     pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
         self.dispatch(msg)
             .map_err(RelayerError::TransactionFailed)?;
