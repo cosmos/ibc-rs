@@ -1,13 +1,12 @@
 use core::str::FromStr;
 
 use cosmrs::AccountId;
+use ibc_core::host::types::identifiers::{ConnectionId, PortId};
+use ibc_core::primitives::Signer;
 
-use crate::applications::interchain_accounts::account::InterchainAccount;
-use crate::applications::interchain_accounts::account::SdkBaseAccount;
-use crate::applications::interchain_accounts::context::InterchainAccountExecutionContext;
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-use crate::core::ics24_host::identifier::{ConnectionId, PortId};
-use crate::Signer;
+use crate::account::{InterchainAccount, SdkBaseAccount};
+use crate::context::InterchainAccountExecutionContext;
+use crate::error::InterchainAccountError;
 
 /// Creates a new interchain account.
 ///

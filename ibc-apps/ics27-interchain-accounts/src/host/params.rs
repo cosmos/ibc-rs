@@ -1,10 +1,11 @@
 use alloc::string::String;
 use alloc::vec::Vec;
-use ibc_proto::ibc::applications::interchain_accounts::host::v1::Params as RawParams;
-use ibc_proto::protobuf::Protobuf;
 
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-use crate::core::MsgEnvelope;
+use ibc_core::handler::types::msgs::MsgEnvelope;
+use ibc_core::primitives::proto::Protobuf;
+use ibc_proto::ibc::apps::interchain_accounts::host::v1::Params as RawParams;
+
+use crate::error::InterchainAccountError;
 
 pub const ALLOW_ALL_HOST_MSGS: &str = "*";
 

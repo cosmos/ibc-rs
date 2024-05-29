@@ -1,17 +1,16 @@
+use alloc::string::{String, ToString};
 use core::str::FromStr;
 
-use alloc::string::{String, ToString};
-use ibc_proto::ibc::applications::interchain_accounts::v1::Metadata as RawMetadata;
-use serde_derive::Deserialize;
-use serde_derive::Serialize;
-use tendermint_proto::Protobuf;
+use ibc_core::channel::types::Version;
+use ibc_core::host::types::identifiers::ConnectionId;
+use ibc_core::primitives::proto::Protobuf;
+use ibc_core::primitives::Signer;
+use ibc_proto::ibc::apps::interchain_accounts::v1::Metadata as RawMetadata;
+use serde::{Deserialize, Serialize};
 
 use super::context::InterchainAccountValidationContext;
 use super::error::InterchainAccountError;
 use super::VERSION;
-use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::ConnectionId;
-use crate::Signer;
 
 /// Defines a set of protocol specific data encoded into the ICS27 channel version bytestring
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

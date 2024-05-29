@@ -1,14 +1,12 @@
 use alloc::string::{String, ToString};
 
-pub use ibc_proto::ibc::applications::interchain_accounts::controller::v1::MsgSendTx as RawMsgSendTx;
-use ibc_proto::protobuf::Protobuf;
+use ibc_core::host::types::identifiers::ConnectionId;
+use ibc_core::primitives::proto::Protobuf;
+use ibc_core::primitives::{Signer, Timestamp};
+use ibc_proto::ibc::apps::interchain_accounts::controller::v1::MsgSendTx as RawMsgSendTx;
 
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-use crate::applications::interchain_accounts::packet::InterchainAccountPacketData;
-use crate::core::ics24_host::identifier::ConnectionId;
-use crate::core::timestamp::Timestamp;
-use crate::core::Msg;
-use crate::Signer;
+use crate::error::InterchainAccountError;
+use crate::packet::InterchainAccountPacketData;
 
 pub(crate) const TYPE_URL: &str = "/ibc.applications.interchain_account.controller.v1.MsgSendTx";
 
@@ -23,14 +21,6 @@ pub struct MsgSendTx {
     pub packet_data: InterchainAccountPacketData,
     /// The relative timeout
     pub relative_timeout: Timestamp,
-}
-
-impl Msg for MsgSendTx {
-    type Raw = RawMsgSendTx;
-
-    fn type_url(&self) -> String {
-        TYPE_URL.to_string()
-    }
 }
 
 impl Protobuf<RawMsgSendTx> for MsgSendTx {}

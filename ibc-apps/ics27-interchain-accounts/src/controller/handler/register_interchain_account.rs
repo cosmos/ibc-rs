@@ -1,17 +1,13 @@
-use crate::prelude::*;
+use ibc_core::channel::handler::{chan_open_init_execute, chan_open_init_validate};
+use ibc_core::channel::types::channel::Order;
+use ibc_core::channel::types::msgs::MsgChannelOpenInit;
+use ibc_core::host::types::identifiers::ChannelId;
+use ibc_core::host::types::path::ChannelEndPath;
 
-use crate::applications::interchain_accounts::context::InterchainAccountExecutionContext;
-use crate::applications::interchain_accounts::context::InterchainAccountValidationContext;
-use crate::applications::interchain_accounts::controller::msgs::MsgRegisterInterchainAccount;
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-use crate::applications::interchain_accounts::port::default_host_port_id;
-use crate::applications::interchain_accounts::port::new_controller_port_id;
-use crate::core::ics04_channel::channel::Order;
-use crate::core::ics04_channel::handler::chan_open_init::chan_open_init_execute;
-use crate::core::ics04_channel::handler::chan_open_init::chan_open_init_validate;
-use crate::core::ics04_channel::msgs::MsgChannelOpenInit;
-use crate::core::ics24_host::identifier::ChannelId;
-use crate::core::ics24_host::path::ChannelEndPath;
+use crate::context::{InterchainAccountExecutionContext, InterchainAccountValidationContext};
+use crate::controller::msgs::MsgRegisterInterchainAccount;
+use crate::error::InterchainAccountError;
+use crate::port::{default_host_port_id, new_controller_port_id};
 
 /// Entry point for registering an interchain account.
 ///

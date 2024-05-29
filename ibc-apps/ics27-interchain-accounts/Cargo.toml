@@ -20,11 +20,16 @@ all-features = true
 
 [dependencies]
 # external dependencies
+serde      = { workspace = true }
 serde_json = { workspace = true, optional = true }
+cosmrs     = { workspace = true }
+prost      = { workspace = true }
+sha2       = { workspace = true }
 
 # ibc dependencies
 ibc-core               = { workspace = true }
 ibc-app-transfer-types = { workspace = true }
+ibc-proto              = { workspace = true }
 
 [dev-dependencies]
 subtle-encoding = { workspace = true }

@@ -2,11 +2,12 @@
 
 use alloc::string::ToString;
 use alloc::vec::Vec;
-use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::applications::interchain_accounts::v1::CosmosTx as RawCosmosTx;
-use ibc_proto::protobuf::Protobuf;
 
-use crate::applications::interchain_accounts::error::InterchainAccountError;
+use ibc_core::primitives::proto::Protobuf;
+use ibc_proto::google::protobuf::Any;
+use ibc_proto::ibc::apps::interchain_accounts::v1::CosmosTx as RawCosmosTx;
+
+use crate::error::InterchainAccountError;
 
 const TYPE_URL: &str = "/ibc.applications.interchain_accounts.v1.CosmosTx";
 

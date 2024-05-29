@@ -1,16 +1,17 @@
 use alloc::string::ToString;
 
-use crate::applications::interchain_accounts::context::InterchainAccountExecutionContext;
-use crate::applications::interchain_accounts::controller::msgs::MsgSendTx;
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-use crate::applications::interchain_accounts::port::new_controller_port_id;
-use crate::applications::interchain_accounts::MODULE_ID_STR;
-use crate::core::events::MessageEvent;
-use crate::core::ics04_channel::handler::send_packet::send_packet;
-use crate::core::ics04_channel::packet::Packet;
-use crate::core::ics04_channel::timeout::TimeoutHeight;
-use crate::core::ics24_host::path::{ChannelEndPath, SeqSendPath};
-use crate::core::timestamp::Timestamp;
+use ibc_core::channel::handler::send_packet;
+use ibc_core::channel::types::packet::Packet;
+use ibc_core::channel::types::timeout::TimeoutHeight;
+use ibc_core::handler::types::events::MessageEvent;
+use ibc_core::host::types::path::{ChannelEndPath, SeqSendPath};
+use ibc_core::primitives::Timestamp;
+
+use crate::context::InterchainAccountExecutionContext;
+use crate::controller::msgs::MsgSendTx;
+use crate::error::InterchainAccountError;
+use crate::port::new_controller_port_id;
+use crate::MODULE_ID_STR;
 
 /// Processes a pre-built packet data containing messages to be executed on the
 /// host chain

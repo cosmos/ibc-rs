@@ -1,18 +1,18 @@
 use alloc::string::{String, ToString};
 use alloc::vec;
-use cosmrs::AccountId;
-use prost::Message;
 
+use cosmrs::AccountId;
+use ibc_core::host::types::identifiers::PortId;
+use ibc_core::primitives::proto::Protobuf;
+use ibc_core::primitives::Signer;
 use ibc_proto::cosmos::auth::v1beta1::BaseAccount as RawBaseAccount;
 use ibc_proto::google::protobuf::Any;
-use ibc_proto::ibc::applications::interchain_accounts::v1::InterchainAccount as RawInterchainAccount;
-use ibc_proto::protobuf::Protobuf;
+use ibc_proto::ibc::apps::interchain_accounts::v1::InterchainAccount as RawInterchainAccount;
+use prost::Message;
 use sha2::{Digest, Sha256};
 
 use super::error::InterchainAccountError;
 use super::MODULE_ID_STR;
-use crate::core::ics24_host::identifier::PortId;
-use crate::Signer;
 
 /// Defines an interchain account type with a generic base account.
 ///

@@ -1,12 +1,8 @@
-use crate::core::ics24_host::identifier::ChannelId;
-use crate::core::ics24_host::identifier::ConnectionId;
-use crate::core::ics24_host::identifier::PortId;
-use crate::core::ExecutionContext;
-use crate::core::ValidationContext;
-use crate::Signer;
+use ibc_core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc_core::host::{ExecutionContext, ValidationContext};
+use ibc_core::primitives::Signer;
 
-use super::account::BaseAccount;
-use super::account::InterchainAccount;
+use super::account::{BaseAccount, InterchainAccount};
 use super::error::InterchainAccountError;
 use super::host::params::Params;
 

@@ -2,33 +2,28 @@
 
 use alloc::string::ToString;
 
-use crate::applications::interchain_accounts::ack_success;
-use crate::applications::interchain_accounts::context::InterchainAccountExecutionContext;
-use crate::applications::interchain_accounts::context::InterchainAccountValidationContext;
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-use crate::applications::interchain_accounts::metadata::Metadata;
-use crate::applications::interchain_accounts::port::default_host_port_id;
-use crate::core::ics04_channel::acknowledgement::Acknowledgement;
-use crate::core::ics04_channel::acknowledgement::AcknowledgementStatus;
-use crate::core::ics04_channel::channel::Counterparty;
-use crate::core::ics04_channel::channel::Order;
-use crate::core::ics04_channel::packet::Packet;
-use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::ChannelId;
-use crate::core::ics24_host::identifier::ConnectionId;
-use crate::core::ics24_host::identifier::PortId;
-use crate::core::ics24_host::path::ChannelEndPath;
-use crate::core::router::ModuleExtras;
-use crate::Signer;
+use ibc_core::channel::types::acknowledgement::{Acknowledgement, AcknowledgementStatus};
+use ibc_core::channel::types::channel::{Counterparty, Order};
+use ibc_core::channel::types::packet::Packet;
+use ibc_core::channel::types::Version;
+use ibc_core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc_core::host::types::path::ChannelEndPath;
+use ibc_core::primitives::Signer;
+use ibc_core::router::types::module::ModuleExtras;
 
 use super::handler::create_interchain_account::create_interchain_account;
 use super::handler::on_recv_packet::on_recv_packet;
+use crate::ack_success;
+use crate::context::{InterchainAccountExecutionContext, InterchainAccountValidationContext};
+use crate::error::InterchainAccountError;
+use crate::metadata::Metadata;
+use crate::port::default_host_port_id;
 
 /// Default validation callback function on the chan_open_init request for the host chain
 ///
 /// Note: if your chain serves as both the controller and the host chain, you
 /// may utilize the default
-/// [controller](crate::applications::interchain_accounts::controller::callback::on_chan_open_init_validate)
+/// [controller](crate::controller::callback::on_chan_open_init_validate)
 /// callback implementation instead.
 pub fn on_chan_open_init_validate(
     _ctx_b: &impl InterchainAccountValidationContext,
@@ -48,7 +43,7 @@ pub fn on_chan_open_init_validate(
 ///
 /// Note: if your chain serves as both the controller and the host chain, you
 /// may utilize the default
-/// [controller](crate::applications::interchain_accounts::controller::callback::on_chan_open_init_execute)
+/// [controller](crate::controller::callback::on_chan_open_init_execute)
 /// callback implementation instead.
 pub fn on_chan_open_init_execute(
     _ctx_b: &mut impl InterchainAccountExecutionContext,
@@ -166,7 +161,7 @@ pub fn on_chan_open_try_execute(
 ///
 /// Note: if your chain serves as both the controller and the host chain, you
 /// may utilize the default
-/// [controller](crate::applications::interchain_accounts::controller::callback::on_chan_open_ack_validate)
+/// [controller](crate::controller::callback::on_chan_open_ack_validate)
 /// callback implementation instead.
 pub fn on_chan_open_ack_validate(
     _ctx_b: &impl InterchainAccountValidationContext,
@@ -183,7 +178,7 @@ pub fn on_chan_open_ack_validate(
 ///
 /// Note: if your chain serves as both the controller and the host chain, you
 /// may utilize the default
-/// [controller](crate::applications::interchain_accounts::controller::callback::on_chan_open_ack_execute)
+/// [controller](crate::controller::callback::on_chan_open_ack_execute)
 /// callback implementation instead.
 pub fn on_chan_open_ack_execute(
     _ctx_b: &mut impl InterchainAccountExecutionContext,
@@ -313,7 +308,7 @@ pub fn on_recv_packet_execute(
 ///
 /// Note: if your chain serves as both the controller and the host chain, you
 /// may utilize the default
-/// [controller](crate::applications::interchain_accounts::controller::callback::on_acknowledgement_packet_validate)
+/// [controller](crate::controller::callback::on_acknowledgement_packet_validate)
 /// callback implementation instead.
 pub fn on_acknowledgement_packet_validate<Ctx>(
     _ctx_b: &impl InterchainAccountValidationContext,
@@ -330,7 +325,7 @@ pub fn on_acknowledgement_packet_validate<Ctx>(
 ///
 /// Note: if your chain serves as both the controller and the host chain, you
 /// may utilize the default
-/// [controller](crate::applications::interchain_accounts::controller::callback::on_acknowledgement_packet_execute)
+/// [controller](crate::controller::callback::on_acknowledgement_packet_execute)
 /// callback implementation instead.
 pub fn on_acknowledgement_packet_execute(
     _ctx_b: &mut impl InterchainAccountExecutionContext,
@@ -349,7 +344,7 @@ pub fn on_acknowledgement_packet_execute(
 ///
 /// Note: if your chain serves as both the controller and the host chain, you
 /// may utilize the default
-/// [controller](crate::applications::interchain_accounts::controller::callback::on_timeout_packet_validate)
+/// [controller](crate::controller::callback::on_timeout_packet_validate)
 /// callback implementation instead.
 pub fn on_timeout_packet_validate<Ctx>(
     _ctx_b: &impl InterchainAccountValidationContext,
@@ -365,7 +360,7 @@ pub fn on_timeout_packet_validate<Ctx>(
 ///
 /// Note: if your chain serves as both the controller and the host chain, you
 /// may utilize the default
-/// [controller](crate::applications::interchain_accounts::controller::callback::on_timeout_packet_execute)
+/// [controller](crate::controller::callback::on_timeout_packet_execute)
 /// callback implementation instead.
 pub fn on_timeout_packet_execute(
     _ctx_b: &mut impl InterchainAccountExecutionContext,

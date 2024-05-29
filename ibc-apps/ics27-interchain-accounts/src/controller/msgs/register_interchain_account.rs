@@ -1,12 +1,12 @@
 use alloc::string::{String, ToString};
-pub use ibc_proto::ibc::applications::interchain_accounts::controller::v1::MsgRegisterInterchainAccount as RawMsgRegisterInterchainAccount;
-use ibc_proto::protobuf::Protobuf;
 
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-use crate::core::ics04_channel::Version;
-use crate::core::ics24_host::identifier::ConnectionId;
-use crate::core::Msg;
-use crate::Signer;
+use ibc_core::channel::types::Version;
+use ibc_core::host::types::identifiers::ConnectionId;
+use ibc_core::primitives::proto::Protobuf;
+use ibc_core::primitives::Signer;
+use ibc_proto::ibc::apps::interchain_accounts::controller::v1::MsgRegisterInterchainAccount as RawMsgRegisterInterchainAccount;
+
+use crate::error::InterchainAccountError;
 
 pub(crate) const TYPE_URL: &str =
     "/ibc.applications.interchain_account.controller.v1.MsgRegisterInterchainAccount";
@@ -17,7 +17,7 @@ pub struct MsgRegisterInterchainAccount {
     /// The owner of the interchain account.
     pub owner: Signer,
     /// The connection identifier on the controller chain.
-    /// Note: to learn about our naming convention, see [here](crate::applications::interchain_accounts).
+    /// Note: to learn about our naming convention, see [here](crate).
     pub conn_id_on_a: ConnectionId,
     /// The version of the interchain account.
     pub version: Version,
@@ -34,14 +34,6 @@ impl MsgRegisterInterchainAccount {
             conn_id_on_a,
             version,
         }
-    }
-}
-
-impl Msg for MsgRegisterInterchainAccount {
-    type Raw = RawMsgRegisterInterchainAccount;
-
-    fn type_url(&self) -> String {
-        TYPE_URL.to_string()
     }
 }
 
@@ -75,6 +67,7 @@ impl From<MsgRegisterInterchainAccount> for RawMsgRegisterInterchainAccount {
             owner: domain.owner.to_string(),
             connection_id: domain.conn_id_on_a.to_string(),
             version: domain.version.to_string(),
+            ordering: todo!(),
         }
     }
 }

@@ -20,6 +20,8 @@ pub mod metadata;
 pub mod packet;
 pub mod port;
 
+extern crate alloc;
+
 /// Module identifier for the ICS27 application.
 pub const MODULE_ID_STR: &str = "interchainaccounts";
 
@@ -30,7 +32,7 @@ pub const VERSION: &str = "ics27-1";
 /// equivalent to `base64::encode(0x01)`.
 pub const ACK_SUCCESS: &str = "AQ=="; //TODO: what's the result string?
 
-use crate::core::ics04_channel::acknowledgement::StatusValue;
+use ibc_core::channel::types::acknowledgement::StatusValue;
 
 /// Returns a successful acknowledgement status for the interchain accounts application.
 pub fn ack_success() -> StatusValue {

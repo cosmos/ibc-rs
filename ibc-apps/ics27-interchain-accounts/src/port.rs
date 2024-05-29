@@ -1,9 +1,10 @@
 use alloc::format;
 use core::str::FromStr;
 
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-use crate::core::ics24_host::identifier::PortId;
-use crate::Signer;
+use ibc_core::host::types::identifiers::PortId;
+use ibc_core::primitives::Signer;
+
+use crate::error::InterchainAccountError;
 
 /// The default prefix for the controller port identifiers.
 pub const CONTROLLER_PORT_PREFIX: &str = "interchain-account";

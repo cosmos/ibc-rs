@@ -1,9 +1,10 @@
 use alloc::string::String;
 use alloc::vec::Vec;
 
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-pub use ibc_proto::ibc::applications::interchain_accounts::v1::InterchainAccountPacketData as RawInterchainAccountPacketData;
-use ibc_proto::protobuf::Protobuf;
+use ibc_core::primitives::proto::Protobuf;
+pub use ibc_proto::ibc::apps::interchain_accounts::v1::InterchainAccountPacketData as RawInterchainAccountPacketData;
+
+use crate::error::InterchainAccountError;
 
 const MAX_MEMO_CHAR_LENGTH: usize = 256;
 

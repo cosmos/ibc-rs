@@ -1,7 +1,6 @@
-use crate::core::ics04_channel::acknowledgement::StatusValue;
-use crate::core::ics04_channel::error::ChannelError;
-use crate::core::ContextError;
-use crate::prelude::*;
+use ibc_core::channel::types::acknowledgement::StatusValue;
+use ibc_core::channel::types::error::ChannelError;
+use ibc_core::handler::types::error::ContextError;
 
 /// Defines the interchain account error type
 #[derive(Clone, Debug)]

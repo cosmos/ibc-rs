@@ -27,6 +27,7 @@ prost       = { workspace = true }
 schemars    = { workspace = true, optional = true }
 serde       = { workspace = true, optional = true }
 time        = { version = ">=0.3.0, <0.3.37", default-features = false }
+cosmrs      = { workspace = true }
 
 # ibc dependencies
 ibc-proto = { workspace = true }

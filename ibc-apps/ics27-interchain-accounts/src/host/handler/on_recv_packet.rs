@@ -1,18 +1,17 @@
 use alloc::vec::Vec;
-use ibc_proto::protobuf::Protobuf;
 
-use crate::applications::interchain_accounts::context::InterchainAccountExecutionContext;
-use crate::applications::interchain_accounts::error::InterchainAccountError;
-use crate::applications::interchain_accounts::host::msgs::cosmos_tx::CosmosTx;
-use crate::applications::interchain_accounts::packet::InterchainAccountPacketData;
+use ibc_core::channel::types::packet::Packet;
+use ibc_core::entrypoint::{execute, validate};
+use ibc_core::handler::types::msgs::MsgEnvelope;
+use ibc_core::host::types::identifiers::{ConnectionId, PortId};
+use ibc_core::host::types::path::ChannelEndPath;
+use ibc_core::primitives::proto::Protobuf;
+use ibc_core::router::router::Router;
 
-use crate::core::execute;
-use crate::core::ics04_channel::packet::Packet;
-use crate::core::ics24_host::identifier::ConnectionId;
-use crate::core::ics24_host::identifier::PortId;
-use crate::core::ics24_host::path::ChannelEndPath;
-use crate::core::validate;
-use crate::core::MsgEnvelope;
+use crate::context::InterchainAccountExecutionContext;
+use crate::error::InterchainAccountError;
+use crate::host::msgs::cosmos_tx::CosmosTx;
+use crate::packet::InterchainAccountPacketData;
 
 /// Handles a given interchain accounts packet on a destination host chain.
 /// If the transaction is successfully executed, the transaction response bytes will be returned.
@@ -88,8 +87,8 @@ where
     Ctx: InterchainAccountExecutionContext,
 {
     for msg in msgs {
+        // TODO(rano): ctx should have router already
         validate(ctx_b, msg.clone()).map_err(InterchainAccountError::source)?;
-
         execute(ctx_b, msg).map_err(InterchainAccountError::source)?;
     }
 
