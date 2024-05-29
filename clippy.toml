@@ -1,0 +1,10 @@
+disallowed-types = [
+    # { path = "usize", reason = "variable size" }, # cannot on now, because mocks use it and serde, even if there is no usize in type
+    { path = "f64", reason = "not supported in CosmWasm" },
+    { path = "f32", reason = "not supported in CosmWasm" },
+]
+
+disallowed-methods = [
+    "std::time::Duration::as_secs_f64",
+]
+msrv = "1.71.1"

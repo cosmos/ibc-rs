@@ -1,0 +1,94 @@
+name: Upload precompiled CosmWasm clients
+on:
+  pull_request:
+    paths:
+      - .github/workflows/upload-cw-clients.yaml
+      - Cargo.toml
+      - ci/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-query/**
+      - ibc-testkit/**
+      - ibc-derive/**
+  push:
+    branches: main
+    paths:
+      - .github/workflows/upload-cw-clients.yaml
+      - Cargo.toml
+      - ci/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-query/**
+      - ibc-testkit/**
+      - ibc-derive/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  upload-tendermint-cw-client:
+    name: Upload precompiled Tendermint CosmWasm client
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+
+      # `cosmwasm/optimizer` requires `Cargo.lock`. but currently,
+      # `Cargo.lock` is not committed, because `ibc-rs` is treated as library.
+      - name: Produce `Cargo.lock` file
+        run: cargo update -p ibc-client-tendermint-cw
+
+      - name: Create mount directories
+        run: mkdir -p "${HOME}/.cargo/registry" "$(pwd)"/target
+
+      - name: Compile cosmwasm blob for tendermint light client
+        run: |
+          docker run \
+          -v "$(pwd)":/code \
+          -v "$(pwd)"/target:/target \
+          -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
+          cosmwasm/optimizer:0.15.1 ./ibc-clients/ics07-tendermint/cw-contract
+
+      - name: Fix permissions
+        run: |
+          sudo chown -R $(id -u):$(id -g) "$(pwd)"/target
+          sudo chown -R $(id -u):$(id -g) "${HOME}/.cargo/registry"
+
+      - name: Install `cosmwasm-check` from crates.io
+        uses: baptiste0928/cargo-install@v3
+        with:
+          crate: cosmwasm-check
+
+      - name: Check compiled CosmWasm contract
+        working-directory: artifacts
+        run: |
+          sha256sum -c checksums.txt
+          cosmwasm-check ibc_client_tendermint_cw.wasm
+
+      - name: Upload compiled CosmWasm contract
+        uses: actions/upload-artifact@v4
+        with:
+          name: tendermint-cw-client
+          path: artifacts/ibc_client_tendermint_cw.wasm
+          # Retain the artifact for 1 week for PRs and 3 months for `main` branch
+          retention-days: ${{ github.event_name == 'pull_request' && 7 || 90 }}
+          overwrite: true
+
+      # # An example workflow to download the artifact:
+      # - uses: actions/download-artifact@v4
+      #   with:
+      #     name: tendermint-cw-client
+      #     repository: cosmos/ibc-rs
+      #     run-id: ${{ env.UPLOAD_WASM_RUN_ID }}
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      # - run: ls ibc_client_tendermint_cw.wasm

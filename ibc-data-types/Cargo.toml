@@ -1,0 +1,100 @@
+[package]
+name         = "ibc-data-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc" ]
+readme       = "README.md"
+
+description = """
+    Maintained by `ibc-rs`, delineates standard data structures and domain types of the Inter-Blockchain Communication (IBC) protocol.
+    Designed for universal application, enabling diverse projects across IBC ecosystem to build using a shared language.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+ibc-app-transfer-types      = { workspace = true }
+ibc-core-client-types       = { workspace = true }
+ibc-core-connection-types   = { workspace = true }
+ibc-core-channel-types      = { workspace = true }
+ibc-core-commitment-types   = { workspace = true }
+ibc-core-host-types         = { workspace = true }
+ibc-core-router-types       = { workspace = true }
+ibc-core-handler-types      = { workspace = true }
+ibc-client-tendermint-types = { workspace = true }
+ibc-client-wasm-types       = { workspace = true }
+ibc-primitives              = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "ibc-app-transfer-types/std",
+  "ibc-core-client-types/std",
+  "ibc-core-connection-types/std",
+  "ibc-core-channel-types/std",
+  "ibc-core-commitment-types/std",
+  "ibc-core-host-types/std",
+  "ibc-core-router-types/std",
+  "ibc-core-handler-types/std",
+  "ibc-client-tendermint-types/std",
+  "ibc-client-wasm-types/std",
+  "ibc-primitives/std",
+]
+serde = [
+  "ibc-app-transfer-types/serde",
+  "ibc-core-client-types/serde",
+  "ibc-core-connection-types/serde",
+  "ibc-core-channel-types/serde",
+  "ibc-core-commitment-types/serde",
+  "ibc-core-host-types/serde",
+  "ibc-core-router-types/serde",
+  "ibc-core-handler-types/serde",
+  "ibc-client-tendermint-types/serde",
+  "ibc-client-wasm-types/serde",
+  "ibc-primitives/serde",
+]
+borsh = [
+  "ibc-app-transfer-types/borsh",
+  "ibc-core-client-types/borsh",
+  "ibc-core-connection-types/borsh",
+  "ibc-core-channel-types/borsh",
+  "ibc-core-commitment-types/borsh",
+  "ibc-core-host-types/borsh",
+  "ibc-core-router-types/borsh",
+  "ibc-core-handler-types/borsh",
+  "ibc-client-tendermint-types/borsh",
+  "ibc-primitives/borsh",
+]
+schema = [
+  "ibc-app-transfer-types/schema",
+  "ibc-core-client-types/schema",
+  "ibc-core-connection-types/schema",
+  "ibc-core-channel-types/schema",
+  "ibc-core-commitment-types/schema",
+  "ibc-core-host-types/schema",
+  "ibc-core-router-types/schema",
+  "ibc-core-handler-types/schema",
+  "ibc-client-tendermint-types/schema",
+  "ibc-client-wasm-types/schema",
+  "ibc-primitives/schema",
+]
+parity-scale-codec = [
+  "ibc-app-transfer-types/parity-scale-codec",
+  "ibc-core-client-types/parity-scale-codec",
+  "ibc-core-connection-types/parity-scale-codec",
+  "ibc-core-channel-types/parity-scale-codec",
+  "ibc-core-commitment-types/parity-scale-codec",
+  "ibc-core-host-types/parity-scale-codec",
+  "ibc-core-router-types/parity-scale-codec",
+  "ibc-core-handler-types/parity-scale-codec",
+  "ibc-client-tendermint-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+]
+cosmwasm = [
+  "ibc-client-wasm-types/cosmwasm",
+]

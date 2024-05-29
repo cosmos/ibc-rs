@@ -1,0 +1,47 @@
+[package]
+name         = "ibc-apps"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "applications", "token-transfer" ]
+readme       = "README.md"
+
+description = """
+    Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement various
+    IBC applications, enabling smooth integration of IBC business logic into any blockchain system.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+ibc-app-transfer     = { workspace = true }
+ibc-app-nft-transfer = { workspace = true, optional = true, features = [ "std", "serde", "schema", "borsh", "parity-scale-codec" ] }
+ibc-app-interchain-accounts = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "ibc-app-transfer/std",
+  "nft-transfer",
+]
+serde = [
+  "ibc-app-transfer/serde",
+]
+schema = [
+  "ibc-app-transfer/schema",
+  "serde",
+  "std",
+]
+borsh = [
+  "ibc-app-transfer/borsh",
+]
+parity-scale-codec = [
+  "ibc-app-transfer/parity-scale-codec",
+]
+nft-transfer = [
+  "ibc-app-nft-transfer",
+]

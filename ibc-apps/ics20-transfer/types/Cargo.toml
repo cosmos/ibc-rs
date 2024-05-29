@@ -1,0 +1,76 @@
+[package]
+name         = "ibc-app-transfer-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "transfer", "ics20" ]
+readme       = "./../../README.md"
+
+description = """
+    Maintained by `ibc-rs`, encapsulates essential ICS-20 Fungible Token Transfer data structures and
+    domain types, as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal
+    applicability to facilitate development and integration across diverse IBC-enabled projects.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh           = { workspace = true, optional = true }
+derive_more     = { workspace = true }
+displaydoc      = { workspace = true }
+primitive-types = { version = "0.12.2", default-features = false, features = [ "serde_no_std" ] }
+schemars        = { workspace = true, optional = true }
+serde           = { workspace = true, optional = true }
+uint            = { version = "0.9", default-features = false }
+
+# ibc dependencies
+ibc-core  = { workspace = true }
+ibc-proto = { workspace = true }
+
+## parity dependencies
+parity-scale-codec = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+rstest     = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "serde/std",
+  "serde_json/std",
+  "displaydoc/std",
+  "uint/std",
+  "primitive-types/std",
+  "ibc-core/std",
+  "ibc-proto/std",
+]
+serde = [
+  "dep:serde",
+  "ibc-core/serde",
+  "ibc-proto/serde",
+]
+schema = [
+  "dep:schemars",
+  "ibc-core/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
+]
+borsh = [
+  "dep:borsh",
+  "ibc-core/borsh",
+  "ibc-proto/borsh",
+]
+parity-scale-codec = [
+  "dep:parity-scale-codec",
+  "dep:scale-info",
+  "ibc-core/parity-scale-codec",
+  "ibc-proto/parity-scale-codec",
+]

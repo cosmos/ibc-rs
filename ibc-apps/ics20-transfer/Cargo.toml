@@ -1,0 +1,57 @@
+[package]
+name         = "ibc-app-transfer"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "transfer", "ics20" ]
+readme       = "./../README.md"
+
+description = """
+    Maintained by `ibc-rs`, contains the implementation of the ICS-20 Fungible Token Transfer
+    application logic and re-exports essential data structures and domain types from
+    `ibc-app-transfer-types` crate.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+serde_json = { workspace = true, optional = true }
+
+# ibc dependencies
+ibc-core               = { workspace = true }
+ibc-app-transfer-types = { workspace = true }
+
+[dev-dependencies]
+subtle-encoding = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "ibc-app-transfer-types/std",
+  "ibc-core/std",
+  "serde_json/std",
+]
+serde = [
+  "ibc-app-transfer-types/serde",
+  "ibc-core/serde",
+  "serde_json",
+]
+schema = [
+  "ibc-app-transfer-types/schema",
+  "ibc-core/schema",
+  "serde",
+  "std",
+]
+borsh = [
+  "ibc-app-transfer-types/borsh",
+  "ibc-core/borsh",
+]
+parity-scale-codec = [
+  "ibc-app-transfer-types/parity-scale-codec",
+  "ibc-core/parity-scale-codec",
+]

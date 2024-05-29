@@ -2,44 +2,51 @@ name: no_std check
 on:
   pull_request:
     paths:
-      - .github/workflows/no-std.yml
+      - .github/workflows/no-std.yaml
       - Cargo.toml
       - Cargo.lock
+      - ci/no-std-check/**
       - ci/**
-      - crates/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-derive/**
   push:
-    branches: main
-    paths:
-      - .github/workflows/no-std.yml
-      - Cargo.toml
-      - Cargo.lock
-      - ci/**
-      - crates/**
+    tags:
+      - v[0-9]+.*
+    branches:
+      - "release/*"
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main' }}
 
 jobs:
   check-no-std-panic-conflict:
     name: Check no_std panic conflict
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-          override: true
       - run: |
           cd ci/no-std-check
-          make check-panic-conflict
+          make check-no-std
 
   check-substrate:
     name: Check no_std substrate support
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: nightly
+          toolchain: nightly-2024-02-24
           target: wasm32-unknown-unknown
-          override: true
       - run: |
           cd ci/no-std-check
           make check-substrate

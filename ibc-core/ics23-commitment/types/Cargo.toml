@@ -1,0 +1,75 @@
+[package]
+name         = "ibc-core-commitment-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "commitment", "types" ]
+readme       = "./../../README.md"
+
+description = """
+    Maintained by `ibc-rs`, encapsulates essential ICS-23 Vector Commitments data structures and domain types,
+    as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal applicability
+    to facilitate development and integration across diverse IBC-enabled projects.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh           = { workspace = true, optional = true }
+derive_more     = { workspace = true, features = [ "as_ref" ] }
+displaydoc      = { workspace = true }
+schemars        = { workspace = true, optional = true }
+serde           = { workspace = true, optional = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-proto      = { workspace = true }
+ibc-primitives = { workspace = true }
+ics23          = { version = "0.11", default-features = false, features = [ "host-functions" ] }
+
+# parity dependencies
+parity-scale-codec = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
+
+[dev-dependencies]
+rstest = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "displaydoc/std",
+  "serde/std",
+  "subtle-encoding/std",
+  "ibc-primitives/std",
+  "ibc-proto/std",
+  "ics23/std",
+]
+serde = [
+  "dep:serde",
+  "ibc-primitives/serde",
+  "ibc-proto/serde",
+  "ics23/serde",
+]
+schema = [
+  "dep:schemars",
+  "ibc-proto/json-schema",
+  "ibc-primitives/schema",
+  "serde",
+  "std",
+]
+borsh = [
+  "dep:borsh",
+  "ibc-proto/borsh",
+  "ibc-primitives/borsh",
+]
+parity-scale-codec = [
+  "dep:parity-scale-codec",
+  "dep:scale-info",
+  "ibc-primitives/parity-scale-codec",
+  "ibc-proto/parity-scale-codec",
+]

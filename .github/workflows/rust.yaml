@@ -1,0 +1,176 @@
+name: Rust
+on:
+  pull_request:
+    paths:
+      - .github/workflows/rust.yaml
+      - Cargo.toml
+      - ci/**
+      - ibc/**
+      - ibc-core/**
+      - ibc-apps/**
+      - ibc-data-types/**
+      - ibc-clients/**
+      - ibc-primitives/**
+      - ibc-query/**
+      - ibc-testkit/**
+      - ibc-derive/**
+  push:
+    tags:
+      - v[0-9]+.*
+    branches:
+      - "release/*"
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !startsWith(github.ref, 'refs/tags/') && github.ref != 'refs/heads/main' }}
+
+env:
+  CARGO_INCREMENTAL: 0
+  CARGO_PROFILE_DEV_DEBUG: 1
+  CARGO_PROFILE_RELEASE_DEBUG: 1
+  RUST_BACKTRACE: short
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+
+jobs:
+  check-features:
+    name: Check features
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+      - name: Run cargo hack
+        run: make check-features
+
+  nightly_fmt:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: nightly # Since fmt uses unstable features for organizing imports
+          components: rustfmt
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+
+  clippy_all_features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --all-features --all-targets
+
+  clippy_no_default_features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+          components: clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --no-default-features --lib
+
+  doc_all_features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --all-features --release
+
+  doc_no_default_features:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
+        with:
+          command: doc
+          args: --no-default-features --release
+
+  test-stable:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features --no-fail-fast --no-run
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all-features --no-fail-fast --workspace -- --nocapture
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --no-default-features --no-fail-fast --no-run
+
+  test-msrv:
+    timeout-minutes: 30
+    env:
+      CARGO_MSRV_VERSION: 0.16.0-beta.20
+      MSRV: 1.71.1
+    strategy:
+      matrix:
+        param:
+          [
+            { os: ubuntu-latest, system: unknown-linux-gnu },
+            { os: macos-latest, system: apple-darwin },
+          ]
+    runs-on: ${{ matrix.param.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download cargo-msrv
+        uses: dsaltares/fetch-gh-release-asset@master
+        with:
+          repo: foresterre/cargo-msrv
+          version: "tags/v${{ env.CARGO_MSRV_VERSION }}"
+          file: "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}.tgz"
+
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: ${{ env.MSRV }}
+
+      - name: Install cargo-msrv
+        run: |
+          tar -xzf "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}.tgz"
+          mv "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}/cargo-msrv" ~/.cargo/bin
+          cargo msrv --version
+
+      - name: Calculate MSRV
+        run: cargo msrv --output-format minimal --min 1.64.0
+
+      - name: Build with MSRV
+        uses: actions-rs/cargo@v1
+        with:
+          toolchain: ${{ env.MSRV }}
+          command: build
+          args: --all-features

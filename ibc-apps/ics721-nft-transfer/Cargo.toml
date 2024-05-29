@@ -1,0 +1,54 @@
+[package]
+name         = "ibc-app-nft-transfer"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "cosmos", "ibc", "nft", "transfer", "ics721" ]
+readme       = "./../README.md"
+
+description = """
+    Maintained by `ibc-rs`, contains the implementation of the ICS-721 Non-Fungible Token Transfer
+    application logic and re-exports essential data structures and domain types from
+    `ibc-app-nft-transfer-types` crate.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+serde_json = { workspace = true, optional = true }
+
+# ibc dependencies
+ibc-app-nft-transfer-types = { workspace = true }
+ibc-core                   = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "ibc-app-nft-transfer-types/std",
+  "ibc-core/std",
+  "serde_json/std",
+]
+serde = [
+  "ibc-app-nft-transfer-types/serde",
+  "ibc-core/serde",
+  "serde_json",
+]
+schema = [
+  "ibc-app-nft-transfer-types/schema",
+  "ibc-core/schema",
+  "serde",
+  "std",
+]
+borsh = [
+  "ibc-app-nft-transfer-types/borsh",
+  "ibc-core/borsh",
+]
+parity-scale-codec = [
+  "ibc-app-nft-transfer-types/parity-scale-codec",
+  "ibc-core/parity-scale-codec",
+]

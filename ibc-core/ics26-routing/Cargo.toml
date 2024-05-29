@@ -1,0 +1,67 @@
+[package]
+name         = "ibc-core-router"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "routing" ]
+readme       = "./../README.md"
+
+description = """
+    Maintained by `ibc-rs`, contains necessary traits to implement the routing and callback functionality
+    (IBC router module) used for connecting the application layer to the transport layer of an IBC enabled chain.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+derive_more     = { workspace = true }
+displaydoc      = { workspace = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-primitives         = { workspace = true }
+ibc-core-channel-types = { workspace = true }
+ibc-core-host-types    = { workspace = true }
+ibc-core-router-types  = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "displaydoc/std",
+  "subtle-encoding/std",
+  "ibc-primitives/std",
+  "ibc-core-channel-types/std",
+  "ibc-core-host-types/std",
+  "ibc-core-router-types/std",
+]
+serde = [
+  "ibc-primitives/serde",
+  "ibc-core-channel-types/serde",
+  "ibc-core-host-types/serde",
+  "ibc-core-router-types/serde",
+]
+borsh = [
+  "ibc-primitives/borsh",
+  "ibc-core-channel-types/borsh",
+  "ibc-core-host-types/borsh",
+  "ibc-core-router-types/borsh",
+]
+schema = [
+  "ibc-core-channel-types/schema",
+  "ibc-core-host-types/schema",
+  "ibc-core-router-types/schema",
+  "ibc-primitives/schema",
+  "serde",
+  "std",
+]
+parity-scale-codec = [
+  "ibc-core-channel-types/parity-scale-codec",
+  "ibc-core-host-types/parity-scale-codec",
+  "ibc-core-router-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+]

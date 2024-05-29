@@ -13,7 +13,7 @@ This ADR is meant to address the main limitation of our current light client API
     + By giving the light clients access to `ValidationContext` and `ExecutionContext`, we're effectively giving them the same capabilities as the core handlers.
     + Although our current model is that all code is trusted (including light clients we didn't write), restraining the capabilities we give to light clients at the very least eliminates a class of bugs (e.g. calling the wrong method), and serves as documentation for exactly which methods the light client needs.
 
-This ADR is all about fixing this issue; namely, to enable light clients to define their own `ValidationContext` and `ExecutionContext` traits for the host to implement. 
+This ADR is all about fixing this issue; namely, to enable light clients to define their own `ValidationContext` and `ExecutionContext` traits for the host to implement.
 
 [ADR 4]: ../architecture/adr-004-light-client-crates-extraction.md
 [later improved]: https://github.com/cosmos/ibc-rs/pull/584
@@ -26,9 +26,9 @@ This ADR is all about fixing this issue; namely, to enable light clients to defi
 
 ### Changes to `ClientState`
 
-The `ClientState` functionality is split into 3 traits: 
-+ `ClientStateCommon`, 
-+ `ClientStateValidation<ClientValidationContext>`, and 
+The `ClientState` functionality is split into 3 traits:
++ `ClientStateCommon`,
++ `ClientStateValidation<ClientValidationContext>`, and
 + `ClientStateExecution<ClientExecutionContext>`
 
 Then, `ClientState` is defined as
@@ -68,7 +68,7 @@ where
         &self,
         ctx: &ClientValidationContext,
         // ...
-    ) -> Result<(), ClientError> { 
+    ) -> Result<(), ClientError> {
         // `get_resource_Y()` accessible through `ctx`
     }
 
@@ -93,7 +93,7 @@ where `ClientExecutionContext` is defined as (simplified)
 
 ```rust
 pub trait ClientExecutionContext: Sized {
-    // ... a few associated types 
+    // ... a few associated types
 
     /// Called upon successful client creation and update
     fn store_client_state(
@@ -193,10 +193,8 @@ enum AnyConsensusState {
 }
 
 #[derive(ClientState)]
-#[generics(
-    ClientValidationContext = MyClientValidationContext,
-    ClientExecutionContext  = MyClientExecutionContext
-)]
+#[validation(MyClientValidationContext)]
+#[execution(MyClientExecutionContext)]
 enum AnyClientState {
     Tendermint(TmClientState),
     Near(NearClientState),
@@ -237,7 +235,7 @@ We ended up having to write our own custom derive macros because existing crates
 
 ### Negative
 + Increased complexity.
-+ Harder to document. 
++ Harder to document.
     + Specifically, we do not write any trait bounds on the `Client{Validation, Execution}Context` generic parameters. The effective trait bounds are spread across all light client implementations that a given host uses.
 
 

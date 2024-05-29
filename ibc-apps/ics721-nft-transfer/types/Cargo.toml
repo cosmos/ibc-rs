@@ -1,0 +1,83 @@
+[package]
+name         = "ibc-app-nft-transfer-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "cosmos", "ibc", "transfer", "nft", "ics721" ]
+readme       = "./../../README.md"
+
+description = """
+    Maintained by `ibc-rs`, encapsulates essential ICS-721 Non-Fungible Token Transfer data structures and
+    domain types, as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal
+    applicability to facilitate development and integration across diverse IBC-enabled projects.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh       = { workspace = true, optional = true }
+base64      = { workspace = true, features = [ "alloc" ] }
+derive_more = { workspace = true }
+displaydoc  = { workspace = true }
+http        = { version = "1.0.0" }
+mime        = { version = "0.3.17" }
+schemars    = { workspace = true, optional = true }
+serde       = { workspace = true, optional = true }
+serde_json  = { workspace = true }
+
+# ibc dependencies
+ibc-core               = { workspace = true }
+ibc-proto              = { workspace = true }
+ibc-app-transfer-types = { workspace = true }
+
+## parity dependencies
+parity-scale-codec = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
+
+[dev-dependencies]
+rstest = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "serde/std",
+  "serde_json/std",
+  "base64/std",
+  "displaydoc/std",
+  "http/std",
+  "ibc-core/std",
+  "ibc-proto/std",
+  "ibc-app-transfer-types/std",
+]
+serde = [
+  "dep:serde",
+  "ibc-core/serde",
+  "ibc-proto/serde",
+  "ibc-app-transfer-types/serde",
+]
+schema = [
+  "dep:schemars",
+  "ibc-core/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
+  "ibc-app-transfer-types/schema",
+]
+borsh = [
+  "dep:borsh",
+  "ibc-core/borsh",
+  "ibc-proto/borsh",
+  "ibc-app-transfer-types/borsh",
+]
+parity-scale-codec = [
+  "dep:parity-scale-codec",
+  "dep:scale-info",
+  "ibc-core/parity-scale-codec",
+  "ibc-proto/parity-scale-codec",
+  "ibc-app-transfer-types/parity-scale-codec",
+]

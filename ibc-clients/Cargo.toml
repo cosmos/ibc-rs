@@ -1,0 +1,45 @@
+[package]
+name         = "ibc-clients"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "applications", "tendermint" ]
+readme       = "README.md"
+
+description = """
+    Maintained by `ibc-rs`, re-exports a comprehensive set of libraries that implement
+    various IBC light clients, enabling smooth integration with IBC-enabled blockchains.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+ibc-client-tendermint = { workspace = true }
+ibc-client-wasm-types = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "ibc-client-tendermint/std",
+  "ibc-client-wasm-types/std",
+]
+serde = [
+  "ibc-client-tendermint/serde",
+  "ibc-client-wasm-types/serde",
+]
+schema = [
+  "ibc-client-tendermint/schema",
+  "ibc-client-wasm-types/schema",
+  "serde",
+  "std",
+]
+borsh = [
+  "ibc-client-tendermint/borsh",
+]
+parity-scale-codec = [
+  "ibc-client-tendermint/parity-scale-codec",
+]

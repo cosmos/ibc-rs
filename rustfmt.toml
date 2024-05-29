@@ -1,0 +1,5 @@
+reorder_imports = true
+
+# unstable features
+group_imports = "StdExternalCrate"
+imports_granularity = "Module"

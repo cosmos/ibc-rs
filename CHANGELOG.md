@@ -1,5 +1,680 @@
 # CHANGELOG
 
+## v0.53.0
+
+*May 13, 2024*
+
+This release overhauls the `ibc-testkit` crate such that it is now able to:
+
+- simulate more realistic IBC workflows by utilizing real IBC and relayer
+  interfaces (as opposed to mocked versions)
+- validate code paths that were not easily testable beforehand, such as Merkle
+  proof generation
+- compose tests in a much more succinct and readable fashion
+
+Note that the drastic changes made to `ibc-testkit`'s structs and types are
+breaking changes.
+
+For more information and background context on the changes to `ibc-testkit` and
+the rationale behind the overhaul, please refer to [ADR 009][adr-009].
+
+This release also includes two fixes. One is to reject packets without height
+and timestamp timeout. The other is to correct the proof verification logic for
+a `PacketTimeout` due to a closed channel, which was verifying an incorrect
+field. It also bumps the minimum-supported version of `ibc-proto` to 0.44, and
+the version of `tendermint` to 0.36. Note that the minimum-supported Rust
+version was reverted back to 1.71.1.
+
+[adr-009]: https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/adr-009-revamp-testkit.md
+
+### BUG FIXES
+
+- [ibc-core] Reject IBC packets without height and timestamp timeout.
+  ([\#1198](https://github.com/cosmos/ibc-rs/issues/1198))
+- [ibc-core] Fix proof verification for `PacketTimeout` on a closed channel.
+  ([\#1217](https://github.com/cosmos/ibc-rs/issues/1217))
+
+### IMPROVEMENTS
+
+- [ibc-testkit] Replace `HostBlock` and `HostType` enums with a `Host` trait to
+  eliminate manual delegations by utilizing monomorphization.
+  ([\#1044](https://github.com/cosmos/ibc-rs/issues/1044))
+- [ibc-testkit] Major refactor of the `ibc-testkit` via
+  [ADR-09](https://github.com/cosmos/ibc-rs/blob/main/docs/architecture/adr-009-revamp-testkit.md).
+  ([\#1109](https://github.com/cosmos/ibc-rs/issues/1109))
+- [ibc-core] Replace fixed `ClientError` associated type restriction with an
+  `Into<ClientError>` trait bound.
+  ([\#1203](https://github.com/cosmos/ibc-rs/issues/1203))
+- Update `ibc-proto` to v0.44.0 and `tendermint` dependencies to v0.36.0.
+  ([\#1212](https://github.com/cosmos/ibc-rs/issues/1212))
+- Revert Rust minimum supported version to `1.71.1`.
+  ([\#1206](https://github.com/cosmos/ibc-rs/pull/1206))
+
+## v0.52.0
+
+*April 26, 2024*
+
+This release adds some exciting changes, improvements, and new features to ibc-rs.
+First and foremost, support for the IBC protocol's [client recovery][client-recovery]
+mechanism has been implemented, which provides a route for frozen and expired IBC clients
+to be re-instated following a successful governance vote. In addition, a new crate,
+`ibc-client-cw`, facilitates CosmWasm contract creation for light clients built using
+`ibc-rs`. Lastly, the ics07 tendermint light client has also been packaged and included
+as a CosmWasm contract.
+
+This release also includes a myriad of other bug-fixes and improvements,
+such as enhancing the portability of ibc-rs's Validation and Execution Context traits,
+as well as fixing an incompatibility with how ibc-rs parses `PrefixDenom`s compared
+to ibc-go, among many others.
+
+The minimum-supported Rust version has been updated to `1.72`. `ibc-proto` has been
+bumped to `0.43`. `tendermint` has been bumped to `0.35`. `ibc-derive` has been
+bumped to `0.7`.
+
+There are no consensus-breaking changes as part of this release.
+
+### BREAKING CHANGES
+
+- [ibc] Enhance portability of custom `Validation/ExecutionContext` traits under
+  ICS-07. They are relocated, along with the rest of the
+  client-relevant context APIs, under ICS-02, with the traits renamed to
+  `ExtClientValidationContext` and `ExtClientExecutionContext` for improved
+  self-description ([\#1163](https://github.com/cosmos/ibc-rs/issues/1163))
+- [ibc-client-tendermint] Simplify custom verifiers usage for Tendermint
+  clients by directly binding with `tendermint_light_client_verifier::Verifier`
+  and removing the unused `TmVerifier` trait.
+  ([\#1168](https://github.com/cosmos/ibc-rs/pull/1168))
+- [ibc] Update minimum supported Rust version to 1.72.
+  ([\#1193](https://github.com/cosmos/ibc-rs/issues/1193))
+
+### BUG FIXES
+
+- [ibc-query] Update standalone query functions to use the specified query
+  height ([\#1154](https://github.com/cosmos/ibc-rs/issues/1154))
+- [ibc-app-transfer] Bring `PrefixedDenom` parsing up to parity with `ibc-go`.
+  ([\#1177](https://github.com/cosmos/ibc-rs/issues/1177))
+- [ibc-app-nft-transfer] Reuse `TracePrefix` and `TracePath` from
+  `ibc-app-transfer-types` when parsing `PrefixedClassId`.
+  ([\#1178](https://github.com/cosmos/ibc-rs/pull/1178))
+- [ibc-core-channel-types] Make receive packet event type identifier consistent
+  with `ibc-go`. ([\#1180](https://github.com/cosmos/ibc-rs/issues/1180))
+
+### FEATURES
+
+- [ibc-core-client] Implement [client recovery][client-recovery] feature.
+  ([\#738](https://github.com/cosmos/ibc-rs/issues/738))
+- [ibc-clients] Introduce CosmWasm context library as `ibc-client-cw` crate to
+  facilitate CosmWasm contract creation for light clients built using `ibc-rs`
+  ([\#1164](https://github.com/cosmos/ibc-rs/issues/1164))
+- [ibc-client-tendermint] Introduce `ibc-client-tendermint-cw` crate
+  implementing CosmWasm contract for ICS-07 Tendermint light client.
+  ([\#1165](https://github.com/cosmos/ibc-rs/issues/1165))
+
+[client-recovery]: https://github.com/cosmos/ibc-go/blob/main/docs/architecture/adr-026-ibc-client-recovery-mechanisms.md
+
+### IMPROVEMENTS
+
+- [ibc-core-commitment-types] Fallible conversion for `ProofSpec`, `LeafOp` and
+  `InnerSpec`. ([\#1108](https://github.com/cosmos/ibc-rs/issues/1108))
+- [ibc-client-tendermint-types] Box header fields inside of Misbehaviour type so
+  that the type is smaller (i.e. trade size of the type for heap memory). This
+  prevents stack overflows on systems with small stack (e.g. Solana).
+  ([\#1145](https://github.com/cosmos/ibc-rs/pull/1145))
+- [ibc-client-tendermint] Decouple the arguments of ICS07 Header/Misbehavior
+  verification functions from the Tendermint client type by flattening and
+  passing only the required fields.
+  ([\#1149](https://github.com/cosmos/ibc-rs/issues/1149))
+- [ibc-query] Add support for querying `upgraded_client/consensus_state` at a
+  given height along with returning their proof of existence in the response.
+  ([\#1152](https://github.com/cosmos/ibc-rs/issues/1152))
+- [ibc-client-tendermint] Add `into_inner()` method to ICS07 `ConsensusState`
+  ([\#1156](https://github.com/cosmos/ibc-rs/pull/1156))
+- Update `ibc-proto` to v0.43.0 and `tendermint` dependencies to v0.35.0.
+  ([\#1171](https://github.com/cosmos/ibc-rs/issues/1171))
+
+## v0.51.0
+
+*March 26, 2024*
+
+This release introduces a few changes for better customizability. The main one is modularizing ICS-24, ICS-02, and ICS-07 trait implementations. This change empowers developers to write Rust light clients succinctly in a smart-contract context like CosmWasm. Also, the default Tendermint client state verifier is now detached to support custom verifiers, if required.
+
+In addition, this version fixes a bug where the consensus state is incorrectly stored when a header with an older height is submitted.
+
+Furthermore, a set of new host keys is added. This makes `ibc-rs` more consistent with the storage access of `ibc-go`. Also, access to client update information is merged into a single method; instead of individual details.
+
+This release updates the `ibc-proto-rs` dependency to `v0.42.2`. This takes account of the updated `MsgUpdateClient` and deprecates `MsgSubmitMisbehaviour`. Also, `ibc-derive` dependency is updated to `v0.6.1`.
+Finally, the minimum supported Rust version is corrected and updated to `1.71.1`.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- [ibc-core] Update `MsgUpdateClient` handler to accept misbehaviour reports via
+  its `client_message` field
+  ([\#835](https://github.com/cosmos/ibc-rs/issues/835))
+- [ibc-core-client] Merge client update time and height modification method
+  pairs into one, that is replace
+  a) client_update_{time,height} by update_meta,
+  b) store_update_{time,height} by store_update_meta and
+  c) delete_update_{time,height} by delete_update_meta.
+  ([\#973](https://github.com/cosmos/ibc-rs/issues/973))
+- [ibc] Refactor client relevant APIs for improved modularity and allow
+  standalone ICS-02 integration
+  ([\#1114](https://github.com/cosmos/ibc-rs/issues/1114))
+- [ibc] Increase minimum supported Rust version to 1.71.1
+  ([\#1118](https://github.com/cosmos/ibc-rs/issues/1118))
+- [ibc] Upgrade `ibc-proto-rs` to `v0.42.2`
+  ([\#1125](https://github.com/cosmos/ibc-rs/pull/1125))
+
+### BUG FIXES
+
+- [ibc] Add missing dependencies for some feature flags across multiple crates
+  ([\#1059](https://github.com/cosmos/ibc-rs/issues/1059))
+- [ibc-client-tendermint-types] Ease frozen Height check in the tendermint
+  `ClientState` protobuf deserialization, and consequently include frozen client
+  check for client creation path.
+  ([\#1061](https://github.com/cosmos/ibc-rs/issues/1061)),
+  ([\#1063](https://github.com/cosmos/ibc-rs/pull/1063))
+- [ibc-client-tendermint] Use header height for Tendermint consensus state storage
+  ([\#1080](https://github.com/cosmos/ibc-rs/issues/1080))
+- [ibc] Upgrade `serde_json` to "1.0.1" to address an stack overflow issue
+  within the `serde-json-wasm` crate
+  ([\#1083](https://github.com/cosmos/ibc-rs/pull/1083))
+- [ibc] Resolve potential `base64` dependency resolution issue by bringing it to
+  the workspace `Cargo.toml`
+  ([\#1084](https://github.com/cosmos/ibc-rs/issues/1084))
+- [ibc-client-tendermint-types] Check ics23 proof specs for empty depth range.
+  ([\#1100](https://github.com/cosmos/ibc-rs/issues/1100))
+
+### FEATURE
+
+- [ibc-core-host] Add remaining storage paths.
+  ([\#1065](https://github.com/cosmos/ibc-rs/issues/1065))
+- [ibc-core-host] Add iteration key for cross-compatibility with `ibc-go` used
+  for iterating over consensus states
+  ([\#1090](https://github.com/cosmos/ibc-rs/issues/1090))
+
+### IMPROVEMENTS
+
+- [ibc-core] Deprecate `ChannelEnd::order_matches` method
+  ([\#394](https://github.com/cosmos/ibc-rs/issues/394))
+- [ibc-apps] Ease `serde` derive on `ICS-20` and `ICS-721` types
+  ([\#1060](https://github.com/cosmos/ibc-rs/pull/1060))
+- [ibc-data-types] Refactor `Default` implementations with concrete names
+  ([\#1074](https://github.com/cosmos/ibc-rs/issues/1074))
+- [ibc-core] Deprecate `MsgSubmitMisbehaviour` in favor of `MsgUpdateClient` for
+  submitting misbehaviour reports
+  ([\#1077](https://github.com/cosmos/ibc-rs/issues/1077))
+- [ibc-core-host] Improve path segment access by exposing path prefixes and
+  implementing some convenient parent/leaf methods
+  ([\#1089](https://github.com/cosmos/ibc-rs/issues/1089))
+- [ibc-client-tendermint] Detach client state verifier such that users have a
+  way to utilize custom verifiers
+  ([\#1097](https://github.com/cosmos/ibc-rs/pull/1097))
+- [ibc-primitives] Use `let-else` over `downcast!()` and remove `utils/macros`
+  module as a result ([\#1118](https://github.com/cosmos/ibc-rs/issues/1118))
+- [ibc-core] Remove unnecessary shadowing with same value
+  ([\#1120](https://github.com/cosmos/ibc-rs/issues/1120))
+- [ibc-core-connection] Remove `State::Uninitialized` check while parsing
+  `ConnectionEnd` from Protobuf
+  ([\#1123](https://github.com/cosmos/ibc-rs/issues/1123))
+
+## v0.50.0
+
+*January 24, 2024*
+
+This release introduces several noteworthy libraries. A standout addition is the
+implementation of the ICS-721 NFT transfer application, enabling the transfer of
+NFT packets across chains that support this capability.
+
+In addition, It incorporates the ICS-08 Wasm light client data structure and
+types. This empowers light client developers to create CosmWasm contracts for
+deployment on Cosmos chains compatible with the version of `ibc-go` supporting
+ICS-08 Wasm client.
+
+Furthermore, this release addresses the issue with the macro derivation of the
+`ClientState` when contexts include generic types, exposes additional convenient
+types and serializers through `ibc-primitives` and includes a more flexible
+constructor for `MockContext` types within the `ibc-testkit` crate, allowing to
+write tests with diverse parameter combinations.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- [ibc] Bump `ibc-proto-rs` to v0.41.0
+  ([\#1036](https://github.com/cosmos/ibc-rs/pull/1036)).
+
+### BUG FIXES
+
+- [ibc-derive] Refactor `ClientState` macro derivation to handle contexts with
+  generic types. ([\#910](https://github.com/cosmos/ibc-rs/issues/910))
+- [ibc-derive] Adapt macro derivations to integrate with projects dependent on
+  `ibc-core` ([\#999](https://github.com/cosmos/ibc-rs/issues/999)).
+
+### FEATURES
+
+- [ibc-app-nft-transfer] Implement ICS-721 NFT transfer application
+  ([\#346](https://github.com/cosmos/ibc-rs/issues/346))
+- [ibc-client-wasm-types] Implement ICS-08 Wasm light client domain types
+  ([\#1030](https://github.com/cosmos/ibc-rs/issues/1030)).
+
+### IMPROVEMENTS
+
+- [ibc-data-types] Re-export clients' domain type from `ibc-data-types`
+  ([\#1041](https://github.com/cosmos/ibc-rs/pull/1041)).
+- [ibc-testkit] Deprecate `MockContext::new*` in favor of `MockContextConfig`.
+  ([\#1042](https://github.com/cosmos/ibc-rs/issues/1042))
+- [ibc-testkit] Remove field access of `MockContext`.
+  ([\#1043](https://github.com/cosmos/ibc-rs/issues/1043))
+- [ibc-testkit] Deprecate `MockContext::with_client*` in favor of
+  `MockContext::with_client_config`.
+  ([\#1049](https://github.com/cosmos/ibc-rs/issues/1049))
+- [ibc-primitives] Re-export additional google proto types, like `Timestamp`
+  and `Duration` for added convenience when developing IBC light clients or
+  applications. ([\#1054](https://github.com/cosmos/ibc-rs/pull/1054))
+- [ibc-primitives] Relocate `serializers.rs` module to reside within the
+  `ibc-primitives` crate extending its utility for a broader range of IBC
+  applications. ([\#1055](https://github.com/cosmos/ibc-rs/issues/1055))
+
+## v0.49.1
+
+*January 3, 2024*
+
+This release continues the trend of further decoupling dependencies between the
+different ibc-rs sub-crates and modules.
+
+In particular, the `prost` dependency is now only imported in the
+`ibc-primitives` crate; note that error variants originating from `prost` have
+largely been removed, which is a breaking change. The `bytes` dependency was
+also removed. Additionally, `CommitmentProofBytes` can now be accessed without
+explicit ownership of the object for which the proof is being queried for.
+
+Some other improvements of note include making the CosmWasm check more rigorous,
+streamlining the `Msg` trait and renaming it to `ToProto`, as well as
+implementing custom JSON and Borsh `ChainId` deserialization.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- `[ibc-app-transfer]` Refactor `send-coins-*()` methods by breaking them down
+  into distinct escrow and unescrow methods, enhancing both clarity and
+  specificity in functionality.
+  ([\#837](https://github.com/cosmos/ibc-rs/issues/837))
+- `[ibc-app-transfer]` Add `memo` field to `escrow-coins-*()` and
+  `burn-coins-*()` methods, allowing implementors to pass in arbitrary data
+  necessary for their use case.
+  ([\#839](https://github.com/cosmos/ibc-rs/issues/837))
+- `[ibc-core-host-type]` Optimize `IdentifierError` variants and make them
+  mutually exclusive. ([\#978](https://github.com/cosmos/ibc-rs/issues/978))
+- `[ibc-data-types]` Bump ibc-proto-rs dependency to v0.39.1.
+  ([\#993](https://github.com/cosmos/ibc-rs/issues/993))
+- `[ibc]` Minimize `prost` dependency by introducing `ToVec` trait
+  - Now `prost` is only imported in `ibc-primitives` crate
+  - Remove error variants originating from `prost` (Breaking change)
+  - Eliminate the need for the `bytes` dependency
+ ([\#997](https://github.com/cosmos/ibc-rs/issues/997))
+- `[ibc-core-host-types]` Introduce `ClientType::build_client_id` which avoids unnecessary validation.
+  ([#1014](https://github.com/cosmos/ibc-rs/issues/1014))
+- `[ibc-core-host-types]` Optimise `ClientId::new` to avoid unnecessary validation and temporary
+  string allocation. ([#1014](https://github.com/cosmos/ibc-rs/issues/1014))
+
+### FEATURES
+
+- `[ibc-core-commitment-types]` implement `AsRef<Vec<u8>>` and
+  `AsRef<[u8]>` for `CommitmentProofBytes` so it’s possible to gain
+  access to the proof byte slice without having to own the object.
+  ([#1008](https://github.com/cosmos/ibc-rs/pull/1008))
+
+### IMPROVEMENTS
+
+- `[cw-check]` More rigorous CosmWasm check by upgrading dependencies and
+  including `std` and `schema` features for `ibc-core`.
+  ([\#992](https://github.com/cosmos/ibc-rs/pull/992))
+- `[ibc-primitives]` streamline `Msg` trait and rename to `ToProto`
+ ([#993](https://github.com/cosmos/ibc-rs/issues/993))
+- `[ibc-core-host-types]` Implement custom JSON and Borsh deserialization for `ChainId` ([#996](https://github.com/cosmos/ibc-rs/pull/1013))
+- `[ibc-core-client-types]` Add a convenient `Status::verify_is_active` method.
+  ([#1005](https://github.com/cosmos/ibc-rs/pull/1005))
+- `[ibc-primitives]` Derive `Hash` on `Timestamp` instead of explicit
+  implementation ([#1011](https://github.com/cosmos/ibc-rs/pull/1005))
+- `[ibc-derive]` Use global paths in generated code by macros to prevent
+  namespace conflicts with local modules
+  ([#1017](https://github.com/cosmos/ibc-rs/pull/1017))
+
+## v0.48.2
+
+*December 22, 2023*
+
+This patch release resolves two issues. It corrects the packet sequence number
+encoding within Timeout message handlers to align with the big-endian format and
+addresses a recursive call error during the conversion from connection `State`
+to `i32`.
+
+There are no consensus-breaking changes.
+
+### BUG FIXES
+
+- `[ibc-core-host-types]` Encode packet sequence into a big endian bytes.
+  ([\#1004](https://github.com/cosmos/ibc-rs/pull/1004))
+- `[ibc-core-connection-types]` Fix recursive call in connection `State`
+  conversion to `i32` ([\#1010](https://github.com/cosmos/ibc-rs/issues/1010))
+
+## v0.48.1
+
+*November 27, 2023*
+
+This patch release eliminates the `dep:` syntax from the `serde` feature,
+addressing potential dependency resolution issue stemming from Rust v1.70.
+
+There are no consensus-breaking changes.
+
+### BUG FIXES
+
+- Fix Cargo test failure with `--no-default-features` flag.
+  ([\#770](https://github.com/cosmos/ibc-rs/issues/770))
+- Fix dependency resolution by removing the `dep:` syntax in `serde` feature of
+  `ibc-app-transfer` crate.
+  ([\#987](https://github.com/cosmos/ibc-rs/issues/987))
+
+## v0.48.0
+
+*November 22, 2023*
+
+In this release, we've undertaken a comprehensive overhaul of the **`ibc-rs`**
+repository, resulting in a strategic reorganization of the codebase. This
+restructuring dissects the implementation of each IBC specification,
+categorizing and situating them within relevant libraries. The primary objective
+is to elevate `ibc-rs` practicality and enhance user flexibility by providing a
+more modular and composable experience.
+
+Users now have the flexibility to choose from a spectrum of dependencies. They
+can opt to utilize the entire suite of meta-crates, such as `ibc`, `ibc-core`,
+`ibc-clients`, or `ibc-apps`. Alternatively, they can exercise fine-grained
+control by selectively importing specific crates. This can involve bringing in
+an entire implemented IBC sub-module, like the `ibc-core-client` crate, or
+importing only the associated data structures of a module, such as the
+`ibc-core-client-types` crate.
+
+Furthermore, this release introduces optimizations centered around construction
+and validation of ICS-24 host identifiers, aiming to curtail some heap
+allocations, beneficial for resource-constrained hosts.
+
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Move ICS-20 and ICS-27 implementations to the respective part of `ibc-apps`
+  and `ibc-clients` crates, as part of the `ibc` crate restructuring effort.
+  ([\#716](https://github.com/cosmos/ibc-rs/issues/716))
+- Bump `ibc-proto-rs` to v0.38.0
+  ([\#949](https://github.com/cosmos/ibc-rs/issues/949))
+- Bump minimum supported Rust version to 1.64
+  ([\#956](https://github.com/cosmos/ibc-rs/issues/956))
+- Restructure `ibc-rs` codebase by organizing it into smaller self-contained,
+  modular libraries, enabling the selective import of specific domain types or
+  module implementations, either individually or in combination, providing
+  enhanced flexibility and ease of use.
+  ([\#965](https://github.com/cosmos/ibc-rs/issues/965))
+
+### FEATURES
+
+- Restructure the mock module implementation and separate its codebase into a
+  new crate named `ibc-testkit`
+  ([\#954](https://github.com/cosmos/ibc-rs/issues/953))
+- Provide `Into<String>` for all identifiers types.
+  ([\#974](https://github.com/cosmos/ibc-rs/pull/974))
+
+### IMPROVEMENTS
+
+- Re-export essential proto types from the underlying `ibc-*-*-types` crates,
+  removing the necessity for a direct dependency on `ibc-proto` in projects
+  integrating `ibc-rs` ([\#697](https://github.com/cosmos/ibc-rs/issues/697))
+- Rename `{submodule}.rs` with corresponding `{submodule}` directory to
+  `{submodule}/mod.rs` ([\#771](https://github.com/cosmos/ibc-rs/issues/771))
+- Add From implementation for ICS26 enum types to make it simpler to construct
+  the types. ([\#938](https://github.com/cosmos/ibc-rs/pull/938))
+- Reduce vector allocations in Commitment computation.
+  ([\#939](https://github.com/cosmos/ibc-rs/pull/939))
+- Support chain identifiers without the `{chain_name}-{revision_number}` pattern
+  of Tendermint chains. ([\#940](https://github.com/cosmos/ibc-rs/issues/940)).
+- Remove redundant `String` creation in `validate_prefix_length`
+  ([\#943](https://github.com/cosmos/ibc-rs/issues/943)).
+- Remove redundant `#[test_log::test]` attributes in test modules
+  ([\#948](https://github.com/cosmos/ibc-rs/issues/948))
+- Remove the default value and implementation for `PortId`
+  ([\#951](https://github.com/cosmos/ibc-rs/issues/951))
+- Expose domain message types under the `ics04_channel` as public
+  ([\#952](https://github.com/cosmos/ibc-rs/issues/952))
+- Enhance dependency management with workspace inheritance
+  ([\#955](https://github.com/cosmos/ibc-rs/issues/955))
+- Simplify and refactor ICS-24 identifier validation logic.
+  ([\#961](https://github.com/cosmos/ibc-rs/issues/961))
+- Reduce heap allocation by using `str` instead of `String` places we convert
+  domain event attributes to the ABCI event attributes
+  ([\#970](https://github.com/cosmos/ibc-rs/issues/970))
+- Expose various fields, types and functions in `ibc-rs` as public including:
+  - `validate` and `execute` handler functions for all the IBC message types.
+  - `TYPE_URL` constants.
+  - Any private fields within the domain message types.
+  - Any private fields within the Tendermint `ClientState` and `ConsensusState`
+  ([\#976](https://github.com/cosmos/ibc-rs/issues/976))
+
+## v0.47.0
+
+*October 19, 2023*
+
+This release adds necessary APIs for featuring consensus state pruning and
+implements pertaining logic for Tendermint light clients. This prevents
+unlimited store growth. Additionally, we've enhanced ibc-rs compatibility with
+no-float environments making Wasm compilation smoother and updated main
+dependencies including `prost` to v0.12, `ibc-proto-rs` to v0.37, and
+`tendermint-rs` to v0.34, ensuring the latest advancements.
+
+There are no consensus-breaking changes.
+
+### FEATURES
+
+- Implement consensus state pruning for Tendermint light clients. ([\#600](https://github.com/cosmos/ibc-rs/issues/600))
+
+### IMPROVEMENTS
+
+- Add test for expired client status.
+  ([\#538](https://github.com/cosmos/ibc-rs/issues/538))
+
+- Fix compilation issue with Wasm envs because of floats. ([\#850](https://github.com/cosmos/ibc-rs/issues/850))
+  - Use `serde-json-wasm` dependency instead of `serde-json` for no-floats support
+  - Add CI test to include CosmWasm compilation check
+
+- Change `mocks` feature to imply `std` since it requires
+  Timestamp::now to work.
+  ([\#926](https://github.com/cosmos/ibc-rs/pull/926))
+- Return PacketStates instead of paths from packet_commitments and
+  packet_acknowledgements. ([\#927](https://github.com/cosmos/ibc-rs/issues/927))
+- Remove `AnySchema` as `JsonSchema` derive on `Any` now accessible through
+  `ibc-proto-rs`. ([#929](https://github.com/cosmos/ibc-rs/issues/929))
+
+## v0.46.0
+
+*October 12, 2023*
+
+This release introduces vital bug fixes, including removal of an incorrect
+validation during a Tendermint client update and the addition of a missing state
+update during a successful client upgrade ensuring the inclusion of the host's
+height and timestamp in the store.
+
+Additionally, it eliminates the `safe-regex` dependency, and restructures IBC
+query implementations under the previous `grpc` feature flag and moves it to a
+separate crate called as `ibc-query`.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Relocate `*_update_time` and `*_update_height` to the client contexts' traits
+  for improved access by light clients
+  ([#914](https://github.com/cosmos/ibc-rs/issues/914))
+
+### BUG FIXES
+
+- Remove an incorrect validation during tendermint client update
+  ([\#911](https://github.com/cosmos/ibc-rs/issues/911))
+- Add missing update in the state, which should include the host's height and
+   timestamp when a successful client upgrade take place.
+   ([\#913](https://github.com/cosmos/ibc-rs/issues/913))
+
+### IMPROVEMENTS
+
+- Remove `safe-regex` dependency
+  ([\#875](https://github.com/cosmos/ibc-rs/issues/875))
+- Enhance IBC query methods usability and code organization
+  - The implementation of query methods is now publicly accessible as standalone functions.
+  - `grpc` feature now lives as a separate crate called as `ibc-query`
+  ([#896](https://github.com/cosmos/ibc-rs/issues/896))
+- Re-export ibc proto types from `ibc-proto-rs`` for dep
+
+## v0.45.0
+
+*September 20, 2023*
+
+This release introduces a new API under the `grpc` feature flag, which has ibc-rs expose grpc endpoints that the hermes relayer needs. Furthermore, `no_std` support for the `serde` feature has been restored, accompanied by other miscellaneous changes.
+There are no consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Bump tendermint-rs to v0.33.0
+  ([#785](https://github.com/cosmos/ibc-rs/issues/785))
+- Bump ibc-proto-rs to v0.34.0
+  ([#790](https://github.com/cosmos/ibc-rs/issues/790))
+- Allow hosts to handle overflow cases in `increase_*_counter` methods by
+  returning `Result<(),ContextError>` type.
+  ([#857](https://github.com/cosmos/ibc-rs/issues/857))
+- logger and event emitter methods return `Result<(), ContextError>` type.
+  ([#859](https://github.com/cosmos/ibc-rs/issues/859))
+- Bump `ibc-proto-rs` to v0.35.0 along with some other minor dependency updates
+  ([#873](https://github.com/cosmos/ibc-rs/issues/873))
+
+### BUG FIXES
+
+- Fix compilation error of v0.41.0 by restoring no_std support for serde
+  feature ([#741](https://github.com/cosmos/ibc-rs/issues/741))
+- Replace mutable ref with immutable ref in validate handler
+  ([\#863](https://github.com/cosmos/ibc-rs/issues/863))
+
+### FEATURES
+
+- Blanket implementation of core gRPC services
+  ([\#686](https://github.com/cosmos/ibc-rs/issues/686))
+
+### IMPROVEMENTS
+
+- Switch to domain Tendermint event type instead of proto for the
+  `upgrade_client_proposal_handler` return
+  ([#838](https://github.com/cosmos/ibc-rs/issues/838))
+- Bump ibc-proto to v0.34.1 and borsh to v0.10
+  ([#844](https://github.com/cosmos/ibc-rs/issues/844))
+- Add borsh derive for `MsgTransfer`
+  ([#845](https://github.com/cosmos/ibc-rs/pull/845))
+- Add borsh derive for `MsgEnvelope`
+  ([#846](https://github.com/cosmos/ibc-rs/pull/846))
+- Derive `PartialEq`, `Eq` for `MsgEnvelope`
+  ([#847](https://github.com/cosmos/ibc-rs/pull/847))
+- Organize imports grouping and granularity using `rustfmt.toml`
+  ([#848](https://github.com/cosmos/ibc-rs/issues/848))
+- Add `JsonSchema` derive for `MsgEnvelope`
+  ([#856](https://github.com/cosmos/ibc-rs/pull/856))
+- Remove unused code snippets and move serializer roundtrip test to `serializers.rs`
+  ([#869](https://github.com/cosmos/ibc-rs/issues/869))
+
+## v0.44.2
+
+*October 12, 2023*
+
+This release is a critical patch release that introduces a vital fix by removing
+an incorrect validation during a Tendermint client update.
+
+There are no consensus-breaking changes.
+
+## v0.44.1
+
+*August 4, 2023*
+
+This release fixes a bug with the `UpdateClient` event where the `header` field was not properly encoded.
+
+There are no consensus-breaking changes.
+
+### BUG FIXES
+
+- Remove traces of deprecated `mocks-no-std` feature
+  ([#819](https://github.com/cosmos/ibc-rs/issues/821))
+- Utilize encoded bytes from `Any` for the `header` field of `UpdateClient`
+  event
+  ([#821](https://github.com/cosmos/ibc-rs/issues/821))
+
+## v0.44.0
+
+*August 4, 2023*
+
+The goal with this release was to replace `ClientState::{confirm_not_frozen, expired}()` with `ClientState::status()` ([#536](https://github.com/cosmos/ibc-rs/issues/536)). Updating basecoin-rs with the new changes exposed the shortcomings of having `SendPacket*Context` be supertraits of `TokenTransfer*Context`, which in turned exposed the shortcomings of having `Router` be a supertrait of `ValidationContext`. Hence, we decoupled everything!
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- [ibc-derive] Replace `ClientState::{confirm_not_frozen, expired}()` with `ClientState::status()`
+  ([#536](https://github.com/cosmos/ibc-rs/issues/536))
+- Decouple `TokenTransfer{Validation,Execution}` from `SendPacket{Validation,Execution}`
+  ([#786](https://github.com/cosmos/ibc-rs/issues/786))
+- Decouple `Router` from `ValidationContext`
+  ([#788](https://github.com/cosmos/ibc-rs/pull/788))
+- Simplify Module lookup in the `Router` trait
+ ([#802](https://github.com/cosmos/ibc-rs/issues/802))
+
+## v0.43.1
+
+*July 31, 2023*
+
+This release bumps ibc-proto to v0.32.1, resolving issue with token transfer
+deserialization for cases with no memo field provided. It also includes various
+enhancements and bug fixes, such as reorganized acknowledgement types, enhanced
+`ChainId` validation, improved `from_str` height creation, synchronized channel
+event namings for consistency.
+
+There are consensus-breaking changes.
+
+### BREAKING CHANGES
+
+- Organize acknowledgement types under the `ics04_channel` module to get
+  accessible by any applications.
+  ([#717](https://github.com/cosmos/ibc-rs/issues/717))
+- Sync field and method namings of ics04 events with the convention
+  ([#750](https://github.com/cosmos/ibc-rs/issues/750))
+- use ibc_proto::protobuf::Protobuf to replace tendermint_proto::Protobuf
+  ([#754](https://github.com/cosmos/ibc-rs/pull/754))
+- Enhancements and fixes to `ChainId` impls and validation.
+  ([#761](https://github.com/cosmos/ibc-rs/issues/761))
+- Use `Vec<u8>` for HeaderAttribute instead of `Any`
+  ([#764](https://github.com/cosmos/ibc-rs/issues/764))
+- Serde: Schema for Coin/Transfer, Amount is string
+  ([#772](https://github.com/cosmos/ibc-rs/issues/772))
+
+### BUG-FIXES
+
+- Tendermint ConsensusState -> Any can crash if out of memory
+  ([#747](https://github.com/cosmos/ibc-rs/issues/747))
+- `Height::from_str` accepts invalid heights
+  ([#752](https://github.com/cosmos/ibc-rs/issues/752))
+- Add serde serialization and deserialization to Packet Receipt
+  ([#794](https://github.com/cosmos/ibc-rs/pull/794))
+
+### IMPROVEMENTS
+
+- Scale encoding for ICS-20 transfer message
+  ([#745](https://github.com/cosmos/ibc-rs/issues/745))
+- Add test to ensure `PacketData` keeps proper JSON encoding
+  ([#763](https://github.com/cosmos/ibc-rs/issues/763))
+
 ## v0.42.0
 
 *July 5, 2023*
@@ -10,7 +685,7 @@ There are no consensus-breaking changes.
 
 ### BREAKING CHANGES
 
--  Implement ADR 7, where `ClientState` objects are now statically dispatched instead
+- Implement ADR 7, where `ClientState` objects are now statically dispatched instead
    of dynamically dispatched.
 ([#296](https://github.com/cosmos/ibc-rs/issues/296))
 - Revise the `verify_upgrade_client` method to utilize the domain-specific
@@ -884,7 +1559,7 @@ This is a major release, which implemented [ADR 4](https://github.com/cosmos/ibc
 
 - Delete packet commitment instead of acknowledgement in acknowledgePacket
   [#1573](https://github.com/informalsystems/ibc-rs/issues/1573)
-- Set the `counterparty_channel_id` correctly to fix ICS04 [`chanOpenAck` handler verification](https://github.com/informalsystems/ibc-rs/blob/master/modules/src/core/ics04_channel/handler/chan_open_ack.rs)
+- Set the `counterparty_channel_id` correctly to fix ICS04 [`chanOpenAck` handler verification](https://github.com/informalsystems/ibc-rs/blob/v0.10.0/modules/src/core/ics04_channel/handler/chan_open_ack.rs)
   ([#1649](https://github.com/informalsystems/ibc-rs/issues/1649))
 - Add missing assertion for non-zero trust-level in Tendermint client initialization.
   ([#1697](https://github.com/informalsystems/ibc-rs/issues/1697))
@@ -911,7 +1586,7 @@ This is a major release, which implemented [ADR 4](https://github.com/cosmos/ibc
 - Set the connection counterparty in the ICS 003 [`connOpenAck` handler][conn-open-ack-handler]
   ([#1532](https://github.com/informalsystems/ibc-rs/issues/1532))
 
-[conn-open-ack-handler]: https://github.com/informalsystems/ibc-rs/blob/master/modules/src/core/ics03_connection/handler/conn_open_ack.rs
+[conn-open-ack-handler]: https://github.com/informalsystems/ibc-rs/blob/v0.9.0/modules/src/core/ics03_connection/handler/conn_open_ack.rs
 
 ### IMPROVEMENTS
 

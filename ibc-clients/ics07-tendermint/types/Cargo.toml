@@ -1,0 +1,93 @@
+[package]
+name         = "ibc-client-tendermint-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "tendermint", "types" ]
+readme       = "./../../README.md"
+
+description = """
+    Maintained by `ibc-rs`, encapsulates essential ICS-07 Tendermint Client data structures and domain types,
+    as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal applicability
+    to facilitate development and integration across diverse IBC-enabled projects.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh      = { workspace = true, optional = true }
+displaydoc = { workspace = true }
+serde      = { workspace = true, optional = true }
+
+# ibc dependencies
+ibc-core-client-types     = { workspace = true }
+ibc-core-commitment-types = { workspace = true }
+ibc-core-host-types       = { workspace = true }
+ibc-primitives            = { workspace = true }
+ibc-proto                 = { workspace = true }
+
+# cosmos dependencies
+tendermint                       = { workspace = true }
+tendermint-light-client-verifier = { workspace = true, features = [ "rust-crypto" ] }
+tendermint-proto                 = { workspace = true }
+
+# parity dependencies
+parity-scale-codec = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
+
+[dev-dependencies]
+serde_json     = { workspace = true }
+tendermint-rpc = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "displaydoc/std",
+  "serde/std",
+  "serde_json/std",
+  "ibc-core-client-types/std",
+  "ibc-core-commitment-types/std",
+  "ibc-core-host-types/std",
+  "ibc-primitives/std",
+  "ibc-proto/std",
+  "tendermint/std",
+]
+serde = [
+  "dep:serde",
+  "ibc-core-client-types/serde",
+  "ibc-core-commitment-types/serde",
+  "ibc-core-host-types/serde",
+  "ibc-primitives/serde",
+  "ibc-proto/serde",
+]
+schema = [
+  "ibc-core-client-types/schema",
+  "ibc-core-commitment-types/schema",
+  "ibc-core-host-types/schema",
+  "ibc-primitives/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
+]
+borsh = [
+  "dep:borsh",
+  "ibc-core-client-types/borsh",
+  "ibc-core-commitment-types/borsh",
+  "ibc-core-host-types/borsh",
+  "ibc-primitives/borsh",
+  "ibc-proto/borsh",
+]
+parity-scale-codec = [
+  "dep:parity-scale-codec",
+  "dep:scale-info",
+  "ibc-core-client-types/parity-scale-codec",
+  "ibc-core-commitment-types/parity-scale-codec",
+  "ibc-core-host-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+  "ibc-proto/parity-scale-codec",
+]

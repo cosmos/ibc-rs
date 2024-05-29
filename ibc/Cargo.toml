@@ -1,0 +1,69 @@
+[package]
+name         = "ibc"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "consensus", "cosmos", "ibc" ]
+readme       = "README.md"
+
+description = """
+    Maintained by `ibc-rs`, serves as a top-level library that contain a comprehensive set of
+    Inter-Blockchain Communication (IBC) implementations, re-exporting data structures and
+    implementations of various IBC core, clients and applications from the `ibc-core`,
+    `ibc-clients` and `ibc-apps` crates.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# ibc dependencies
+ibc-apps             = { workspace = true }
+ibc-clients          = { workspace = true }
+ibc-core             = { workspace = true }
+ibc-core-host-cosmos = { workspace = true }
+ibc-derive           = { workspace = true }
+ibc-primitives       = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "ibc-apps/std",
+  "ibc-clients/std",
+  "ibc-core/std",
+  "ibc-core-host-cosmos/std",
+  "ibc-primitives/std",
+]
+borsh = [
+  "ibc-apps/borsh",
+  "ibc-clients/borsh",
+  "ibc-core/borsh",
+  "ibc-core-host-cosmos/borsh",
+  "ibc-primitives/borsh",
+]
+serde = [
+  "ibc-apps/serde",
+  "ibc-clients/serde",
+  "ibc-core/serde",
+  "ibc-core-host-cosmos/serde",
+  "ibc-primitives/serde",
+]
+schema = [
+  "ibc-apps/schema",
+  "ibc-clients/schema",
+  "ibc-core/schema",
+  "ibc-core-host-cosmos/schema",
+  "ibc-primitives/schema",
+  "serde",
+  "std",
+]
+parity-scale-codec = [
+  "ibc-apps/parity-scale-codec",
+  "ibc-clients/parity-scale-codec",
+  "ibc-core/parity-scale-codec",
+  "ibc-core-host-cosmos/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+]

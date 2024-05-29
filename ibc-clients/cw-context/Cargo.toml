@@ -1,0 +1,41 @@
+[package]
+name         = "ibc-client-cw"
+authors      = { workspace = true }
+edition      = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+rust-version = { workspace = true }
+version      = { workspace = true }
+keywords     = [ "ibc", "light-client", "CosmWasm", "ICS-08" ]
+readme       = "./../README.md"
+
+description = """
+    Contains types and implementations that are needed to integrate a light client, built using ibc-rs,
+    into CosmWasm contract. It functions as a library, allowing users to import the ready-made `Context`
+    object that is generic across light clients, introduce their concrete client type and integrate
+    their assembled context into the CosmWasm contract's entrypoint.
+"""
+
+[dependencies]
+# external dependencies
+derive_more = { workspace = true }
+prost       = { workspace = true }
+serde       = { workspace = true, features = [ "derive" ] }
+
+# ibc dependencies
+ibc-core              = { workspace = true }
+ibc-client-wasm-types = { workspace = true, features = [ "cosmwasm" ] }
+
+# cosmwasm dependencies
+cosmwasm-schema = { workspace = true }
+cosmwasm-std    = { workspace = true }
+cw-storage-plus = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "prost/std",
+  "serde/std",
+  "ibc-core/std",
+  "ibc-client-wasm-types/std",
+]

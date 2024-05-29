@@ -1,0 +1,1 @@
+- Implement consensus state pruning for Tendermint light clients ([#600](https://github.com/cosmos/ibc-rs/issues/600))

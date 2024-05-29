@@ -40,14 +40,14 @@ function updateClient(
 
     clientState.VerifyClientMessage(clientMessage)
     // Validation END
-    
+
     // Execution START
     foundMisbehaviour := clientState.CheckForMisbehaviour(clientMessage)
     if foundMisbehaviour {
         clientState.UpdateStateOnMisbehaviour(clientMessage)
     }
-    else {    
-        clientState.UpdateState(clientMessage) 
+    else {
+        clientState.UpdateState(clientMessage)
     }
     // Execution END
 }
@@ -99,13 +99,13 @@ pub trait Host {
     /// An error type that can represent all host errors.
     type Error;
 
-    /// The Host's key-value store that must provide access to IBC paths. 
+    /// The Host's key-value store that must provide access to IBC paths.
     type KvStore: IbcStore<Self::Error>;
 
     /// An event logging facility.
     type EventLogger: EventLogger<Event=Event<DefaultIbcTypes>>;
 
-    /// Methods to access the store (ro & rw). 
+    /// Methods to access the store (ro & rw).
     fn store(&self) -> &Self::KvStore;
     fn store_mut(&mut self) -> &mut Self::KvStore;
 
@@ -296,7 +296,7 @@ trait ValidationContext {
     /// Function required by ICS 03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
     fn get_compatible_versions(&self) -> Vec<Version> {
-        get_compatible_versions()
+        ConnectionVersion::compatibles()
     }
 
     /// Function required by ICS 03. Returns one version out of the supplied list of versions, which the
@@ -373,11 +373,9 @@ trait ValidationContext {
     /// A hashing function for packet commitments
     fn hash(&self, value: Vec<u8>) -> Vec<u8>;
 
-    /// Returns the time when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_time(&self, client_id: &ClientId, height: Height) -> Result<Timestamp, Error>;
-
-    /// Returns the height when the client state for the given [`ClientId`] was updated with a header for the given [`Height`]
-    fn client_update_height(&self, client_id: &ClientId, height: Height) -> Result<Height, Error>;
+    /// Returns the time and height when the client state for the
+    /// given [`ClientId`] was updated with a header for the given [`Height`]
+    fn update_meta(&self, client_id: &ClientId, height: Height) -> Result<(Timestamp, Height), Error>;
 
     /// Returns a counter on the number of channel ids that have been created thus far.
     /// The value of this counter should increase only via method
@@ -423,26 +421,17 @@ trait ExecutionContext {
 
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
-    /// Should never fail.
     fn increase_client_counter(&mut self);
 
     /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified time as the time at which
-    /// this update (or header) was processed.
-    fn store_update_time(
+    ///
+    /// Implementations are expected to use this to record the specified time
+    /// and height as the time at which this update (or header) was processed.
+    fn store_update_meta(
         &mut self,
         client_id: ClientId,
         height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), Error>;
-
-    /// Called upon successful client update.
-    /// Implementations are expected to use this to record the specified height as the height at
-    /// at which this update (or header) was processed.
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
+        host_timestamp: Timestamp,
         host_height: Height,
     ) -> Result<(), Error>;
 
@@ -462,7 +451,6 @@ trait ExecutionContext {
 
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter which keeps track of how many connections have been created.
-    /// Should never fail.
     fn increase_connection_counter(&mut self);
 
     fn store_packet_commitment(
@@ -524,7 +512,6 @@ trait ExecutionContext {
 
     /// Called upon channel identifier creation (Init or Try message processing).
     /// Increases the counter which keeps track of how many channels have been created.
-    /// Should never fail.
     fn increase_channel_counter(&mut self);
 
     /// Ibc events
@@ -550,16 +537,11 @@ pub trait Host {
 
     /// Methods currently in `ClientKeeper`
     fn increase_client_counter(&mut self);
-    fn store_update_time(
+    fn store_update_meta(
         &mut self,
         client_id: ClientId,
         height: Height,
-        timestamp: Timestamp,
-    ) -> Result<(), Error>;
-    fn store_update_height(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
+        host_timestamp: Timestamp,
         host_height: Height,
     ) -> Result<(), Error>;
 
@@ -574,8 +556,7 @@ pub trait Host {
     /// Methods currently in `ChannelReader`
     fn connection_channels(&self, cid: &ConnectionId) -> Result<Vec<(PortId, ChannelId)>, Error>;
     fn hash(&self, value: Vec<u8>) -> Vec<u8>;
-    fn client_update_time(&self, client_id: &ClientId, height: Height) -> Result<Timestamp, Error>;
-    fn client_update_height(&self, client_id: &ClientId, height: Height) -> Result<Height, Error>;
+    fn update_meta(&self, client_id: &ClientId, height: Height) -> Result<(Timestamp, Height), Error>;
     fn channel_counter(&self) -> Result<u64, Error>;
     fn max_expected_time_per_block(&self) -> Duration;
     fn block_delay(&self, delay_period_time: Duration) -> u64;
@@ -626,7 +607,7 @@ pub trait StoreSerde {
     /// Serialize to canonical binary representation
     fn serialize(self) -> Vec<u8>;
 
-    /// Deserialize from bytes 
+    /// Deserialize from bytes
     fn deserialize(value: &[u8]) -> Self;
 }
 

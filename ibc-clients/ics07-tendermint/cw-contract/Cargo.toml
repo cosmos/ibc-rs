@@ -1,0 +1,34 @@
+[package]
+name         = "ibc-client-tendermint-cw"
+authors      = { workspace = true }
+edition      = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+rust-version = { workspace = true }
+version      = { workspace = true }
+keywords     = [ "ibc", "light-client", "ics07", "tendermint", "CosmWasm" ]
+readme       = "./../../README.md"
+
+description = """
+    The ICS-08 CosmWasm contract implementation of the ICS-07 Tendermint light client.
+"""
+
+[lib]
+crate-type = [ "cdylib", "rlib" ]
+
+[dependencies]
+# ibc dependencies
+ibc-core              = { workspace = true }
+ibc-client-cw         = { workspace = true }
+ibc-client-tendermint = { workspace = true }
+
+# cosmwasm dependencies
+cosmwasm-std = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "ibc-core/std",
+  "ibc-client-cw/std",
+  "ibc-client-tendermint/std",
+]
