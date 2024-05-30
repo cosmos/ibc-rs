@@ -1,4 +1,4 @@
-//! Contains various internally-used utilities.
+//! Contains various internally used utilities.
 pub mod pretty;
 
 pub use pretty::*;

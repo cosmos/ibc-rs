@@ -5,7 +5,7 @@ use ibc_proto::Protobuf;
 
 use crate::prelude::*;
 
-/// Types that implement this trait are able to be converted to
+/// Types that implement this trait can be converted to
 /// a raw Protobuf `Any` type.
 pub trait ToProto<P>: Protobuf<P>
 where

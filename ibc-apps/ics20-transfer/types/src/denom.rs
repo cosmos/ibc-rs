@@ -90,7 +90,7 @@ impl TracePrefix {
     /// it returns a tuple of the removed [`TracePrefix`] and the substring after the prefix.
     ///
     /// If the substring is empty, it returns `None`.
-    /// Otherwise the substring starts with `/`. In that case,
+    /// Otherwise, the substring starts with `/`. In that case,
     /// the leading `/` is stripped and returned.
     ///
     /// If the string does not start with a [`TracePrefix`], this method returns `None`.
@@ -174,7 +174,7 @@ impl TracePath {
     /// [`TracePath`] and the substring after the [`TracePath`].
     ///
     /// If the substring is empty, it returns `None`.
-    /// Otherwise the substring starts with `/`. In that case,
+    /// Otherwise, the substring starts with `/`. In that case,
     /// the leading `/` is stripped and returned.
     ///
     /// If the string does not contain any [`TracePrefix`], it returns the original string.
@@ -273,7 +273,7 @@ impl PrefixedDenom {
     }
 }
 
-/// Returns true if the denomination originally came from the sender chain and
+/// Returns true if the denomination originally came from the sender chain, and
 /// false otherwise.
 ///
 /// Note: It is better to think of the "source" chain as the chain that
@@ -305,7 +305,7 @@ pub fn is_sender_chain_source(
     !is_receiver_chain_source(source_port, source_channel, denom)
 }
 
-/// Returns true if the denomination originally came from the receiving chain and false otherwise.
+/// Returns true if the denomination originally came from the receiving chain, and false otherwise.
 pub fn is_receiver_chain_source(
     source_port: PortId,
     source_channel: ChannelId,

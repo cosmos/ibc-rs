@@ -13,12 +13,12 @@ pub struct PageRequest {
     /// querying the next page most efficiently. Only one of offset or key
     /// should be set.
     pub key: Vec<u8>,
-    /// offset is a numeric offset that can be used when key is unavailable.
-    /// It is less efficient than using key. Only one of offset or key should
-    /// be set.
+    /// offset is a numeric offset that can be used when the key is unavailable.
+    /// It is less efficient than using the key.
+    /// Only one of offset or key should be set.
     pub offset: u64,
-    /// limit is the total number of results to be returned in the result page.
-    /// If left empty it will default to a value to be set by each app.
+    /// limit is the total number of results to be returned to the result page.
+    /// If left empty, it will default to a value to be set by each app.
     pub limit: u64,
     /// count_total is set to true  to indicate that the result set should include
     /// a count of the total number of items available for pagination in UIs.
@@ -70,7 +70,7 @@ pub struct PageResponse {
     /// query the next page most efficiently. It will be empty if
     /// there are no more results.
     pub next_key: Vec<u8>,
-    /// total is total number of results available if PageRequest.count_total
+    /// total is the total number of results available if PageRequest.count_total
     /// was set, its value is undefined otherwise
     pub total: u64,
 }

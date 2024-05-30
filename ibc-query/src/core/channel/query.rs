@@ -212,7 +212,7 @@ where
 }
 
 /// Queries for the packet commitment associated with a channel by the given
-/// sequence, channel and port ids
+/// sequence, channel, and port ids
 pub fn query_packet_commitment<I>(
     ibc_ctx: &I,
     request: &QueryPacketCommitmentRequest,
@@ -269,7 +269,7 @@ where
 }
 
 /// Queries for the packet receipt associated with a channel by the given
-/// sequence, channel and port ids
+/// sequence, channel, and port ids
 pub fn query_packet_receipt<I>(
     ibc_ctx: &I,
     request: &QueryPacketReceiptRequest,
@@ -304,7 +304,7 @@ where
 }
 
 /// Queries for the packet acknowledgement associated with a channel by the
-/// given sequence, channel and port ids
+/// given sequence, channel, and port ids
 pub fn query_packet_acknowledgement<I>(
     ibc_ctx: &I,
     request: &QueryPacketAcknowledgementRequest,

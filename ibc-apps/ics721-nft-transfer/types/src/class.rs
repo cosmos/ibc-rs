@@ -92,7 +92,7 @@ impl PrefixedClassId {
     }
 }
 
-/// Returns true if the class ID originally came from the sender chain and false otherwise.
+/// Returns true if the class ID originally came from the sender chain, and false otherwise.
 pub fn is_sender_chain_source(
     source_port: PortId,
     source_channel: ChannelId,
@@ -101,7 +101,7 @@ pub fn is_sender_chain_source(
     !is_receiver_chain_source(source_port, source_channel, class_id)
 }
 
-/// Returns true if the class ID originally came from the receiving chain and false otherwise.
+/// Returns true if the class ID originally came from the receiving chain, and false otherwise.
 pub fn is_receiver_chain_source(
     source_port: PortId,
     source_channel: ChannelId,

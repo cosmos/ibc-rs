@@ -84,8 +84,8 @@ impl scale_info::TypeInfo for Timestamp {
 /// - If the left timestamp is strictly after the right timestamp, the result is `Expired`.
 /// - Otherwise, the result is `NotExpired`.
 ///
-/// User of this result may want to determine whether error should be raised,
-/// when either of the timestamp being compared is invalid.
+/// Users of this result may want to determine whether an error should be raised,
+/// when either of the timestamps being compared is invalid.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(PartialEq, Eq, Copy, Clone, Debug, Hash)]
 pub enum Expiry {
@@ -135,7 +135,7 @@ impl Timestamp {
     /// Computes the duration difference of another `Timestamp` from the current one.
     /// Returns the difference in time as an [`core::time::Duration`].
     /// Returns `None` if the other `Timestamp` is more advanced
-    /// than the current or if either of the `Timestamp`s is not set.
+    /// than the current, or if either of the `Timestamp`s is not set.
     pub fn duration_since(&self, other: &Self) -> Option<Duration> {
         match (self.time, other.time) {
             (Some(time1), Some(time2)) => time1.duration_since(time2).ok(),

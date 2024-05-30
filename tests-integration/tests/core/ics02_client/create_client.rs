@@ -16,9 +16,9 @@ use ibc::core::host::types::path::{ClientConsensusStatePath, NextClientSequenceP
 use ibc::core::host::{ClientStateRef, ValidationContext};
 use ibc_query::core::context::ProvableContext;
 use ibc_testkit::context::{MockContext, TendermintContext};
-use ibc_testkit::fixtures::clients::tendermint::{
-    dummy_tendermint_header, dummy_tm_client_state_from_header,
-};
+#[cfg(feature = "serde")]
+use ibc_testkit::fixtures::clients::tendermint::dummy_tendermint_header;
+use ibc_testkit::fixtures::clients::tendermint::dummy_tm_client_state_from_header;
 use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
@@ -63,6 +63,7 @@ fn test_create_client_ok() {
     assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
 }
 
+#[cfg(feature = "serde")]
 #[test]
 fn test_tm_create_client_ok() {
     let signer = dummy_account_id();
@@ -100,6 +101,7 @@ fn test_tm_create_client_ok() {
     assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
 }
 
+#[cfg(feature = "serde")]
 #[test]
 fn test_invalid_frozen_tm_client_creation() {
     let signer = dummy_account_id();

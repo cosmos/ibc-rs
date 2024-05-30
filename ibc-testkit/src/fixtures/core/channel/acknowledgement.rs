@@ -7,7 +7,7 @@ use super::{dummy_proof, dummy_raw_packet};
 use crate::fixtures::core::signer::dummy_bech32_account;
 
 /// Returns a dummy `RawMsgAcknowledgement`, for testing purposes only!
-/// The `height` parametrizes both the proof height as well as the timeout height.
+/// The `height` parametrizes the proof height as well as the timeout height.
 pub fn dummy_raw_msg_acknowledgement(height: u64) -> RawMsgAcknowledgement {
     dummy_raw_msg_ack_with_packet(dummy_raw_packet(height, 1), height)
 }

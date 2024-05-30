@@ -45,8 +45,8 @@ pub const PORT_ID_STR: &str = "nft-transfer";
 /// ICS-721 application current version.
 pub const VERSION: &str = "ics721-1";
 
-/// The successful string used for creating an acknowledgement status,
-/// equivalent to `base64::encode(0x01)`.
+/// The successful string, used for creating an acknowledgement status.
+/// It is equivalent to `base64::encode(0x01)`.
 pub const ACK_SUCCESS_B64: &str = "AQ==";
 
 use ibc_core::channel::types::acknowledgement::StatusValue;

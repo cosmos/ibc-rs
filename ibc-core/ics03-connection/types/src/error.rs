@@ -69,12 +69,12 @@ pub enum ConnectionError {
     },
     /// invalid client state: `{reason}`
     InvalidClientState { reason: String },
-    /// not enough blocks elapsed, current height `{current_host_height}` is still less than earliest acceptable height `{earliest_valid_height}`
+    /// not enough blocks elapsed, current height `{current_host_height}` is still less than the earliest acceptable height `{earliest_valid_height}`
     NotEnoughBlocksElapsed {
         current_host_height: Height,
         earliest_valid_height: Height,
     },
-    /// not enough time elapsed, current timestamp `{current_host_time}` is still less than earliest acceptable timestamp `{earliest_valid_time}`
+    /// not enough time elapsed, current timestamp `{current_host_time}` is still less than the earliest acceptable timestamp `{earliest_valid_time}`
     NotEnoughTimeElapsed {
         current_host_time: Timestamp,
         earliest_valid_time: Timestamp,

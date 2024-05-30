@@ -10,6 +10,7 @@ use ibc::core::channel::types::msgs::{
     MsgTimeoutOnClose, PacketMsg,
 };
 use ibc::core::channel::types::packet::Packet;
+use ibc::core::channel::types::timeout::TimeoutHeight;
 use ibc::core::channel::types::Version as ChannelVersion;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
@@ -620,7 +621,7 @@ where
         };
     }
 
-    /// `A` initiates the channel closing with the other end on `B`.
+    /// `A` initiates the channel closing, with the other end on `B`.
     /// `A` stops processing the channel.
     pub fn channel_close_init_on_a(
         ctx_a: &mut TestContext<A>,
@@ -949,14 +950,14 @@ where
 
         ctx_a.deliver(msg_for_a).expect("success");
 
-        let Some(IbcEvent::ChannelClosed(_)) = ctx_a.ibc_store().events.lock().last().cloned()
+        let Some(IbcEvent::TimeoutPacket(_)) = ctx_a.ibc_store().events.lock().last().cloned()
         else {
             panic!("unexpected event")
         };
     }
 
     /// Sends a packet from an IBC application on `A` to `B` using the IBC packet relay protocol.
-    pub fn send_packet_on_a(
+    pub fn submit_packet_on_b(
         ctx_a: &mut TestContext<A>,
         ctx_b: &mut TestContext<B>,
         packet: Packet,
@@ -991,6 +992,90 @@ where
             signer.clone(),
         );
 
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+            ctx_b,
+            ctx_a,
+            client_id_on_b,
+            signer.clone(),
+        );
+    }
+
+    /// Times out a packet from an IBC application on `A` to `B` after waiting timeout period.
+    pub fn timeout_packet_from_a(
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &mut TestContext<B>,
+        packet: Packet,
+        client_id_on_a: ClientId,
+        client_id_on_b: ClientId,
+        signer: Signer,
+    ) {
+        // packet is passed from module
+
+        let TimeoutHeight::At(timeout_height) = packet.timeout_height_on_b else {
+            panic!("timeout height is set")
+        };
+
+        // progress `B`'s block height to the timeout height.
+        // packet is timed out at the timeout height + 1
+        while ctx_b.latest_height() <= timeout_height {
+            ctx_b.advance_block_height();
+        }
+
+        // update client on `A` with the latest header from `B`.
+        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
+            ctx_a,
+            ctx_b,
+            client_id_on_a.clone(),
+            signer.clone(),
+        );
+
+        // timeout the packet on `A`.
+        TypedRelayerOps::<A, B>::packet_timeout_on_a(ctx_a, ctx_b, packet.clone(), signer.clone());
+
+        // `A` has progressed; update client on `B` with the latest header from `A`.
+        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+            ctx_b,
+            ctx_a,
+            client_id_on_b,
+            signer.clone(),
+        );
+    }
+
+    /// Times out a packet from an IBC application on `A` to `B` after closing the channel.
+    pub fn timeout_packet_from_a_on_channel_close(
+        ctx_a: &mut TestContext<A>,
+        ctx_b: &mut TestContext<B>,
+        packet: Packet,
+        client_id_on_a: ClientId,
+        client_id_on_b: ClientId,
+        signer: Signer,
+    ) {
+        // packet is passed from module
+
+        // close the channel on `A`.
+        TypedRelayerOps::<A, B>::close_channel_on_a(
+            ctx_a,
+            ctx_b,
+            client_id_on_a.clone(),
+            packet.chan_id_on_a.clone(),
+            packet.port_id_on_a.clone(),
+            client_id_on_b.clone(),
+            packet.chan_id_on_b.clone(),
+            packet.port_id_on_b.clone(),
+            signer.clone(),
+        );
+
+        // timeout the packet on `A`.
+        TypedRelayerOps::<A, B>::packet_timeout_on_close_on_a(
+            ctx_a,
+            ctx_b,
+            packet.clone(),
+            packet.chan_id_on_b.clone(),
+            packet.port_id_on_b.clone(),
+            signer.clone(),
+        );
+
+        // `A` has progressed; update client on `B` with the latest header from `A`.
         TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
