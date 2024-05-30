@@ -75,18 +75,27 @@ development.
 
 ## `ibc-rs` in the wild
 
-|  # | Use-Case               |     Team      | Used-Modules |                 Links                 |          Phase           |
-| -: | ---------------------- | :-----------: | ------------ | :-----------------------------------: | :----------------------: |
+The IBC protocol is integrated in numerous networks and projects. The `ibc-rs` implementation specifically
+is adopted for IBC integration, testing, or development in the following use-cases.
+
+|  # | Integration use-Case   |     Team      | Used-Modules |                 Links                 |          Phase           |
+|---:|------------------------|:-------------:|--------------|:-------------------------------------:|:------------------------:|
 |  1 | Solana                 | ComposableFin | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
 |  2 | Ethereum               | ComposableFin | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
 |  3 | Polkadot               | ComposableFin | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
-|  4 | Nomic                  |     Nomic     | all          |        [Nomic network][nomic]         | :hourglass_flowing_sand: |
+|  4 | Nomic                  |     Nomic     | all          |        [Nomic network][nomic]         |    :white_check_mark:    |
 |  5 | Namada                 |     Anoma     | all          |           [Namada][namada]            | :hourglass_flowing_sand: |
-|  6 | Sovereign integration  |   Informal    | all          |      [`sovereign-ibc`][sov-ibc]       | :hourglass_flowing_sand: |
-|  7 | Testing Hermes Relayer |   Informal    | all          |     [`basecoin-rs`][basecoin-rs]      |    :white_check_mark:    |
-|  8 | Substrate pallet       |    Octopus    | all          | [Substrate IBC Pallet][substrate-ibc] |     :grey_question:      |
-|  9 | ZK-IBC                 | SuccinctLabs  | all          |           [ZK-IBC][zk-ibc]            |     :grey_question:      |
-| 10 | Starkenet              |   Informal    | -            |                   -                   |          :eyes:          |
+|  6 | Sovereign              |   Informal    | all          |      [`sovereign-ibc`][sov-ibc]       | :hourglass_flowing_sand: |
+|  7 | Testing Hermes Relayer |   Informal    | all          |     [`basecoin-rs`][basecoin-rs]      |    :hammer_and_pick:     |
+|  8 | Substrate pallet       |    Octopus    | all          | [Substrate IBC Pallet][substrate-ibc] |    :hammer_and_pick:     |
+|  9 | ZK-IBC                 | SuccinctLabs  | all          |           [ZK-IBC][zk-ibc]            |    :hammer_and_pick:     |
+| 10 | Starknet               |   Informal    | :eyes:       |                :eyes:                 |          :eyes:          |
+
+Legend:
+- :white_check_mark: -- IBC integration runs in production
+- :hourglass_flowing_sand: -- IBC integration is in development (testnet or devnet)
+- :hammer_and_pick: -- used in testing and/or development
+- :eyes: -- early exploration phase
 
 [pica-network]: https://www.picasso.network
 [nomic]: https://www.nomic.io
@@ -99,7 +108,7 @@ development.
 
 ## License
 
-Copyright © 2022 Informal Systems Inc. and ibc-rs authors.
+Copyright © 2024 Informal Systems Inc. and ibc-rs authors.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 the files in this repository except in compliance with the License. You may
