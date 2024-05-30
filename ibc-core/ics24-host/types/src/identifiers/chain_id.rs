@@ -447,9 +447,9 @@ mod tests {
 
     #[cfg(feature = "borsh")]
     fn borsh_ser_de_roundtrip(chain_id: ChainId) {
-        use borsh::{BorshDeserialize, BorshSerialize};
+        use borsh::BorshDeserialize;
 
-        let chain_id_bytes = chain_id.try_to_vec().unwrap();
+        let chain_id_bytes = borsh::to_vec(&chain_id).unwrap();
         let res = ChainId::try_from_slice(&chain_id_bytes).unwrap();
         assert_eq!(chain_id, res);
     }

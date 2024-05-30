@@ -369,9 +369,10 @@ mod tests {
     #[test]
     #[cfg(feature = "borsh")]
     fn test_timestamp_borsh_ser_der() {
-        use borsh::{BorshDeserialize, BorshSerialize};
+        use borsh::BorshDeserialize;
+
         let timestamp = Timestamp::now();
-        let encode_timestamp = timestamp.try_to_vec().unwrap();
+        let encode_timestamp = borsh::to_vec(&timestamp).unwrap();
         let _ = Timestamp::try_from_slice(&encode_timestamp).unwrap();
     }
 
