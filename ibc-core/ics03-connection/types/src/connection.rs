@@ -460,7 +460,8 @@ impl Counterparty {
 )]
 #[cfg_attr(
     feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize),
+    borsh(use_discriminant = false)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
