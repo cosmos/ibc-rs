@@ -81,26 +81,26 @@ integration, testing, or development for some of the most technically compelling
 use cases.
 
 |  # | Integration use-case            |     Team      | Used-Modules |                            Links                            |          Phase           |
-| -: | ------------------------------- | :-----------: | ------------ | :---------------------------------------------------------: | :----------------------: |
-|  1 | Solana IBC implementation       |  Composable   | all          |               [Picasso Network][pica-network]               |    :white_check_mark:    |
-|  2 | Ethereum IBC relayer            |  Composable   | all          |               [Picasso Network][pica-network]               |    :white_check_mark:    |
-|  3 | Polkadot SDK IBC implementation |  Composable   | all          |               [Picasso Network][pica-network]               |    :white_check_mark:    |
-|  4 | Nomic                           |     Nomic     | all          |                   [Nomic network][nomic]                    |    :white_check_mark:    |
-|  5 | Namada                          |     Anoma     | all          |                      [Namada][namada]                       | :hourglass_flowing_sand: |
-|  6 | Sovereign                       |   Informal    | all          |                 [`sovereign-ibc`][sov-ibc]                  | :hourglass_flowing_sand: |
-|  7 | Hermes IBC relayer              |   Informal    | all          |                [`basecoin-rs`][basecoin-rs]                 |    :hammer_and_pick:     |
-|  8 | Substrate pallet                |    Octopus    | all          |            [Substrate IBC Pallet][substrate-ibc]            |    :hammer_and_pick:     |
-|  9 | Near Protocol                   |    Octopus    | all          |                   [`near-ibc`][near-ibc]                    | :hourglass_flowing_sand: |
-| 10 | Tendermint Light Client         | Electron Labs | all          | [`Electron-Labs/tendermint-rs`][electronlabs-tendermint-rs] | :hourglass_flowing_sand: |
-| 11 | Starknet                        |   Informal    | :eyes:       |                           :eyes:                            |          :eyes:          |
+| -: | ------------------------------- | :-----------: | :----------: | :---------------------------------------------------------: | :----------------------: |
+|  1 | Solana IBC implementation       |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
+|  2 | Ethereum IBC relayer            |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
+|  3 | Polkadot SDK IBC implementation |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
+|  4 | Nomic                           |     Nomic     |    :100:     |                   [Nomic network][nomic]                    |    :white_check_mark:    |
+|  5 | Namada                          |     Anoma     |    :100:     |                      [Namada][namada]                       | :hourglass_flowing_sand: |
+|  6 | Sovereign                       |   Informal    |    :100:     |                 [`sovereign-ibc`][sov-ibc]                  | :hourglass_flowing_sand: |
+|  7 | Hermes IBC relayer              |   Informal    |    :100:     |                [`basecoin-rs`][basecoin-rs]                 |    :hammer_and_pick:     |
+|  8 | Substrate pallet                |    Octopus    |    :100:     |            [Substrate IBC Pallet][substrate-ibc]            |    :hammer_and_pick:     |
+|  9 | Near Protocol                   |    Octopus    |    :100:     |                   [`near-ibc`][near-ibc]                    | :hourglass_flowing_sand: |
+| 10 | Tendermint Light Client         | Electron Labs |   `ics07`    | [`Electron-Labs/tendermint-rs`][electronlabs-tendermint-rs] | :hourglass_flowing_sand: |
+| 11 | Starknet                        |   Informal    |    :eyes:    |                           :eyes:                            |          :eyes:          |
 
 Legend:
 
-- :white_check_mark: -- IBC integration runs in production
-- :hourglass_flowing_sand: -- IBC integration is in development (testnet or
-  devnet)
-- :hammer_and_pick: -- used in testing and/or development
-- :eyes: -- early exploration phase
+- :white_check_mark: IBC integration runs in production
+- :hourglass_flowing_sand: IBC integration is in development (testnet or devnet)
+- :hammer_and_pick: used in testing and/or development
+- :100: full IBC integration
+- :eyes: early exploration phase
 
 [pica-network]: https://www.picasso.network
 [nomic]: https://www.nomic.io
