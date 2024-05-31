@@ -75,25 +75,28 @@ development.
 
 ## `ibc-rs` in the wild
 
-The IBC protocol is integrated in numerous networks and projects. The `ibc-rs` implementation specifically
-is adopted for IBC integration, testing, or development in the following use-cases.
+The IBC protocol is integrated in numerous networks and projects. The `ibc-rs`
+implementation specifically is adopted for IBC integration, testing, or
+development in the following use-cases.
 
-|  # | Integration use-case |     Team      | Used-Modules |                 Links                 |          Phase           |
-|---:|----------------------|:-------------:|--------------|:-------------------------------------:|:------------------------:|
-|  1 | Solana               |  Composable   | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
-|  2 | Ethereum             |  Composable   | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
-|  3 | Polkadot             |  Composable   | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
-|  4 | Nomic                |     Nomic     | all          |        [Nomic network][nomic]         |    :white_check_mark:    |
-|  5 | Namada               |     Anoma     | all          |           [Namada][namada]            | :hourglass_flowing_sand: |
-|  6 | Sovereign            |   Informal    | all          |      [`sovereign-ibc`][sov-ibc]       | :hourglass_flowing_sand: |
-|  7 | Hermes IBC relayer   |   Informal    | all          |     [`basecoin-rs`][basecoin-rs]      |    :hammer_and_pick:     |
-|  8 | Substrate pallet     |    Octopus    | all          | [Substrate IBC Pallet][substrate-ibc] |    :hammer_and_pick:     |
-|  9 | zkIBC                | Electron Labs | all          |            [zkIBC][zk-ibc]            |    :hammer_and_pick:     |
-| 10 | Starknet             |   Informal    | :eyes:       |                :eyes:                 |          :eyes:          |
+|  # | Integration use-case    |     Team      | Used-Modules |                 Links                 |          Phase           |
+| -: | ----------------------- | :-----------: | ------------ | :-----------------------------------: | :----------------------: |
+|  1 | Solana                  |  Composable   | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
+|  2 | Ethereum                |  Composable   | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
+|  3 | Polkadot                |  Composable   | all          |    [Picasso Network][pica-network]    |    :white_check_mark:    |
+|  4 | Nomic                   |     Nomic     | all          |        [Nomic network][nomic]         |    :white_check_mark:    |
+|  5 | Namada                  |     Anoma     | all          |           [Namada][namada]            | :hourglass_flowing_sand: |
+|  6 | Sovereign               |   Informal    | all          |      [`sovereign-ibc`][sov-ibc]       | :hourglass_flowing_sand: |
+|  7 | Hermes IBC relayer      |   Informal    | all          |     [`basecoin-rs`][basecoin-rs]      |    :hammer_and_pick:     |
+|  8 | Substrate pallet        |    Octopus    | all          | [Substrate IBC Pallet][substrate-ibc] |    :hammer_and_pick:     |
+|  9 | Tendermint Light Client | Electron Labs | all          |                   -                   | :hourglass_flowing_sand: |
+| 10 | Starknet                |   Informal    | -            |                   -                   |          :eyes:          |
 
 Legend:
+
 - :white_check_mark: -- IBC integration runs in production
-- :hourglass_flowing_sand: -- IBC integration is in development (testnet or devnet)
+- :hourglass_flowing_sand: -- IBC integration is in development (testnet or
+  devnet)
 - :hammer_and_pick: -- used in testing and/or development
 - :eyes: -- early exploration phase
 
@@ -104,7 +107,8 @@ Legend:
 [hermes]: https://hermes.informal.systems
 [sov-ibc]: https://github.com/informalsystems/sovereign-ibc
 [substrate-ibc]: https://github.com/octopus-network/substrate-ibc
-[zk-ibc]: https://www.zkibc.com
+[near-ibc]: https://github.com/octopus-network/near-ibc
+[electronlabs-tendermint-rs]: https://github.com/Electron-Labs/tendermint-rs
 
 ## License
 
