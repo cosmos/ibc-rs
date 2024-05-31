@@ -289,10 +289,8 @@ mod tests {
     #[test]
     fn test_borsh_roundtrip() {
         fn borsh_roundtrip(data_value: DataValue) {
-            use borsh::BorshDeserialize;
-
             let data_value_bytes = borsh::to_vec(&data_value).unwrap();
-            let res = DataValue::try_from_slice(&data_value_bytes).unwrap();
+            let res = borsh::from_slice::<DataValue>(&data_value_bytes).unwrap();
 
             assert_eq!(data_value, res);
         }

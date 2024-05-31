@@ -442,10 +442,8 @@ mod tests {
     #[test]
     fn test_borsh_roundtrip() {
         fn borsh_roundtrip(class_uri: ClassUri) {
-            use borsh::BorshDeserialize;
-
             let class_uri_bytes = borsh::to_vec(&class_uri).unwrap();
-            let res = ClassUri::try_from_slice(&class_uri_bytes).unwrap();
+            let res = borsh::from_slice::<ClassUri>(&class_uri_bytes).unwrap();
 
             assert_eq!(class_uri, res);
         }

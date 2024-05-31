@@ -440,17 +440,14 @@ mod tests {
     #[rstest]
     #[case(b"\x06\0\0\0foo-42\x45\0\0\0\0\0\0\0")]
     fn test_invalid_chain_id_borsh_deserialization(#[case] chain_id_bytes: &[u8]) {
-        use borsh::BorshDeserialize;
-
-        assert!(ChainId::try_from_slice(chain_id_bytes).is_err())
+        assert!(borsh::from_slice::<ChainId>(chain_id_bytes).is_err())
     }
 
     #[cfg(feature = "borsh")]
     fn borsh_ser_de_roundtrip(chain_id: ChainId) {
-        use borsh::BorshDeserialize;
-
         let chain_id_bytes = borsh::to_vec(&chain_id).unwrap();
-        let res = ChainId::try_from_slice(&chain_id_bytes).unwrap();
+        let res = borsh::from_slice::<ChainId>(&chain_id_bytes).unwrap();
+
         assert_eq!(chain_id, res);
     }
 

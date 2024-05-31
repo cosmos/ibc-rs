@@ -145,15 +145,13 @@ mod tests {
     #[cfg(feature = "borsh")]
     #[test]
     fn borsh_amount() {
-        use borsh::BorshDeserialize;
-
         let value = Amount::from(42);
         let serialized = borsh::to_vec(&value).unwrap();
 
         // Amount is supposed to be a U256 according to the spec, which is 32 bytes
         assert_eq!(serialized.len(), 32);
 
-        let value_deserialized = Amount::try_from_slice(&serialized).unwrap();
+        let value_deserialized = borsh::from_slice::<Amount>(&serialized).unwrap();
 
         assert_eq!(value, value_deserialized);
     }

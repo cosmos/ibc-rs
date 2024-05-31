@@ -245,10 +245,8 @@ mod tests {
     #[test]
     fn test_borsh_roundtrip() {
         fn borsh_roundtrip(token_uri: TokenUri) {
-            use borsh::BorshDeserialize;
-
             let token_uri_bytes = borsh::to_vec(&token_uri).unwrap();
-            let res = TokenUri::try_from_slice(&token_uri_bytes).unwrap();
+            let res = borsh::from_slice::<TokenUri>(&token_uri_bytes).unwrap();
 
             assert_eq!(token_uri, res);
         }
