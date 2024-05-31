@@ -200,8 +200,7 @@ mod tests {
 
         let serialized = borsh::to_vec(&msg).unwrap();
 
-        let msg_deserialized =
-            <MsgConnectionOpenTry as borsh::BorshDeserialize>::try_from_slice(&serialized).unwrap();
+        let msg_deserialized = borsh::from_slice::<MsgConnectionOpenTry>(&serialized).unwrap();
 
         assert_eq!(msg, msg_deserialized);
     }

@@ -119,21 +119,16 @@ pub struct TokenUri(
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshSerialize for TokenUri {
-    fn serialize<W: borsh::maybestd::io::Write>(
-        &self,
-        writer: &mut W,
-    ) -> borsh::maybestd::io::Result<()> {
+    fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
         borsh::BorshSerialize::serialize(&self.to_string(), writer)
     }
 }
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshDeserialize for TokenUri {
-    fn deserialize_reader<R: borsh::maybestd::io::Read>(
-        reader: &mut R,
-    ) -> borsh::maybestd::io::Result<Self> {
+    fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
         let uri = String::deserialize_reader(reader)?;
-        Ok(TokenUri::from_str(&uri).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
+        Ok(TokenUri::from_str(&uri).map_err(|_| borsh::io::ErrorKind::Other)?)
     }
 }
 
@@ -250,10 +245,8 @@ mod tests {
     #[test]
     fn test_borsh_roundtrip() {
         fn borsh_roundtrip(token_uri: TokenUri) {
-            use borsh::{BorshDeserialize, BorshSerialize};
-
-            let token_uri_bytes = token_uri.try_to_vec().unwrap();
-            let res = TokenUri::try_from_slice(&token_uri_bytes).unwrap();
+            let token_uri_bytes = borsh::to_vec(&token_uri).unwrap();
+            let res = borsh::from_slice::<TokenUri>(&token_uri_bytes).unwrap();
 
             assert_eq!(token_uri, res);
         }

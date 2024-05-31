@@ -56,7 +56,7 @@ authors      = [ "Informal Systems <hello@informal.systems>" ]
 [workspace.dependencies]
 # external dependencies
 base64          = { version = "0.21", default-features = false }
-borsh           = { version = "0.10", default-features = false }
+borsh           = { version = "1", default-features = false, features = [ "derive" ] }
 displaydoc      = { version = "0.2", default-features = false }
 prost           = { version = "0.12", default-features = false }
 derive_more     = { version = "0.99.17", default-features = false, features = [ "from", "into", "display", "try_into" ] }
@@ -106,7 +106,7 @@ ibc-client-wasm-types       = { version = "0.53.0", path = "./ibc-clients/ics08-
 ibc-app-transfer-types      = { version = "0.53.0", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 ibc-app-nft-transfer-types  = { version = "0.53.0", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
 
-ibc-proto = { version = "0.44.0", default-features = false }
+ibc-proto = { version = "0.45.0", default-features = false }
 
 # cosmos dependencies
 tendermint                       = { version = "0.36.0", default-features = false }
