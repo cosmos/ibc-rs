@@ -12,12 +12,10 @@
 </div>
 <div>
 
-[![Docs][docs-image]][docs-link]
-[![Build Status][build-image]][build-link]
+[![Docs][docs-image]][docs-link] [![Build Status][build-image]][build-link]
 [![Code Coverage][codecov-image]][codecov-link]
 [![Apache 2.0 Licensed][license-image]][license-link]
-![Version][crates-io-version]
-![Downloads][crates-io-downloads]
+![Version][crates-io-version] ![Downloads][crates-io-downloads]
 ![Rust Stable][msrv-image]
 
 </div>
@@ -30,23 +28,23 @@ sub-crates that can be used independently or together.
 
 ## Project Structure
 
-| <div style="width:100px">Crate</div>  | Description |
-| ------------------------------------- | ----------- |
-|[ibc](ibc)                             | Re-exports all the data structures and on-chain logic of various IBC core, clients and applications. |
-|[ibc-data-types](ibc-data-types)       | Re-exports all the IBC data types that are shared across different IBC implementations. |
-|[ibc-core](ibc-core)                   | Contains data structures and implementations of all the IBC core specifications. |
-|[ibc-clients](ibc-clients)             | Contains data structures and implementations of various IBC light clients. |
-|[ibc-apps](ibc-apps)                   | Contains data structures and implementations of various IBC applications. |
-|[ibc-testkit](ibc-testkit)             | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests. |
-|[ibc-query](ibc-query)                 | Contains utility traits and implementations for querying states of an integrated IBC module. |
-|[ibc-derive](ibc-derive)               | Derive macros for `ClientState` and `ConsensusState` traits, reducing boilerplate. |
+| <div style="width:100px">Crate</div> | Description                                                                                          |
+| ------------------------------------ | ---------------------------------------------------------------------------------------------------- |
+| [ibc](ibc)                           | Re-exports all the data structures and on-chain logic of various IBC core, clients and applications. |
+| [ibc-data-types](ibc-data-types)     | Re-exports all the IBC data types that are shared across different IBC implementations.              |
+| [ibc-core](ibc-core)                 | Contains data structures and implementations of all the IBC core specifications.                     |
+| [ibc-clients](ibc-clients)           | Contains data structures and implementations of various IBC light clients.                           |
+| [ibc-apps](ibc-apps)                 | Contains data structures and implementations of various IBC applications.                            |
+| [ibc-testkit](ibc-testkit)           | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests.               |
+| [ibc-query](ibc-query)               | Contains utility traits and implementations for querying states of an integrated IBC module.         |
+| [ibc-derive](ibc-derive)             | Derive macros for `ClientState` and `ConsensusState` traits, reducing boilerplate.                   |
 
 ## Contributing
 
-IBC is specified in English in the [cosmos/ibc repo][ibc]. Any protocol changes
-or clarifications should be contributed there.
+IBC is specified in English in the [`cosmos/ibc` repo][ibc]. Any protocol
+changes or clarifications should be contributed there.
 
-If you're interested in contributing, please take a look at the
+If you're interested in contributing, please refer to the
 [CONTRIBUTING](./CONTRIBUTING.md) guidelines. We welcome and appreciate
 community contributions!
 
@@ -114,7 +112,7 @@ Legend:
 
 ## License
 
-Copyright © 2024 Informal Systems Inc. and ibc-rs authors.
+Copyright © 2024 Informal Systems Inc. and `ibc-rs` authors.
 
 Licensed under the Apache License, Version 2.0 (the "License"); you may not use
 the files in this repository except in compliance with the License. You may
@@ -139,7 +137,6 @@ specific language governing permissions and limitations under the License.
 [crates-io-version]: https://img.shields.io/crates/v/ibc.svg
 [crates-io-downloads]: https://img.shields.io/crates/d/ibc.svg
 [msrv-image]: https://img.shields.io/crates/msrv/ibc
-
 [//]: # (general links)
 [ibc]: https://github.com/cosmos/ibc
 [ibc-go]: https://github.com/cosmos/ibc-go
