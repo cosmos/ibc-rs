@@ -90,7 +90,7 @@ use cases.
 |  6 | Sovereign                       |   Informal    | all          |                 [`sovereign-ibc`][sov-ibc]                  | :hourglass_flowing_sand: |
 |  7 | Hermes IBC relayer              |   Informal    | all          |                [`basecoin-rs`][basecoin-rs]                 |    :hammer_and_pick:     |
 |  8 | Substrate pallet                |    Octopus    | all          |            [Substrate IBC Pallet][substrate-ibc]            |    :hammer_and_pick:     |
-|  9 | Near Protocol                   |    Octopus    | all          |                    [`near-ibc][near-ibc]                    | :hourglass_flowing_sand: |
+|  9 | Near Protocol                   |    Octopus    | all          |                   [`near-ibc`][near-ibc]                    | :hourglass_flowing_sand: |
 | 10 | Tendermint Light Client         | Electron Labs | all          | [`Electron-Labs/tendermint-rs`][electronlabs-tendermint-rs] | :hourglass_flowing_sand: |
 | 11 | Starknet                        |   Informal    | :eyes:       |                           :eyes:                            |          :eyes:          |
 
