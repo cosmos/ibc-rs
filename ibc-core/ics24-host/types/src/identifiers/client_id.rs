@@ -66,6 +66,12 @@ impl ClientId {
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
     }
+
+    /// Check if the client identifier is for 08-wasm light client.
+    pub fn is_wasm_client_id(&self) -> bool {
+        self.0.starts_with("08-wasm-")
+            && self.0.chars().skip("08-wasm-".len()).all(char::is_numeric)
+    }
 }
 
 impl FromStr for ClientId {

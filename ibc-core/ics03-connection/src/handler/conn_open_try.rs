@@ -38,6 +38,20 @@ where
 
     let client_val_ctx_b = ctx_b.get_client_validation_context();
 
+    #[cfg(feature = "wasm-wrapped-client-state")]
+    let client_state_of_b_on_a: Ctx::HostClientState = if vars.client_id_on_a.is_wasm_client_id() {
+        Protobuf::<Any>::decode(
+            ibc_client_wasm_types::client_state::ClientState::try_from(
+                msg.client_state_of_b_on_a.clone(),
+            )?
+            .data
+            .as_slice(),
+        )?
+    } else {
+        Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone()).map_err(Into::into)?
+    };
+
+    #[cfg(not(feature = "wasm-wrapped-client-state"))]
     let client_state_of_b_on_a =
         Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone()).map_err(Into::into)?;
 

@@ -26,7 +26,7 @@ use crate::utils::calculate_block_delay;
 pub trait ValidationContext {
     type V: ClientValidationContext;
     /// The client state type for the host chain.
-    type HostClientState: ClientStateValidation<Self::V>;
+    type HostClientState: ClientStateValidation<Self::V> + Clone;
     /// The consensus state type for the host chain.
     type HostConsensusState: ConsensusState;
 
