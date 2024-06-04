@@ -41,7 +41,7 @@ parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
 [dev-dependencies]
-serde_json     = { workspace = true }
+serde-json     = { workspace = true }
 tendermint-rpc = { workspace = true }
 
 [features]
@@ -49,7 +49,7 @@ default = [ "std" ]
 std = [
   "displaydoc/std",
   "serde/std",
-  "serde_json/std",
+  "serde-json/std",
   "ibc-core-client-types/std",
   "ibc-core-commitment-types/std",
   "ibc-core-host-types/std",

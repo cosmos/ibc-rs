@@ -28,7 +28,7 @@ http        = { version = "1.0.0" }
 mime        = { version = "0.3.17" }
 schemars    = { workspace = true, optional = true }
 serde       = { workspace = true, optional = true }
-serde_json  = { workspace = true }
+serde-json  = { workspace = true }
 
 # ibc dependencies
 ibc-core               = { workspace = true }
@@ -46,7 +46,7 @@ rstest = { workspace = true }
 default = [ "std" ]
 std = [
   "serde/std",
-  "serde_json/std",
+  "serde-json/std",
   "base64/std",
   "displaydoc/std",
   "http/std",

@@ -13,7 +13,7 @@ description = "Integration tests using `ibc-testkit` and the other IBC crates."
 [dependencies]
 # external dependencies
 serde           = { workspace = true, optional = true }
-serde_json      = { workspace = true, optional = true }
+serde-json      = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 tracing         = { version = "0.1.40", default-features = false }
 
@@ -36,7 +36,7 @@ basecoin-store = { version = "0.1.0" }
 tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
-[dev_dependencies]
+[dev-dependencies]
 cosmwasm-std   = { workspace = true }
 hex            = { version = "0.4.2" }
 rstest         = { workspace = true }
@@ -47,11 +47,9 @@ tendermint-rpc = { workspace = true }
 default = [ "std" ]
 std = [
   "serde/std",
-  "serde_json/std",
+  "serde-json/std",
   "ibc/std",
   "ibc/serde",
   "ibc-testkit/serde",
   "tendermint/std",
-  "dep:serde",
-  "dep:serde_json",
 ]
