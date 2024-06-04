@@ -33,6 +33,7 @@ fn validate_impl<Ctx>(
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    Ctx::HostClientState: Protobuf<Any>,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
