@@ -36,7 +36,7 @@ std = [
 serde = [
   "ibc-app-nft-transfer-types/serde",
   "ibc-core/serde",
-  "serde-json",
+  "dep:serde-json",
 ]
 schema = [
   "ibc-app-nft-transfer-types/schema",
