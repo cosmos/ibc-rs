@@ -41,7 +41,6 @@ where
     type V = Self;
     type HostClientState = AnyClientState;
     type HostConsensusState = AnyConsensusState;
-    type ClientStateWrapperAtAnyCounterParty<V> = V;
 
     fn host_height(&self) -> Result<Height, ContextError> {
         Ok(Height::new(
@@ -78,9 +77,7 @@ where
 
     fn validate_self_client(
         &self,
-        client_state_of_host_on_counterparty: Self::ClientStateWrapperAtAnyCounterParty<
-            Self::HostClientState,
-        >,
+        client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
         if client_state_of_host_on_counterparty.is_frozen() {
             return Err(ClientError::ClientFrozen {

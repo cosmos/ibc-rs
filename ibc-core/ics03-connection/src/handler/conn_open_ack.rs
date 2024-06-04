@@ -19,9 +19,6 @@ pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), Conte
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
-    Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState>: TryFrom<Any>,
-    <Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState> as TryFrom<Any>>::Error:
-        Into<ClientError>,
 {
     let vars = LocalVars::new(ctx_a, &msg)?;
     validate_impl(ctx_a, &msg, &vars)
@@ -35,9 +32,6 @@ fn validate_impl<Ctx>(
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
-    Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState>: TryFrom<Any>,
-    <Ctx::ClientStateWrapperAtAnyCounterParty<Ctx::HostClientState> as TryFrom<Any>>::Error:
-        Into<ClientError>,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
@@ -55,10 +49,7 @@ where
     let client_val_ctx_a = ctx_a.get_client_validation_context();
 
     let client_state_of_a_on_b =
-        Ctx::ClientStateWrapperAtAnyCounterParty::<Ctx::HostClientState>::try_from(
-            msg.client_state_of_a_on_b.clone(),
-        )
-        .map_err(Into::into)?;
+        Ctx::HostClientState::try_from(msg.client_state_of_a_on_b.clone()).map_err(Into::into)?;
 
     ctx_a.validate_self_client(client_state_of_a_on_b)?;
 

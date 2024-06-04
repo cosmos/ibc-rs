@@ -30,22 +30,6 @@ pub trait ValidationContext {
     /// The consensus state type for the host chain.
     type HostConsensusState: ConsensusState;
 
-    /// ClientState wrapper at counter party chains.
-    ///
-    /// In normal cases, this is identity.
-    /// ```rust,ignore
-    /// type ClientStateWrapperAtAnyCounterParty<CS> = CS;
-    /// ```
-    ///
-    /// But there are cases, e.g., ICS-008 enabled ibc-go, where the client state
-    /// is wrapped before storing. So we need to unwrap it appropriately.
-    ///
-    /// Note: we need `associated_type_defaults` to make this optional.
-    /// ```rust,ignore
-    /// type ClientStateWrapperAtAnyCounterParty<CS> = CS;
-    /// ```
-    type ClientStateWrapperAtAnyCounterParty<CS>;
-
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
 
@@ -80,9 +64,7 @@ pub trait ValidationContext {
     /// in the `ibc-core/ics24-host` module.
     fn validate_self_client(
         &self,
-        client_state_of_host_on_counterparty: Self::ClientStateWrapperAtAnyCounterParty<
-            Self::HostClientState,
-        >,
+        client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError>;
 
     /// Returns the prefix that the local chain uses in the KV store.
