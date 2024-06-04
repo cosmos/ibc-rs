@@ -36,7 +36,7 @@ basecoin-store = { version = "0.1.0" }
 tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
-[dev_dependencies]
+[dev-dependencies]
 cosmwasm-std   = { workspace = true }
 hex            = { version = "0.4.2" }
 rstest         = { workspace = true }
