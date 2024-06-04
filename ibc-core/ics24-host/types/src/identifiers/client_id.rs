@@ -95,3 +95,26 @@ impl PartialEq<str> for ClientId {
         self.as_str().eq(other)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[rstest::rstest]
+    #[case("08-wasm-1", true)]
+    #[case("08-wasm-", false)]
+    #[case("08-wasm-abc", false)]
+    #[case("08-wasm-1-2", false)]
+    #[case("08-wasm", false)]
+    #[case("wasm", false)]
+    #[case("08-", false)]
+    fn test_is_wasm_client_id(#[case] client_id: &str, #[case] expected: bool) {
+        assert_eq!(
+            matches!(
+                client_id.parse().map(|id: ClientId| id.is_wasm_client_id()),
+                Ok(true)
+            ),
+            expected
+        );
+    }
+}
