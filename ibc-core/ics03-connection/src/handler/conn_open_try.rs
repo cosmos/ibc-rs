@@ -16,6 +16,8 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
 
+use crate::handler::unpack_host_client_state;
+
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
     Ctx: ValidationContext,
@@ -38,32 +40,10 @@ where
 
     let client_val_ctx_b = ctx_b.get_client_validation_context();
 
-    #[cfg(feature = "wasm-wrapped-client-state")]
-    let client_state_of_b_on_a: Ctx::HostClientState = if vars.client_id_on_a.is_wasm_client_id() {
-        let wasm_client_state = ibc_client_wasm_types::client_state::ClientState::try_from(
-            msg.client_state_of_b_on_a.clone(),
-        )
-        .map_err(|e| {
-            ContextError::ConnectionError(ConnectionError::InvalidClientState {
-                reason: e.to_string(),
-            })
-        })?;
-
-        let any_client_state = <Any as ::prost::Message>::decode(wasm_client_state.data.as_slice())
-            .map_err(|e| {
-                ContextError::ConnectionError(ConnectionError::InvalidClientState {
-                    reason: e.to_string(),
-                })
-            })?;
-
-        Ctx::HostClientState::try_from(any_client_state).map_err(Into::into)?
-    } else {
-        Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone()).map_err(Into::into)?
-    };
-
-    #[cfg(not(feature = "wasm-wrapped-client-state"))]
-    let client_state_of_b_on_a =
-        Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone()).map_err(Into::into)?;
+    let client_state_of_b_on_a = unpack_host_client_state::<Ctx::HostClientState>(
+        msg.client_state_of_b_on_a.clone(),
+        &vars.client_id_on_a,
+    )?;
 
     ctx_b.validate_self_client(client_state_of_b_on_a)?;
 
