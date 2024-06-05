@@ -28,7 +28,7 @@ type Checksum = Vec<u8>;
 /// - Only a sorted set is needed. So the value type is set to
 /// [`Empty`] following
 /// ([cosmwasm-book](https://book.cosmwasm.com/cross-contract/map-storage.html#maps-as-sets)).
-pub const CONSENSUS_STATE_HEIGHT_MAP: Map<'_, (u64, u64), Empty> =
+pub const CONSENSUS_STATE_HEIGHT_MAP: Map<(u64, u64), Empty> =
     Map::new(ITERATE_CONSENSUS_STATE_PREFIX);
 
 /// Context is a wrapper around the deps and env that provides access
