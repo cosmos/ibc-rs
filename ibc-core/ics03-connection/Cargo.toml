@@ -25,6 +25,8 @@ ibc-core-handler-types    = { workspace = true }
 ibc-primitives            = { workspace = true }
 ibc-client-wasm-types     = { workspace = true, optional = true }
 
+prost = { workspace = true, optional = true }
+
 [features]
 default = [ "std" ]
 std = [
@@ -67,4 +69,5 @@ parity-scale-codec = [
 ]
 wasm-wrapped-client-state = [
   "dep:ibc-client-wasm-types",
+  "dep:prost",
 ]
