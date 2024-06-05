@@ -18,10 +18,9 @@ where
 {
     #[cfg(feature = "wasm-wrapped-client-state")]
     if host_client_id_at_counterparty.is_wasm_client_id() {
-        use std::string::ToString;
-
         use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
         use ibc_core_connection_types::error::ConnectionError;
+        use ibc_primitives::prelude::ToString;
         use prost::Message;
 
         let wasm_client_state = WasmClientState::try_from(value).map_err(|e| {
