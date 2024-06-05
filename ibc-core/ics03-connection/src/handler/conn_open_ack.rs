@@ -32,7 +32,6 @@ fn validate_impl<Ctx>(
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
-    Ctx::HostClientState: Protobuf<Any>,
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
@@ -52,13 +51,23 @@ where
     #[cfg(feature = "wasm-wrapped-client-state")]
     let client_state_of_a_on_b: Ctx::HostClientState = if vars.client_id_on_b().is_wasm_client_id()
     {
-        Protobuf::<Any>::decode(
-            ibc_client_wasm_types::client_state::ClientState::try_from(
-                msg.client_state_of_a_on_b.clone(),
-            )?
-            .data
-            .as_slice(),
-        )?
+        let wasm_client_state = ibc_client_wasm_types::client_state::ClientState::try_from(
+            msg.client_state_of_a_on_b.clone(),
+        )
+        .map_err(|e| {
+            ContextError::ConnectionError(ConnectionError::InvalidClientState {
+                reason: e.to_string(),
+            })
+        })?;
+
+        let any_client_state = <Any as ::prost::Message>::decode(wasm_client_state.data.as_slice())
+            .map_err(|e| {
+                ContextError::ConnectionError(ConnectionError::InvalidClientState {
+                    reason: e.to_string(),
+                })
+            })?;
+
+        Ctx::HostClientState::try_from(any_client_state).map_err(Into::into)?
     } else {
         Ctx::HostClientState::try_from(msg.client_state_of_a_on_b.clone()).map_err(Into::into)?
     };

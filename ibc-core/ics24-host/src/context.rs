@@ -16,7 +16,6 @@ use ibc_core_host_types::path::{
     SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;
-use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::{Signer, Timestamp};
 
 use crate::utils::calculate_block_delay;
@@ -27,7 +26,7 @@ use crate::utils::calculate_block_delay;
 pub trait ValidationContext {
     type V: ClientValidationContext;
     /// The client state type for the host chain.
-    type HostClientState: ClientStateValidation<Self::V> + Protobuf<Any>;
+    type HostClientState: ClientStateValidation<Self::V>;
     /// The consensus state type for the host chain.
     type HostConsensusState: ConsensusState;
 
