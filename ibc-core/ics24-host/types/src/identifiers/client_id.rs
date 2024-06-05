@@ -69,12 +69,14 @@ impl ClientId {
 
     /// Check if the client identifier is for 08-wasm light client.
     pub fn is_wasm_client_id(&self) -> bool {
+        const WASM_CLIENT_PREFIX: &str = "08-wasm-";
+
         // prefixed with wasm client type identifier.
-        self.0.starts_with("08-wasm-")
+        self.0.starts_with(WASM_CLIENT_PREFIX)
             // followed by non-empty string.
-            && self.0.len() > "08-wasm-".len()
+            && self.0.len() > WASM_CLIENT_PREFIX.len()
             // and the rest of the string is numeric.
-            && self.0.chars().skip("08-wasm-".len()).all(char::is_numeric)
+            && self.0.chars().skip(WASM_CLIENT_PREFIX.len()).all(char::is_numeric)
     }
 }
 
