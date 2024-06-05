@@ -628,6 +628,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ibc-client-wasm-types"
+version = "0.53.0"
+dependencies = [
+ "base64 0.21.7",
+ "displaydoc",
+ "ibc-core-client",
+ "ibc-core-host-types",
+ "ibc-primitives",
+ "ibc-proto",
+]
+
+[[package]]
 name = "ibc-core"
 version = "0.53.0"
 dependencies = [
@@ -742,11 +754,13 @@ dependencies = [
 name = "ibc-core-connection"
 version = "0.53.0"
 dependencies = [
+ "ibc-client-wasm-types",
  "ibc-core-client",
  "ibc-core-connection-types",
  "ibc-core-handler-types",
  "ibc-core-host",
  "ibc-primitives",
+ "prost",
 ]
 
 [[package]]
@@ -1125,9 +1139,9 @@ dependencies = [
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.84"
+version = "1.0.85"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec96c6a92621310b51366f1e28d05ef11489516e93be030060e5fc12024a49d6"
+checksum = "22244ce15aa966053a896d1accb3a6e68469b97c7f33f284b99f0d576879fc23"
 dependencies = [
  "unicode-ident",
 ]
