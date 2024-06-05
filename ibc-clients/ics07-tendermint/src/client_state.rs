@@ -31,6 +31,18 @@ pub use validation::*;
 /// `ibc-client-tendermint-types` crate. This wrapper exists so that we can
 /// bypass Rust's orphan rules and implement traits from
 /// `ibc::core::client::context` on the `ClientState` type.
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, derive_more::From)]
 pub struct ClientState(ClientStateType);
