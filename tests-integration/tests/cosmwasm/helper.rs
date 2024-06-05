@@ -1,13 +1,16 @@
 use std::str::FromStr;
 
-use cosmwasm_std::testing::{mock_env, mock_info};
+use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
 use cosmwasm_std::{coins, Env, MessageInfo, Timestamp as CwTimestamp};
 use ibc::clients::tendermint::types::ConsensusState;
 use ibc::core::primitives::Timestamp as IbcTimestamp;
 use tendermint::Hash;
 
 pub fn dummy_msg_info() -> MessageInfo {
-    mock_info("creator", &coins(1000, "ibc"))
+    let deps = mock_dependencies();
+    let creator = deps.api.addr_make("creator");
+
+    message_info(&creator, &coins(1000, "ibc"))
 }
 
 pub fn dummy_checksum() -> Vec<u8> {
