@@ -94,7 +94,7 @@ pub trait ValidationContext {
             &self.get_compatible_versions(),
             counterparty_candidate_versions,
         )
-        .map_err(Into::into)?;
+        .map_err(ProtocolError::from)?;
         Ok(version)
     }
 

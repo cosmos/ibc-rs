@@ -1,5 +1,5 @@
 use ibc_core_client_types::Height;
-use ibc_core_handler_types::error::ProtocolError;
+use ibc_core_handler_types::error::{Error, ProtocolError};
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_core_host_types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_primitives::prelude::*;
@@ -15,11 +15,15 @@ use crate::consensus_state::ConsensusState;
 pub trait ClientValidationContext: Sized {
     type ClientStateRef: ClientStateValidation<Self>;
     type ConsensusStateRef: ConsensusState;
+    type HostError;
 
     /// Returns the ClientState for the given identifier `client_id`.
     ///
     /// Note: Clients have the responsibility to store client states on client creation and update.
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ProtocolError>;
+    fn client_state(
+        &self,
+        client_id: &ClientId,
+    ) -> Result<Self::ClientStateRef, Error<Self::HostError>>;
 
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.
@@ -30,7 +34,7 @@ pub trait ClientValidationContext: Sized {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::ConsensusStateRef, ProtocolError>;
+    ) -> Result<Self::ConsensusStateRef, Error<Self::HostError>>;
 
     /// Returns the timestamp and height of the host when it processed a client
     /// update request at the specified height.
@@ -38,7 +42,7 @@ pub trait ClientValidationContext: Sized {
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<(Timestamp, Height), ProtocolError>;
+    ) -> Result<(Timestamp, Height), Error<Self::HostError>>;
 }
 
 /// Defines the methods that all client `ExecutionContext`s (precisely the
@@ -54,7 +58,10 @@ pub trait ClientExecutionContext:
 {
     type ClientStateMut: ClientStateExecution<Self>;
 
-    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, ProtocolError> {
+    fn client_state_mut(
+        &self,
+        client_id: &ClientId,
+    ) -> Result<Self::ClientStateMut, ProtocolError> {
         self.client_state(client_id)
     }
 
