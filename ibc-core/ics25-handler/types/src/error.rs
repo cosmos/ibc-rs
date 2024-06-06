@@ -8,8 +8,27 @@ use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_router_types::error::RouterError;
 use ibc_primitives::prelude::*;
 
-/// The top-level internal error type that encapsulates all ibc-rs errors
-/// that are not meant to be handled by users.
+/// Top-level ibc-rs error type that distinguishes between:
+/// - Errors that originate at the host level that need to be dealt with by the IBC module.
+/// - Errors that originate from internal ibc-rs code paths that need to be surfaced to the host.
+#[derive(Debug, Display)]
+pub enum Error<E> {
+    /// Host-defined errors
+    Host(E),
+    /// Internal protocol-level errors
+    Protocol(ProtocolError),
+}
+
+impl<E> From<ProtocolError> for Error<E> {
+    fn from(protocol_error: ProtocolError) -> Self {
+        Self::Protocol(protocol_error)
+    }
+}
+
+/// Encapsulates all internal ibc-rs errors.
+///
+/// These are not meant to be handled by users; their primary purpose is
+/// to aid in debugging.
 #[derive(Debug, Display, From)]
 pub enum ProtocolError {
     /// ICS02 Client error: {0}

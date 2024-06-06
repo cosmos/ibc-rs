@@ -17,7 +17,7 @@ use ibc_core_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
 use ibc_core_connection::types::msgs::ConnectionMsg;
-use ibc_core_handler_types::error::ProtocolError;
+use ibc_core_handler_types::error::Error;
 use ibc_core_handler_types::msgs::MsgEnvelope;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::router::Router;
@@ -25,11 +25,7 @@ use ibc_core_router::types::error::RouterError;
 use ibc_primitives::proto::Any;
 
 /// Entrypoint which performs both validation and message execution
-pub fn dispatch<Ctx>(
-    ctx: &mut Ctx,
-    router: &mut impl Router,
-    msg: MsgEnvelope,
-) -> Result<(), ProtocolError>
+pub fn dispatch<Ctx>(ctx: &mut Ctx, router: &mut impl Router, msg: MsgEnvelope) -> Result<(), Error>
 where
     Ctx: ExecutionContext,
     <<Ctx::V as ClientValidationContext>::ClientStateRef as TryFrom<Any>>::Error: Into<ClientError>,
