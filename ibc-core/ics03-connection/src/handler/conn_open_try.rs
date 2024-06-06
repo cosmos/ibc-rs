@@ -16,7 +16,9 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ProtocolError>
+use crate::handler::unpack_host_client_state;
+
+pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), Ctx::Error>
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
@@ -38,8 +40,10 @@ where
 
     let client_val_ctx_b = ctx_b.get_client_validation_context();
 
-    let client_state_of_b_on_a =
-        Ctx::HostClientState::try_from(msg.client_state_of_b_on_a.clone()).map_err(Into::into)?;
+    let client_state_of_b_on_a = unpack_host_client_state::<Ctx::HostClientState>(
+        msg.client_state_of_b_on_a.clone(),
+        &vars.client_id_on_a,
+    )?;
 
     ctx_b.validate_self_client(client_state_of_b_on_a)?;
 

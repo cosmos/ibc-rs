@@ -52,7 +52,7 @@ pub struct MsgConnectionOpenTry {
 #[allow(deprecated)]
 #[cfg(feature = "borsh")]
 mod borsh_impls {
-    use borsh::maybestd::io::{self, Read};
+    use borsh::io::{self, Read};
     use borsh::{BorshDeserialize, BorshSerialize};
 
     use super::*;

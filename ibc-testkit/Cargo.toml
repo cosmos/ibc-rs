@@ -23,7 +23,7 @@ displaydoc      = { workspace = true }
 parking_lot     = { version = "0.12.1", default-features = false }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
-serde_json      = { workspace = true, optional = true }
+serde-json      = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 typed-builder   = { version = "0.18.0" }
 
@@ -47,7 +47,7 @@ rstest = { workspace = true }
 default = [ "std" ]
 std = [
   "serde/std",
-  "serde_json/std",
+  "serde-json/std",
   "ibc/std",
   "ibc-proto/std",
   "tendermint/std",
@@ -56,7 +56,7 @@ serde = [
   "dep:serde",
   "ibc/serde",
   "ibc-proto/serde",
-  "serde_json",
+  "dep:serde-json",
 ]
 schema = [
   "dep:schemars",

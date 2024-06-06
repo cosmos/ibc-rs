@@ -30,7 +30,7 @@ ibc-proto           = { workspace = true }
 
 [dev-dependencies]
 rstest     = { workspace = true }
-serde_json = { workspace = true }
+serde-json = { workspace = true }
 
 [features]
 default = [ "std" ]

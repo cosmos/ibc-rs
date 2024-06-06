@@ -37,14 +37,14 @@ parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
 [dev-dependencies]
-serde_json = { workspace = true }
+serde-json = { workspace = true }
 rstest     = { workspace = true }
 
 [features]
 default = [ "std" ]
 std = [
   "serde/std",
-  "serde_json/std",
+  "serde-json/std",
   "displaydoc/std",
   "uint/std",
   "primitive-types/std",
