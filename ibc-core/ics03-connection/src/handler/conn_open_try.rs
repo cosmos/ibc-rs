@@ -16,9 +16,7 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
 
-use crate::handler::unpack_host_client_state;
-
-use super::pack_host_consensus_state;
+use crate::handler::{pack_host_consensus_state, unpack_host_client_state};
 
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
