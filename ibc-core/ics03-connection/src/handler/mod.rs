@@ -8,11 +8,11 @@ pub mod conn_open_confirm;
 pub mod conn_open_init;
 pub mod conn_open_try;
 
-/// Unpacks the client state from the provided [`Any`] type.
+/// Unpacks the client state from the format that is stored at the counterparty chain.
 ///
-/// Currently, the IBC-go enabled chains stores Wasm LightClient states in a
-/// WasmClientState wrapper. This function unpacks the client state from
-/// the WasmClientState wrapper if the client identifier is of Wasm client type.
+/// Currently, the IBC-go enabled chains stores Wasm LightClient states in a WasmClientState
+/// wrapper. This function unpacks the client state from the WasmClientState wrapper
+/// if the client identifier at counterparty is of Wasm client type.
 pub(crate) fn unpack_host_client_state<CS>(
     value: Any,
     host_client_id_at_counterparty: &ClientId,
