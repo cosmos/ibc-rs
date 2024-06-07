@@ -1,3 +1,5 @@
+use core::fmt::{Debug, Display};
+
 use ibc_core_client_types::Height;
 use ibc_core_handler_types::error::{Error, ProtocolError};
 use ibc_core_host_types::identifiers::ClientId;
@@ -15,7 +17,7 @@ use crate::consensus_state::ConsensusState;
 pub trait ClientValidationContext: Sized {
     type ClientStateRef: ClientStateValidation<Self>;
     type ConsensusStateRef: ConsensusState;
-    type HostError;
+    type HostError: Debug + Display;
 
     /// Returns the ClientState for the given identifier `client_id`.
     ///

@@ -1,3 +1,4 @@
+use core::fmt::{Debug, Display};
 use core::time::Duration;
 
 use ibc_core_channel_types::channel::ChannelEnd;
@@ -30,7 +31,7 @@ pub trait ValidationContext {
     /// The consensus state type for the host chain.
     type HostConsensusState: ConsensusState;
     /// The error type for the host chain.
-    type HostError;
+    type HostError: Debug + Display;
 
     /// Retrieve the context that implements all clients' `ValidationContext`.
     fn get_client_validation_context(&self) -> &Self::V;
