@@ -21,7 +21,7 @@ where
     CS: TryFrom<Any>,
     <CS as TryFrom<Any>>::Error: Into<ClientError>,
 {
-    #[cfg(feature = "wasm-wrapped-client-state")]
+    #[cfg(feature = "wasm-client")]
     if host_client_id_at_counterparty.is_wasm_client_id() {
         use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
         use ibc_core_connection_types::error::ConnectionError;
@@ -46,7 +46,7 @@ where
         Ok(CS::try_from(value).map_err(Into::<ClientError>::into)?)
     }
 
-    #[cfg(not(feature = "wasm-wrapped-client-state"))]
+    #[cfg(not(feature = "wasm-client"))]
     {
         // this avoids lint warning for unused variable.
         let _ = host_client_id_at_counterparty;
