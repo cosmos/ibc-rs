@@ -2,11 +2,12 @@
 use derive_more::From;
 use ibc_core_host_types::identifiers::{ClientId, ClientType};
 use ibc_primitives::prelude::*;
+use self::str::FromStr;
 use subtle_encoding::hex;
 use tendermint::abci;
 
 use crate::height::Height;
-
+use crate::error::ClientError;
 /// Client event types
 pub const CREATE_CLIENT_EVENT: &str = "create_client";
 pub const UPDATE_CLIENT_EVENT: &str = "update_client";
@@ -217,6 +218,88 @@ impl From<CreateClient> for abci::Event {
                 c.consensus_height.into(),
             ],
         }
+    }
+}
+// impl TryFrom<abci::Event> for CreateClient {
+//     type Error = ...;
+
+//     fn try_from(value: abci::Event) -> Result<Self, Self::Error> {
+//         (value.kind == CREATE_CLIENT_EVENT)
+//             .then(|| { ... })
+//             .ok_or_else(|| { ... })
+//     }
+// }
+impl TryFrom<abci::Event> for CreateClient {
+    type Error = ClientError;
+
+    fn try_from(value: abci::Event) -> Result<Self, Self::Error> {
+        if value.kind != CREATE_CLIENT_EVENT {
+            return Err(ClientError::Other {
+                description: "Error in parsing CreateClient event".to_string(),
+            });
+        }
+
+        let mut client_id = None;
+        let mut client_type = None;
+        let mut consensus_height = None;
+
+        for attribute in value.attributes.iter() {
+            let key = attribute.key_str().map_err(|_| ClientError::Other {
+                description: "Invalid attribute key".to_string(),
+            })?;
+
+            match key {
+                CLIENT_ID_ATTRIBUTE_KEY => {
+                    client_id = Some(parse_attribute_value(
+                        attribute,
+                        |value| ClientId::from_str(value).map_err(|_| ClientError::Other {
+                            description: "Invalid client ID attribute value".to_string(),
+                        }),
+                    )?);
+                }
+                CLIENT_TYPE_ATTRIBUTE_KEY => {
+                    client_type = Some(parse_attribute_value(
+                        attribute,
+                        |value| ClientType::from_str(value).map_err(|_| ClientError::Other {
+                            description: "Invalid client type attribute value".to_string(),
+                        }),
+                    )?);
+                }
+                CONSENSUS_HEIGHT_ATTRIBUTE_KEY => {
+                    consensus_height = Some(parse_attribute_value(
+                        attribute,
+                        |value| Height::from_str(value).map_err(|_| ClientError::Other {
+                            description: "Invalid consensus height attribute value".to_string(),
+                        }),
+                    )?);
+                }
+                _ => {}
+            }
+        }
+
+        let client_id = client_id.ok_or_else(|| ClientError::Other {
+            description: "Missing client ID attribute".to_string(),
+        })?;
+        let client_type = client_type.ok_or_else(|| ClientError::Other {
+            description: "Missing client type attribute".to_string(),
+        })?;
+        let consensus_height = consensus_height.ok_or_else(|| ClientError::Other {
+            description: "Missing consensus height attribute".to_string(),
+        })?;
+
+        Ok(CreateClient::new(client_id, client_type, consensus_height))
+    }
+}
+
+fn parse_attribute_value<T>(
+    attribute: &abci::EventAttribute,
+    f: impl FnOnce(&str) -> Result<T, ClientError>,
+) -> Result<T, ClientError> {
+    match attribute.value_str() {
+        Ok(value) => f(value),
+        Err(_) => Err(ClientError::Other {
+            description: "Invalid attribute value".to_string(),
+        }),
     }
 }
 
