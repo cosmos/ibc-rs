@@ -39,6 +39,7 @@ members = [
   # internal crates that are not published
   "tests-integration",
 ]
+
 exclude = [
   "ci/cw-check",
   "ci/no-std-check",
@@ -105,8 +106,7 @@ ibc-client-tendermint-types = { version = "0.53.0", path = "./ibc-clients/ics07-
 ibc-client-wasm-types       = { version = "0.53.0", path = "./ibc-clients/ics08-wasm/types", default-features = false }
 ibc-app-transfer-types      = { version = "0.53.0", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 ibc-app-nft-transfer-types  = { version = "0.53.0", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
-
-ibc-proto = { version = "0.45.0", default-features = false }
+ibc-proto                   = { version = "0.45.0", default-features = false }
 
 # cosmos dependencies
 tendermint                       = { version = "0.36.0", default-features = false }
@@ -120,10 +120,10 @@ tendermint-testgen               = { version = "0.36.0", default-features = fals
 ### Note: Kept at the following version to match the CosmWasm module version
 ### used by chains supporting the wasm-enabled version of ibc-go v7.3
 ### (This is the min version of `ibc-go` that supports `08-wasm` light clients)
-cosmwasm-schema = { version = "1.5.4" }
-cosmwasm-std    = { version = "1.5.4" }
-cosmwasm-vm     = { version = "1.5.4" }
-cw-storage-plus = { version = "1.2.0" }
+cosmwasm-schema = { version = "2.0.4" }
+cosmwasm-std    = { version = "2.0.4" }
+cosmwasm-vm     = { version = "2.0.4" }
+cw-storage-plus = { version = "2.0.0" }
 
 # parity dependencies
 parity-scale-codec = { version = "3.6.5", default-features = false, features = [ "derive" ] }
