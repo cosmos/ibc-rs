@@ -639,3 +639,125 @@ impl From<UpgradeClient> for abci::Event {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use core::any::Any;
+
+    use super::*;
+    use rstest::*;
+
+    #[rstest]
+    #[case(
+        abci::Event {
+            kind: CREATE_CLIENT_EVENT.to_owned(),
+            attributes: vec![
+                abci::EventAttribute::try_from(("client_id", "07-tendermint-0")).unwrap(),
+                abci::EventAttribute::try_from(("client_type", "07-tendermint")).unwrap(),
+                abci::EventAttribute::try_from(("consensus_height", "1-10")).unwrap(),
+            ],
+        },
+        Ok(CreateClient::new(
+            ClientId::from_str("07-tendermint-0").expect("should parse"),
+            ClientType::from_str("07-tendermint").expect("should parse"),
+            Height::new(1, 10).unwrap(),
+        )),
+    )]
+    #[case(
+        abci::Event {
+            kind: "some_other_event".to_owned(),
+            attributes: vec![
+                abci::EventAttribute::try_from(("client_id", "07-tendermint-0")).unwrap(),
+                abci::EventAttribute::try_from(("client_type", "07-tendermint")).unwrap(),
+                abci::EventAttribute::try_from(("consensus_height", "1-10")).unwrap(),
+            ],
+        },
+        Err(ClientError::Other {
+            description: "Error in parsing CreateClient event".to_string(),
+        }),
+    )]
+    #[case(
+        abci::Event {
+            kind: CREATE_CLIENT_EVENT.to_owned(),
+            attributes: vec![
+                abci::EventAttribute::try_from(("client_type", "07-tendermint")).unwrap(),
+                abci::EventAttribute::try_from(("consensus_height", "1-10")).unwrap(),
+            ],
+        },
+        Err(ClientError::MissingAttributeKey {
+            attribute_key: CLIENT_ID_ATTRIBUTE_KEY.to_string(),
+        }),
+    )]
+    fn test_create_client_try_from(
+        #[case] event: abci::Event,
+        #[case] expected: Result<CreateClient, ClientError>,
+    ) {
+        let result = CreateClient::try_from(event);
+        if expected.is_err() {
+            assert_eq!(result.unwrap_err().type_id(), expected.unwrap_err().type_id());
+        } else {
+            assert_eq!(result.unwrap(), expected.unwrap());
+        }
+    }
+
+    #[rstest]
+    #[case(
+        abci::Event {
+            kind: UPDATE_CLIENT_EVENT.to_owned(),
+            attributes: vec![
+                abci::EventAttribute::try_from(("client_id", "07-tendermint-0")).unwrap(),
+                abci::EventAttribute::try_from(("client_type", "07-tendermint")).unwrap(),
+                abci::EventAttribute::try_from(("consensus_height", "1-10")).unwrap(),
+                abci::EventAttribute::try_from(("consensus_heights", "1-10,1-11")).unwrap(),
+                abci::EventAttribute::try_from(("header", "1234")).unwrap(),
+            ],
+        },
+        Ok(UpdateClient::new(
+            ClientId::from_str("07-tendermint-0").expect("should parse"),
+            ClientType::from_str("07-tendermint").expect("should parse"),
+            Height::new(1, 10).unwrap(),
+            vec![Height::new(1, 10).unwrap(), Height::new(1, 11).unwrap()],
+            vec![0x12, 0x34],
+        )),
+    )]
+    #[case(
+        abci::Event {
+            kind: "some_other_event".to_owned(),
+            attributes: vec![
+                abci::EventAttribute::try_from(("client_id", "07-tendermint-0")).unwrap(),
+                abci::EventAttribute::try_from(("client_type", "07-tendermint")).unwrap(),
+                abci::EventAttribute::try_from(("consensus_height", "1-10")).unwrap(),
+                abci::EventAttribute::try_from(("consensus_heights", "1-10,1-11")).unwrap(),
+                abci::EventAttribute::try_from(("header", "1234")).unwrap(),
+            ],
+        },
+        Err(ClientError::Other {
+            description: "Error in parsing UpdateClient event".to_string(),
+        }),
+    )]
+    #[case(
+        abci::Event {
+            kind: UPDATE_CLIENT_EVENT.to_owned(),
+            attributes: vec![
+                abci::EventAttribute::try_from(("client_type", "07-tendermint")).unwrap(),
+                abci::EventAttribute::try_from(("consensus_height", "1-10")).unwrap(),
+                abci::EventAttribute::try_from(("consensus_heights", "1-10,1-11")).unwrap(),
+                abci::EventAttribute::try_from(("header", "1234")).unwrap(),
+            ],
+        },
+        Err(ClientError::MissingAttributeKey {
+            attribute_key: CLIENT_ID_ATTRIBUTE_KEY.to_string(),
+        }),
+    )]
+    fn test_update_client_try_from(
+        #[case] event: abci::Event,
+        #[case] expected: Result<UpdateClient, ClientError>,
+    ) {
+        let result = UpdateClient::try_from(event);
+        if expected.is_err() {
+            assert_eq!(result.unwrap_err().type_id(), expected.unwrap_err().type_id());
+        } else {
+            assert_eq!(result.unwrap(), expected.unwrap());
+        }
+    }
+}
