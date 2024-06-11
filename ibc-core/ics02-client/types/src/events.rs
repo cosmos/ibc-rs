@@ -518,25 +518,11 @@ impl TryFrom<abci::Event> for UpdateClient{
             })
         },
     ).and_then(|(client_id, client_type, consensus_height, consensus_heights, header)| {
-        let client_id = client_id.ok_or_else(|| ClientError::Other {
-            description: "Missing client_id attribute".to_string(),
-        })?.client_id;
-
-        let client_type = client_type.ok_or_else(|| ClientError::Other {
-            description: "Missing client_type attribute".to_string(),
-        })?.client_type;
-
-        let consensus_height = consensus_height.ok_or_else(|| ClientError::Other {
-            description: "Missing consensus_height attribute".to_string(),
-        })?.consensus_height;
-
-        let consensus_heights = consensus_heights.ok_or_else(|| ClientError::Other {
-            description: "Missing consensus_heights attribute".to_string(),
-        })?.consensus_heights;
-
-        let header = header.ok_or_else(|| ClientError::Other {
-            description: "Missing header attribute".to_string(),
-        })?.header;
+        let client_id = client_id.ok_or_else(|| ClientError::MissingAttributeKey { attribute_key: CLIENT_ID_ATTRIBUTE_KEY.to_string() })?.client_id;
+        let client_type = client_type.ok_or_else(|| ClientError::MissingAttributeKey { attribute_key: CLIENT_TYPE_ATTRIBUTE_KEY.to_string() })?.client_type;
+        let consensus_height = consensus_height.ok_or_else(|| ClientError::MissingAttributeKey { attribute_key: CONSENSUS_HEIGHT_ATTRIBUTE_KEY.to_string() })?.consensus_height;
+        let consensus_heights = consensus_heights.ok_or_else(|| ClientError::MissingAttributeKey { attribute_key: CONSENSUS_HEIGHTS_ATTRIBUTE_KEY.to_string() })?.consensus_heights;
+        let header = header.ok_or_else(|| ClientError::MissingAttributeKey { attribute_key: HEADER_ATTRIBUTE_KEY.to_string() })?.header;
 
         Ok(UpdateClient::new(client_id, client_type, consensus_height, consensus_heights, header))
     })
