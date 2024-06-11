@@ -9,7 +9,7 @@ use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentPrefix;
 use ibc_core_connection_types::version::{pick_version, Version as ConnectionVersion};
 use ibc_core_connection_types::ConnectionEnd;
-use ibc_core_handler_types::error::{Error, ProtocolError};
+use ibc_core_handler_types::error::{ContextError, ProtocolError};
 use ibc_core_handler_types::events::IbcEvent;
 use ibc_core_host_types::identifiers::{ConnectionId, Sequence};
 use ibc_core_host_types::path::{
@@ -37,27 +37,27 @@ pub trait ValidationContext {
     fn get_client_validation_context(&self) -> &Self::V;
 
     /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, Error<Self::HostError>>;
+    fn host_height(&self) -> Result<Height, ContextError<Self::HostError>>;
 
     /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, Error<Self::HostError>>;
+    fn host_timestamp(&self) -> Result<Timestamp, ContextError<Self::HostError>>;
 
     /// Returns the `ConsensusState` of the host (local) chain at a specific height.
     fn host_consensus_state(
         &self,
         height: &Height,
-    ) -> Result<Self::HostConsensusState, Error<Self::HostError>>;
+    ) -> Result<Self::HostConsensusState, ContextError<Self::HostError>>;
 
     /// Returns a natural number, counting how many clients have been created
     /// thus far. The value of this counter should increase only via method
     /// `ExecutionContext::increase_client_counter`.
-    fn client_counter(&self) -> Result<u64, Error<Self::HostError>>;
+    fn client_counter(&self) -> Result<u64, ContextError<Self::HostError>>;
 
     /// Returns the ConnectionEnd for the given identifier `conn_id`.
     fn connection_end(
         &self,
         conn_id: &ConnectionId,
-    ) -> Result<ConnectionEnd, Error<Self::HostError>>;
+    ) -> Result<ConnectionEnd, ContextError<Self::HostError>>;
 
     /// Validates the `ClientState` of the host chain stored on the counterparty
     /// chain against the host's internal state.
@@ -71,13 +71,13 @@ pub trait ValidationContext {
     fn validate_self_client(
         &self,
         client_state_of_host_on_counterparty: Self::HostClientState,
-    ) -> Result<(), Error<Self::HostError>>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;
 
     /// Returns a counter on how many connections have been created thus far.
-    fn connection_counter(&self) -> Result<u64, Error<Self::HostError>>;
+    fn connection_counter(&self) -> Result<u64, ContextError<Self::HostError>>;
 
     /// Function required by ICS-03. Returns the list of all possible versions that the connection
     /// handshake protocol supports.
@@ -90,7 +90,7 @@ pub trait ValidationContext {
     fn pick_version(
         &self,
         counterparty_candidate_versions: &[ConnectionVersion],
-    ) -> Result<ConnectionVersion, Error<Self::HostError>> {
+    ) -> Result<ConnectionVersion, ContextError<Self::HostError>> {
         let version = pick_version(
             &self.get_compatible_versions(),
             counterparty_candidate_versions,
@@ -103,48 +103,48 @@ pub trait ValidationContext {
     fn channel_end(
         &self,
         channel_end_path: &ChannelEndPath,
-    ) -> Result<ChannelEnd, Error<Self::HostError>>;
+    ) -> Result<ChannelEnd, ContextError<Self::HostError>>;
 
     /// Returns the sequence number for the next packet to be sent for the given store path
     fn get_next_sequence_send(
         &self,
         seq_send_path: &SeqSendPath,
-    ) -> Result<Sequence, Error<Self::HostError>>;
+    ) -> Result<Sequence, ContextError<Self::HostError>>;
 
     /// Returns the sequence number for the next packet to be received for the given store path
     fn get_next_sequence_recv(
         &self,
         seq_recv_path: &SeqRecvPath,
-    ) -> Result<Sequence, Error<Self::HostError>>;
+    ) -> Result<Sequence, ContextError<Self::HostError>>;
 
     /// Returns the sequence number for the next packet to be acknowledged for the given store path
     fn get_next_sequence_ack(
         &self,
         seq_ack_path: &SeqAckPath,
-    ) -> Result<Sequence, Error<Self::HostError>>;
+    ) -> Result<Sequence, ContextError<Self::HostError>>;
 
     /// Returns the packet commitment for the given store path
     fn get_packet_commitment(
         &self,
         commitment_path: &CommitmentPath,
-    ) -> Result<PacketCommitment, Error<Self::HostError>>;
+    ) -> Result<PacketCommitment, ContextError<Self::HostError>>;
 
     /// Returns the packet receipt for the given store path
     fn get_packet_receipt(
         &self,
         receipt_path: &ReceiptPath,
-    ) -> Result<Receipt, Error<Self::HostError>>;
+    ) -> Result<Receipt, ContextError<Self::HostError>>;
 
     /// Returns the packet acknowledgement for the given store path
     fn get_packet_acknowledgement(
         &self,
         ack_path: &AckPath,
-    ) -> Result<AcknowledgementCommitment, Error<Self::HostError>>;
+    ) -> Result<AcknowledgementCommitment, ContextError<Self::HostError>>;
 
     /// Returns a counter on the number of channel ids have been created thus far.
     /// The value of this counter should increase only via method
     /// `ExecutionContext::increase_channel_counter`.
-    fn channel_counter(&self) -> Result<u64, Error<Self::HostError>>;
+    fn channel_counter(&self) -> Result<u64, ContextError<Self::HostError>>;
 
     /// Returns the maximum expected time per block
     fn max_expected_time_per_block(&self) -> Duration;
@@ -157,7 +157,8 @@ pub trait ValidationContext {
 
     /// Validates the `signer` field of IBC messages, which represents the address
     /// of the user/relayer that signed the given message.
-    fn validate_message_signer(&self, signer: &Signer) -> Result<(), Error<Self::HostError>>;
+    fn validate_message_signer(&self, signer: &Signer)
+        -> Result<(), ContextError<Self::HostError>>;
 }
 
 /// Context to be implemented by the host that provides all "write-only" methods.
@@ -171,93 +172,96 @@ pub trait ExecutionContext: ValidationContext {
 
     /// Called upon client creation.
     /// Increases the counter which keeps track of how many clients have been created.
-    fn increase_client_counter(&mut self) -> Result<(), ProtocolError>;
+    fn increase_client_counter(&mut self) -> Result<(), ContextError<Self::HostError>>;
 
     /// Stores the given connection_end at path
     fn store_connection(
         &mut self,
         connection_path: &ConnectionPath,
         connection_end: ConnectionEnd,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Stores the given connection_id at a path associated with the client_id.
     fn store_connection_to_client(
         &mut self,
         client_connection_path: &ClientConnectionPath,
         conn_id: ConnectionId,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter which keeps track of how many connections have been created.
-    fn increase_connection_counter(&mut self) -> Result<(), ProtocolError>;
+    fn increase_connection_counter(&mut self) -> Result<(), ContextError<Self::HostError>>;
 
     /// Stores the given packet commitment at the given store path
     fn store_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Deletes the packet commitment at the given store path
     fn delete_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Stores the given packet receipt at the given store path
     fn store_packet_receipt(
         &mut self,
         receipt_path: &ReceiptPath,
         receipt: Receipt,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Stores the given packet acknowledgement at the given store path
     fn store_packet_acknowledgement(
         &mut self,
         ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Deletes the packet acknowledgement at the given store path
-    fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), ProtocolError>;
+    fn delete_packet_acknowledgement(
+        &mut self,
+        ack_path: &AckPath,
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Stores the given channel_end at a path associated with the port_id and channel_id.
     fn store_channel(
         &mut self,
         channel_end_path: &ChannelEndPath,
         channel_end: ChannelEnd,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Stores the given `nextSequenceSend` number at the given store path
     fn store_next_sequence_send(
         &mut self,
         seq_send_path: &SeqSendPath,
         seq: Sequence,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Stores the given `nextSequenceRecv` number at the given store path
     fn store_next_sequence_recv(
         &mut self,
         seq_recv_path: &SeqRecvPath,
         seq: Sequence,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Stores the given `nextSequenceAck` number at the given store path
     fn store_next_sequence_ack(
         &mut self,
         seq_ack_path: &SeqAckPath,
         seq: Sequence,
-    ) -> Result<(), ProtocolError>;
+    ) -> Result<(), ContextError<Self::HostError>>;
 
     /// Called upon channel identifier creation (Init or Try message processing).
     /// Increases the counter which keeps track of how many channels have been created.
-    fn increase_channel_counter(&mut self) -> Result<(), ProtocolError>;
+    fn increase_channel_counter(&mut self) -> Result<(), ContextError<Self::HostError>>;
 
     /// Emit the given IBC event
-    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ProtocolError>;
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError<Self::HostError>>;
 
     /// Log the given message.
-    fn log_message(&mut self, message: String) -> Result<(), ProtocolError>;
+    fn log_message(&mut self, message: String) -> Result<(), ContextError<Self::HostError>>;
 }
 
 /// Convenient type alias for `ClientStateRef`, providing access to client

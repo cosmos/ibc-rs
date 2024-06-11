@@ -5,16 +5,18 @@ use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::{ClientMisbehaviour, UpdateClient};
 use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;
 use ibc_core_client_types::UpdateKind;
-use ibc_core_handler_types::error::ProtocolError;
+use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), Ctx::Error>
+pub fn validate<Ctx>(
+    ctx: &Ctx,
+    msg: MsgUpdateOrMisbehaviour,
+) -> Result<(), ContextError<Ctx::HostError>>
 where
     Ctx: ValidationContext,
-    Ctx::Error: From<ClientError> + From<ProtocolError>,
 {
     ctx.validate_message_signer(msg.signer())?;
 
@@ -36,10 +38,12 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), Ctx::Error>
+pub fn execute<Ctx>(
+    ctx: &mut Ctx,
+    msg: MsgUpdateOrMisbehaviour,
+) -> Result<(), ContextError<Ctx::HostError>>
 where
     Ctx: ExecutionContext,
-    Ctx::Error: From<ClientError> + From<ProtocolError>,
 {
     let client_id = msg.client_id().clone();
     let update_kind = match msg {

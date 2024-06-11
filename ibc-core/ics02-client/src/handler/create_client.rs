@@ -4,13 +4,13 @@ use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::CreateClient;
 use ibc_core_client_types::msgs::MsgCreateClient;
-use ibc_core_handler_types::error::Error;
+use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::{ClientStateMut, ClientStateRef, ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), Error<Ctx::HostError>>
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ContextError<Ctx::HostError>>
 where
     Ctx: ValidationContext,
     <ClientStateRef<Ctx> as TryFrom<Any>>::Error: Into<ClientError>,
@@ -51,7 +51,7 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), Error<Ctx::HostError>>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ContextError<Ctx::HostError>>
 where
     Ctx: ExecutionContext,
     <ClientStateMut<Ctx> as TryFrom<Any>>::Error: Into<ClientError>,
