@@ -25,7 +25,7 @@ use crate::utils::calculate_block_delay;
 ///
 /// Trait used for the top-level `validate` entrypoint in the `ibc-core` crate.
 pub trait ValidationContext {
-    type V: ClientValidationContext;
+    type V: ClientValidationContext<HostError = Self::HostError>;
     /// The client state type for the host chain.
     type HostClientState: ClientStateValidation<Self::V>;
     /// The consensus state type for the host chain.
@@ -165,7 +165,7 @@ pub trait ValidationContext {
 ///
 /// Trait used for the top-level `execute` and `dispatch` entrypoints in the `ibc-core` crate.
 pub trait ExecutionContext: ValidationContext {
-    type E: ClientExecutionContext;
+    type E: ClientExecutionContext<HostError = Self::HostError>;
 
     /// Retrieve the context that implements all clients' `ExecutionContext`.
     fn get_client_execution_context(&mut self) -> &mut Self::E;
