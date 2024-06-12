@@ -244,10 +244,12 @@ where
                 )
             }
             Order::None => {
-                return Err(ProtocolError::ChannelError(ChannelError::InvalidOrderType {
-                    expected: "Channel ordering cannot be None".to_string(),
-                    actual: chan_end_on_a.ordering.to_string(),
-                }))
+                return Err(ProtocolError::ChannelError(
+                    ChannelError::InvalidOrderType {
+                        expected: "Channel ordering cannot be None".to_string(),
+                        actual: chan_end_on_a.ordering.to_string(),
+                    },
+                ))
             }
         };
 
