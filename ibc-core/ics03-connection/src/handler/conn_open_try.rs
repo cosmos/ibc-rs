@@ -16,7 +16,7 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;
 
-use crate::handler::unpack_host_client_state;
+use crate::handler::{pack_host_consensus_state, unpack_host_client_state};
 
 pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ContextError>
 where
@@ -119,6 +119,9 @@ where
         let expected_consensus_state_of_b_on_a =
             ctx_b.host_consensus_state(&msg.consensus_height_of_b_on_a)?;
 
+        let stored_consensus_state_of_b_on_a =
+            pack_host_consensus_state(expected_consensus_state_of_b_on_a, &vars.client_id_on_a);
+
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
             client_id_on_a.clone(),
             msg.consensus_height_of_b_on_a.revision_number(),
@@ -131,7 +134,7 @@ where
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
                 Path::ClientConsensusState(client_cons_state_path_on_a),
-                expected_consensus_state_of_b_on_a.into().to_vec(),
+                stored_consensus_state_of_b_on_a.to_vec(),
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
                 height: msg.proofs_height_on_a,
