@@ -111,7 +111,7 @@ where
         client_message: Any,
     ) -> Result<(), ContextError<V::HostError>>;
 
-    /// Checks for eContextError<V::HostErrorvidence of a misbehaviour in Header or Misbehaviour type. It
+    /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
     /// assumes the client_message has already been verified.
     fn check_for_misbehaviour(
         &self,
@@ -120,10 +120,10 @@ where
         client_message: Any,
     ) -> Result<bool, ContextError<V::HostError>>;
 
-    /// Returns the stContextError<V::HostErroratus of the client. Only Active clients are allowed to process packets.
+    /// Returns the status of the client. Only Active clients are allowed to process packets.
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ContextError<V::HostError>>;
 
-    /// Verifies whether the calling (subject) client state matches thContextError<V::HostErrore substitute
+    /// Verifies whether the calling (subject) client state matches the substitute
     /// client state for the purposes of client recovery.
     ///
     /// Note that this validation function does not need to perform *all* of the
@@ -188,7 +188,7 @@ where
         client_message: Any,
     ) -> Result<(), ContextError<E::HostError>>;
 
-    /// Update the client state and consensus state in the store with the upgraded oContextError<V::HostErrornes.
+    /// Update the client state and consensus state in the store with the upgraded ones.
     fn update_state_on_upgrade(
         &self,
         ctx: &mut E,
