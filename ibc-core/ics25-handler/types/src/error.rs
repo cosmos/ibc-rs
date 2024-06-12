@@ -1,4 +1,5 @@
 //! Defines the context error type
+use core::fmt::{Debug, Display};
 
 use derive_more::From;
 use displaydoc::Display;
@@ -12,7 +13,7 @@ use ibc_primitives::prelude::*;
 /// - Errors that originate at the host level that need to be dealt with by the IBC module.
 /// - Errors that originate from internal ibc-rs code paths that need to be surfaced to the host.
 #[derive(Debug, Display)]
-pub enum ContextError<E> {
+pub enum ContextError<E: Debug + Display> {
     /// Host-defined errors
     Host(E),
     /// Internal protocol-level errors
@@ -37,13 +38,13 @@ pub enum ProtocolError {
     RouterError(RouterError),
 }
 
-impl<E> From<ProtocolError> for ContextError<E> {
+impl<E: Display + Debug> From<ProtocolError> for ContextError<E> {
     fn from(protocol_error: ProtocolError) -> Self {
         Self::Protocol(protocol_error)
     }
 }
 
-impl<E> From<ClientError> for ContextError<E> {
+impl<E: Display + Debug> From<ClientError> for ContextError<E> {
     fn from(client_error: ClientError) -> Self {
         Self::Protocol(ProtocolError::ClientError(client_error))
     }

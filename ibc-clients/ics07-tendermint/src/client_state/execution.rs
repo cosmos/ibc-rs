@@ -1,9 +1,11 @@
+use ibc_client_tendermint_types::error::Error as TmError;
 use ibc_client_tendermint_types::{
     ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
 };
 use ibc_core_client::context::prelude::*;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
+use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_primitives::prelude::*;
@@ -23,7 +25,7 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         consensus_state: Any,
-    ) -> Result<(), ClientError> {
+    ) -> Result<(), ContextError<E::HostError>> {
         initialise(self.inner(), ctx, client_id, consensus_state)
     }
 
@@ -32,7 +34,7 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         header: Any,
-    ) -> Result<Vec<Height>, ClientError> {
+    ) -> Result<Vec<Height>, ContextError<E::HostError>> {
         update_state(self.inner(), ctx, client_id, header)
     }
 
@@ -41,7 +43,7 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         client_message: Any,
-    ) -> Result<(), ClientError> {
+    ) -> Result<(), ContextError<E::HostError>> {
         update_on_misbehaviour(self.inner(), ctx, client_id, client_message)
     }
 
@@ -51,7 +53,7 @@ where
         client_id: &ClientId,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
-    ) -> Result<Height, ClientError> {
+    ) -> Result<Height, ContextError<E::HostError>> {
         update_on_upgrade(
             self.inner(),
             ctx,
@@ -67,7 +69,7 @@ where
         subject_client_id: &ClientId,
         substitute_client_state: Any,
         substitute_consensus_state: Any,
-    ) -> Result<(), ClientError> {
+    ) -> Result<(), ContextError<E::HostError>> {
         let subject_client_state = self.inner().clone();
 
         update_on_recovery(
@@ -90,7 +92,7 @@ pub fn initialise<E>(
     ctx: &mut E,
     client_id: &ClientId,
     consensus_state: Any,
-) -> Result<(), ClientError>
+) -> Result<(), ContextError<E::HostError>>
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
@@ -135,7 +137,7 @@ pub fn update_state<E>(
     ctx: &mut E,
     client_id: &ClientId,
     header: Any,
-) -> Result<Vec<Height>, ClientError>
+) -> Result<Vec<Height>, ContextError<E::HostError>>
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
@@ -203,7 +205,7 @@ pub fn update_on_misbehaviour<E>(
     ctx: &mut E,
     client_id: &ClientId,
     _client_message: Any,
-) -> Result<(), ClientError>
+) -> Result<(), ContextError<E::HostError>>
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
@@ -235,7 +237,7 @@ pub fn update_on_upgrade<E>(
     client_id: &ClientId,
     upgraded_client_state: Any,
     upgraded_consensus_state: Any,
-) -> Result<Height, ClientError>
+) -> Result<Height, ContextError<E::HostError>>
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,
@@ -271,6 +273,7 @@ where
     // will allow the first block of the new chain to be verified against
     // the last validators of the old chain so long as it is submitted
     // within the TrustingPeriod of this client.
+    //
     // NOTE: We do not set processed time for this consensus state since
     // this consensus state should not be used for packet verification as
     // the root is empty. The next consensus state submitted using update
@@ -315,7 +318,7 @@ pub fn prune_oldest_consensus_state<E>(
     client_state: &ClientStateType,
     ctx: &mut E,
     client_id: &ClientId,
-) -> Result<(), ClientError>
+) -> Result<(), ContextError<E::HostError>>
 where
     E: ClientExecutionContext + ExtClientValidationContext,
     E::ClientStateRef: From<ClientStateType>,
@@ -380,7 +383,7 @@ pub fn update_on_recovery<E>(
     subject_client_id: &ClientId,
     substitute_client_state: Any,
     substitute_consensus_state: Any,
-) -> Result<(), ClientError>
+) -> Result<(), ContextError<E::HostError>>
 where
     E: ExtClientExecutionContext,
     E::ClientStateRef: From<ClientStateType>,

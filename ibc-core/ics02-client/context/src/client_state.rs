@@ -5,6 +5,7 @@ use ibc_core_client_types::{Height, Status};
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
+use ibc_core_handler_types::error::ContextError;
 use ibc_core_host_types::identifiers::{ClientId, ClientType};
 use ibc_core_host_types::path::Path;
 use ibc_primitives::prelude::*;
@@ -108,21 +109,21 @@ where
         ctx: &V,
         client_id: &ClientId,
         client_message: Any,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError<V::HostError>>;
 
-    /// Checks for evidence of a misbehaviour in Header or Misbehaviour type. It
+    /// Checks for eContextError<V::HostErrorvidence of a misbehaviour in Header or Misbehaviour type. It
     /// assumes the client_message has already been verified.
     fn check_for_misbehaviour(
         &self,
         ctx: &V,
         client_id: &ClientId,
         client_message: Any,
-    ) -> Result<bool, ClientError>;
+    ) -> Result<bool, ContextError<V::HostError>>;
 
-    /// Returns the status of the client. Only Active clients are allowed to process packets.
-    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError>;
+    /// Returns the stContextError<V::HostErroratus of the client. Only Active clients are allowed to process packets.
+    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ContextError<V::HostError>>;
 
-    /// Verifies whether the calling (subject) client state matches the substitute
+    /// Verifies whether the calling (subject) client state matches thContextError<V::HostErrore substitute
     /// client state for the purposes of client recovery.
     ///
     /// Note that this validation function does not need to perform *all* of the
@@ -134,7 +135,11 @@ where
     /// level.
     ///
     /// Returns `Ok` if the subject and substitute client states match, `Err` otherwise.
-    fn check_substitute(&self, ctx: &V, substitute_client_state: Any) -> Result<(), ClientError>;
+    fn check_substitute(
+        &self,
+        ctx: &V,
+        substitute_client_state: Any,
+    ) -> Result<(), ContextError<V::HostError>>;
 }
 
 /// `ClientState` methods which require access to the client's
@@ -156,7 +161,7 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         consensus_state: Any,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError<E::HostError>>;
 
     /// Updates and stores as necessary any associated information for an IBC
     /// client, such as the ClientState and corresponding ConsensusState. Upon
@@ -172,7 +177,7 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         header: Any,
-    ) -> Result<Vec<Height>, ClientError>;
+    ) -> Result<Vec<Height>, ContextError<E::HostError>>;
 
     /// update_state_on_misbehaviour should perform appropriate state changes on
     /// a client state given that misbehaviour has been detected and verified
@@ -181,16 +186,16 @@ where
         ctx: &mut E,
         client_id: &ClientId,
         client_message: Any,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError<E::HostError>>;
 
-    /// Update the client state and consensus state in the store with the upgraded ones.
+    /// Update the client state and consensus state in the store with the upgraded oContextError<V::HostErrornes.
     fn update_state_on_upgrade(
         &self,
         ctx: &mut E,
         client_id: &ClientId,
         upgraded_client_state: Any,
         upgraded_consensus_state: Any,
-    ) -> Result<Height, ClientError>;
+    ) -> Result<Height, ContextError<E::HostError>>;
 
     /// Update the subject client using the `substitute_client_state` in response
     /// to a successful client recovery.
@@ -200,7 +205,7 @@ where
         subject_client_id: &ClientId,
         substitute_client_state: Any,
         substitute_consensus_state: Any,
-    ) -> Result<(), ClientError>;
+    ) -> Result<(), ContextError<E::HostError>>;
 }
 
 /// Primary client trait. Defines all the methods that clients must implement.
