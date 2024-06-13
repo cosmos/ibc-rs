@@ -18,8 +18,9 @@ description = """
 all-features = true
 
 [dependencies]
-ibc-app-transfer     = { workspace = true }
-ibc-app-nft-transfer = { workspace = true, optional = true, features = [ "std", "serde", "schema", "borsh", "parity-scale-codec" ] }
+ibc-app-transfer            = { workspace = true }
+ibc-app-nft-transfer        = { workspace = true, optional = true, features = [ "std", "serde", "schema", "borsh", "parity-scale-codec" ] }
+ibc-app-interchain-accounts = { workspace = true }
 
 [features]
 default = [ "std" ]

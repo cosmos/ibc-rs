@@ -228,6 +228,10 @@ impl ChannelEnd {
         self.state == State::Open
     }
 
+    pub fn is_closed(&self) -> bool {
+        self.state == State::Closed
+    }
+
     pub fn state(&self) -> &State {
         &self.state
     }
@@ -279,7 +283,7 @@ impl ChannelEnd {
 
     /// Checks if the state of this channel end is not closed.
     pub fn verify_not_closed(&self) -> Result<(), ChannelError> {
-        if self.state.eq(&State::Closed) {
+        if self.is_closed() {
             return Err(ChannelError::InvalidState {
                 expected: "Channel state cannot be Closed".to_string(),
                 actual: self.state.to_string(),

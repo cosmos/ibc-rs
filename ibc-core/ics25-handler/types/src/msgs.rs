@@ -6,6 +6,7 @@ use ibc_core_channel_types::msgs::{
     CHAN_OPEN_INIT_TYPE_URL, CHAN_OPEN_TRY_TYPE_URL, RECV_PACKET_TYPE_URL,
     TIMEOUT_ON_CLOSE_TYPE_URL, TIMEOUT_TYPE_URL,
 };
+use ibc_core_client_types::msgs::RECOVER_CLIENT_TYPE_URL;
 #[allow(deprecated)]
 use ibc_core_client_types::msgs::{
     ClientMsg, MsgCreateClient, MsgSubmitMisbehaviour, MsgUpdateClient, MsgUpgradeClient,
@@ -19,6 +20,7 @@ use ibc_core_connection_types::msgs::{
 };
 use ibc_core_router_types::error::RouterError;
 use ibc_primitives::prelude::*;
+use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::Protobuf;
 
@@ -34,6 +36,73 @@ pub enum MsgEnvelope {
     Connection(ConnectionMsg),
     Channel(ChannelMsg),
     Packet(PacketMsg),
+}
+
+impl MsgEnvelope {
+    pub fn signer(&self) -> Signer {
+        match self.clone() {
+            MsgEnvelope::Client(msg) => match msg {
+                ClientMsg::CreateClient(msg) => msg.signer,
+                ClientMsg::UpdateClient(msg) => msg.signer,
+                ClientMsg::UpgradeClient(msg) => msg.signer,
+                ClientMsg::RecoverClient(msg) => msg.signer,
+                #[allow(deprecated)]
+                ClientMsg::Misbehaviour(msg) => msg.signer,
+            },
+            MsgEnvelope::Connection(msg) => match msg {
+                ConnectionMsg::OpenInit(msg) => msg.signer,
+                ConnectionMsg::OpenTry(msg) => msg.signer,
+                ConnectionMsg::OpenAck(msg) => msg.signer,
+                ConnectionMsg::OpenConfirm(msg) => msg.signer,
+            },
+            MsgEnvelope::Channel(msg) => match msg {
+                ChannelMsg::OpenInit(msg) => msg.signer,
+                ChannelMsg::OpenTry(msg) => msg.signer,
+                ChannelMsg::OpenAck(msg) => msg.signer,
+                ChannelMsg::OpenConfirm(msg) => msg.signer,
+                ChannelMsg::CloseInit(msg) => msg.signer,
+                ChannelMsg::CloseConfirm(msg) => msg.signer,
+            },
+            MsgEnvelope::Packet(msg) => match msg {
+                PacketMsg::Recv(msg) => msg.signer,
+                PacketMsg::Ack(msg) => msg.signer,
+                PacketMsg::Timeout(msg) => msg.signer,
+                PacketMsg::TimeoutOnClose(msg) => msg.signer,
+            },
+        }
+    }
+
+    pub fn type_url(&self) -> String {
+        match self {
+            MsgEnvelope::Client(msg) => match msg {
+                ClientMsg::CreateClient(_msg) => CREATE_CLIENT_TYPE_URL.into(),
+                ClientMsg::UpdateClient(_msg) => UPDATE_CLIENT_TYPE_URL.into(),
+                ClientMsg::UpgradeClient(_msg) => UPGRADE_CLIENT_TYPE_URL.into(),
+                ClientMsg::Misbehaviour(_msg) => SUBMIT_MISBEHAVIOUR_TYPE_URL.into(),
+                ClientMsg::RecoverClient(_msg) => RECOVER_CLIENT_TYPE_URL.into(),
+            },
+            MsgEnvelope::Connection(msg) => match msg {
+                ConnectionMsg::OpenInit(_msg) => CONN_OPEN_INIT_TYPE_URL.into(),
+                ConnectionMsg::OpenTry(_msg) => CONN_OPEN_TRY_TYPE_URL.into(),
+                ConnectionMsg::OpenAck(_msg) => CONN_OPEN_ACK_TYPE_URL.into(),
+                ConnectionMsg::OpenConfirm(_msg) => CONN_OPEN_CONFIRM_TYPE_URL.into(),
+            },
+            MsgEnvelope::Channel(msg) => match msg {
+                ChannelMsg::OpenInit(_msg) => CHAN_OPEN_INIT_TYPE_URL.into(),
+                ChannelMsg::OpenTry(_msg) => CHAN_OPEN_TRY_TYPE_URL.into(),
+                ChannelMsg::OpenAck(_msg) => CHAN_OPEN_ACK_TYPE_URL.into(),
+                ChannelMsg::OpenConfirm(_msg) => CHAN_OPEN_CONFIRM_TYPE_URL.into(),
+                ChannelMsg::CloseInit(_msg) => CHAN_CLOSE_INIT_TYPE_URL.into(),
+                ChannelMsg::CloseConfirm(_msg) => CHAN_CLOSE_CONFIRM_TYPE_URL.into(),
+            },
+            MsgEnvelope::Packet(msg) => match msg {
+                PacketMsg::Recv(_msg) => RECV_PACKET_TYPE_URL.into(),
+                PacketMsg::Ack(_msg) => ACKNOWLEDGEMENT_TYPE_URL.into(),
+                PacketMsg::Timeout(_msg) => TIMEOUT_TYPE_URL.into(),
+                PacketMsg::TimeoutOnClose(_msg) => TIMEOUT_ON_CLOSE_TYPE_URL.into(),
+            },
+        }
+    }
 }
 
 #[allow(deprecated)]

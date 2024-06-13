@@ -31,6 +31,24 @@ pub struct MsgChannelOpenInit {
 }
 
 impl MsgChannelOpenInit {
+    pub fn new(
+        port_id_on_a: PortId,
+        connection_hops_on_a: Vec<ConnectionId>,
+        port_id_on_b: PortId,
+        ordering: Order,
+        signer: Signer,
+        version_proposal: Version,
+    ) -> Self {
+        Self {
+            port_id_on_a,
+            connection_hops_on_a,
+            port_id_on_b,
+            ordering,
+            signer,
+            version_proposal,
+        }
+    }
+
     /// Checks if the `connection_hops` has a length of `expected`.
     ///
     /// Note: Current IBC version only supports one connection hop.

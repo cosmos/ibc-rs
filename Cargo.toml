@@ -29,6 +29,7 @@ members = [
   "ibc-apps/ics20-transfer",
   "ibc-apps/ics721-nft-transfer/types",
   "ibc-apps/ics721-nft-transfer",
+  "ibc-apps/ics27-interchain-accounts",
   "ibc-apps",
   "ibc-core/ics24-host/cosmos",
   "ibc-data-types",
@@ -67,6 +68,7 @@ sha2            = { version = "0.10.8", default-features = false }
 serde           = { version = "1.0", default-features = false }
 serde-json      = { package = "serde-json-wasm", version = "1.0.1", default-features = false }
 subtle-encoding = { version = "0.5", default-features = false }
+cosmrs          = { version = "0.16.0" }
 
 # ibc dependencies
 ibc            = { version = "0.53.0", path = "./ibc", default-features = false }
@@ -90,8 +92,9 @@ ibc-client-cw            = { version = "0.53.0", path = "./ibc-clients/cw-contex
 ibc-client-tendermint    = { version = "0.53.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
 ibc-client-tendermint-cw = { version = "0.53.0", path = "./ibc-clients/ics07-tendermint/cw-contract", default-features = false }
 
-ibc-app-transfer     = { version = "0.53.0", path = "./ibc-apps/ics20-transfer", default-features = false }
-ibc-app-nft-transfer = { version = "0.53.0", path = "./ibc-apps/ics721-nft-transfer", default-features = false }
+ibc-app-transfer            = { version = "0.53.0", path = "./ibc-apps/ics20-transfer", default-features = false }
+ibc-app-nft-transfer        = { version = "0.53.0", path = "./ibc-apps/ics721-nft-transfer", default-features = false }
+ibc-app-interchain-accounts = { version = "0.53.0", path = "./ibc-apps/ics27-interchain-accounts", default-features = false }
 
 ibc-core-client-context     = { version = "0.53.0", path = "./ibc-core/ics02-client/context", default-features = false }
 ibc-core-client-types       = { version = "0.53.0", path = "./ibc-core/ics02-client/types", default-features = false }
