@@ -6,6 +6,7 @@ use ibc_core_client::context::client_state::ClientStateValidation;
 use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Status;
+use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
@@ -48,7 +49,7 @@ where
         ctx: &V,
         client_id: &ClientId,
         client_message: Any,
-    ) -> Result<(), ClientError> {
+    ) -> Result<(), ContextError<V::HostError>> {
         verify_client_message::<V, Sha256>(
             self.inner(),
             ctx,
@@ -63,15 +64,19 @@ where
         ctx: &V,
         client_id: &ClientId,
         client_message: Any,
-    ) -> Result<bool, ClientError> {
+    ) -> Result<bool, ContextError<V::HostError>> {
         check_for_misbehaviour(self.inner(), ctx, client_id, client_message)
     }
 
-    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
+    fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ContextError<V::HostError>> {
         status(self.inner(), ctx, client_id)
     }
 
-    fn check_substitute(&self, _ctx: &V, substitute_client_state: Any) -> Result<(), ClientError> {
+    fn check_substitute(
+        &self,
+        _ctx: &V,
+        substitute_client_state: Any,
+    ) -> Result<(), ContextError<V::HostError>> {
         check_substitute::<V>(self.inner(), substitute_client_state)
     }
 }
@@ -91,7 +96,7 @@ pub fn verify_client_message<V, H>(
     client_id: &ClientId,
     client_message: Any,
     verifier: &impl Verifier,
-) -> Result<(), ClientError>
+) -> Result<(), ContextError<V::HostError>>
 where
     V: ExtClientValidationContext,
     ConsensusStateType: Convertible<V::ConsensusStateRef>,
@@ -162,7 +167,7 @@ pub fn check_for_misbehaviour<V>(
     ctx: &V,
     client_id: &ClientId,
     client_message: Any,
-) -> Result<bool, ClientError>
+) -> Result<bool, ContextError<V::HostError>>
 where
     V: ExtClientValidationContext,
     ConsensusStateType: Convertible<V::ConsensusStateRef>,
@@ -190,7 +195,7 @@ pub fn status<V>(
     client_state: &ClientStateType,
     ctx: &V,
     client_id: &ClientId,
-) -> Result<Status, ClientError>
+) -> Result<Status, ContextError<V::HostError>>
 where
     V: ExtClientValidationContext,
     ConsensusStateType: Convertible<V::ConsensusStateRef>,
@@ -238,7 +243,7 @@ where
 pub fn check_substitute<V>(
     subject_client_state: &ClientStateType,
     substitute_client_state: Any,
-) -> Result<(), ClientError>
+) -> Result<(), ContextError<V::HostError>>
 where
     V: ExtClientValidationContext,
     ConsensusStateType: Convertible<V::ConsensusStateRef>,
