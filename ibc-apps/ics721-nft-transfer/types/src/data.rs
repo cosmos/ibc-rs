@@ -152,7 +152,10 @@ impl<'de> serde::Deserialize<'de> for DataValue {
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshSerialize for DataValue {
-    fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> borsh::maybestd::io::Result<()> {
         borsh::BorshSerialize::serialize(&self.value, writer)?;
         let mime = match &self.mime {
             Some(mime) => mime.to_string(),
@@ -165,13 +168,15 @@ impl borsh::BorshSerialize for DataValue {
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshDeserialize for DataValue {
-    fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
+    fn deserialize_reader<R: borsh::maybestd::io::Read>(
+        reader: &mut R,
+    ) -> borsh::maybestd::io::Result<Self> {
         let value = String::deserialize_reader(reader)?;
         let mime = String::deserialize_reader(reader)?;
         let mime = if mime.is_empty() {
             None
         } else {
-            Some(Mime::from_str(&mime).map_err(|_| borsh::io::ErrorKind::Other)?)
+            Some(Mime::from_str(&mime).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
         };
 
         Ok(Self { value, mime })
@@ -289,8 +294,10 @@ mod tests {
     #[test]
     fn test_borsh_roundtrip() {
         fn borsh_roundtrip(data_value: DataValue) {
-            let data_value_bytes = borsh::to_vec(&data_value).unwrap();
-            let res = borsh::from_slice::<DataValue>(&data_value_bytes).unwrap();
+            use borsh::{BorshDeserialize, BorshSerialize};
+
+            let data_value_bytes = data_value.try_to_vec().unwrap();
+            let res = DataValue::try_from_slice(&data_value_bytes).unwrap();
 
             assert_eq!(data_value, res);
         }

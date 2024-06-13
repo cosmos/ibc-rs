@@ -154,7 +154,10 @@ mod sealed {
 
     #[cfg(feature = "borsh")]
     impl borsh::BorshSerialize for ConnectionEnd {
-        fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
+        fn serialize<W: borsh::maybestd::io::Write>(
+            &self,
+            writer: &mut W,
+        ) -> borsh::maybestd::io::Result<()> {
             let value = InnerConnectionEnd::from(self.clone());
             borsh::BorshSerialize::serialize(&value, writer)
         }
@@ -162,7 +165,9 @@ mod sealed {
 
     #[cfg(feature = "borsh")]
     impl borsh::BorshDeserialize for ConnectionEnd {
-        fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
+        fn deserialize_reader<R: borsh::maybestd::io::Read>(
+            reader: &mut R,
+        ) -> borsh::maybestd::io::Result<Self> {
             let inner_conn_end = InnerConnectionEnd::deserialize_reader(reader)?;
             Ok(ConnectionEnd::from(inner_conn_end))
         }
@@ -460,8 +465,7 @@ impl Counterparty {
 )]
 #[cfg_attr(
     feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize),
-    borsh(use_discriminant = false)
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]

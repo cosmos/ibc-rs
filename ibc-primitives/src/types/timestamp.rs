@@ -33,7 +33,10 @@ pub struct Timestamp {
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshSerialize for Timestamp {
-    fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> borsh::maybestd::io::Result<()> {
         let timestamp = self.nanoseconds();
         borsh::BorshSerialize::serialize(&timestamp, writer)
     }
@@ -41,9 +44,11 @@ impl borsh::BorshSerialize for Timestamp {
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshDeserialize for Timestamp {
-    fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
+    fn deserialize_reader<R: borsh::maybestd::io::Read>(
+        reader: &mut R,
+    ) -> borsh::maybestd::io::Result<Self> {
         let timestamp = u64::deserialize_reader(reader)?;
-        Ok(Self::from_nanoseconds(timestamp).map_err(|_| borsh::io::ErrorKind::Other)?)
+        Ok(Self::from_nanoseconds(timestamp).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
     }
 }
 
@@ -369,9 +374,10 @@ mod tests {
     #[test]
     #[cfg(feature = "borsh")]
     fn test_timestamp_borsh_ser_der() {
+        use borsh::{BorshDeserialize, BorshSerialize};
         let timestamp = Timestamp::now();
-        let encode_timestamp = borsh::to_vec(&timestamp).unwrap();
-        let _ = borsh::from_slice::<Timestamp>(&encode_timestamp).unwrap();
+        let encode_timestamp = timestamp.try_to_vec().unwrap();
+        let _ = Timestamp::try_from_slice(&encode_timestamp).unwrap();
     }
 
     #[test]

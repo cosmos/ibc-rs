@@ -192,16 +192,21 @@ pub struct ClassUri(
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshSerialize for ClassUri {
-    fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
+    fn serialize<W: borsh::maybestd::io::Write>(
+        &self,
+        writer: &mut W,
+    ) -> borsh::maybestd::io::Result<()> {
         borsh::BorshSerialize::serialize(&self.to_string(), writer)
     }
 }
 
 #[cfg(feature = "borsh")]
 impl borsh::BorshDeserialize for ClassUri {
-    fn deserialize_reader<R: borsh::io::Read>(reader: &mut R) -> borsh::io::Result<Self> {
+    fn deserialize_reader<R: borsh::maybestd::io::Read>(
+        reader: &mut R,
+    ) -> borsh::maybestd::io::Result<Self> {
         let uri = String::deserialize_reader(reader)?;
-        Ok(ClassUri::from_str(&uri).map_err(|_| borsh::io::ErrorKind::Other)?)
+        Ok(ClassUri::from_str(&uri).map_err(|_| borsh::maybestd::io::ErrorKind::Other)?)
     }
 }
 
@@ -442,8 +447,10 @@ mod tests {
     #[test]
     fn test_borsh_roundtrip() {
         fn borsh_roundtrip(class_uri: ClassUri) {
-            let class_uri_bytes = borsh::to_vec(&class_uri).unwrap();
-            let res = borsh::from_slice::<ClassUri>(&class_uri_bytes).unwrap();
+            use borsh::{BorshDeserialize, BorshSerialize};
+
+            let class_uri_bytes = class_uri.try_to_vec().unwrap();
+            let res = ClassUri::try_from_slice(&class_uri_bytes).unwrap();
 
             assert_eq!(class_uri, res);
         }
