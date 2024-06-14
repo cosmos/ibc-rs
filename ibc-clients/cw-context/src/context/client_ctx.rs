@@ -18,8 +18,10 @@ use crate::utils::AnyCodec;
 
 impl<'a, C: ClientType<'a>> ClientValidationContext for Context<'a, C>
 where
-    <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
-    <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+    // <C::ClientState as TryFrom<Any>>::Error: Into<ClientError>,
+    // <C::ConsensusState as TryFrom<Any>>::Error: Into<ClientError>,
+    ClientError: From<<C::ClientState as TryFrom<Any>>::Error>,
+    ClientError: From<<C::ConsensusState as TryFrom<Any>>::Error>,
 {
     type ClientStateRef = C::ClientState;
     type ConsensusStateRef = C::ConsensusState;
