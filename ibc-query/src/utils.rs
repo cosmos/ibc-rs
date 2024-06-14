@@ -30,11 +30,11 @@ where
 
 pub trait IntoResponse<Raw>: Sized
 where
-    Self: Into<Raw>,
+    Raw: From<Self>,
 {
     fn into_response(self) -> Result<Response<Raw>, Status> {
         Ok(Response::new(self.into()))
     }
 }
 
-impl<T, Raw> IntoResponse<Raw> for T where T: Into<Raw> {}
+impl<T, Raw> IntoResponse<Raw> for T where Raw: From<T> {}
