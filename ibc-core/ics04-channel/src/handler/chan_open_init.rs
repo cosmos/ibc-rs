@@ -32,6 +32,8 @@ where
         &msg.version_proposal,
     )?;
 
+    ctx_a.available_port_capability(&msg.port_id_on_a, &chan_id_on_a)?;
+
     Ok(())
 }
 
@@ -103,6 +105,12 @@ where
             ctx_a.log_message(log_message)?;
         }
     }
+
+    ctx_a.claim_port_capability(
+        module.identifier().to_string().into(),
+        &msg.port_id_on_a,
+        &chan_id_on_a,
+    )?;
 
     Ok(())
 }

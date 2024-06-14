@@ -9,6 +9,7 @@ use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
+use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Expiry;
 
@@ -19,17 +20,21 @@ use crate::context::{SendPacketExecutionContext, SendPacketValidationContext};
 /// Equivalent to calling [`send_packet_validate`], followed by [`send_packet_execute`]
 pub fn send_packet(
     ctx_a: &mut impl SendPacketExecutionContext,
+    module: &impl Module,
     packet: Packet,
 ) -> Result<(), ContextError> {
-    send_packet_validate(ctx_a, &packet)?;
-    send_packet_execute(ctx_a, packet)
+    send_packet_validate(ctx_a, module, &packet)?;
+    send_packet_execute(ctx_a, module, packet)
 }
 
 /// Validate that sending the given packet would succeed.
 pub fn send_packet_validate(
     ctx_a: &impl SendPacketValidationContext,
+    module: &impl Module,
     packet: &Packet,
 ) -> Result<(), ContextError> {
+    ctx_a.has_port_capability(module, &packet.port_id_on_a, &packet.chan_id_on_a)?;
+
     if !packet.timeout_height_on_b.is_set() && !packet.timeout_timestamp_on_b.is_set() {
         return Err(ContextError::PacketError(PacketError::MissingTimeout));
     }
@@ -104,8 +109,11 @@ pub fn send_packet_validate(
 /// A prior call to [`send_packet_validate`] MUST have succeeded.
 pub fn send_packet_execute(
     ctx_a: &mut impl SendPacketExecutionContext,
+    module: &impl Module,
     packet: Packet,
 ) -> Result<(), ContextError> {
+    ctx_a.has_port_capability(module, &packet.port_id_on_a, &packet.chan_id_on_a)?;
+
     {
         let seq_send_path_on_a = SeqSendPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
         let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;

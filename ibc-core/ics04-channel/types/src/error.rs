@@ -71,6 +71,16 @@ pub enum ChannelError {
     InvalidIdentifier(IdentifierError),
     /// channel counter overflow error
     CounterOverflow,
+    /// Capability for `{port_id}/{channel_id}` does not exist
+    CapabilityNotFound {
+        port_id: PortId,
+        channel_id: ChannelId,
+    },
+    /// Capability for `{port_id}/{channel_id}` already exists
+    CapabilityAlreadyExists {
+        port_id: PortId,
+        channel_id: ChannelId,
+    },
     /// other error: `{description}`
     Other { description: String },
 }

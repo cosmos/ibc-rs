@@ -6,9 +6,10 @@ use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::ConnectionEnd;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::IbcEvent;
-use ibc_core_host::types::identifiers::{ConnectionId, Sequence};
+use ibc_core_host::types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_core_host::types::path::{ChannelEndPath, CommitmentPath, SeqSendPath};
 use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
 /// Methods required in send packet validation, to be implemented by the host
@@ -26,6 +27,13 @@ pub trait SendPacketValidationContext {
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath)
         -> Result<Sequence, ContextError>;
+
+    fn has_port_capability(
+        &self,
+        module: &impl Module,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<(), ContextError>;
 }
 
 impl<T> SendPacketValidationContext for T
@@ -51,6 +59,15 @@ where
         seq_send_path: &SeqSendPath,
     ) -> Result<Sequence, ContextError> {
         self.get_next_sequence_send(seq_send_path)
+    }
+
+    fn has_port_capability(
+        &self,
+        module: &impl Module,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<(), ContextError> {
+        self.has_port_capability(module.identifier().to_string().into(), port_id, channel_id)
     }
 }
 
