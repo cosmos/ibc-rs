@@ -13,7 +13,7 @@ pub const MOCK_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.mock.ConsensusState";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MockConsensusState {
     pub header: MockHeader,
-    pub root: CommitmentRoot,
+    root: CommitmentRoot,
 }
 
 impl MockConsensusState {
