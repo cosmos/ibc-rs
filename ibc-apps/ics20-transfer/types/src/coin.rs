@@ -39,18 +39,18 @@ pub struct Coin<D> {
     pub amount: Amount,
 }
 
-impl<D: FromStr> Coin<D>
+impl<D: FromStr<Err = TokenTransferError>> Coin<D>
 where
-    D::Err: Into<TokenTransferError>,
+    TokenTransferError: From<D::Err>,
 {
     pub fn from_string_list(coin_str: &str) -> Result<Vec<Self>, TokenTransferError> {
         coin_str.split(',').map(FromStr::from_str).collect()
     }
 }
 
-impl<D: FromStr> FromStr for Coin<D>
+impl<D: FromStr<Err = TokenTransferError>> FromStr for Coin<D>
 where
-    D::Err: Into<TokenTransferError>,
+    TokenTransferError: From<D::Err>,
 {
     type Err = TokenTransferError;
 
@@ -82,19 +82,19 @@ where
 
         Ok(Coin {
             amount: amount.parse()?,
-            denom: denom.parse().map_err(Into::into)?,
+            denom: denom.parse().map_err(Into::<TokenTransferError>::into)?,
         })
     }
 }
 
 impl<D: FromStr> TryFrom<ProtoCoin> for Coin<D>
 where
-    D::Err: Into<TokenTransferError>,
+    TokenTransferError: From<D::Err>,
 {
     type Error = TokenTransferError;
 
     fn try_from(proto: ProtoCoin) -> Result<Coin<D>, Self::Error> {
-        let denom = D::from_str(&proto.denom).map_err(Into::into)?;
+        let denom = D::from_str(&proto.denom).map_err(Into::<TokenTransferError>::into)?;
         let amount = Amount::from_str(&proto.amount)?;
         Ok(Self { denom, amount })
     }
