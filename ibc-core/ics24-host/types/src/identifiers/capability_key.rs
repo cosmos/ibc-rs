@@ -1,4 +1,5 @@
 use core::any::TypeId;
+use core::fmt::Write;
 
 use ibc_primitives::prelude::String;
 
@@ -7,7 +8,9 @@ pub struct CapabilityKey(String);
 
 impl From<TypeId> for CapabilityKey {
     fn from(type_id: TypeId) -> Self {
-        Self(std::format!("{:?}", type_id))
+        let mut buf = String::new();
+        write!(buf, "{:?}", type_id).unwrap();
+        Self(buf)
     }
 }
 
