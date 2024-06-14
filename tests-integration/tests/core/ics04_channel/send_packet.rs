@@ -18,6 +18,7 @@ use ibc::core::primitives::*;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_packet;
 use ibc_testkit::hosts::MockHost;
+use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use test_log::test;
 
@@ -92,6 +93,8 @@ fn send_packet_processing() {
         packet
     };
 
+    let dummy_transfer_module = DummyTransferModule;
+
     let tests: Vec<Test> = vec![
         Test {
             name: "Processing fails because no channel exists in the context".to_string(),
@@ -107,7 +110,12 @@ fn send_packet_processing() {
                     LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
-                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_channel(
+                    &dummy_transfer_module,
+                    PortId::transfer(),
+                    ChannelId::zero(),
+                    chan_end_on_a.clone(),
+                )
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet,
             want_pass: true,
@@ -120,7 +128,12 @@ fn send_packet_processing() {
                     LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
-                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_channel(
+                    &dummy_transfer_module,
+                    PortId::transfer(),
+                    ChannelId::zero(),
+                    chan_end_on_a.clone(),
+                )
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_timeout_equal_client_height,
             want_pass: true,
@@ -133,7 +146,12 @@ fn send_packet_processing() {
                     LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
-                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_channel(
+                    &dummy_transfer_module,
+                    PortId::transfer(),
+                    ChannelId::zero(),
+                    chan_end_on_a.clone(),
+                )
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_timeout_one_before_client_height,
             want_pass: false,
@@ -146,7 +164,12 @@ fn send_packet_processing() {
                     LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a.clone())
-                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a.clone())
+                .with_channel(
+                    &dummy_transfer_module,
+                    PortId::transfer(),
+                    ChannelId::zero(),
+                    chan_end_on_a.clone(),
+                )
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_with_no_timeout,
             want_pass: false,
@@ -159,7 +182,12 @@ fn send_packet_processing() {
                     LightClientState::<MockHost>::with_latest_height(client_height),
                 )
                 .with_connection(ConnectionId::zero(), conn_end_on_a)
-                .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
+                .with_channel(
+                    &dummy_transfer_module,
+                    PortId::transfer(),
+                    ChannelId::zero(),
+                    chan_end_on_a,
+                )
                 .with_send_sequence(PortId::transfer(), ChannelId::zero(), 1.into()),
             packet: packet_with_timestamp_old,
             want_pass: false,
@@ -169,7 +197,11 @@ fn send_packet_processing() {
     .collect();
 
     for mut test in tests {
-        let res = send_packet(&mut test.ctx.ibc_store, test.packet.clone());
+        let res = send_packet(
+            &mut test.ctx.ibc_store,
+            &DummyTransferModule,
+            test.packet.clone(),
+        );
         // Additionally check the events and the output objects in the result.
         match res {
             Ok(()) => {

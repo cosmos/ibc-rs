@@ -18,6 +18,7 @@ use ibc::core::primitives::*;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
 use ibc_testkit::hosts::MockHost;
+use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
@@ -145,6 +146,7 @@ fn timeout_fail_no_consensus_state_for_height(fixture: Fixture) {
 
     let mut ctx = ctx
         .with_channel(
+            &DummyTransferModule,
             PortId::transfer(),
             ChannelId::zero(),
             chan_end_on_a_unordered,
@@ -208,6 +210,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(
+            &DummyTransferModule,
             PortId::transfer(),
             ChannelId::zero(),
             chan_end_on_a_unordered,
@@ -242,6 +245,7 @@ fn timeout_success_no_packet_commitment(fixture: Fixture) {
     } = fixture;
     let ctx = ctx
         .with_channel(
+            &DummyTransferModule,
             PortId::transfer(),
             ChannelId::zero(),
             chan_end_on_a_unordered,
@@ -280,6 +284,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(
+            &DummyTransferModule,
             PortId::transfer(),
             ChannelId::zero(),
             chan_end_on_a_unordered,
@@ -319,7 +324,12 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
             LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
-        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a_ordered)
+        .with_channel(
+            &DummyTransferModule,
+            PortId::transfer(),
+            ChannelId::zero(),
+            chan_end_on_a_ordered,
+        )
         .with_packet_commitment(
             packet.port_id_on_a,
             packet.chan_id_on_a,
@@ -347,6 +357,7 @@ fn timeout_unordered_chan_execute(fixture: Fixture) {
     } = fixture;
     let mut ctx = ctx
         .with_channel(
+            &DummyTransferModule,
             PortId::transfer(),
             ChannelId::zero(),
             chan_end_on_a_unordered,
@@ -388,7 +399,12 @@ fn timeout_ordered_chan_execute(fixture: Fixture) {
         ..
     } = fixture;
     let mut ctx = ctx
-        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a_ordered)
+        .with_channel(
+            &DummyTransferModule,
+            PortId::transfer(),
+            ChannelId::zero(),
+            chan_end_on_a_ordered,
+        )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),
