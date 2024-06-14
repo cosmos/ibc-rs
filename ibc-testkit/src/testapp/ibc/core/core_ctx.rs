@@ -18,7 +18,9 @@ use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::{ConnectionEnd, IdentifiedConnectionEnd};
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::IbcEvent;
-use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
+use ibc::core::host::types::identifiers::{
+    CapabilityKey, ChannelId, ClientId, ConnectionId, PortId, Sequence,
+};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath,
     NextChannelSequencePath, NextClientSequencePath, NextConnectionSequencePath, Path, ReceiptPath,
@@ -265,6 +267,43 @@ where
 
     fn get_client_validation_context(&self) -> &Self::V {
         self
+    }
+
+    fn available_port_capability(
+        &self,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<(), ContextError> {
+        (!self
+            .port_capabilities
+            .lock()
+            .contains_key(&(port_id.clone(), channel_id.clone())))
+        .then_some(())
+        .ok_or_else(|| {
+            ContextError::ChannelError(ChannelError::CapabilityAlreadyExists {
+                port_id: port_id.clone(),
+                channel_id: channel_id.clone(),
+            })
+        })
+    }
+
+    fn has_port_capability(
+        &self,
+        capability: CapabilityKey,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<(), ContextError> {
+        self.port_capabilities
+            .lock()
+            .get(&(port_id.clone(), channel_id.clone()))
+            .filter(|stored_capability| stored_capability == &&capability)
+            .ok_or_else(|| {
+                ContextError::ChannelError(ChannelError::CapabilityNotFound {
+                    port_id: port_id.clone(),
+                    channel_id: channel_id.clone(),
+                })
+            })
+            .map(|_| ())
     }
 }
 
@@ -773,6 +812,19 @@ where
             .map_err(|_| ChannelError::Other {
                 description: "Channel end store error".to_string(),
             })?;
+        Ok(())
+    }
+
+    fn claim_port_capability(
+        &mut self,
+        capability: CapabilityKey,
+        port_id: &PortId,
+        channel_id: &ChannelId,
+    ) -> Result<(), ContextError> {
+        self.port_capabilities
+            .lock()
+            .insert((port_id.clone(), channel_id.clone()), capability);
+
         Ok(())
     }
 

@@ -19,6 +19,7 @@ use ibc::core::host::types::path::{
     SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ExecutionContext, ValidationContext};
+use ibc::core::router::module::Module;
 use ibc::primitives::prelude::*;
 use ibc::primitives::Timestamp;
 
@@ -386,6 +387,7 @@ where
     /// This does not bootstrap any corresponding IBC connection or light client.
     pub fn with_channel(
         mut self,
+        module: &impl Module,
         port_id: PortId,
         chan_id: ChannelId,
         channel_end: ChannelEnd,
@@ -394,6 +396,11 @@ where
         self.ibc_store
             .store_channel(&channel_end_path, channel_end)
             .expect("error writing to store");
+
+        self.ibc_store
+            .claim_port_capability(module.identifier().to_string().into(), &port_id, &chan_id)
+            .expect("error writing to store");
+
         self
     }
 

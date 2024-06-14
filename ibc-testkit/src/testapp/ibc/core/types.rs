@@ -12,7 +12,9 @@ use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::handler::types::events::IbcEvent;
-use ibc::core::host::types::identifiers::{ConnectionId, Sequence};
+use ibc::core::host::types::identifiers::{
+    CapabilityKey, ChannelId, ConnectionId, PortId, Sequence,
+};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     ClientUpdateHeightPath, ClientUpdateTimePath, CommitmentPath, ConnectionPath,
@@ -89,6 +91,8 @@ where
     pub host_consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
     /// Map of older ibc commitment proofs
     pub ibc_commiment_proofs: Arc<Mutex<BTreeMap<u64, CommitmentProof>>>,
+    /// Map of port capabilities
+    pub port_capabilities: Arc<Mutex<BTreeMap<(PortId, ChannelId), CapabilityKey>>>,
     /// IBC Events
     pub events: Arc<Mutex<Vec<IbcEvent>>>,
     /// message logs
@@ -138,6 +142,7 @@ where
             packet_commitment_store: TypedStore::new(shared_store.clone()),
             packet_receipt_store: TypedStore::new(shared_store.clone()),
             packet_ack_store: TypedStore::new(shared_store.clone()),
+            port_capabilities: Arc::new(Mutex::new(Default::default())),
             events: Arc::new(Mutex::new(Vec::new())),
             logs: Arc::new(Mutex::new(Vec::new())),
             store: shared_store,
