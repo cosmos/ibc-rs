@@ -227,6 +227,10 @@ mod tests {
         }
 
         impl Module for FooModule {
+            fn identifier(&self) -> ModuleId {
+                ModuleId::new("foomodule".to_string())
+            }
+
             fn on_chan_open_init_validate(
                 &self,
                 _order: Order,
@@ -327,6 +331,10 @@ mod tests {
         struct BarModule;
 
         impl Module for BarModule {
+            fn identifier(&self) -> ModuleId {
+                ModuleId::new("barmodule".to_string())
+            }
+
             fn on_chan_open_init_validate(
                 &self,
                 _order: Order,

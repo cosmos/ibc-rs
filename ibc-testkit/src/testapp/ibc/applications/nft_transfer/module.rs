@@ -7,11 +7,15 @@ use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
 use ibc::core::router::module::Module;
-use ibc::core::router::types::module::ModuleExtras;
+use ibc::core::router::types::module::{ModuleExtras, ModuleId};
 
 use super::types::DummyNftTransferModule;
 
 impl Module for DummyNftTransferModule {
+    fn identifier(&self) -> ModuleId {
+        ModuleId::new("nft-transfer".to_string())
+    }
+
     fn on_chan_open_init_validate(
         &self,
         _order: Order,

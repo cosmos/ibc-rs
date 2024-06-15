@@ -1,7 +1,5 @@
-use core::any::TypeId;
 /// The trait that defines an IBC application
 use core::fmt::Debug;
-use core::fmt::Write;
 
 use ibc_core_channel_types::acknowledgement::Acknowledgement;
 use ibc_core_channel_types::channel::{Counterparty, Order};
@@ -14,11 +12,7 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 
 pub trait Module: 'static + Debug {
-    fn identifier(&self) -> ModuleId {
-        let mut buf = String::new();
-        write!(buf, "{:?}", TypeId::of::<Self>()).expect("Never fails");
-        ModuleId::new(buf)
-    }
+    fn identifier(&self) -> ModuleId;
 
     fn on_chan_open_init_validate(
         &self,
