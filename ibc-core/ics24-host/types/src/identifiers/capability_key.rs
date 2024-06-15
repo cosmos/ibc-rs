@@ -3,6 +3,7 @@ use core::fmt::Write;
 
 use ibc_primitives::prelude::String;
 
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct CapabilityKey(String);
 

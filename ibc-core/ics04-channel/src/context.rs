@@ -6,8 +6,8 @@ use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::ConnectionEnd;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::IbcEvent;
-use ibc_core_host::types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
-use ibc_core_host::types::path::{ChannelEndPath, CommitmentPath, SeqSendPath};
+use ibc_core_host::types::identifiers::{ConnectionId, Sequence};
+use ibc_core_host::types::path::{ChannelEndPath, CommitmentPath, PortPath, SeqSendPath};
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
@@ -30,9 +30,8 @@ pub trait SendPacketValidationContext {
 
     fn has_port_capability(
         &self,
+        port_path: &PortPath,
         module: &impl Module,
-        port_id: &PortId,
-        channel_id: &ChannelId,
     ) -> Result<(), ContextError>;
 }
 
@@ -63,11 +62,10 @@ where
 
     fn has_port_capability(
         &self,
+        port_path: &PortPath,
         module: &impl Module,
-        port_id: &PortId,
-        channel_id: &ChannelId,
     ) -> Result<(), ContextError> {
-        self.has_port_capability(module.identifier().to_string().into(), port_id, channel_id)
+        self.has_port_capability(port_path, module.identifier().to_string().into())
     }
 }
 

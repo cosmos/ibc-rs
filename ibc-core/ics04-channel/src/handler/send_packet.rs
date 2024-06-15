@@ -7,7 +7,7 @@ use ibc_core_client::context::prelude::*;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, PortPath, SeqSendPath,
 };
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
@@ -33,7 +33,7 @@ pub fn send_packet_validate(
     module: &impl Module,
     packet: &Packet,
 ) -> Result<(), ContextError> {
-    ctx_a.has_port_capability(module, &packet.port_id_on_a, &packet.chan_id_on_a)?;
+    ctx_a.has_port_capability(&PortPath(packet.port_id_on_a.clone()), module)?;
 
     if !packet.timeout_height_on_b.is_set() && !packet.timeout_timestamp_on_b.is_set() {
         return Err(ContextError::PacketError(PacketError::MissingTimeout));
@@ -112,7 +112,7 @@ pub fn send_packet_execute(
     module: &impl Module,
     packet: Packet,
 ) -> Result<(), ContextError> {
-    ctx_a.has_port_capability(module, &packet.port_id_on_a, &packet.chan_id_on_a)?;
+    ctx_a.has_port_capability(&PortPath(packet.port_id_on_a.clone()), module)?;
 
     {
         let seq_send_path_on_a = SeqSendPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);

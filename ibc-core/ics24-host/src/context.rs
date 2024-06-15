@@ -10,10 +10,10 @@ use ibc_core_connection_types::version::{pick_version, Version as ConnectionVers
 use ibc_core_connection_types::ConnectionEnd;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::IbcEvent;
-use ibc_core_host_types::identifiers::{CapabilityKey, ChannelId, ConnectionId, PortId, Sequence};
+use ibc_core_host_types::identifiers::{CapabilityKey, ConnectionId, Sequence};
 use ibc_core_host_types::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath, ReceiptPath,
-    SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath, PortPath,
+    ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Signer, Timestamp};
@@ -126,17 +126,12 @@ pub trait ValidationContext {
     /// `ExecutionContext::increase_channel_counter`.
     fn channel_counter(&self) -> Result<u64, ContextError>;
 
-    fn available_port_capability(
-        &self,
-        port_id: &PortId,
-        channel_id: &ChannelId,
-    ) -> Result<(), ContextError>;
+    fn available_port_capability(&self, port_path: &PortPath) -> Result<(), ContextError>;
 
     fn has_port_capability(
         &self,
+        port_path: &PortPath,
         capability: CapabilityKey,
-        port_id: &PortId,
-        channel_id: &ChannelId,
     ) -> Result<(), ContextError>;
 
     /// Returns the maximum expected time per block
@@ -248,9 +243,8 @@ pub trait ExecutionContext: ValidationContext {
 
     fn claim_port_capability(
         &mut self,
+        port_path: &PortPath,
         capability: CapabilityKey,
-        port_id: &PortId,
-        channel_id: &ChannelId,
     ) -> Result<(), ContextError>;
 
     /// Emit the given IBC event

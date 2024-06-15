@@ -5,6 +5,7 @@ use ibc_core_client_types::{error as client_error, Height};
 use ibc_core_connection_types::error as connection_error;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
+use ibc_core_host_types::path::PortPath;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{ParseTimestampError, Timestamp};
 
@@ -71,16 +72,10 @@ pub enum ChannelError {
     InvalidIdentifier(IdentifierError),
     /// channel counter overflow error
     CounterOverflow,
-    /// Capability for `{port_id}/{channel_id}` does not exist
-    CapabilityNotFound {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
-    /// Capability for `{port_id}/{channel_id}` already exists
-    CapabilityAlreadyExists {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
+    /// Capability for `{0}` does not exist
+    CapabilityNotFound(PortPath),
+    /// Capability for `{0}` already exists
+    CapabilityAlreadyExists(PortPath),
     /// other error: `{description}`
     Other { description: String },
 }

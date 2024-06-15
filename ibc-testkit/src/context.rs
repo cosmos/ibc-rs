@@ -16,7 +16,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId, Sequence};
 use ibc::core::host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, ConnectionPath,
-    SeqAckPath, SeqRecvPath, SeqSendPath,
+    PortPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::core::router::module::Module;
@@ -398,7 +398,7 @@ where
             .expect("error writing to store");
 
         self.ibc_store
-            .claim_port_capability(module.identifier().to_string().into(), &port_id, &chan_id)
+            .claim_port_capability(&PortPath(port_id), module.identifier().to_string().into())
             .expect("error writing to store");
 
         self
