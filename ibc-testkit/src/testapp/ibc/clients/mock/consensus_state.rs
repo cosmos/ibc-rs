@@ -12,9 +12,9 @@ pub const MOCK_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.mock.ConsensusState";
 /// The mock consensus state type used within ibc-testkit for testing situations
 /// when a consensus state is required.
 ///
-/// Note this type differs from the `mock::ConsensusState` type exposed by
-/// ibc-proto in that it contains the `root` field for easily returning a
-/// reference to the consensus state's `CommitmentRoot`.
+/// Note, this type slightly differs from the [`RawMockConsensusState`] type exposed by
+/// ibc-proto. It contains a (private) `root` field to easily return a
+/// reference to the mock consensus state's dummy [`CommitmentRoot`].
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MockConsensusState {
