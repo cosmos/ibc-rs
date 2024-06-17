@@ -9,12 +9,12 @@ use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::mock::proto::ConsensusState as RawMockConsensusState;
 pub const MOCK_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.mock.ConsensusState";
 
-// Note: This type differs from the `mock::ConsensusState` type exposed by
-// ibc-proto in a few ways:
-// - ibc-proto's `mock::ConsensusState`'s `header` field takes the form of an
-//   `Option<Header>`, while the `header` field here is not optional.
-// - ibc-proto's `mock::ConsensusState` does not have a `root` field for holding
-//   the `CommitmentRoot`; this field exists here because ...
+/// The mock consensus state type used within ibc-testkit for testing situations
+/// when a consensus state is required.
+///
+/// Note this type differs from the `mock::ConsensusState` type exposed by
+/// ibc-proto in that it contains the `root` field for easily returning a
+/// reference to the consensus state's `CommitmentRoot`.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MockConsensusState {
