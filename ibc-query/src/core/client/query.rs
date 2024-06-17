@@ -88,7 +88,7 @@ pub fn query_consensus_state<I>(
 ) -> Result<QueryConsensusStateResponse, QueryError>
 where
     I: QueryContext,
-    ConsensusStateRef<I>: Into<Any>,
+    Any: From<ConsensusStateRef<I>>,
 {
     let client_id = request.client_id.clone();
 
@@ -148,7 +148,7 @@ pub fn query_consensus_states<I>(
 ) -> Result<QueryConsensusStatesResponse, QueryError>
 where
     I: QueryContext,
-    ConsensusStateRef<I>: Into<Any>,
+    Any: From<ConsensusStateRef<I>>,
 {
     let consensus_states = ibc_ctx.consensus_states(&request.client_id)?;
 
@@ -254,7 +254,7 @@ pub fn query_upgraded_consensus_state<I, U>(
 where
     I: ValidationContext,
     U: UpgradeValidationContext + ProvableContext,
-    UpgradedConsensusStateRef<U>: Into<Any>,
+    Any: From<UpgradedConseusStateRef<U>>,
 {
     let upgrade_revision_height = match request.upgrade_height {
         Some(height) => height.revision_height(),

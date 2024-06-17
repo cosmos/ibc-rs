@@ -36,8 +36,7 @@ pub struct ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
-    UpgradedClientStateRef<U>: Into<Any>,
-    UpgradedConsensusStateRef<U>: Into<Any>,
+    Any: From<UpgradedClientStateRef<U>> + From<UpgradedConsensusState<U>>,
 {
     ibc_context: I,
     upgrade_context: U,
@@ -47,8 +46,7 @@ impl<I, U> ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + Send + Sync + 'static,
-    UpgradedClientStateRef<U>: Into<Any>,
-    UpgradedConsensusStateRef<U>: Into<Any>,
+    Any: From<UpgradedClientStateRef<U>> + From<UpgradedConsensusState<U>>,
 {
     /// Parameters `ibc_context` and `upgrade_context` must be a type where writes from one thread are readable from another.
     /// This means using `Arc<Mutex<_>>` or `Arc<RwLock<_>>` in most cases.
@@ -65,8 +63,7 @@ impl<I, U> ClientQuery for ClientQueryService<I, U>
 where
     I: QueryContext + Send + Sync + 'static,
     U: UpgradeValidationContext + ProvableContext + Send + Sync + 'static,
-    ConsensusStateRef<I>: Into<Any>,
-    UpgradedConsensusStateRef<U>: Into<Any>,
+    Any: From<ConsensusState<I>> + From<UpgradedConsensusStateRef<U>>,
 {
     async fn client_state(
         &self,
