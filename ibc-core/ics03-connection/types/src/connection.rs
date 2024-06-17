@@ -2,7 +2,6 @@
 
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::time::Duration;
-use core::u64;
 
 use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentPrefix;

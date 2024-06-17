@@ -34,3 +34,6 @@ mc.log
 
 # Ignore CosmWasm artifacts
 /cw-contracts
+
+# Ignore dotenv
+.env
