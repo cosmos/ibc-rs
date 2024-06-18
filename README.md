@@ -94,8 +94,8 @@ use cases.
 
 Legend:
 
-- :white_check_mark: IBC integration runs in production
-- :hourglass_flowing_sand: IBC integration is in development (testnet or devnet)
+- :white_check_mark: IBC integration in production
+- :hourglass_flowing_sand: IBC integration in development (testnet or devnet)
 - :hammer_and_pick: used in testing and/or development
 - :100: full IBC integration
 - :eyes: early exploration phase
