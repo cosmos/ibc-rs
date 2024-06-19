@@ -9,7 +9,8 @@ use ibc::core::primitives::Timestamp;
 use typed_builder::TypedBuilder;
 
 use crate::context::StoreGenericTestContext;
-use crate::hosts::{HostClientState, TestBlock, TestHost};
+use crate::hosts::{HostClientState, HostConsensusState, TestBlock, TestHost};
+use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 use crate::utils::year_2023;
@@ -41,6 +42,8 @@ impl<S, H> From<TestContextConfig<H>> for StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug + Default,
     H: TestHost,
+    AnyClientState: From<HostClientState<H>>,
+    AnyConsensusState: From<HostConsensusState<H>>,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     fn from(params: TestContextConfig<H>) -> Self {

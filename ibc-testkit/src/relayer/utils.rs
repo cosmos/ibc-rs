@@ -33,7 +33,8 @@ use ibc::primitives::Signer;
 use ibc_query::core::context::ProvableContext;
 
 use crate::context::TestContext;
-use crate::hosts::{HostClientState, TestBlock, TestHost};
+use crate::hosts::{HostClientState, HostConsensusState, TestBlock, TestHost};
+use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, LightClientState};
 
 /// Implements IBC relayer functions for a pair of [`TestHost`] implementations: `A` and `B`.
@@ -47,6 +48,10 @@ pub struct TypedRelayerOps<A, B>(PhantomData<A>, PhantomData<B>)
 where
     A: TestHost,
     B: TestHost,
+    AnyClientState: From<HostClientState<A>>,
+    AnyConsensusState: From<HostConsensusState<A>>,
+    AnyClientState: From<HostClientState<B>>,
+    AnyConsensusState: From<HostConsensusState<B>>,
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>;
 
@@ -54,6 +59,10 @@ impl<A, B> TypedRelayerOps<A, B>
 where
     A: TestHost,
     B: TestHost,
+    AnyClientState: From<HostClientState<A>>,
+    AnyConsensusState: From<HostConsensusState<A>>,
+    AnyClientState: From<HostClientState<B>>,
+    AnyConsensusState: From<HostConsensusState<B>>,
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {

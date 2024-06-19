@@ -24,7 +24,9 @@ use ibc::primitives::Timestamp;
 
 use super::testapp::ibc::core::types::{LightClientState, MockIbcStore};
 use crate::fixtures::core::context::TestContextConfig;
-use crate::hosts::{HostClientState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
+use crate::hosts::{
+    HostClientState, HostConsensusState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost,
+};
 use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::router::MockRouter;
@@ -36,6 +38,8 @@ pub struct StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug,
     H: TestHost,
+    AnyClientState: From<HostClientState<H>>,
+    AnyConsensusState: From<HostConsensusState<H>>,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     /// The multi store of the context.
@@ -68,6 +72,8 @@ impl<S, H> Default for StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug + Default,
     H: TestHost,
+    AnyClientState: From<HostClientState<H>>,
+    AnyConsensusState: From<HostConsensusState<H>>,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     fn default() -> Self {
@@ -82,6 +88,8 @@ where
     S: ProvableStore + Debug,
     H: TestHost,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
+    AnyClientState: From<HostClientState<H>>,
+    AnyConsensusState: From<HostConsensusState<H>>,
 {
     /// Returns an immutable reference to the IBC store.
     pub fn ibc_store(&self) -> &MockIbcStore<S> {
@@ -170,12 +178,12 @@ where
     /// and consensus, and prepares the context for the next block. This includes
     /// the latest consensus state and the latest IBC commitment proof.
     pub fn begin_block(&mut self) {
-        let consensus_state = self
-            .host
-            .latest_block()
-            .into_header()
-            .into_consensus_state()
-            .into();
+        let consensus_state = AnyConsensusState::from(
+            self.host
+                .latest_block()
+                .into_header()
+                .into_consensus_state(),
+        );
 
         let ibc_commitment_proof = self
             .multi_store
@@ -347,11 +355,17 @@ where
     ) -> Self
     where
         RH: TestHost,
+        AnyClientState: From<HostClientState<RH>>,
+        AnyConsensusState: From<HostConsensusState<RH>>,
     {
-        self = self.with_client_state(client_id, light_client.client_state.into());
+        self = self.with_client_state(client_id, AnyClientState::from(light_client.client_state));
 
         for (height, consensus_state) in light_client.consensus_states {
-            self = self.with_consensus_state(client_id, height, consensus_state.into());
+            self = self.with_consensus_state(
+                client_id,
+                height,
+                AnyConsensusState::from(consensus_state),
+            );
 
             self.ibc_store
                 .store_update_meta(
@@ -512,6 +526,8 @@ mod tests {
         pub struct Test<H: TestHost>
         where
             H: TestHost,
+            AnyClientState: From<HostClientState<H>>,
+            AnyConsensusState: From<HostConsensusState<H>>,
             HostConsensusState<H>: ConsensusState,
             HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
         {
@@ -522,6 +538,8 @@ mod tests {
         fn run_tests<H>(sub_title: &str)
         where
             H: TestHost,
+            AnyClientState: From<HostClientState<H>>,
+            AnyConsensusState: From<HostConsensusState<H>>,
             HostConsensusState<H>: ConsensusState,
             HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
         {

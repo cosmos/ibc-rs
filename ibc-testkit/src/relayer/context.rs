@@ -6,8 +6,9 @@ use ibc::core::host::ValidationContext;
 use ibc::primitives::Signer;
 
 use crate::context::TestContext;
-use crate::hosts::{HostClientState, TestHost};
+use crate::hosts::{HostClientState, HostConsensusState, TestHost};
 use crate::relayer::utils::TypedRelayerOps;
+use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
 /// A relayer context that allows interaction between two [`TestContext`] instances.
@@ -15,6 +16,10 @@ pub struct RelayerContext<A, B>
 where
     A: TestHost,
     B: TestHost,
+    AnyClientState: From<HostClientState<A>>,
+    AnyConsensusState: From<HostConsensusState<A>>,
+    AnyClientState: From<HostClientState<B>>,
+    AnyConsensusState: From<HostConsensusState<B>>,
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {
@@ -26,6 +31,10 @@ impl<A, B> RelayerContext<A, B>
 where
     A: TestHost,
     B: TestHost,
+    AnyClientState: From<HostClientState<A>>,
+    AnyConsensusState: From<HostConsensusState<A>>,
+    AnyClientState: From<HostClientState<B>>,
+    AnyConsensusState: From<HostConsensusState<B>>,
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {

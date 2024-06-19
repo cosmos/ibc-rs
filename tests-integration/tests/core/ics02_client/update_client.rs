@@ -30,7 +30,7 @@ use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::tendermint::BlockParams;
 use ibc_testkit::hosts::{
-    HostClientState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost,
+    HostClientState, HostConsensusState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost,
 };
 use ibc_testkit::relayer::error::RelayerError;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
@@ -38,7 +38,7 @@ use ibc_testkit::testapp::ibc::clients::mock::client_state::{
 };
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
-use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
+use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{
     DefaultIbcStore, LightClientBuilder, LightClientState, MockIbcStore,
@@ -1530,6 +1530,8 @@ pub(crate) fn build_client_update_datagram<H: TestHeader, Dst: TestHost>(
     src_header: &H,
 ) -> Result<ClientMsg, RelayerError>
 where
+    AnyClientState: From<HostClientState<Dst>>,
+    AnyConsensusState: From<HostConsensusState<Dst>>,
     HostClientState<Dst>: ClientStateValidation<DefaultIbcStore>,
 {
     // Check if client for ibc0 on ibc1 has been updated to latest height:

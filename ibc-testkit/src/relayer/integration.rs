@@ -3,8 +3,9 @@ use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 
 use crate::context::TestContext;
 use crate::fixtures::core::signer::dummy_account_id;
-use crate::hosts::{HostClientState, TestHost};
+use crate::hosts::{HostClientState, HostConsensusState, TestHost};
 use crate::relayer::context::RelayerContext;
+use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::DefaultIbcStore;
 
 /// Integration test for IBC implementation. This test creates clients,
@@ -17,6 +18,10 @@ pub fn ibc_integration_test<A, B>()
 where
     A: TestHost,
     B: TestHost,
+    AnyClientState: From<HostClientState<A>>,
+    AnyConsensusState: From<HostConsensusState<A>>,
+    AnyClientState: From<HostClientState<B>>,
+    AnyConsensusState: From<HostConsensusState<B>>,
     HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
     HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
 {

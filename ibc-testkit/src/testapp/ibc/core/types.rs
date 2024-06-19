@@ -31,7 +31,7 @@ use typed_builder::TypedBuilder;
 
 use crate::context::{MockStore, TestContext};
 use crate::fixtures::core::context::TestContextConfig;
-use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
+use crate::hosts::{HostClientState, HostConsensusState, TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
@@ -452,6 +452,8 @@ pub struct LightClientState<H: TestHost> {
 impl<H> Default for LightClientState<H>
 where
     H: TestHost,
+    AnyClientState: From<HostClientState<H>>,
+    AnyConsensusState: From<HostConsensusState<H>>,
     HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     fn default() -> Self {
@@ -463,6 +465,8 @@ where
 impl<H> LightClientState<H>
 where
     H: TestHost,
+    AnyClientState: From<HostClientState<H>>,
+    AnyConsensusState: From<HostConsensusState<H>>,
     HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     pub fn with_latest_height(height: Height) -> Self {
@@ -478,6 +482,8 @@ where
 pub struct LightClientBuilder<'a, H>
 where
     H: TestHost,
+    AnyClientState: From<HostClientState<H>>,
+    AnyConsensusState: From<HostConsensusState<H>>,
     HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     context: &'a TestContext<H>,
@@ -490,6 +496,8 @@ where
 impl<'a, H> From<LightClientBuilder<'a, H>> for LightClientState<H>
 where
     H: TestHost,
+    AnyClientState: From<HostClientState<H>>,
+    AnyConsensusState: From<HostConsensusState<H>>,
     HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     fn from(builder: LightClientBuilder<'a, H>) -> Self {
