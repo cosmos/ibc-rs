@@ -52,35 +52,36 @@ impl From<ClientIdAttribute> for abci::EventAttribute {
         (CLIENT_ID_ATTRIBUTE_KEY, attr.client_id.as_str()).into()
     }
 }
+
 impl TryFrom<abci::EventAttribute> for ClientIdAttribute {
     type Error = ClientError;
 
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
-        value
-            .key_str()
-            .map(|key| {
-                if key != CLIENT_ID_ATTRIBUTE_KEY {
-                    return Err(ClientError::InvalidAttributeKey {
-                        attribute_key: key.to_string(),
-                    });
-                }
-                value
-                    .value_str()
-                    .map(|value| {
-                        Ok(ClientIdAttribute {
-                            client_id: ClientId::from_str(value).map_err(|_| {
-                                ClientError::InvalidAttributeValue {
-                                    attribute_value: value.to_string(),
-                                }
-                            })?,
-                        })
-                    })
-                    .map_err(|_| ClientError::InvalidAttributeValue {
-                        attribute_value: String::new(),
-                    })?
-            })
-            .map_err(|_| ClientError::InvalidAttributeKey {
+        if let Ok(key_str) = value.key_str() {
+            if key_str != CLIENT_ID_ATTRIBUTE_KEY {
+                return Err(ClientError::InvalidAttributeKey {
+                    attribute_key: key_str.to_string(),
+                });
+            }
+        } else {
+            return Err(ClientError::InvalidAttributeKey {
                 attribute_key: String::new(),
+            });
+        }
+
+        value
+            .value_str()
+            .map(|val_str| {
+                let client_id = ClientId::from_str(val_str).map_err(|_| {
+                    ClientError::InvalidAttributeValue {
+                        attribute_value: val_str.to_string(),
+                    }
+                })?;
+
+                Ok(ClientIdAttribute { client_id })
+            })
+            .map_err(|_| ClientError::InvalidAttributeValue {
+                attribute_value: String::new(),
             })?
     }
 }
@@ -225,9 +226,6 @@ impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
         (CONSENSUS_HEIGHTS_ATTRIBUTE_KEY, consensus_heights.join(",")).into()
     }
 }
-
-// impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
-//     type Error = ClientError;
 
 impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
     type Error = ClientError;
