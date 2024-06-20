@@ -1153,7 +1153,7 @@ fn test_update_client_events(fixture: Fixture) {
 }
 
 fn ensure_misbehaviour<S: ProvableStore + Debug>(
-    ctx: &MockIbcStore<S>,
+    ctx: &MockIbcStore<S, AnyClientState, AnyConsensusState>,
     client_id: &ClientId,
     client_type: &ClientType,
 ) {

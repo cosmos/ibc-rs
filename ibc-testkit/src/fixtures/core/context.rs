@@ -44,7 +44,7 @@ where
     H: TestHost,
     AnyClientState: From<HostClientState<H>>,
     AnyConsensusState: From<HostConsensusState<H>>,
-    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
     fn from(params: TestContextConfig<H>) -> Self {
         assert_ne!(

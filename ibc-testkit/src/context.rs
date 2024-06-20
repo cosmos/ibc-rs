@@ -40,7 +40,7 @@ where
     H: TestHost,
     AnyClientState: From<HostClientState<H>>,
     AnyConsensusState: From<HostConsensusState<H>>,
-    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
     /// The multi store of the context.
     /// This is where the IBC store root is stored at IBC commitment prefix.
@@ -50,7 +50,7 @@ where
     pub host: H,
 
     /// An object that stores all IBC related data.
-    pub ibc_store: MockIbcStore<S>,
+    pub ibc_store: MockIbcStore<S, AnyClientState, AnyConsensusState>,
 
     /// A router that can route messages to the appropriate IBC application.
     pub ibc_router: MockRouter,
@@ -74,7 +74,7 @@ where
     H: TestHost,
     AnyClientState: From<HostClientState<H>>,
     AnyConsensusState: From<HostConsensusState<H>>,
-    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
     fn default() -> Self {
         TestContextConfig::builder().build()
@@ -87,17 +87,17 @@ impl<S, H> StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug,
     H: TestHost,
-    HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
     AnyClientState: From<HostClientState<H>>,
     AnyConsensusState: From<HostConsensusState<H>>,
 {
     /// Returns an immutable reference to the IBC store.
-    pub fn ibc_store(&self) -> &MockIbcStore<S> {
+    pub fn ibc_store(&self) -> &MockIbcStore<S, AnyClientState, AnyConsensusState> {
         &self.ibc_store
     }
 
     /// Returns a mutable reference to the IBC store.
-    pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S> {
+    pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S, AnyClientState, AnyConsensusState> {
         &mut self.ibc_store
     }
 

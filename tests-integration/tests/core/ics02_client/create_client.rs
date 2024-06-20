@@ -1,4 +1,3 @@
-use basecoin_store::impls::InMemoryStore;
 use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ConsensusState as TmConsensusState,
 };
@@ -28,7 +27,7 @@ use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusStat
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, MockIbcStore};
+use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder};
 use test_log::test;
 
 #[test]
@@ -96,7 +95,7 @@ fn test_tm_create_client_ok() {
     assert!(res.is_ok(), "tendermint client execution happy path");
 
     let expected_client_state =
-        ClientStateRef::<MockIbcStore<InMemoryStore>>::try_from(msg.client_state).unwrap();
+        ClientStateRef::<DefaultIbcStore>::try_from(msg.client_state).unwrap();
     assert_eq!(expected_client_state.client_type(), client_type);
     assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
 }

@@ -24,9 +24,11 @@ use crate::testapp::ibc::clients::mock::consensus_state::{
     MockConsensusState, MOCK_CONSENSUS_STATE_TYPE_URL,
 };
 
+type AnyMockIbcStore<S> = MockIbcStore<S, AnyClientState, AnyConsensusState>;
+
 #[derive(Debug, Clone, From, PartialEq, ClientState)]
-#[validation(MockIbcStore<S: ProvableStore + Debug>)]
-#[execution(MockIbcStore<S: ProvableStore + Debug>)]
+#[validation(AnyMockIbcStore<S: ProvableStore + Debug>)]
+#[execution(AnyMockIbcStore<S: ProvableStore + Debug>)]
 pub enum AnyClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),

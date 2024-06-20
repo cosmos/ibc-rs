@@ -9,6 +9,7 @@ use basecoin_store::types::{BinStore, JsonStore, ProtobufStore, TypedSet, TypedS
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::client::context::client_state::ClientStateValidation;
+use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::handler::types::events::IbcEvent;
@@ -32,17 +33,18 @@ use typed_builder::TypedBuilder;
 use crate::context::{MockStore, TestContext};
 use crate::fixtures::core::context::TestContextConfig;
 use crate::hosts::{HostClientState, HostConsensusState, TestBlock, TestHeader, TestHost};
-use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 pub const DEFAULT_BLOCK_TIME_SECS: u64 = 3;
 
-pub type DefaultIbcStore = MockIbcStore<MockStore>;
+pub type DefaultIbcStore = MockIbcStore<MockStore, AnyClientState, AnyConsensusState>;
 
 /// An object that stores all IBC related data.
 #[derive(Debug)]
-pub struct MockIbcStore<S>
+pub struct MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateValidation<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
     /// chain revision number,
     pub revision_number: Arc<Mutex<u64>>,
@@ -62,10 +64,9 @@ where
     pub client_processed_heights:
         ProtobufStore<SharedStore<S>, ClientUpdateHeightPath, Height, RawHeight>,
     /// A typed-store for AnyClientState
-    pub client_state_store: ProtobufStore<SharedStore<S>, ClientStatePath, AnyClientState, Any>,
+    pub client_state_store: ProtobufStore<SharedStore<S>, ClientStatePath, ACL, Any>,
     /// A typed-store for AnyConsensusState
-    pub consensus_state_store:
-        ProtobufStore<SharedStore<S>, ClientConsensusStatePath, AnyConsensusState, Any>,
+    pub consensus_state_store: ProtobufStore<SharedStore<S>, ClientConsensusStatePath, ACS, Any>,
     /// A typed-store for ConnectionEnd
     pub connection_end_store:
         ProtobufStore<SharedStore<S>, ConnectionPath, ConnectionEnd, RawConnectionEnd>,
@@ -86,7 +87,7 @@ where
     /// A typed-store for packet ack
     pub packet_ack_store: BinStore<SharedStore<S>, AckPath, AcknowledgementCommitment>,
     /// Map of host consensus states
-    pub host_consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
+    pub host_consensus_states: Arc<Mutex<BTreeMap<u64, ACS>>>,
     /// Map of older ibc commitment proofs
     pub ibc_commiment_proofs: Arc<Mutex<BTreeMap<u64, CommitmentProof>>>,
     /// IBC Events
@@ -95,9 +96,11 @@ where
     pub logs: Arc<Mutex<Vec<String>>>,
 }
 
-impl<S> MockIbcStore<S>
+impl<S, ACL, ACS> MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateValidation<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
     pub fn new(revision_number: u64, store: S) -> Self {
         let shared_store = SharedStore::new(store);
@@ -144,7 +147,7 @@ where
         }
     }
 
-    fn store_host_consensus_state(&mut self, height: u64, consensus_state: AnyConsensusState) {
+    fn store_host_consensus_state(&mut self, height: u64, consensus_state: ACS) {
         self.host_consensus_states
             .lock()
             .insert(height, consensus_state);
@@ -154,12 +157,7 @@ where
         self.ibc_commiment_proofs.lock().insert(height, proof);
     }
 
-    pub fn begin_block(
-        &mut self,
-        height: u64,
-        consensus_state: AnyConsensusState,
-        proof: CommitmentProof,
-    ) {
+    pub fn begin_block(&mut self, height: u64, consensus_state: ACS, proof: CommitmentProof) {
         assert_eq!(self.store.current_height(), height);
         self.store_host_consensus_state(height, consensus_state);
         self.store_ibc_commitment_proof(height, proof);
@@ -178,18 +176,20 @@ where
     }
 }
 
-impl<S> Default for MockIbcStore<S>
+impl<S, ACL, ACS> Default for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug + Default,
+    ACL: ClientStateValidation<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
     fn default() -> Self {
-        // Note: this creates a MockIbcStore which has MockConsensusState as Host ConsensusState
         let mut ibc_store = Self::new(0, S::default());
         ibc_store.store.commit().expect("no error");
-        ibc_store.store_host_consensus_state(
-            ibc_store.store.current_height(),
-            MockHeader::default().into_consensus_state().into(),
-        );
+        // // FIXME(rano): store a consensus state.
+        // ibc_store.store_host_consensus_state(
+        //     ibc_store.store.current_height(),
+        //     MockHeader::default().into_consensus_state().into(),
+        // );
         ibc_store.store_ibc_commitment_proof(
             ibc_store.store.current_height(),
             CommitmentProof::default(),
