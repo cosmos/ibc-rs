@@ -94,7 +94,7 @@ All done! 🎉
 
 ## Versioning
 
-ibc-rs will uses a modified form of [semantic versioning][semver] and adheres to
+ibc-rs uses a modified form of [semantic versioning][semver] and adheres to
 the vMAJOR.MINOR.PATCH as follows:
 
 - *Major* version bumps are reserved for protocol-breaking changes that require
