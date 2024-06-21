@@ -226,9 +226,6 @@ impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
     }
 }
 
-// impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
-//     type Error = ClientError;
-
 impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
     type Error = ClientError;
 
@@ -836,10 +833,10 @@ mod tests {
             kind: UPDATE_CLIENT_EVENT.to_owned(),
             attributes: vec![
                 abci::EventAttribute::from(("client_id", "07-tendermint-0")),
-abci::EventAttribute::from(("client_type", "07-tendermint")),
-abci::EventAttribute::from(("consensus_height", "1-10")),
-abci::EventAttribute::from(("consensus_heights", "1-10,1-11")),
-abci::EventAttribute::from(("header", "1234")),
+                abci::EventAttribute::from(("client_type", "07-tendermint")),
+                abci::EventAttribute::from(("consensus_height", "1-10")),
+                abci::EventAttribute::from(("consensus_heights", "1-10,1-11")),
+                abci::EventAttribute::from(("header", "1234")),
             ],
         },
         Ok(UpdateClient::new(
