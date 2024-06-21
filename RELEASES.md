@@ -46,9 +46,10 @@ Our release process is as follows:
 5. a) Validate the number of new crates that need to be released via CI.
       crates.io imposes a [rate limit][cargo-release-rate-limit] of 5 new
       crates per release. If more than 5 new crates need to published as part of a
-      single release, those will need to be published manually so that the rest may
-      be published via CI. Consult [this][publishing] section of the Cargo Book for 
-      instructions on how to publish crates manually to crates.io.
+      single release, those extra crates will need to be published manually 
+      so that the rest may be published via CI. Consult [this][publishing] 
+      section of the Cargo Book for instructions on how to manually publish 
+      crates to crates.io.
    b) Validate the number of existing crates that need to be released via CI. The
       rate limit for existing crates is a configurable parameter and can be updated
       by changing the `rate-limit` setting under the `workspace.metadata.release`
