@@ -94,20 +94,19 @@ All done! 🎉
 
 ## Versioning
 
-ibc-rs uses a modified form of [semantic versioning][semver] and adheres to the
-vMAJOR.MINOR.PATCH structure as follows:
+`ibc-rs` uses a modified form of [semantic versioning][semver] and adheres to
+the `vMAJOR.MINOR.PATCH` structure as follows:
 
-- _Major_ version bumps are reserved for protocol-breaking changes that require
-  users to perform a coordinated upgrade in order to use the new version of
-  ibc-rs.
+- _Major_ version bumps are reserved for protocol breaking changes that require
+  users to perform a coordinated upgrade to use the new version of `ibc-rs`.
 - _Minor_ version bumps are reserved for new features and/or substantial changes
-  that cause API- and/or consensus-breakage.
-- _Patch_ version bumps are reserved for bug/security fixes that are not
-  API-breaking.
+  that cause API and/or consensus breakage.
+- _Patch_ version bumps are reserved for bug/security fixes that are not API
+  breaking.
 
 ```mermaid
 graph TD
-    A[Change] --> B{Protocol-breaking?}
+    A[Change] --> B{Protocol breaking?}
     B -->|Yes| C[Increment major version]
     B -->|No| D{API/Consensus breaking?}
     D -->|Yes| E[Increment minor version]
@@ -117,4 +116,4 @@ graph TD
 [crates.io]: https://crates.io
 [release.yaml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yaml
 [cargo-release-rate-limit]: https://github.com/crate-ci/cargo-release/blob/4b09269/src/steps/mod.rs#L214-L268
-[semver]: https://semver.org/
+[semver]: https://semver.org
