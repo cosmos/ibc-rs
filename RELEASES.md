@@ -105,6 +105,15 @@ the vMAJOR.MINOR.PATCH structure as follows:
 
 ![alt](docs/static/img/ibc-rs-versioning.png)
 
+```mermaid
+graph TD
+    A[Change] --> B{Protocol-breaking?}
+    B -->|Yes| C[Increment major version]
+    B -->|No| D{API/Consensus breaking?}
+    D -->|Yes| E[Increment minor version]
+    D -->|No| F[Increment patch version]
+```
+
 [crates.io]: https://crates.io
 [release.yaml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yaml
 [cargo-release-rate-limit]: https://github.com/crate-ci/cargo-release/blob/4b09269/src/steps/mod.rs#L214-L268
