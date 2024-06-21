@@ -95,7 +95,7 @@ All done! 🎉
 ## Versioning
 
 ibc-rs uses a modified form of [semantic versioning][semver] and adheres to
-the vMAJOR.MINOR.PATCH as follows:
+the vMAJOR.MINOR.PATCH structure as follows:
 
 - *Major* version bumps are reserved for protocol-breaking changes that require
   users to perform a coordinated upgrade in order to use the new version of ibc-rs.
