@@ -130,3 +130,7 @@ cw-storage-plus = { version = "2.0.0" }
 # parity dependencies
 parity-scale-codec = { version = "3.6.12", default-features = false, features = [ "derive" ] }
 scale-info         = { version = "2.11.3", default-features = false }
+
+[workspace.metadata.release]
+# specifies the rate limit for cargo-release when publishing existing packages
+rate-limit = { existing-packages = 40 }

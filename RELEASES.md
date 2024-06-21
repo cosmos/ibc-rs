@@ -43,20 +43,17 @@ Our release process is as follows:
      subsequent crates that depend on them can then be released via the release
      process. For instructions on how to release a crate on crates.io, refer
      [here](https://doc.rust-lang.org/cargo/reference/publishing.html).
-5. Beware of [crates-io rate limit][cargo-release-rate-limit]. It is 5 for
-   publishing new crates and 30 for publishing existing crates. But the number
-   of our crates has reached 31. So we publish a leaf crate, `ibc-primitives`
-   manually and release the rest of the 30 crates via CI.
-   - Release `ibc-primitives` by running:
-   ```sh
-   cargo release -p ibc-primitives --no-push --no-tag --allow-branch main --execute
-   ```
-   - Validate the number of crates that need to be released via CI, it can not
-     be more than 30.
-   - There should be a 10 minutes delay between the release of `ibc-primitives`
-     and the release of the rest of the crates on CI.
-   - If new crates are added, we need to recompute the set of crates that we
-     want to release via CI. The rest must be released manually.
+5. a) Validate the number of new crates that need to be released via CI.
+      crates.io imposes a [rate limit][cargo-release-rate-limit] of 5 new
+      crates per release. If more than 5 new crates need to published as part of a
+      single release, those will need to be published manually so that the rest may
+      be published via CI. Consult [this][publishing] section of the Cargo Book for 
+      instructions on how to publish crates manually to crates.io.
+   b) Validate the number of existing crates that need to be released via CI. The
+      rate limit for existing crates is a configurable parameter and can be updated
+      by changing the `rate-limit` setting under the `workspace.metadata.release`
+      section in the root Cargo.toml. If the number of existing packages exceeds
+      this number, increase this value.
 6. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
    the documentation compiles and seems up-to-date and coherent. Fix any
    potential issues here and push them to the release PR.
@@ -95,3 +92,4 @@ All done! 🎉
 [crates.io]: https://crates.io
 [release.yaml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yaml
 [cargo-release-rate-limit]: https://github.com/crate-ci/cargo-release/blob/4b09269/src/steps/mod.rs#L214-L268
+[publishing]: https://doc.rust-lang.org/cargo/reference/publishing.html
