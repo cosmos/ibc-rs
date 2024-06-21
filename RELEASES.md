@@ -113,7 +113,11 @@ graph TD
     D -->|No| F[Increment patch version]
 ```
 
+Note that, this is slightly different from
+[`ibc-go`'s versioning policy][ibc-go-version-policy].
+
 [crates.io]: https://crates.io
 [release.yaml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yaml
 [cargo-release-rate-limit]: https://github.com/crate-ci/cargo-release/blob/4b09269/src/steps/mod.rs#L214-L268
 [semver]: https://semver.org
+[ibc-go-version-policy]: https://github.com/cosmos/ibc-go/blob/main/RELEASES.md#releases
