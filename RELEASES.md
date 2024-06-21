@@ -103,8 +103,6 @@ the vMAJOR.MINOR.PATCH structure as follows:
   that cause API- and/or consensus-breakage.
 - *Patch* version bumps are reserved for bug/security fixes that are not API-breaking.
 
-![alt](docs/static/img/ibc-rs-versioning.png)
-
 ```mermaid
 graph TD
     A[Change] --> B{Protocol-breaking?}
