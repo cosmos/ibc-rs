@@ -56,17 +56,18 @@ authors      = [ "Informal Systems <hello@informal.systems>" ]
 
 [workspace.dependencies]
 # external dependencies
-base64          = { version = "0.21", default-features = false }
+base64          = { version = "0.22", default-features = false }
 borsh           = { version = "1", default-features = false, features = [ "derive" ] }
-displaydoc      = { version = "0.2", default-features = false }
+displaydoc      = { version = "0.2.5", default-features = false }
 prost           = { version = "0.12", default-features = false }
-derive_more     = { version = "0.99.17", default-features = false, features = [ "from", "into", "display", "try_into" ] }
+derive_more     = { version = "0.99.18", default-features = false, features = [ "from", "into", "display", "try_into" ] }
 rstest          = { version = "0.21" }
-schemars        = { version = "0.8.15" }
+schemars        = { version = "0.8.21" }
 sha2            = { version = "0.10.8", default-features = false }
 serde           = { version = "1.0", default-features = false }
 serde-json      = { package = "serde-json-wasm", version = "1.0.1", default-features = false }
 subtle-encoding = { version = "0.5", default-features = false }
+hex             = { version = "0.4.3" }
 
 # ibc dependencies
 ibc            = { version = "0.53.0", path = "./ibc", default-features = false }
@@ -106,15 +107,16 @@ ibc-client-tendermint-types = { version = "0.53.0", path = "./ibc-clients/ics07-
 ibc-client-wasm-types       = { version = "0.53.0", path = "./ibc-clients/ics08-wasm/types", default-features = false }
 ibc-app-transfer-types      = { version = "0.53.0", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 ibc-app-nft-transfer-types  = { version = "0.53.0", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
-ibc-proto                   = { version = "0.45.0", default-features = false }
+
+ibc-proto = { version = "0.46.0", default-features = false }
 
 # cosmos dependencies
-tendermint                       = { version = "0.36.0", default-features = false }
-tendermint-light-client          = { version = "0.36.0", default-features = false }
-tendermint-light-client-verifier = { version = "0.36.0", default-features = false }
-tendermint-proto                 = { version = "0.36.0", default-features = false }
-tendermint-rpc                   = { version = "0.36.0", default-features = false }
-tendermint-testgen               = { version = "0.36.0", default-features = false }
+tendermint                       = { version = "0.37.0", default-features = false }
+tendermint-light-client          = { version = "0.37.0", default-features = false }
+tendermint-light-client-verifier = { version = "0.37.0", default-features = false }
+tendermint-proto                 = { version = "0.37.0", default-features = false }
+tendermint-rpc                   = { version = "0.37.0", default-features = false }
+tendermint-testgen               = { version = "0.37.0", default-features = false }
 
 # cosmwasm dependencies
 ### Note: Kept at the following version to match the CosmWasm module version
@@ -126,5 +128,5 @@ cosmwasm-vm     = { version = "2.0.4" }
 cw-storage-plus = { version = "2.0.0" }
 
 # parity dependencies
-parity-scale-codec = { version = "3.6.5", default-features = false, features = [ "derive" ] }
-scale-info         = { version = "2.10.0", default-features = false }
+parity-scale-codec = { version = "3.6.12", default-features = false, features = [ "derive" ] }
+scale-info         = { version = "2.11.3", default-features = false }
