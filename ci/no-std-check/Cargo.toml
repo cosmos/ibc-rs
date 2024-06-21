@@ -15,9 +15,9 @@ tendermint = { version = "0.37", default-features = false }
 tendermint-proto = { version = "0.37", default-features = false }
 tendermint-light-client-verifier = { version = "0.37", default-features = false, features = [ "rust-crypto" ] }
 
-sp-core    = { version = "33.0", default-features = false, optional = true }
-sp-io      = { version = "36.0", default-features = false, optional = true }
-sp-runtime = { version = "37.0", default-features = false, optional = true }
+sp-core    = { version = "34.0", default-features = false, optional = true }
+sp-io      = { version = "37.0", default-features = false, optional = true }
+sp-runtime = { version = "38.0", default-features = false, optional = true }
 sp-std     = { version = "14.0", default-features = false, optional = true }
 
 # The indirect dependency `syn` 2.0.4 has a bug that causes
