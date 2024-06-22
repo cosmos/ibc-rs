@@ -24,7 +24,7 @@ borsh       = { workspace = true, optional = true }
 base64      = { workspace = true, features = [ "alloc" ] }
 derive_more = { workspace = true }
 displaydoc  = { workspace = true }
-http        = { version = "1.0.0" }
+http        = { version = "1.1.0" }
 mime        = { version = "0.3.17" }
 schemars    = { workspace = true, optional = true }
 serde       = { workspace = true, optional = true }
