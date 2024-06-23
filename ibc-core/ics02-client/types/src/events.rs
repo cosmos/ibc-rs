@@ -71,13 +71,12 @@ impl TryFrom<abci::EventAttribute> for ClientIdAttribute {
         value
             .value_str()
             .map(|value| {
-                Ok(ClientIdAttribute {
-                    client_id: ClientId::from_str(value).map_err(|_| {
-                        ClientError::InvalidAttributeValue {
-                            attribute_value: value.to_string(),
-                        }
-                    })?,
-                })
+                let client_id =
+                    ClientId::from_str(value).map_err(|_| ClientError::InvalidAttributeValue {
+                        attribute_value: value.to_string(),
+                    })?;
+
+                Ok(ClientIdAttribute { client_id })
             })
             .map_err(|_| ClientError::InvalidAttributeValue {
                 attribute_value: String::new(),
@@ -128,13 +127,13 @@ impl TryFrom<abci::EventAttribute> for ClientTypeAttribute {
         value
             .value_str()
             .map(|value| {
-                Ok(ClientTypeAttribute {
-                    client_type: ClientType::from_str(value).map_err(|_| {
-                        ClientError::InvalidAttributeValue {
-                            attribute_value: value.to_string(),
-                        }
-                    })?,
-                })
+                let client_type = ClientType::from_str(value).map_err(|_| {
+                    ClientError::InvalidAttributeValue {
+                        attribute_value: value.to_string(),
+                    }
+                })?;
+
+                Ok(ClientTypeAttribute { client_type })
             })
             .map_err(|_| ClientError::InvalidAttributeValue {
                 attribute_value: String::new(),
@@ -184,13 +183,11 @@ impl TryFrom<abci::EventAttribute> for ConsensusHeightAttribute {
         value
             .value_str()
             .map(|value| {
-                Ok(ConsensusHeightAttribute {
-                    consensus_height: Height::from_str(value).map_err(|_| {
-                        ClientError::InvalidAttributeValue {
-                            attribute_value: value.to_string(),
-                        }
-                    })?,
-                })
+                let consensus_height =
+                    Height::from_str(value).map_err(|_| ClientError::InvalidAttributeValue {
+                        attribute_value: value.to_string(),
+                    })?;
+                Ok(ConsensusHeightAttribute { consensus_height })
             })
             .map_err(|_| ClientError::InvalidAttributeKey {
                 attribute_key: String::new(),
@@ -255,6 +252,7 @@ impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
                         })
                     })
                     .collect::<Result<Vec<Height>, ClientError>>()?;
+
                 Ok(ConsensusHeightsAttribute { consensus_heights })
             })
             .map_err(|_| ClientError::InvalidAttributeValue {
@@ -312,11 +310,12 @@ impl TryFrom<abci::EventAttribute> for HeaderAttribute {
         value
             .value_str()
             .map(|value| {
-                hex::decode(value)
-                    .map_err(|_| ClientError::InvalidAttributeValue {
+                let header =
+                    hex::decode(value).map_err(|_| ClientError::InvalidAttributeValue {
                         attribute_value: value.to_string(),
-                    })
-                    .map(|header| HeaderAttribute { header })
+                    })?;
+
+                Ok(HeaderAttribute { header })
             })
             .map_err(|_| ClientError::InvalidAttributeValue {
                 attribute_value: String::new(),
