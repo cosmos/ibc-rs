@@ -1,0 +1,3 @@
+# specifies the rate limit for cargo-release when publishing existing packages
+# default value: { new-packages = 5, existing-packages = 30 }
+rate-limit = { existing-packages = 40 }

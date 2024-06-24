@@ -18,17 +18,17 @@
 //! The layout of this crate mirrors the organization of the [IBC
 //! Standard][ibc-standard]:
 //!
-//! + [Core](core) implements the transport, authentication, and ordering layers
+//! - [Core](core) implements the transport, authentication, and ordering layers
 //!   of the IBC protocol.
 //!
-//! + [Clients](clients) consists of implementations of client verification
-//! algorithms (following the base client interface that is defined in `Core`)
-//! for specific consensus algorithms. A chain uses these verification
-//! algorithms to verify the state of remote chains.
+//! - [Clients](clients) consists of implementations of client verification
+//!   algorithms (following the base client interface that is defined in `Core`)
+//!   for specific consensus algorithms. A chain uses these verification
+//!   algorithms to verify the state of remote chains.
 //!
-//! + [Applications](apps) consists of implementations of some IBC applications.
-//! This is the part of the protocol that abstracts away the core protocol and
-//! focuses solely on business logic.
+//! - [Applications](apps) consists of implementations of some IBC applications.
+//!   This is the part of the protocol that abstracts away the core protocol and
+//!   focuses solely on business logic.
 //!
 //! [ibc-standard]: https://github.com/cosmos/ibc
 //! [ibc-rs]: https://github.com/cosmos/ibc-rs

@@ -6,18 +6,18 @@ resolver = "2"
 
 [dependencies]
 ibc = { path = "../../ibc", default-features = false, features = [ "serde" ] }
-ibc-proto = { version = "0.45", default-features = false, features = [
+ibc-proto = { version = "0.46", default-features = false, features = [
   "parity-scale-codec",
   "borsh",
   "serde",
 ] }
-tendermint = { version = "0.36", default-features = false }
-tendermint-proto = { version = "0.36", default-features = false }
-tendermint-light-client-verifier = { version = "0.36", default-features = false, features = [ "rust-crypto" ] }
+tendermint = { version = "0.37", default-features = false }
+tendermint-proto = { version = "0.37", default-features = false }
+tendermint-light-client-verifier = { version = "0.37", default-features = false, features = [ "rust-crypto" ] }
 
-sp-core    = { version = "32.0", default-features = false, optional = true }
-sp-io      = { version = "34.0", default-features = false, optional = true }
-sp-runtime = { version = "35.0", default-features = false, optional = true }
+sp-core    = { version = "34.0", default-features = false, optional = true }
+sp-io      = { version = "37.0", default-features = false, optional = true }
+sp-runtime = { version = "38.0", default-features = false, optional = true }
 sp-std     = { version = "14.0", default-features = false, optional = true }
 
 # The indirect dependency `syn` 2.0.4 has a bug that causes

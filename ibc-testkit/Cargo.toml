@@ -20,12 +20,12 @@ description = """
 borsh           = { workspace = true, optional = true }
 derive_more     = { workspace = true }
 displaydoc      = { workspace = true }
-parking_lot     = { version = "0.12.1", default-features = false }
+parking_lot     = { version = "0.12.3", default-features = false }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 serde-json      = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
-typed-builder   = { version = "0.18.0" }
+typed-builder   = { version = "0.18.2" }
 
 # ibc dependencies
 ibc       = { workspace = true, features = [ "std" ] }
@@ -40,7 +40,7 @@ tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
-hex    = { version = "0.4.2" }
+hex    = { workspace = true }
 rstest = { workspace = true }
 
 [features]
