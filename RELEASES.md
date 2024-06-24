@@ -49,12 +49,7 @@ Our release process is as follows:
       crate per minute after a burst of 10 crates.
    2. Also, [`cargo-release`][cargo-release-rate-limit] rejects publishing more
       than 5 new crates or 30 existing crates by default. If we need to publish
-      more than this number, we need to update `workspace.metadata.release` in
-      the root `Cargo.toml`.
-      ```toml
-      [workspace.metadata.release]
-      rate-limit = { new-packages = 10, existing-packages = 40 }
-      ```
+      more than this number, we need to update `release.toml` at workspace root.
 6. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
    the documentation compiles and seems up-to-date and coherent. Fix any
    potential issues here and push them to the release PR.
