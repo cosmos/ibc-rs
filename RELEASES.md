@@ -43,18 +43,19 @@ Our release process is as follows:
      subsequent crates that depend on them can then be released via the release
      process. For instructions on how to release a crate on crates.io, refer
      [here][publishing].
-5. a) Validate the number of new crates that need to be released via CI.
-      crates.io imposes a [rate limit][cargo-release-rate-limit] of 5 new
-      crates per release. If more than 5 new crates need to published as part of a
-      single release, those extra crates will need to be published manually 
-      so that the rest may be published via CI. Consult [this][publishing] 
-      section of the Cargo Book for instructions on how to manually publish 
-      crates to crates.io.
-   b) Validate the number of existing crates that need to be released via CI. The
-      rate limit for existing crates is a configurable parameter and can be updated
-      by changing the `rate-limit` setting under the `workspace.metadata.release`
-      section in the root Cargo.toml. If the number of existing packages exceeds
-      this number, increase this value.
+5.
+   1. Validate the number of new crates that need to be released via CI.
+      crates.io imposes a [rate limit][cargo-release-rate-limit] of 5 new crates
+      per release. If more than 5 new crates need to published as part of a
+      single release, those extra crates will need to be published manually so
+      that the rest may be published via CI. Consult [this][publishing] section
+      of the Cargo Book for instructions on how to manually publish crates to
+      crates.io.
+   2. Validate the number of existing crates that need to be released via CI.
+      The rate limit for existing crates is a configurable parameter and can be
+      updated by changing the `rate-limit` setting under the
+      `workspace.metadata.release` section in the root Cargo.toml. If the number
+      of existing packages exceeds this number, increase this value.
 6. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
    the documentation compiles and seems up-to-date and coherent. Fix any
    potential issues here and push them to the release PR.
