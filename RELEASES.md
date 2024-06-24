@@ -4,14 +4,14 @@ Our release process is as follows:
 
 1. In a new branch `release/vX.Y.Z`, update the [changelog](./CHANGELOG.md) to
    reflect and summarize all changes in the release. This involves:
-   1. Running `unclog build -u` and copy pasting the output at the top of the
+   1. Running `unclog build -u` and copy-pasting the output at the top of the
       `CHANGELOG.md` file, making sure to update the header with the new
       version.
    2. Running `unclog release --editor <editor> vX.Y.Z` to create a summary of
-      all of the changes in this release.
+      all the changes in this release.
       1. Your text editor will open. Write the release summary, and close the
-         editor. Make sure to include a comment on whether or not the release
-         contains consensus-breaking changes.
+         editor. Make sure to include a comment on whether the release contains
+         consensus-breaking changes.
       2. Add this same summary to `CHANGELOG.md` as well.
    3. Committing the updated `CHANGELOG.md` file and `.changelog` directory to
       the repo.
@@ -21,8 +21,8 @@ Our release process is as follows:
    version of that crate.
    1. bump the version in `crates/ibc-derive/Cargo.toml`
    2. Publish `ibc-derive` with `cargo publish -p ibc-derive`
-4. Bump the versions of all crates to the new version in their Cargo.toml and in
-   the root `Cargo.toml` as well, and push these changes to the release PR.
+4. Bump the versions of all crates to the new version in their `Cargo.toml` and
+   in the root `Cargo.toml` as well, and push these changes to the release PR.
    - If you released a new version of `ibc-derive` in step 3, make sure to
      update that dependency.
    - Verify that there is no dev-dependency among the workspace crates. This is
@@ -35,18 +35,18 @@ Our release process is as follows:
      ![alt test](docs/dev-deps-graph.png) The dev dependencies are colored with
      blue arrows. Currently, there are no blue arrows, i.e. there is no dev
      dependency among the IBC crates. It is advised to avoid any dev dependency
-     because of release order complicacy (except maybe inside `ibc-testkit`, as
-     it is the top crate that depends on `ibc` crate and no other crate depends
-     on it).
-   - In order to resolve such a situation, the dev dependencies other than
-     `ibc-testkit` can be manually released to crates.io first so that the
-     subsequent crates that depend on them can then be released via the release
-     process. For instructions on how to release a crate on crates.io, refer
+     because of release order complication (except maybe inside `ibc-testkit`,
+     as it is the top crate that depends on `ibc` crate and no other crate
+     depends on it).
+   - To resolve such a situation, the dev dependencies other than `ibc-testkit`
+     can be manually released to crates.io first so that the subsequent crates
+     that depend on them can then be released via the release process. For
+     instructions on how to release a crate on crates.io, refer
      [here][publishing].
 5.
    1. Validate the number of new crates that need to be released via CI.
       crates.io imposes a [rate limit][cargo-release-rate-limit] of 5 new crates
-      per release. If more than 5 new crates need to published as part of a
+      per release. If more than 5 new crates need to be published as part of a
       single release, those extra crates will need to be published manually so
       that the rest may be published via CI. Consult [this][publishing] section
       of the Cargo Book for instructions on how to manually publish crates to
@@ -54,8 +54,8 @@ Our release process is as follows:
    2. Validate the number of existing crates that need to be released via CI.
       The rate limit for existing crates is a configurable parameter and can be
       updated by changing the `rate-limit` setting under the
-      `workspace.metadata.release` section in the root Cargo.toml. If the number
-      of existing packages exceeds this number, increase this value.
+      `workspace.metadata.release` section in the root `Cargo.toml`. If the
+      number of existing packages exceeds this number, increase this value.
 6. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
    the documentation compiles and seems up-to-date and coherent. Fix any
    potential issues here and push them to the release PR.
@@ -74,7 +74,7 @@ Our release process is as follows:
        locally to publish any missing crates from this release. This step
        requires the appropriate privileges to push crates to [crates.io].
     2. If there is any new crate published locally, add
-       [ibcbot](https://crates.io/users/ibcbot) to its owners list.
+       [ibcbot](https://crates.io/users/ibcbot) to its owners' list.
     3. In case problems arise from the source files, fix them, bump a new patch
        version (e.g. `v0.48.1`) and repeat the process with its corresponding
        new tag.
