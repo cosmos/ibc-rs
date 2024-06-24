@@ -43,19 +43,18 @@ Our release process is as follows:
      that depend on them can then be released via the release process. For
      instructions on how to release a crate on crates.io, refer
      [here][publishing].
-5.
-   1. Validate the number of new crates that need to be released via CI.
-      crates.io imposes a [rate limit][cargo-release-rate-limit] of 5 new crates
-      per release. If more than 5 new crates need to be published as part of a
-      single release, those extra crates will need to be published manually so
-      that the rest may be published via CI. Consult [this][publishing] section
-      of the Cargo Book for instructions on how to manually publish crates to
-      crates.io.
-   2. Validate the number of existing crates that need to be released via CI.
-      The rate limit for existing crates is a configurable parameter and can be
-      updated by changing the `rate-limit` setting under the
-      `workspace.metadata.release` section in the root `Cargo.toml`. If the
-      number of existing packages exceeds this number, increase this value.
+5. Validate the number of new and existing crates that need to be released via
+   CI.
+   1. crates.io imposes a [rate limit][crates-io-rate-limit] of publishing 1
+      crate per minute after a burst of 10 crates.
+   2. Also, [`cargo-release`][cargo-release-rate-limit] rejects publishing more
+      than 5 new crates or 30 existing crates by default. If we need to publish
+      more than this number, we need to update `workspace.metadata.release` in
+      the root `Cargo.toml`.
+      ```toml
+      [workspace.metadata.release]
+      rate-limit = { new-packages = 10, existing-packages = 40 }
+      ```
 6. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
    the documentation compiles and seems up-to-date and coherent. Fix any
    potential issues here and push them to the release PR.
@@ -93,5 +92,6 @@ All done! 🎉
 
 [crates.io]: https://crates.io
 [release.yaml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yaml
-[cargo-release-rate-limit]: https://github.com/crate-ci/cargo-release/blob/4b09269/src/steps/mod.rs#L214-L268
+[crates-io-rate-limit]: https://github.com/rust-lang/crates.io/pull/1596
+[cargo-release-rate-limit]: https://github.com/crate-ci/cargo-release/blob/54ad949/src/config.rs#L493-L498
 [publishing]: https://doc.rust-lang.org/cargo/reference/publishing.html
