@@ -86,8 +86,34 @@ Our release process is as follows:
 
 All done! 🎉
 
+## Versioning
+
+`ibc-rs` uses a modified form of [semantic versioning][semver] and adheres to
+the `vMAJOR.MINOR.PATCH` structure as follows:
+
+- _Major_ version bumps are reserved for protocol breaking changes that require
+  users to perform a coordinated upgrade to use the new version of `ibc-rs`.
+- _Minor_ version bumps are reserved for new features and/or substantial changes
+  that cause API and/or consensus breakage.
+- _Patch_ version bumps are reserved for bug/security fixes that are not API
+  breaking.
+
+```mermaid
+graph TD
+    A[Change] --> B{Protocol breaking?}
+    B -->|Yes| C[Increment major version]
+    B -->|No| D{API/Consensus breaking?}
+    D -->|Yes| E[Increment minor version]
+    D -->|No| F[Increment patch version]
+```
+
+Note that, this is slightly different from
+[`ibc-go`'s versioning policy][ibc-go-version-policy].
+
 [crates.io]: https://crates.io
 [release.yaml]: https://github.com/cosmos/ibc-rs/blob/main/.github/workflows/release.yaml
+[semver]: https://semver.org
+[ibc-go-version-policy]: https://github.com/cosmos/ibc-go/blob/main/RELEASES.md#releases
 [crates-io-rate-limit]: https://github.com/rust-lang/crates.io/pull/1596
 [cargo-release-rate-limit]: https://github.com/crate-ci/cargo-release/blob/54ad949/src/config.rs#L493-L498
 [publishing]: https://doc.rust-lang.org/cargo/reference/publishing.html
