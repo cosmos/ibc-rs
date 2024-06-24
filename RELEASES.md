@@ -42,7 +42,7 @@ Our release process is as follows:
      `ibc-testkit` can be manually released to crates.io first so that the
      subsequent crates that depend on them can then be released via the release
      process. For instructions on how to release a crate on crates.io, refer
-     [here](https://doc.rust-lang.org/cargo/reference/publishing.html).
+     [here][publishing].
 5. a) Validate the number of new crates that need to be released via CI.
       crates.io imposes a [rate limit][cargo-release-rate-limit] of 5 new
       crates per release. If more than 5 new crates need to published as part of a
