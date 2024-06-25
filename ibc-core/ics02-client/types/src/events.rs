@@ -167,7 +167,7 @@ impl From<ConsensusHeightAttribute> for abci::EventAttribute {
 
 impl TryFrom<abci::EventAttribute> for ConsensusHeightAttribute {
     type Error = ClientError;
-    
+
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != CONSENSUS_HEIGHT_ATTRIBUTE_KEY {
