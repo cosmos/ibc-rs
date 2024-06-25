@@ -105,6 +105,12 @@ pub enum ClientError {
     InvalidUpdateClientMessage,
     /// other error: `{description}`
     Other { description: String },
+    /// invalid attribute key: `{attribute_key}`
+    InvalidAttributeKey { attribute_key: String },
+    /// invalid attribute value: `{attribute_value}`
+    InvalidAttributeValue { attribute_value: String },
+    /// Missing attribute key: `{attribute_key}`
+    MissingAttributeKey { attribute_key: String },
 }
 
 impl From<&'static str> for ClientError {

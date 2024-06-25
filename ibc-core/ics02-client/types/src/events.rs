@@ -5,8 +5,9 @@ use ibc_primitives::prelude::*;
 use subtle_encoding::hex;
 use tendermint::abci;
 
+use self::str::FromStr;
+use crate::error::ClientError;
 use crate::height::Height;
-
 /// Client event types
 pub const CREATE_CLIENT_EVENT: &str = "create_client";
 pub const UPDATE_CLIENT_EVENT: &str = "update_client";
@@ -51,6 +52,37 @@ impl From<ClientIdAttribute> for abci::EventAttribute {
         (CLIENT_ID_ATTRIBUTE_KEY, attr.client_id.as_str()).into()
     }
 }
+impl TryFrom<abci::EventAttribute> for ClientIdAttribute {
+    type Error = ClientError;
+
+    fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
+        if let Ok(key_str) = value.key_str() {
+            if key_str != CLIENT_ID_ATTRIBUTE_KEY {
+                return Err(ClientError::InvalidAttributeKey {
+                    attribute_key: key_str.to_string(),
+                });
+            }
+        } else {
+            return Err(ClientError::InvalidAttributeKey {
+                attribute_key: String::new(),
+            });
+        }
+
+        value
+            .value_str()
+            .map(|value| {
+                let client_id =
+                    ClientId::from_str(value).map_err(|_| ClientError::InvalidAttributeValue {
+                        attribute_value: value.to_string(),
+                    })?;
+
+                Ok(ClientIdAttribute { client_id })
+            })
+            .map_err(|_| ClientError::InvalidAttributeValue {
+                attribute_value: String::new(),
+            })?
+    }
+}
 
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -73,6 +105,39 @@ struct ClientTypeAttribute {
 impl From<ClientTypeAttribute> for abci::EventAttribute {
     fn from(attr: ClientTypeAttribute) -> Self {
         (CLIENT_TYPE_ATTRIBUTE_KEY, attr.client_type.as_str()).into()
+    }
+}
+
+impl TryFrom<abci::EventAttribute> for ClientTypeAttribute {
+    type Error = ClientError;
+
+    fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
+        if let Ok(key_str) = value.key_str() {
+            if key_str != CLIENT_TYPE_ATTRIBUTE_KEY {
+                return Err(ClientError::InvalidAttributeKey {
+                    attribute_key: key_str.to_string(),
+                });
+            }
+        } else {
+            return Err(ClientError::InvalidAttributeKey {
+                attribute_key: String::new(),
+            });
+        }
+
+        value
+            .value_str()
+            .map(|value| {
+                let client_type = ClientType::from_str(value).map_err(|_| {
+                    ClientError::InvalidAttributeValue {
+                        attribute_value: value.to_string(),
+                    }
+                })?;
+
+                Ok(ClientTypeAttribute { client_type })
+            })
+            .map_err(|_| ClientError::InvalidAttributeValue {
+                attribute_value: String::new(),
+            })?
     }
 }
 
@@ -100,6 +165,36 @@ impl From<ConsensusHeightAttribute> for abci::EventAttribute {
     }
 }
 
+impl TryFrom<abci::EventAttribute> for ConsensusHeightAttribute {
+    type Error = ClientError;
+
+    fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
+        if let Ok(key_str) = value.key_str() {
+            if key_str != CONSENSUS_HEIGHT_ATTRIBUTE_KEY {
+                return Err(ClientError::InvalidAttributeKey {
+                    attribute_key: key_str.to_string(),
+                });
+            }
+        } else {
+            return Err(ClientError::InvalidAttributeKey {
+                attribute_key: String::new(),
+            });
+        }
+
+        value
+            .value_str()
+            .map(|value| {
+                let consensus_height =
+                    Height::from_str(value).map_err(|_| ClientError::InvalidAttributeValue {
+                        attribute_value: value.to_string(),
+                    })?;
+                Ok(ConsensusHeightAttribute { consensus_height })
+            })
+            .map_err(|_| ClientError::InvalidAttributeKey {
+                attribute_key: String::new(),
+            })?
+    }
+}
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -126,6 +221,44 @@ impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
             .map(|consensus_height| consensus_height.to_string())
             .collect();
         (CONSENSUS_HEIGHTS_ATTRIBUTE_KEY, consensus_heights.join(",")).into()
+    }
+}
+
+impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
+    type Error = ClientError;
+
+    fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
+        if let Ok(key_str) = value.key_str() {
+            if key_str != CONSENSUS_HEIGHTS_ATTRIBUTE_KEY {
+                return Err(ClientError::InvalidAttributeKey {
+                    attribute_key: key_str.to_string(),
+                });
+            }
+        } else {
+            return Err(ClientError::InvalidAttributeKey {
+                attribute_key: String::new(),
+            });
+        }
+
+        value
+            .value_str()
+            .map(|value| {
+                let consensus_heights: Vec<Height> = value
+                    .split(',')
+                    .map(|height_str| {
+                        Height::from_str(height_str).map_err(|_| {
+                            ClientError::InvalidAttributeValue {
+                                attribute_value: height_str.to_string(),
+                            }
+                        })
+                    })
+                    .collect::<Result<Vec<Height>, ClientError>>()?;
+
+                Ok(ConsensusHeightsAttribute { consensus_heights })
+            })
+            .map_err(|_| ClientError::InvalidAttributeValue {
+                attribute_value: String::new(),
+            })?
     }
 }
 
@@ -157,6 +290,37 @@ impl From<HeaderAttribute> for abci::EventAttribute {
                 .expect("Never fails because hexadecimal is valid UTF-8"),
         )
             .into()
+    }
+}
+impl TryFrom<abci::EventAttribute> for HeaderAttribute {
+    type Error = ClientError;
+
+    fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
+        if let Ok(key_str) = value.key_str() {
+            if key_str != HEADER_ATTRIBUTE_KEY {
+                return Err(ClientError::InvalidAttributeKey {
+                    attribute_key: key_str.to_string(),
+                });
+            }
+        } else {
+            return Err(ClientError::InvalidAttributeKey {
+                attribute_key: String::new(),
+            });
+        }
+
+        value
+            .value_str()
+            .map(|value| {
+                let header =
+                    hex::decode(value).map_err(|_| ClientError::InvalidAttributeValue {
+                        attribute_value: value.to_string(),
+                    })?;
+
+                Ok(HeaderAttribute { header })
+            })
+            .map_err(|_| ClientError::InvalidAttributeValue {
+                attribute_value: String::new(),
+            })?
     }
 }
 
@@ -220,6 +384,79 @@ impl From<CreateClient> for abci::Event {
     }
 }
 
+impl TryFrom<abci::Event> for CreateClient {
+    type Error = ClientError;
+
+    fn try_from(value: abci::Event) -> Result<Self, Self::Error> {
+        if value.kind != CREATE_CLIENT_EVENT {
+            return Err(ClientError::Other {
+                description: "Error in parsing CreateClient event".to_string(),
+            });
+        }
+
+        value
+            .attributes
+            .iter()
+            .try_fold(
+                (None, None, None),
+                |(client_id, client_type, consensus_height): (
+                    Option<ClientIdAttribute>,
+                    Option<ClientTypeAttribute>,
+                    Option<ConsensusHeightAttribute>,
+                ),
+                 attribute| {
+                    let key =
+                        attribute
+                            .key_str()
+                            .map_err(|_| ClientError::InvalidAttributeKey {
+                                attribute_key: String::new(),
+                            })?;
+
+                    match key {
+                        CLIENT_ID_ATTRIBUTE_KEY => Ok((
+                            Some(attribute.clone().try_into()?),
+                            client_type,
+                            consensus_height,
+                        )),
+                        CLIENT_TYPE_ATTRIBUTE_KEY => Ok((
+                            client_id,
+                            Some(attribute.clone().try_into()?),
+                            consensus_height,
+                        )),
+                        CONSENSUS_HEIGHT_ATTRIBUTE_KEY => {
+                            Ok((client_id, client_type, Some(attribute.clone().try_into()?)))
+                        }
+                        _ => Ok((client_id, client_type, consensus_height)),
+                    }
+                },
+            )
+            .and_then(
+                |(client_id, client_type, consensus_height): (
+                    Option<ClientIdAttribute>,
+                    Option<ClientTypeAttribute>,
+                    Option<ConsensusHeightAttribute>,
+                )| {
+                    let client_id = client_id.ok_or_else(|| ClientError::MissingAttributeKey {
+                        attribute_key: CLIENT_ID_ATTRIBUTE_KEY.to_string(),
+                    })?;
+                    let client_type =
+                        client_type.ok_or_else(|| ClientError::MissingAttributeKey {
+                            attribute_key: CLIENT_TYPE_ATTRIBUTE_KEY.to_string(),
+                        })?;
+                    let consensus_height =
+                        consensus_height.ok_or_else(|| ClientError::MissingAttributeKey {
+                            attribute_key: CONSENSUS_HEIGHT_ATTRIBUTE_KEY.to_string(),
+                        })?;
+
+                    Ok(CreateClient::new(
+                        client_id.client_id,
+                        client_type.client_type,
+                        consensus_height.consensus_height,
+                    ))
+                },
+            )
+    }
+}
 /// UpdateClient event signals a recent update of an on-chain client (IBC Client).
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -305,7 +542,116 @@ impl From<UpdateClient> for abci::Event {
         }
     }
 }
+impl TryFrom<abci::Event> for UpdateClient {
+    type Error = ClientError;
 
+    fn try_from(value: abci::Event) -> Result<Self, Self::Error> {
+        if value.kind != UPDATE_CLIENT_EVENT {
+            return Err(ClientError::Other {
+                description: "Error in parsing UpdateClient event".to_string(),
+            });
+        }
+
+        type UpdateClientAttributes = (
+            Option<ClientIdAttribute>,
+            Option<ClientTypeAttribute>,
+            Option<ConsensusHeightAttribute>,
+            Option<ConsensusHeightsAttribute>,
+            Option<HeaderAttribute>,
+        );
+
+        value
+            .attributes
+            .iter()
+            .try_fold(
+                (None, None, None, None, None),
+                |acc: UpdateClientAttributes, attribute| {
+                    let key =
+                        attribute
+                            .key_str()
+                            .map_err(|_| ClientError::InvalidAttributeKey {
+                                attribute_key: String::new(),
+                            })?;
+
+                    match key {
+                        CLIENT_ID_ATTRIBUTE_KEY => Ok((
+                            Some(attribute.clone().try_into()?),
+                            acc.1,
+                            acc.2,
+                            acc.3,
+                            acc.4,
+                        )),
+                        CLIENT_TYPE_ATTRIBUTE_KEY => Ok((
+                            acc.0,
+                            Some(attribute.clone().try_into()?),
+                            acc.2,
+                            acc.3,
+                            acc.4,
+                        )),
+                        CONSENSUS_HEIGHT_ATTRIBUTE_KEY => Ok((
+                            acc.0,
+                            acc.1,
+                            Some(attribute.clone().try_into()?),
+                            acc.3,
+                            acc.4,
+                        )),
+                        CONSENSUS_HEIGHTS_ATTRIBUTE_KEY => Ok((
+                            acc.0,
+                            acc.1,
+                            acc.2,
+                            Some(attribute.clone().try_into()?),
+                            acc.4,
+                        )),
+                        HEADER_ATTRIBUTE_KEY => Ok((
+                            acc.0,
+                            acc.1,
+                            acc.2,
+                            acc.3,
+                            Some(attribute.clone().try_into()?),
+                        )),
+                        _ => Ok(acc),
+                    }
+                },
+            )
+            .and_then(
+                |(client_id, client_type, consensus_height, consensus_heights, header)| {
+                    let client_id = client_id
+                        .ok_or_else(|| ClientError::MissingAttributeKey {
+                            attribute_key: CLIENT_ID_ATTRIBUTE_KEY.to_string(),
+                        })?
+                        .client_id;
+                    let client_type = client_type
+                        .ok_or_else(|| ClientError::MissingAttributeKey {
+                            attribute_key: CLIENT_TYPE_ATTRIBUTE_KEY.to_string(),
+                        })?
+                        .client_type;
+                    let consensus_height = consensus_height
+                        .ok_or_else(|| ClientError::MissingAttributeKey {
+                            attribute_key: CONSENSUS_HEIGHT_ATTRIBUTE_KEY.to_string(),
+                        })?
+                        .consensus_height;
+                    let consensus_heights = consensus_heights
+                        .ok_or_else(|| ClientError::MissingAttributeKey {
+                            attribute_key: CONSENSUS_HEIGHTS_ATTRIBUTE_KEY.to_string(),
+                        })?
+                        .consensus_heights;
+                    let header = header
+                        .ok_or_else(|| ClientError::MissingAttributeKey {
+                            attribute_key: HEADER_ATTRIBUTE_KEY.to_string(),
+                        })?
+                        .header;
+
+                    Ok(UpdateClient::new(
+                        client_id,
+                        client_type,
+                        consensus_height,
+                        consensus_heights,
+                        header,
+                    ))
+                },
+            )
+    }
+}
 /// ClientMisbehaviour event signals the update of an on-chain client (IBC Client) with evidence of
 /// misbehaviour.
 #[cfg_attr(
@@ -413,6 +759,135 @@ impl From<UpgradeClient> for abci::Event {
                 u.client_type.into(),
                 u.consensus_height.into(),
             ],
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use core::any::Any;
+
+    use rstest::*;
+
+    use super::*;
+
+    #[rstest]
+    #[case(
+        abci::Event {
+            kind: CREATE_CLIENT_EVENT.to_owned(),
+            attributes: vec![
+                abci::EventAttribute::from(("client_id", "07-tendermint-0")),
+                abci::EventAttribute::from(("client_type", "07-tendermint")),
+                abci::EventAttribute::from(("consensus_height", "1-10")),
+            ],
+        },
+        Ok(CreateClient::new(
+            ClientId::from_str("07-tendermint-0").expect("should parse"),
+            ClientType::from_str("07-tendermint").expect("should parse"),
+            Height::new(1, 10).unwrap(),
+        )),
+    )]
+    #[case(
+        abci::Event {
+            kind: "some_other_event".to_owned(),
+            attributes: vec![
+                abci::EventAttribute::from(("client_id", "07-tendermint-0")),
+                abci::EventAttribute::from(("client_type", "07-tendermint")),
+                abci::EventAttribute::from(("consensus_height", "1-10")),
+            ],
+        },
+        Err(ClientError::Other {
+            description: "Error in parsing CreateClient event".to_string(),
+        }),
+    )]
+    #[case(
+        abci::Event {
+            kind: CREATE_CLIENT_EVENT.to_owned(),
+            attributes: vec![
+                abci::EventAttribute::from(("client_type", "07-tendermint")),
+                abci::EventAttribute::from(("consensus_height", "1-10")),
+            ],
+        },
+        Err(ClientError::MissingAttributeKey {
+            attribute_key: CLIENT_ID_ATTRIBUTE_KEY.to_string(),
+        }),
+    )]
+    fn test_create_client_try_from(
+        #[case] event: abci::Event,
+        #[case] expected: Result<CreateClient, ClientError>,
+    ) {
+        let result = CreateClient::try_from(event);
+        if expected.is_err() {
+            assert_eq!(
+                result.unwrap_err().type_id(),
+                expected.unwrap_err().type_id()
+            );
+        } else {
+            assert_eq!(result.unwrap(), expected.unwrap());
+        }
+    }
+
+    #[rstest]
+    #[case(
+        abci::Event {
+            kind: UPDATE_CLIENT_EVENT.to_owned(),
+            attributes: vec![
+                abci::EventAttribute::from(("client_id", "07-tendermint-0")),
+                abci::EventAttribute::from(("client_type", "07-tendermint")),
+                abci::EventAttribute::from(("consensus_height", "1-10")),
+                abci::EventAttribute::from(("consensus_heights", "1-10,1-11")),
+                abci::EventAttribute::from(("header", "1234")),
+            ],
+        },
+        Ok(UpdateClient::new(
+            ClientId::from_str("07-tendermint-0").expect("should parse"),
+            ClientType::from_str("07-tendermint").expect("should parse"),
+            Height::new(1, 10).unwrap(),
+            vec![Height::new(1, 10).unwrap(), Height::new(1, 11).unwrap()],
+            vec![0x12, 0x34],
+        )),
+    )]
+    #[case(
+        abci::Event {
+            kind: "some_other_event".to_owned(),
+            attributes: vec![
+                abci::EventAttribute::from(("client_id", "07-tendermint-0")),
+                abci::EventAttribute::from(("client_type", "07-tendermint")),
+                abci::EventAttribute::from(("consensus_height", "1-10")),
+                abci::EventAttribute::from(("consensus_heights", "1-10,1-11")),
+                abci::EventAttribute::from(("header", "1234")),
+            ],
+        },
+        Err(ClientError::Other {
+            description: "Error in parsing UpdateClient event".to_string(),
+        }),
+    )]
+    #[case(
+        abci::Event {
+            kind: UPDATE_CLIENT_EVENT.to_owned(),
+            attributes: vec![
+                abci::EventAttribute::from(("client_type", "07-tendermint")),
+                abci::EventAttribute::from(("consensus_height", "1-10")),
+                abci::EventAttribute::from(("consensus_heights", "1-10,1-11")),
+                abci::EventAttribute::from(("header", "1234")),
+            ],
+        },
+        Err(ClientError::MissingAttributeKey {
+            attribute_key: CLIENT_ID_ATTRIBUTE_KEY.to_string(),
+        }),
+    )]
+    fn test_update_client_try_from(
+        #[case] event: abci::Event,
+        #[case] expected: Result<UpdateClient, ClientError>,
+    ) {
+        let result = UpdateClient::try_from(event);
+        if expected.is_err() {
+            assert_eq!(
+                result.unwrap_err().type_id(),
+                expected.unwrap_err().type_id()
+            );
+        } else {
+            assert_eq!(result.unwrap(), expected.unwrap());
         }
     }
 }

@@ -40,6 +40,9 @@ tendermint = { workspace = true }
 parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
+[dev-dependencies]
+rstest = { workspace = true }
+
 [features]
 default = [ "std" ]
 std = [
