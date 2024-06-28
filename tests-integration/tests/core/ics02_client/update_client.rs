@@ -9,7 +9,7 @@ use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ClientState as TmClientState, Header as TmHeader,
     Misbehaviour as TmMisbehaviour,
 };
-use ibc::core::client::context::client_state::{ClientStateExecution, ClientStateValidation};
+use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::ClientValidationContext;
 use ibc::core::client::types::msgs::{ClientMsg, MsgUpdateClient};
 use ibc::core::client::types::proto::v1::Height as RawHeight;
@@ -1530,7 +1530,7 @@ pub(crate) fn build_client_update_datagram<H: TestHeader, Dst: TestHost>(
 where
     AnyClientState: From<HostClientState<Dst>>,
     AnyConsensusState: From<HostConsensusState<Dst>>,
-    HostClientState<Dst>: ClientStateExecution<DefaultIbcStore>,
+    HostClientState<Dst>: ClientStateValidation<DefaultIbcStore>,
 {
     // Check if client for ibc0 on ibc1 has been updated to latest height:
     // - query client state on destination chain

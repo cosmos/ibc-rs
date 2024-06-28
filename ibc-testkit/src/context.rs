@@ -5,7 +5,7 @@ use basecoin_store::context::ProvableStore;
 use basecoin_store::impls::InMemoryStore;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::PacketCommitment;
-use ibc::core::client::context::client_state::ClientStateExecution;
+use ibc::core::client::context::client_state::{ClientStateExecution, ClientStateValidation};
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::error::ClientError;
@@ -43,7 +43,7 @@ where
     H: TestHost,
     ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
     ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
-    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, ACL, ACS>>,
 {
     /// The multi store of the context.
     /// This is where the IBC store root is stored at IBC commitment prefix.
@@ -80,7 +80,7 @@ where
     H: TestHost,
     ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
     ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
-    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, ACL, ACS>>,
     MockIbcStore<S, ACL, ACS>:
         ClientExecutionContext<ClientStateMut = ACL, ConsensusStateRef = ACS>,
     ClientError: From<<ACL as TryFrom<Any>>::Error>,
@@ -98,7 +98,7 @@ where
     H: TestHost,
     ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
     ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
-    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, ACL, ACS>>,
     MockIbcStore<S, ACL, ACS>:
         ClientExecutionContext<ClientStateMut = ACL, ConsensusStateRef = ACS>,
     ClientError: From<<ACL as TryFrom<Any>>::Error>,
@@ -538,7 +538,7 @@ mod tests {
             AnyClientState: From<HostClientState<H>>,
             AnyConsensusState: From<HostConsensusState<H>>,
             HostConsensusState<H>: ConsensusState,
-            HostClientState<H>: ClientStateExecution<DefaultIbcStore>,
+            HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
         {
             name: String,
             ctx: TestContext<H>,
@@ -550,7 +550,7 @@ mod tests {
             AnyClientState: From<HostClientState<H>>,
             AnyConsensusState: From<HostConsensusState<H>>,
             HostConsensusState<H>: ConsensusState,
-            HostClientState<H>: ClientStateExecution<DefaultIbcStore>,
+            HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
         {
             let cv = 0; // The version to use for all chains.
 

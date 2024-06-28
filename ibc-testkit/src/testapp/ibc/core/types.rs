@@ -456,7 +456,7 @@ where
     S: ProvableStore + Debug + Default,
     ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
     ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
-    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, ACL, ACS>>,
     MockIbcStore<S, ACL, ACS>:
         ClientExecutionContext<ClientStateMut = ACL, ConsensusStateRef = ACS>,
     ClientError: From<<ACL as TryFrom<Any>>::Error>,
@@ -474,7 +474,7 @@ where
     S: ProvableStore + Debug + Default,
     ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
     ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
-    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, ACL, ACS>>,
     MockIbcStore<S, ACL, ACS>:
         ClientExecutionContext<ClientStateMut = ACL, ConsensusStateRef = ACS>,
     ClientError: From<<ACL as TryFrom<Any>>::Error>,
@@ -495,7 +495,7 @@ where
     S: ProvableStore + Debug,
     ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
     ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
-    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, ACL, ACS>>,
 {
     context: &'a StoreGenericTestContext<S, H, ACL, ACS>,
     #[builder(default, setter(into))]
@@ -511,7 +511,7 @@ where
     S: ProvableStore + Debug,
     ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
     ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
-    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, ACL, ACS>>,
     MockIbcStore<S, ACL, ACS>:
         ClientExecutionContext<ClientStateMut = ACL, ConsensusStateRef = ACS>,
     ClientError: From<<ACL as TryFrom<Any>>::Error>,
