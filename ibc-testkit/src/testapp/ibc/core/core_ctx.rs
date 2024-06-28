@@ -81,13 +81,19 @@ where
         &self,
         client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
-        // // FIXME(rano): is_frozen is specific to Tendermint or Mock client state.
-        // if client_state_of_host_on_counterparty.is_frozen() {
-        //     return Err(ClientError::ClientFrozen {
-        //         description: String::new(),
-        //     }
-        //     .into());
-        // }
+        // TODO(rano): simplify the status method. The client id is not needed here as the client state is at remote chain.
+        // We use a nonexisting client id to be able to call this method.
+        // Note, this will never return `Status::Active` and in happy cases it will return `Status::Expired` as
+        // the client state will not be found.
+        if client_state_of_host_on_counterparty
+            .status(self, &ClientId::new("nonexisting", 999).expect("no error"))?
+            .is_frozen()
+        {
+            return Err(ClientError::ClientFrozen {
+                description: String::new(),
+            }
+            .into());
+        }
 
         let latest_height = self.host_height()?;
 
