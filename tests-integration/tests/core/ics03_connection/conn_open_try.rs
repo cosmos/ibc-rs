@@ -6,13 +6,13 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
-use ibc_testkit::context::{MockContext, MockStore};
+use ibc_testkit::context::{DefaultLightClientState, MockContext};
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_try;
 use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientState};
+use ibc_testkit::testapp::ibc::core::types::DefaultIbcStore;
 use test_log::test;
 
 enum Ctx {
@@ -60,7 +60,7 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
             ctx_new
                 .with_light_client(
                     &msg.client_id_on_b,
-                    LightClientState::<MockHost, MockStore>::with_latest_height(
+                    DefaultLightClientState::<MockHost>::with_latest_height(
                         Height::new(0, client_cons_state_height).unwrap(),
                     ),
                 )

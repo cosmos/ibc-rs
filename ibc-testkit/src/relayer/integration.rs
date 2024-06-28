@@ -1,15 +1,18 @@
 use core::fmt::Debug;
 
 use basecoin_store::context::ProvableStore;
-use ibc::core::client::context::client_state::ClientStateValidation;
+use ibc::core::client::context::client_state::ClientStateExecution;
+use ibc::core::client::context::ClientExecutionContext;
+use ibc::core::client::types::error::ClientError;
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc::primitives::proto::Any;
 
 use crate::context::StoreGenericTestContext;
 use crate::fixtures::core::signer::dummy_account_id;
 use crate::hosts::{HostClientState, HostConsensusState, TestHost};
 use crate::relayer::context::RelayerContext;
-use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::types::MockIbcStore;
+use ibc::core::client::context::consensus_state::ConsensusState;
 
 /// Integration test for IBC implementation. This test creates clients,
 /// connections, channels between two [`TestHost`]s.
@@ -17,20 +20,24 @@ use crate::testapp::ibc::core::types::MockIbcStore;
 /// If `serde` feature is enabled, this also exercises packet relay between [`TestHost`]s. This uses
 /// [`DummyTransferModule`](crate::testapp::ibc::applications::transfer::types::DummyTransferModule)
 /// to simulate the transfer of tokens between two contexts.
-pub fn ibc_integration_test<A, B, S>()
+pub fn ibc_integration_test<A, B, S, ACL, ACS>()
 where
     A: TestHost,
     B: TestHost,
     S: ProvableStore + Debug + Default,
-    AnyClientState: From<HostClientState<A>>,
-    AnyConsensusState: From<HostConsensusState<A>>,
-    AnyClientState: From<HostClientState<B>>,
-    AnyConsensusState: From<HostConsensusState<B>>,
-    HostClientState<A>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
-    HostClientState<B>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
+    ACL: From<HostClientState<A>>
+        + From<HostClientState<B>>
+        + ClientStateExecution<MockIbcStore<S, ACL, ACS>>
+        + Clone,
+    ACS: From<HostConsensusState<A>> + From<HostConsensusState<B>> + ConsensusState + Clone,
+    HostClientState<A>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    HostClientState<B>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    MockIbcStore<S, ACL, ACS>:
+        ClientExecutionContext<ClientStateMut = ACL, ConsensusStateRef = ACS>,
+    ClientError: From<<ACL as TryFrom<Any>>::Error>,
 {
-    let ctx_a = StoreGenericTestContext::<S, A>::default();
-    let ctx_b = StoreGenericTestContext::<S, B>::default();
+    let ctx_a = StoreGenericTestContext::<S, A, ACL, ACS>::default();
+    let ctx_b = StoreGenericTestContext::<S, B, ACL, ACS>::default();
 
     let signer = dummy_account_id();
 
@@ -176,13 +183,27 @@ mod tests {
     use super::*;
     use crate::context::MockStore;
     use crate::hosts::{MockHost, TendermintHost};
+    use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
+    use crate::testapp::ibc::core::types::DefaultIbcStore;
 
     // tests among all the `TestHost` implementations
     #[test]
     fn ibc_integration_test_for_all_pairs() {
-        ibc_integration_test::<MockHost, MockHost, MockStore>();
-        ibc_integration_test::<MockHost, TendermintHost, MockStore>();
-        ibc_integration_test::<TendermintHost, MockHost, MockStore>();
-        ibc_integration_test::<TendermintHost, TendermintHost, MockStore>();
+        fn default_ibc_integration_test<A, B>()
+        where
+            A: TestHost,
+            B: TestHost,
+            AnyClientState: From<HostClientState<A>> + From<HostClientState<B>>,
+            AnyConsensusState: From<HostConsensusState<A>> + From<HostConsensusState<B>>,
+            HostClientState<A>: ClientStateExecution<DefaultIbcStore>,
+            HostClientState<B>: ClientStateExecution<DefaultIbcStore>,
+        {
+            ibc_integration_test::<A, B, MockStore, AnyClientState, AnyConsensusState>();
+        }
+
+        default_ibc_integration_test::<MockHost, MockHost>();
+        default_ibc_integration_test::<MockHost, TendermintHost>();
+        default_ibc_integration_test::<TendermintHost, MockHost>();
+        default_ibc_integration_test::<TendermintHost, TendermintHost>();
     }
 }

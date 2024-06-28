@@ -13,13 +13,13 @@ use ibc::core::host::types::identifiers::{ChainId, ClientId};
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
-use ibc_testkit::context::{MockContext, MockStore};
+use ibc_testkit::context::{DefaultLightClientState, MockContext};
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_ack;
 use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientState};
+use ibc_testkit::testapp::ibc::core::types::DefaultIbcStore;
 use test_log::test;
 
 enum Ctx {
@@ -76,7 +76,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
             ctx_new
                 .with_light_client(
                     &client_id,
-                    LightClientState::<MockHost, MockStore>::with_latest_height(proof_height),
+                    DefaultLightClientState::<MockHost>::with_latest_height(proof_height),
                 )
                 .with_connection(conn_id, default_conn_end)
                 .ibc_store
@@ -85,7 +85,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
             ctx_default
                 .with_light_client(
                     &client_id,
-                    LightClientState::<MockHost, MockStore>::with_latest_height(proof_height),
+                    DefaultLightClientState::<MockHost>::with_latest_height(proof_height),
                 )
                 .with_connection(conn_id, default_conn_end)
                 .ibc_store
@@ -94,7 +94,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
             ctx_new
                 .with_light_client(
                     &client_id,
-                    LightClientState::<MockHost, MockStore>::with_latest_height(proof_height),
+                    DefaultLightClientState::<MockHost>::with_latest_height(proof_height),
                 )
                 .with_connection(conn_id, conn_end_open)
                 .ibc_store

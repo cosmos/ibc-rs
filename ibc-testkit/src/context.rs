@@ -5,8 +5,10 @@ use basecoin_store::context::ProvableStore;
 use basecoin_store::impls::InMemoryStore;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::PacketCommitment;
-use ibc::core::client::context::client_state::ClientStateValidation;
+use ibc::core::client::context::client_state::ClientStateExecution;
+use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::{dispatch, execute, validate};
@@ -18,8 +20,10 @@ use ibc::core::host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, ConnectionPath,
     SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use ibc::core::host::{ExecutionContext, ValidationContext};
+use ibc::core::host::ExecutionContext;
+use ibc::core::host::ValidationContext;
 use ibc::primitives::prelude::*;
+use ibc::primitives::proto::Any;
 use ibc::primitives::Timestamp;
 
 use super::testapp::ibc::core::types::{LightClientState, MockIbcStore};
@@ -34,13 +38,13 @@ use crate::testapp::ibc::core::types::DEFAULT_BLOCK_TIME_SECS;
 
 /// A context implementing the dependencies necessary for testing any IBC module.
 #[derive(Debug)]
-pub struct StoreGenericTestContext<S, H>
+pub struct StoreGenericTestContext<S, H, ACL, ACS>
 where
     S: ProvableStore + Debug,
     H: TestHost,
-    AnyClientState: From<HostClientState<H>>,
-    AnyConsensusState: From<HostConsensusState<H>>,
-    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
+    ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
+    ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
+    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
 {
     /// The multi store of the context.
     /// This is where the IBC store root is stored at IBC commitment prefix.
@@ -50,7 +54,7 @@ where
     pub host: H,
 
     /// An object that stores all IBC related data.
-    pub ibc_store: MockIbcStore<S, AnyClientState, AnyConsensusState>,
+    pub ibc_store: MockIbcStore<S, ACL, ACS>,
 
     /// A router that can route messages to the appropriate IBC application.
     pub ibc_router: MockRouter,
@@ -58,8 +62,11 @@ where
 
 /// A mock store type using basecoin-storage implementations.
 pub type MockStore = InMemoryStore;
-/// A [`StoreGenericTestContext`] using [`MockStore`].
-pub type TestContext<H> = StoreGenericTestContext<MockStore, H>;
+/// A [`StoreGenericTestContext`] using [`MockStore`], [`AnyClientState`], and [`AnyConsensusState`].
+pub type TestContext<H> = StoreGenericTestContext<MockStore, H, AnyClientState, AnyConsensusState>;
+/// A [`LightClientState`] using [`MockStore`], [`AnyClientState`] and [`AnyConsensusState`].
+pub type DefaultLightClientState<H> =
+    LightClientState<H, MockStore, AnyClientState, AnyConsensusState>;
 /// A [`StoreGenericTestContext`] using [`MockStore`] and [`MockHost`].
 pub type MockContext = TestContext<MockHost>;
 /// A [`StoreGenericTestContext`] using [`MockStore`] and [`TendermintHost`].
@@ -68,13 +75,16 @@ pub type TendermintContext = TestContext<TendermintHost>;
 /// Returns a [`StoreGenericTestContext`] with bare minimum initialization: no clients, no connections, and no channels are
 /// present, and the chain has Height(5). This should be used sparingly, mostly for testing the
 /// creation of new domain objects.
-impl<S, H> Default for StoreGenericTestContext<S, H>
+impl<S, H, ACL, ACS> Default for StoreGenericTestContext<S, H, ACL, ACS>
 where
     S: ProvableStore + Debug + Default,
     H: TestHost,
-    AnyClientState: From<HostClientState<H>>,
-    AnyConsensusState: From<HostConsensusState<H>>,
-    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
+    ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
+    ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
+    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    MockIbcStore<S, ACL, ACS>:
+        ClientExecutionContext<ClientStateMut = ACL, ConsensusStateRef = ACS>,
+    ClientError: From<<ACL as TryFrom<Any>>::Error>,
 {
     fn default() -> Self {
         TestContextConfig::builder().build()
@@ -83,21 +93,24 @@ where
 
 /// Implementation of internal interface for use in testing. The methods in this interface should
 /// _not_ be accessible to any ICS handler.
-impl<S, H> StoreGenericTestContext<S, H>
+impl<S, H, ACL, ACS> StoreGenericTestContext<S, H, ACL, ACS>
 where
     S: ProvableStore + Debug,
     H: TestHost,
-    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
-    AnyClientState: From<HostClientState<H>>,
-    AnyConsensusState: From<HostConsensusState<H>>,
+    ACL: From<HostClientState<H>> + ClientStateExecution<MockIbcStore<S, ACL, ACS>> + Clone,
+    ACS: From<HostConsensusState<H>> + ConsensusState + Clone,
+    HostClientState<H>: ClientStateExecution<MockIbcStore<S, ACL, ACS>>,
+    MockIbcStore<S, ACL, ACS>:
+        ClientExecutionContext<ClientStateMut = ACL, ConsensusStateRef = ACS>,
+    ClientError: From<<ACL as TryFrom<Any>>::Error>,
 {
     /// Returns an immutable reference to the IBC store.
-    pub fn ibc_store(&self) -> &MockIbcStore<S, AnyClientState, AnyConsensusState> {
+    pub fn ibc_store(&self) -> &MockIbcStore<S, ACL, ACS> {
         &self.ibc_store
     }
 
     /// Returns a mutable reference to the IBC store.
-    pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S, AnyClientState, AnyConsensusState> {
+    pub fn ibc_store_mut(&mut self) -> &mut MockIbcStore<S, ACL, ACS> {
         &mut self.ibc_store
     }
 
@@ -178,7 +191,7 @@ where
     /// and consensus, and prepares the context for the next block. This includes
     /// the latest consensus state and the latest IBC commitment proof.
     pub fn begin_block(&mut self) {
-        let consensus_state = AnyConsensusState::from(
+        let consensus_state = ACS::from(
             self.host
                 .latest_block()
                 .into_header()
@@ -282,7 +295,7 @@ where
     }
 
     /// Bootstraps the context with a client state and its corresponding [`ClientId`].
-    pub fn with_client_state(mut self, client_id: &ClientId, client_state: AnyClientState) -> Self {
+    pub fn with_client_state(mut self, client_id: &ClientId, client_state: ACL) -> Self {
         let client_state_path = ClientStatePath::new(client_id.clone());
         self.ibc_store
             .store_client_state(client_state_path, client_state)
@@ -295,7 +308,7 @@ where
         mut self,
         client_id: &ClientId,
         height: Height,
-        consensus_state: AnyConsensusState,
+        consensus_state: ACS,
     ) -> Self {
         let consensus_state_path = ClientConsensusStatePath::new(
             client_id.clone(),
@@ -316,7 +329,7 @@ where
         &self,
         mut consensus_heights: Vec<Height>,
         client_params: &H::LightClientParams,
-    ) -> LightClientState<H, S> {
+    ) -> LightClientState<H, S, ACL, ACS> {
         let client_height = if let Some(&height) = consensus_heights.last() {
             height
         } else {
@@ -344,7 +357,7 @@ where
         LightClientState {
             client_state,
             consensus_states,
-            _store: core::marker::PhantomData,
+            _phantom: core::marker::PhantomData,
         }
     }
 
@@ -352,21 +365,17 @@ where
     pub fn with_light_client<RH>(
         mut self,
         client_id: &ClientId,
-        light_client: LightClientState<RH, S>,
+        light_client: LightClientState<RH, S, ACL, ACS>,
     ) -> Self
     where
         RH: TestHost,
-        AnyClientState: From<HostClientState<RH>>,
-        AnyConsensusState: From<HostConsensusState<RH>>,
+        ACL: From<HostClientState<RH>>,
+        ACS: From<HostConsensusState<RH>>,
     {
-        self = self.with_client_state(client_id, AnyClientState::from(light_client.client_state));
+        self = self.with_client_state(client_id, ACL::from(light_client.client_state));
 
         for (height, consensus_state) in light_client.consensus_states {
-            self = self.with_consensus_state(
-                client_id,
-                height,
-                AnyConsensusState::from(consensus_state),
-            );
+            self = self.with_consensus_state(client_id, height, ACS::from(consensus_state));
 
             self.ibc_store
                 .store_update_meta(
@@ -530,7 +539,7 @@ mod tests {
             AnyClientState: From<HostClientState<H>>,
             AnyConsensusState: From<HostConsensusState<H>>,
             HostConsensusState<H>: ConsensusState,
-            HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+            HostClientState<H>: ClientStateExecution<DefaultIbcStore>,
         {
             name: String,
             ctx: TestContext<H>,
@@ -542,7 +551,7 @@ mod tests {
             AnyClientState: From<HostClientState<H>>,
             AnyConsensusState: From<HostConsensusState<H>>,
             HostConsensusState<H>: ConsensusState,
-            HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+            HostClientState<H>: ClientStateExecution<DefaultIbcStore>,
         {
             let cv = 0; // The version to use for all chains.
 
