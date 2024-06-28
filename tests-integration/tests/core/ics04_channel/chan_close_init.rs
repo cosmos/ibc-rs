@@ -11,13 +11,12 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{DefaultLightClientState, MockContext};
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_close_init;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::LightClientState;
 
 #[test]
 fn test_chan_close_init_validate() {
@@ -57,7 +56,9 @@ fn test_chan_close_init_validate() {
         default_context
             .with_light_client(
                 &client_id,
-                LightClientState::<MockHost>::with_latest_height(client_consensus_state_height),
+                DefaultLightClientState::<MockHost>::with_latest_height(
+                    client_consensus_state_height,
+                ),
             )
             .with_connection(conn_id, conn_end)
             .with_channel(
@@ -115,7 +116,9 @@ fn test_chan_close_init_execute() {
         default_context
             .with_light_client(
                 &client_id,
-                LightClientState::<MockHost>::with_latest_height(client_consensus_state_height),
+                DefaultLightClientState::<MockHost>::with_latest_height(
+                    client_consensus_state_height,
+                ),
             )
             .with_connection(conn_id, conn_end)
             .with_channel(

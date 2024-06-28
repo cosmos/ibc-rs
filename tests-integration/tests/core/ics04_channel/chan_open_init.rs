@@ -8,12 +8,12 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{DefaultLightClientState, MockContext};
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_init;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_init;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientState};
+use ibc_testkit::testapp::ibc::core::types::DefaultIbcStore;
 use rstest::*;
 use test_log::test;
 
@@ -50,7 +50,7 @@ fn fixture() -> Fixture {
     let ctx = default_ctx
         .with_light_client(
             &client_id_on_a,
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            DefaultLightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a);
 

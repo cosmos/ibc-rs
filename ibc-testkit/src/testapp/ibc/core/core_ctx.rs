@@ -9,6 +9,7 @@ use ibc::core::channel::types::channel::{ChannelEnd, IdentifiedChannelEnd};
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::channel::types::packet::{PacketState, Receipt};
+use ibc::core::client::context::client_state::{ClientStateExecution, ClientStateValidation};
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
@@ -32,15 +33,16 @@ use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
 use ibc_query::core::context::{ProvableContext, QueryContext};
 
 use super::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
-use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 
-impl<S> ValidationContext for MockIbcStore<S>
+impl<S, ACL, ACS> ValidationContext for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateValidation<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
     type V = Self;
-    type HostClientState = AnyClientState;
-    type HostConsensusState = AnyConsensusState;
+    type HostClientState = ACL;
+    type HostConsensusState = ACS;
 
     fn host_height(&self) -> Result<Height, ContextError> {
         Ok(Height::new(
@@ -79,7 +81,14 @@ where
         &self,
         client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
-        if client_state_of_host_on_counterparty.is_frozen() {
+        // TODO(rano): simplify the status method. The client id is not needed here as the client state is at remote chain.
+        // We use a nonexisting client id to be able to call this method.
+        // Note, this will never return `Status::Active` and in happy cases it will return `Status::Expired` as
+        // the client state will not be found.
+        if client_state_of_host_on_counterparty
+            .status(self, &ClientId::new("nonexisting", 999).expect("no error"))?
+            .is_frozen()
+        {
             return Err(ClientError::ClientFrozen {
                 description: String::new(),
             }
@@ -269,9 +278,11 @@ where
 }
 
 /// Trait to provide proofs in gRPC service blanket implementations.
-impl<S> ProvableContext for MockIbcStore<S>
+impl<S, ACL, ACS> ProvableContext for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateValidation<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
     /// Returns the proof for the given [`Height`] and [`Path`]
     fn get_proof(&self, height: Height, path: &Path) -> Option<Vec<u8>> {
@@ -294,9 +305,11 @@ where
 }
 
 /// Trait to complete the gRPC service blanket implementations.
-impl<S> QueryContext for MockIbcStore<S>
+impl<S, ACL, ACS> QueryContext for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateValidation<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
     /// Returns the list of all client states.
     fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, ContextError> {
@@ -636,9 +649,11 @@ where
     }
 }
 
-impl<S> ExecutionContext for MockIbcStore<S>
+impl<S, ACL, ACS> ExecutionContext for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateExecution<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
     type E = Self;
 

@@ -13,12 +13,11 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{DefaultLightClientState, MockContext};
 use ibc_testkit::fixtures::core::channel::{dummy_msg_recv_packet, dummy_raw_msg_recv_packet};
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
 use test_log::test;
 
@@ -120,7 +119,7 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
     let context = context
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            DefaultLightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(
@@ -187,7 +186,7 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
     let context = context
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            DefaultLightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b)
@@ -216,7 +215,7 @@ fn recv_packet_execute_happy_path(fixture: Fixture) {
     let mut ctx = context
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            DefaultLightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_b)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_b);
