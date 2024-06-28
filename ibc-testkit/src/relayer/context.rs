@@ -17,7 +17,7 @@ use crate::hosts::{HostClientState, HostConsensusState, TestHost};
 use crate::relayer::utils::TypedRelayerOps;
 use crate::testapp::ibc::core::types::MockIbcStore;
 
-/// A relayer context that allows interaction between two [`TestContext`] instances.
+/// A relayer context that allows interaction between two [`StoreGenericTestContext`] instances.
 pub struct RelayerContext<A, B, S, ACL, ACS>
 where
     A: TestHost,
@@ -54,7 +54,7 @@ where
         ClientExecutionContext<ClientStateMut = ACL, ConsensusStateRef = ACS>,
     ClientError: From<<ACL as TryFrom<Any>>::Error>,
 {
-    /// Creates a new relayer context with the given [`TestContext`] instances.
+    /// Creates a new relayer context with the given [`StoreGenericTestContext`] instances.
     pub fn new(
         ctx_a: StoreGenericTestContext<S, A, ACL, ACS>,
         ctx_b: StoreGenericTestContext<S, B, ACL, ACS>,
