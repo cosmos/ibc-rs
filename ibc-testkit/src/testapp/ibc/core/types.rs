@@ -30,7 +30,7 @@ use ibc_proto::ics23::CommitmentProof;
 use parking_lot::Mutex;
 use typed_builder::TypedBuilder;
 
-use crate::context::{MockStore, TestContext};
+use crate::context::{MockStore, StoreGenericTestContext};
 use crate::fixtures::core::context::TestContextConfig;
 use crate::hosts::{HostClientState, HostConsensusState, TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
@@ -443,64 +443,74 @@ mod tests {
     }
 }
 
-pub struct LightClientState<H: TestHost> {
+pub struct LightClientState<H, S>
+where
+    H: TestHost,
+    S: ProvableStore + Debug,
+{
     pub client_state: H::ClientState,
     pub consensus_states:
         BTreeMap<Height, <<H::Block as TestBlock>::Header as TestHeader>::ConsensusState>,
+    pub _store: core::marker::PhantomData<S>,
 }
 
-impl<H> Default for LightClientState<H>
+impl<H, S> Default for LightClientState<H, S>
 where
     H: TestHost,
+    S: ProvableStore + Debug + Default,
     AnyClientState: From<HostClientState<H>>,
     AnyConsensusState: From<HostConsensusState<H>>,
-    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
     fn default() -> Self {
-        let context = TestContext::<H>::default();
+        // we are using `MockStore` here as we discard the context after building the light client.
+        let context = StoreGenericTestContext::<S, H>::default();
         LightClientBuilder::init().context(&context).build()
     }
 }
 
-impl<H> LightClientState<H>
+impl<H, S> LightClientState<H, S>
 where
     H: TestHost,
+    S: ProvableStore + Debug + Default,
     AnyClientState: From<HostClientState<H>>,
     AnyConsensusState: From<HostConsensusState<H>>,
-    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
     pub fn with_latest_height(height: Height) -> Self {
         let context = TestContextConfig::builder()
             .latest_height(height)
-            .build::<TestContext<_>>();
+            .build::<StoreGenericTestContext<S, H>>();
         LightClientBuilder::init().context(&context).build()
     }
 }
 
 #[derive(TypedBuilder)]
 #[builder(builder_method(name = init), build_method(into))]
-pub struct LightClientBuilder<'a, H>
+pub struct LightClientBuilder<'a, H, S>
 where
     H: TestHost,
+    S: ProvableStore + Debug,
     AnyClientState: From<HostClientState<H>>,
     AnyConsensusState: From<HostConsensusState<H>>,
-    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
-    context: &'a TestContext<H>,
+    context: &'a StoreGenericTestContext<S, H>,
     #[builder(default, setter(into))]
     consensus_heights: Vec<Height>,
     #[builder(default)]
     params: H::LightClientParams,
 }
 
-impl<'a, H> From<LightClientBuilder<'a, H>> for LightClientState<H>
+impl<'a, H, S> From<LightClientBuilder<'a, H, S>> for LightClientState<H, S>
 where
     H: TestHost,
+    S: ProvableStore + Debug,
     AnyClientState: From<HostClientState<H>>,
     AnyConsensusState: From<HostConsensusState<H>>,
-    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<H>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
-    fn from(builder: LightClientBuilder<'a, H>) -> Self {
+    fn from(builder: LightClientBuilder<'a, H, S>) -> Self {
         let LightClientBuilder {
             context,
             consensus_heights,

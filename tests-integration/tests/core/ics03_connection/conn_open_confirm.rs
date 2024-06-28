@@ -11,7 +11,7 @@ use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{MockContext, MockStore};
 use ibc_testkit::fixtures::core::connection::dummy_conn_open_confirm;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
@@ -54,7 +54,9 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
             ctx_default
                 .with_light_client(
                     &client_id,
-                    LightClientState::<MockHost>::with_latest_height(Height::new(0, 10).unwrap()),
+                    LightClientState::<MockHost, MockStore>::with_latest_height(
+                        Height::new(0, 10).unwrap(),
+                    ),
                 )
                 .with_connection(msg.conn_id_on_b.clone(), incorrect_conn_end_state)
                 .ibc_store
@@ -63,7 +65,9 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
             ctx_default
                 .with_light_client(
                     &client_id,
-                    LightClientState::<MockHost>::with_latest_height(Height::new(0, 10).unwrap()),
+                    LightClientState::<MockHost, MockStore>::with_latest_height(
+                        Height::new(0, 10).unwrap(),
+                    ),
                 )
                 .with_connection(msg.conn_id_on_b.clone(), correct_conn_end)
                 .ibc_store

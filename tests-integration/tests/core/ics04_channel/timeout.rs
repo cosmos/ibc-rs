@@ -15,7 +15,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::primitives::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{MockContext, MockStore};
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
@@ -41,7 +41,7 @@ fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
     let ctx = MockContext::default().with_light_client(
         &ClientId::new("07-tendermint", 0).expect("no error"),
-        LightClientState::<MockHost>::with_latest_height(client_height),
+        LightClientState::<MockHost, MockStore>::with_latest_height(client_height),
     );
 
     let client_height = Height::new(0, 2).unwrap();
@@ -117,7 +117,7 @@ fn timeout_fail_no_channel(fixture: Fixture) {
     } = fixture;
     let ctx = ctx.with_light_client(
         &ClientId::new("07-tendermint", 0).expect("no error"),
-        LightClientState::<MockHost>::with_latest_height(client_height),
+        LightClientState::<MockHost, MockStore>::with_latest_height(client_height),
     );
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
     let res = validate(&ctx.ibc_store, &router, msg_envelope);
@@ -204,7 +204,7 @@ fn timeout_fail_proof_timeout_not_reached(fixture: Fixture) {
     let ctx = ctx
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            LightClientState::<MockHost, MockStore>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(
@@ -276,7 +276,7 @@ fn timeout_unordered_channel_validate(fixture: Fixture) {
     let ctx = ctx
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            LightClientState::<MockHost, MockStore>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(
@@ -316,7 +316,7 @@ fn timeout_ordered_channel_validate(fixture: Fixture) {
     let ctx = ctx
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            LightClientState::<MockHost, MockStore>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a_ordered)

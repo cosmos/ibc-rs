@@ -1,12 +1,15 @@
+use core::fmt::Debug;
+
+use basecoin_store::context::ProvableStore;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 
-use crate::context::TestContext;
+use crate::context::StoreGenericTestContext;
 use crate::fixtures::core::signer::dummy_account_id;
 use crate::hosts::{HostClientState, HostConsensusState, TestHost};
 use crate::relayer::context::RelayerContext;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
-use crate::testapp::ibc::core::types::DefaultIbcStore;
+use crate::testapp::ibc::core::types::MockIbcStore;
 
 /// Integration test for IBC implementation. This test creates clients,
 /// connections, channels between two [`TestHost`]s.
@@ -14,19 +17,20 @@ use crate::testapp::ibc::core::types::DefaultIbcStore;
 /// If `serde` feature is enabled, this also exercises packet relay between [`TestHost`]s. This uses
 /// [`DummyTransferModule`](crate::testapp::ibc::applications::transfer::types::DummyTransferModule)
 /// to simulate the transfer of tokens between two contexts.
-pub fn ibc_integration_test<A, B>()
+pub fn ibc_integration_test<A, B, S>()
 where
     A: TestHost,
     B: TestHost,
+    S: ProvableStore + Debug + Default,
     AnyClientState: From<HostClientState<A>>,
     AnyConsensusState: From<HostConsensusState<A>>,
     AnyClientState: From<HostClientState<B>>,
     AnyConsensusState: From<HostConsensusState<B>>,
-    HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
-    HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<A>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
+    HostClientState<B>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
-    let ctx_a = TestContext::<A>::default();
-    let ctx_b = TestContext::<B>::default();
+    let ctx_a = StoreGenericTestContext::<S, A>::default();
+    let ctx_b = StoreGenericTestContext::<S, B>::default();
 
     let signer = dummy_account_id();
 
@@ -170,14 +174,15 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::context::MockStore;
     use crate::hosts::{MockHost, TendermintHost};
 
     // tests among all the `TestHost` implementations
     #[test]
     fn ibc_integration_test_for_all_pairs() {
-        ibc_integration_test::<MockHost, MockHost>();
-        ibc_integration_test::<MockHost, TendermintHost>();
-        ibc_integration_test::<TendermintHost, MockHost>();
-        ibc_integration_test::<TendermintHost, TendermintHost>();
+        ibc_integration_test::<MockHost, MockHost, MockStore>();
+        ibc_integration_test::<MockHost, TendermintHost, MockStore>();
+        ibc_integration_test::<TendermintHost, MockHost, MockStore>();
+        ibc_integration_test::<TendermintHost, TendermintHost, MockStore>();
     }
 }

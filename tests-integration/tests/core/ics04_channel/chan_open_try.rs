@@ -10,7 +10,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId};
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{MockContext, MockStore};
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_try;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::hosts::MockHost;
@@ -87,7 +87,9 @@ fn chan_open_try_validate_happy_path(fixture: Fixture) {
     let ctx = ctx
         .with_light_client(
             &client_id_on_b,
-            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
+            LightClientState::<MockHost, MockStore>::with_latest_height(
+                Height::new(0, proof_height).unwrap(),
+            ),
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
 
@@ -112,7 +114,9 @@ fn chan_open_try_execute_happy_path(fixture: Fixture) {
     let mut ctx = ctx
         .with_light_client(
             &client_id_on_b,
-            LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
+            LightClientState::<MockHost, MockStore>::with_latest_height(
+                Height::new(0, proof_height).unwrap(),
+            ),
         )
         .with_connection(conn_id_on_b, conn_end_on_b);
 

@@ -316,7 +316,7 @@ where
         &self,
         mut consensus_heights: Vec<Height>,
         client_params: &H::LightClientParams,
-    ) -> LightClientState<H> {
+    ) -> LightClientState<H, S> {
         let client_height = if let Some(&height) = consensus_heights.last() {
             height
         } else {
@@ -344,6 +344,7 @@ where
         LightClientState {
             client_state,
             consensus_states,
+            _store: core::marker::PhantomData,
         }
     }
 
@@ -351,7 +352,7 @@ where
     pub fn with_light_client<RH>(
         mut self,
         client_id: &ClientId,
-        light_client: LightClientState<RH>,
+        light_client: LightClientState<RH, S>,
     ) -> Self
     where
         RH: TestHost,

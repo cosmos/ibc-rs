@@ -8,7 +8,7 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{MockContext, MockStore};
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_init;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_init;
 use ibc_testkit::hosts::MockHost;
@@ -50,7 +50,7 @@ fn fixture() -> Fixture {
     let ctx = default_ctx
         .with_light_client(
             &client_id_on_a,
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            LightClientState::<MockHost, MockStore>::with_latest_height(client_height),
         )
         .with_connection(ConnectionId::zero(), conn_end_on_a);
 

@@ -1,7 +1,9 @@
 use alloc::string::String;
+use core::fmt::Debug;
 use core::marker::PhantomData;
 use core::time::Duration;
 
+use basecoin_store::context::ProvableStore;
 use ibc::core::channel::types::acknowledgement::Acknowledgement;
 use ibc::core::channel::types::channel::Order;
 use ibc::core::channel::types::msgs::{
@@ -32,10 +34,10 @@ use ibc::core::host::ValidationContext;
 use ibc::primitives::Signer;
 use ibc_query::core::context::ProvableContext;
 
-use crate::context::TestContext;
+use crate::context::StoreGenericTestContext;
 use crate::hosts::{HostClientState, HostConsensusState, TestBlock, TestHost};
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
-use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, LightClientState};
+use crate::testapp::ibc::core::types::{LightClientBuilder, LightClientState, MockIbcStore};
 
 /// Implements IBC relayer functions for a pair of [`TestHost`] implementations: `A` and `B`.
 /// Note that, all the implementations are in one direction: from `A` to `B`.
@@ -44,38 +46,40 @@ use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, Ligh
 ///
 /// For the functions in the opposite direction, use `TypedRelayerOps::<B, A>` instead of TypedRelayerOps::<A, B>`.
 #[derive(Debug, Default)]
-pub struct TypedRelayerOps<A, B>(PhantomData<A>, PhantomData<B>)
+pub struct TypedRelayerOps<A, B, S>(PhantomData<A>, PhantomData<B>, PhantomData<S>)
 where
     A: TestHost,
     B: TestHost,
+    S: ProvableStore + Debug,
     AnyClientState: From<HostClientState<A>>,
     AnyConsensusState: From<HostConsensusState<A>>,
     AnyClientState: From<HostClientState<B>>,
     AnyConsensusState: From<HostConsensusState<B>>,
-    HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
-    HostClientState<B>: ClientStateValidation<DefaultIbcStore>;
+    HostClientState<A>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
+    HostClientState<B>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>;
 
-impl<A, B> TypedRelayerOps<A, B>
+impl<A, B, S> TypedRelayerOps<A, B, S>
 where
     A: TestHost,
     B: TestHost,
+    S: ProvableStore + Debug,
     AnyClientState: From<HostClientState<A>>,
     AnyConsensusState: From<HostConsensusState<A>>,
     AnyClientState: From<HostClientState<B>>,
     AnyConsensusState: From<HostConsensusState<B>>,
-    HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
-    HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<A>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
+    HostClientState<B>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
     /// Creates a client on `A` with the state of `B`.
     /// Returns the client identifier on `A`.
     pub fn create_client_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &StoreGenericTestContext<S, B>,
         signer: Signer,
     ) -> ClientId {
         let light_client_of_b = LightClientBuilder::init()
             .context(ctx_b)
-            .build::<LightClientState<B>>();
+            .build::<LightClientState<B, S>>();
 
         let msg_for_a = MsgEnvelope::Client(ClientMsg::CreateClient(MsgCreateClient {
             client_state: light_client_of_b.client_state.into(),
@@ -111,7 +115,10 @@ where
     }
 
     /// Advances the block height on `A` until it catches up with the latest timestamp on `B`.
-    pub fn sync_clock_on_a(ctx_a: &mut TestContext<A>, ctx_b: &TestContext<B>) {
+    pub fn sync_clock_on_a(
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &StoreGenericTestContext<S, B>,
+    ) {
         while ctx_b.latest_timestamp() > ctx_a.latest_timestamp() {
             ctx_a.advance_block_height();
         }
@@ -119,8 +126,8 @@ where
 
     /// Updates the client on `A` with the latest header from `B`.
     pub fn update_client_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &StoreGenericTestContext<S, B>,
         client_id_on_a: ClientId,
         signer: Signer,
     ) {
@@ -160,20 +167,20 @@ where
     ///
     /// Timestamp sync is required, as IBC doesn't allow client updates from the future beyond max clock drift.
     pub fn update_client_on_a_with_sync(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &mut TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
         client_id_on_a: ClientId,
         signer: Signer,
     ) {
-        TypedRelayerOps::<A, B>::sync_clock_on_a(ctx_a, ctx_b);
-        TypedRelayerOps::<A, B>::update_client_on_a(ctx_a, ctx_b, client_id_on_a, signer);
+        TypedRelayerOps::<A, B, S>::sync_clock_on_a(ctx_a, ctx_b);
+        TypedRelayerOps::<A, B, S>::update_client_on_a(ctx_a, ctx_b, client_id_on_a, signer);
     }
 
     /// `A` initiates a connection with the other end on `B`.
     /// Returns the connection identifier on `A`.
     pub fn connection_open_init_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &StoreGenericTestContext<S, B>,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
         signer: Signer,
@@ -206,8 +213,8 @@ where
     /// `B` receives the connection opening attempt by `A` after `A` initiates the connection.
     /// Returns the connection identifier on `B`.
     pub fn connection_open_try_on_b(
-        ctx_b: &mut TestContext<B>,
-        ctx_a: &TestContext<A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
+        ctx_a: &StoreGenericTestContext<S, A>,
         conn_id_on_a: ConnectionId,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
@@ -295,8 +302,8 @@ where
     /// `A` receives `B`'s acknowledgement that `B` received the connection opening attempt by `A`.
     /// `A` starts processing the connection on its side.
     pub fn connection_open_ack_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &StoreGenericTestContext<S, B>,
         conn_id_on_a: ConnectionId,
         conn_id_on_b: ConnectionId,
         client_id_on_b: ClientId,
@@ -371,8 +378,8 @@ where
     /// `B` receives the confirmation from `A` that the connection creation was successful.
     /// `B` also starts processing the connection on its side.
     pub fn connection_open_confirm_on_b(
-        ctx_b: &mut TestContext<B>,
-        ctx_a: &TestContext<A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
+        ctx_a: &StoreGenericTestContext<S, A>,
         conn_id_on_a: ConnectionId,
         conn_id_on_b: ConnectionId,
         signer: Signer,
@@ -408,13 +415,13 @@ where
     /// A connection is created by `A` towards `B` using the IBC connection handshake protocol.
     /// Returns the connection identifiers of `A` and `B`.
     pub fn create_connection_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &mut TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
-        let conn_id_on_a = TypedRelayerOps::<A, B>::connection_open_init_on_a(
+        let conn_id_on_a = TypedRelayerOps::<A, B, S>::connection_open_init_on_a(
             ctx_a,
             ctx_b,
             client_id_on_a.clone(),
@@ -422,14 +429,14 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        let conn_id_on_b = TypedRelayerOps::<A, B>::connection_open_try_on_b(
+        let conn_id_on_b = TypedRelayerOps::<A, B, S>::connection_open_try_on_b(
             ctx_b,
             ctx_a,
             conn_id_on_a.clone(),
@@ -438,14 +445,14 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
+        TypedRelayerOps::<A, B, S>::update_client_on_a_with_sync(
             ctx_a,
             ctx_b,
             client_id_on_a.clone(),
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::connection_open_ack_on_a(
+        TypedRelayerOps::<A, B, S>::connection_open_ack_on_a(
             ctx_a,
             ctx_b,
             conn_id_on_a.clone(),
@@ -454,14 +461,14 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::connection_open_confirm_on_b(
+        TypedRelayerOps::<A, B, S>::connection_open_confirm_on_b(
             ctx_b,
             ctx_a,
             conn_id_on_b.clone(),
@@ -469,7 +476,12 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(ctx_a, ctx_b, client_id_on_a, signer);
+        TypedRelayerOps::<A, B, S>::update_client_on_a_with_sync(
+            ctx_a,
+            ctx_b,
+            client_id_on_a,
+            signer,
+        );
 
         (conn_id_on_a, conn_id_on_b)
     }
@@ -477,7 +489,7 @@ where
     /// `A` initiates a channel with port identifier with the other end on `B`.
     /// Returns the channel identifier of `A`.
     pub fn channel_open_init_on_a(
-        ctx_a: &mut TestContext<A>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
         conn_id_on_a: ConnectionId,
         port_id_on_a: PortId,
         port_id_on_b: PortId,
@@ -506,8 +518,8 @@ where
     /// `B` receives the channel opening attempt by `A` after `A` initiates the channel.
     /// Returns the channel identifier of `B`.
     pub fn channel_open_try_on_b(
-        ctx_b: &mut TestContext<B>,
-        ctx_a: &TestContext<A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
+        ctx_a: &StoreGenericTestContext<S, A>,
         conn_id_on_b: ConnectionId,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
@@ -554,8 +566,8 @@ where
     /// `A` receives `B`'s acknowledgement that `B` received the channel opening attempt by `A`.
     /// `A` starts processing the channel on its side.
     pub fn channel_open_ack_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &StoreGenericTestContext<S, B>,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
         chan_id_on_b: ChannelId,
@@ -595,8 +607,8 @@ where
     /// `B` receives the confirmation from `A` that the channel creation was successful.
     /// `B` also starts processing the channel on its side.
     pub fn channel_open_confirm_on_b(
-        ctx_b: &mut TestContext<B>,
-        ctx_a: &TestContext<A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
+        ctx_a: &StoreGenericTestContext<S, A>,
         chan_id_on_a: ChannelId,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
@@ -633,7 +645,7 @@ where
     /// `A` initiates the channel closing, with the other end on `B`.
     /// `A` stops processing the channel.
     pub fn channel_close_init_on_a(
-        ctx_a: &mut TestContext<A>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
         signer: Signer,
@@ -655,8 +667,8 @@ where
     /// `B` receives the channel closing attempt by `A` after `A` initiates the channel closing.
     /// `B` also stops processing the channel.
     pub fn channel_close_confirm_on_b(
-        ctx_b: &mut TestContext<B>,
-        ctx_a: &TestContext<A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
+        ctx_a: &StoreGenericTestContext<S, A>,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
         signer: Signer,
@@ -694,8 +706,8 @@ where
     /// Returns the channel identifiers of `A` and `B`.
     #[allow(clippy::too_many_arguments)]
     pub fn create_channel_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &mut TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
         client_id_on_a: ClientId,
         conn_id_on_a: ConnectionId,
         port_id_on_a: PortId,
@@ -704,7 +716,7 @@ where
         port_id_on_b: PortId,
         signer: Signer,
     ) -> (ChannelId, ChannelId) {
-        let chan_id_on_a = TypedRelayerOps::<A, B>::channel_open_init_on_a(
+        let chan_id_on_a = TypedRelayerOps::<A, B, S>::channel_open_init_on_a(
             ctx_a,
             conn_id_on_a.clone(),
             port_id_on_a.clone(),
@@ -712,14 +724,14 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        let chan_id_on_b = TypedRelayerOps::<A, B>::channel_open_try_on_b(
+        let chan_id_on_b = TypedRelayerOps::<A, B, S>::channel_open_try_on_b(
             ctx_b,
             ctx_a,
             conn_id_on_b.clone(),
@@ -728,14 +740,14 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
+        TypedRelayerOps::<A, B, S>::update_client_on_a_with_sync(
             ctx_a,
             ctx_b,
             client_id_on_a.clone(),
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::channel_open_ack_on_a(
+        TypedRelayerOps::<A, B, S>::channel_open_ack_on_a(
             ctx_a,
             ctx_b,
             chan_id_on_a.clone(),
@@ -745,14 +757,14 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::channel_open_confirm_on_b(
+        TypedRelayerOps::<A, B, S>::channel_open_confirm_on_b(
             ctx_b,
             ctx_a,
             chan_id_on_a.clone(),
@@ -761,7 +773,12 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(ctx_a, ctx_b, client_id_on_a, signer);
+        TypedRelayerOps::<A, B, S>::update_client_on_a_with_sync(
+            ctx_a,
+            ctx_b,
+            client_id_on_a,
+            signer,
+        );
 
         (chan_id_on_a, chan_id_on_b)
     }
@@ -769,8 +786,8 @@ where
     /// A channel is closed by `A` towards `B` using the IBC channel handshake protocol.
     #[allow(clippy::too_many_arguments)]
     pub fn close_channel_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &mut TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
         client_id_on_a: ClientId,
         chan_id_on_a: ChannelId,
         port_id_on_a: PortId,
@@ -779,21 +796,21 @@ where
         port_id_on_b: PortId,
         signer: Signer,
     ) {
-        TypedRelayerOps::<A, B>::channel_close_init_on_a(
+        TypedRelayerOps::<A, B, S>::channel_close_init_on_a(
             ctx_a,
             chan_id_on_a.clone(),
             port_id_on_a.clone(),
             signer.clone(),
         );
 
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b,
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::channel_close_confirm_on_b(
+        TypedRelayerOps::<A, B, S>::channel_close_confirm_on_b(
             ctx_b,
             ctx_a,
             chan_id_on_b,
@@ -801,14 +818,19 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(ctx_a, ctx_b, client_id_on_a, signer);
+        TypedRelayerOps::<A, B, S>::update_client_on_a_with_sync(
+            ctx_a,
+            ctx_b,
+            client_id_on_a,
+            signer,
+        );
     }
 
     /// `B` receives a packet from an IBC module on `A`.
     /// Returns `B`'s acknowledgement of receipt.
     pub fn packet_recv_on_b(
-        ctx_b: &mut TestContext<B>,
-        ctx_a: &TestContext<A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
+        ctx_a: &StoreGenericTestContext<S, A>,
         packet: Packet,
         signer: Signer,
     ) -> Acknowledgement {
@@ -845,8 +867,8 @@ where
 
     /// `A` receives the acknowledgement from `B` that `B` received the packet from `A`.
     pub fn packet_ack_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &StoreGenericTestContext<S, B>,
         packet: Packet,
         acknowledgement: Acknowledgement,
         signer: Signer,
@@ -882,8 +904,8 @@ where
     /// `A` receives the timeout packet from `B`.
     /// That is, `B` has not received the packet from `A` within the timeout period.
     pub fn packet_timeout_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &StoreGenericTestContext<S, B>,
         packet: Packet,
         signer: Signer,
     ) {
@@ -919,8 +941,8 @@ where
     /// `A` receives the timeout packet from `B` after closing the channel.
     /// That is, `B` has not received the packet from `A` because the channel is closed.
     pub fn packet_timeout_on_close_on_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &StoreGenericTestContext<S, B>,
         packet: Packet,
         chan_id_on_b: ChannelId,
         port_id_on_b: PortId,
@@ -967,8 +989,8 @@ where
 
     /// Sends a packet from an IBC application on `A` to `B` using the IBC packet relay protocol.
     pub fn submit_packet_on_b(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &mut TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
         packet: Packet,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
@@ -976,24 +998,28 @@ where
     ) {
         // packet is passed from module
 
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b.clone(),
             signer.clone(),
         );
 
-        let acknowledgement =
-            TypedRelayerOps::<A, B>::packet_recv_on_b(ctx_b, ctx_a, packet.clone(), signer.clone());
+        let acknowledgement = TypedRelayerOps::<A, B, S>::packet_recv_on_b(
+            ctx_b,
+            ctx_a,
+            packet.clone(),
+            signer.clone(),
+        );
 
-        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
+        TypedRelayerOps::<A, B, S>::update_client_on_a_with_sync(
             ctx_a,
             ctx_b,
             client_id_on_a,
             signer.clone(),
         );
 
-        TypedRelayerOps::<A, B>::packet_ack_on_a(
+        TypedRelayerOps::<A, B, S>::packet_ack_on_a(
             ctx_a,
             ctx_b,
             packet,
@@ -1001,7 +1027,7 @@ where
             signer.clone(),
         );
 
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b,
@@ -1011,8 +1037,8 @@ where
 
     /// Times out a packet from an IBC application on `A` to `B` after waiting timeout period.
     pub fn timeout_packet_from_a(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &mut TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
         packet: Packet,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
@@ -1031,7 +1057,7 @@ where
         }
 
         // update client on `A` with the latest header from `B`.
-        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
+        TypedRelayerOps::<A, B, S>::update_client_on_a_with_sync(
             ctx_a,
             ctx_b,
             client_id_on_a.clone(),
@@ -1039,10 +1065,15 @@ where
         );
 
         // timeout the packet on `A`.
-        TypedRelayerOps::<A, B>::packet_timeout_on_a(ctx_a, ctx_b, packet.clone(), signer.clone());
+        TypedRelayerOps::<A, B, S>::packet_timeout_on_a(
+            ctx_a,
+            ctx_b,
+            packet.clone(),
+            signer.clone(),
+        );
 
         // `A` has progressed; update client on `B` with the latest header from `A`.
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b,
@@ -1052,8 +1083,8 @@ where
 
     /// Times out a packet from an IBC application on `A` to `B` after closing the channel.
     pub fn timeout_packet_from_a_on_channel_close(
-        ctx_a: &mut TestContext<A>,
-        ctx_b: &mut TestContext<B>,
+        ctx_a: &mut StoreGenericTestContext<S, A>,
+        ctx_b: &mut StoreGenericTestContext<S, B>,
         packet: Packet,
         client_id_on_a: ClientId,
         client_id_on_b: ClientId,
@@ -1062,7 +1093,7 @@ where
         // packet is passed from module
 
         // close the channel on `A`.
-        TypedRelayerOps::<A, B>::close_channel_on_a(
+        TypedRelayerOps::<A, B, S>::close_channel_on_a(
             ctx_a,
             ctx_b,
             client_id_on_a.clone(),
@@ -1075,7 +1106,7 @@ where
         );
 
         // timeout the packet on `A`.
-        TypedRelayerOps::<A, B>::packet_timeout_on_close_on_a(
+        TypedRelayerOps::<A, B, S>::packet_timeout_on_close_on_a(
             ctx_a,
             ctx_b,
             packet.clone(),
@@ -1085,7 +1116,7 @@ where
         );
 
         // `A` has progressed; update client on `B` with the latest header from `A`.
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             ctx_b,
             ctx_a,
             client_id_on_b,

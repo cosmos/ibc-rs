@@ -11,7 +11,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ConnectionId;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{MockContext, MockStore};
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_close_confirm;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::hosts::MockHost;
@@ -57,7 +57,9 @@ fn test_chan_close_confirm_validate() {
     let context = default_context
         .with_light_client(
             &client_id,
-            LightClientState::<MockHost>::with_latest_height(client_consensus_state_height),
+            LightClientState::<MockHost, MockStore>::with_latest_height(
+                client_consensus_state_height,
+            ),
         )
         .with_connection(conn_id, conn_end)
         .with_channel(
@@ -114,7 +116,9 @@ fn test_chan_close_confirm_execute() {
     let mut context = default_context
         .with_light_client(
             &client_id,
-            LightClientState::<MockHost>::with_latest_height(client_consensus_state_height),
+            LightClientState::<MockHost, MockStore>::with_latest_height(
+                client_consensus_state_height,
+            ),
         )
         .with_connection(conn_id, conn_end)
         .with_channel(

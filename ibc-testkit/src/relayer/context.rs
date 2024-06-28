@@ -1,3 +1,6 @@
+use core::fmt::Debug;
+
+use basecoin_store::context::ProvableStore;
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
@@ -5,79 +8,81 @@ use ibc::core::host::types::path::ChannelEndPath;
 use ibc::core::host::ValidationContext;
 use ibc::primitives::Signer;
 
-use crate::context::TestContext;
+use crate::context::StoreGenericTestContext;
 use crate::hosts::{HostClientState, HostConsensusState, TestHost};
 use crate::relayer::utils::TypedRelayerOps;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
-use crate::testapp::ibc::core::types::DefaultIbcStore;
+use crate::testapp::ibc::core::types::MockIbcStore;
 
 /// A relayer context that allows interaction between two [`TestContext`] instances.
-pub struct RelayerContext<A, B>
+pub struct RelayerContext<A, B, S>
 where
     A: TestHost,
     B: TestHost,
+    S: ProvableStore + Debug,
     AnyClientState: From<HostClientState<A>>,
     AnyConsensusState: From<HostConsensusState<A>>,
     AnyClientState: From<HostClientState<B>>,
     AnyConsensusState: From<HostConsensusState<B>>,
-    HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
-    HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<A>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
+    HostClientState<B>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
-    ctx_a: TestContext<A>,
-    ctx_b: TestContext<B>,
+    ctx_a: StoreGenericTestContext<S, A>,
+    ctx_b: StoreGenericTestContext<S, B>,
 }
 
-impl<A, B> RelayerContext<A, B>
+impl<A, B, S> RelayerContext<A, B, S>
 where
     A: TestHost,
     B: TestHost,
+    S: ProvableStore + Debug,
     AnyClientState: From<HostClientState<A>>,
     AnyConsensusState: From<HostConsensusState<A>>,
     AnyClientState: From<HostClientState<B>>,
     AnyConsensusState: From<HostConsensusState<B>>,
-    HostClientState<A>: ClientStateValidation<DefaultIbcStore>,
-    HostClientState<B>: ClientStateValidation<DefaultIbcStore>,
+    HostClientState<A>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
+    HostClientState<B>: ClientStateValidation<MockIbcStore<S, AnyClientState, AnyConsensusState>>,
 {
     /// Creates a new relayer context with the given [`TestContext`] instances.
-    pub fn new(ctx_a: TestContext<A>, ctx_b: TestContext<B>) -> Self {
+    pub fn new(ctx_a: StoreGenericTestContext<S, A>, ctx_b: StoreGenericTestContext<S, B>) -> Self {
         Self { ctx_a, ctx_b }
     }
 
     /// Returns an immutable reference to the first context.
-    pub fn get_ctx_a(&self) -> &TestContext<A> {
+    pub fn get_ctx_a(&self) -> &StoreGenericTestContext<S, A> {
         &self.ctx_a
     }
 
     /// Returns an immutable reference to the second context.
-    pub fn get_ctx_b(&self) -> &TestContext<B> {
+    pub fn get_ctx_b(&self) -> &StoreGenericTestContext<S, B> {
         &self.ctx_b
     }
 
     /// Returns a mutable reference to the first context.
-    pub fn get_ctx_a_mut(&mut self) -> &mut TestContext<A> {
+    pub fn get_ctx_a_mut(&mut self) -> &mut StoreGenericTestContext<S, A> {
         &mut self.ctx_a
     }
 
     /// Returns a mutable reference to the second context.
-    pub fn get_ctx_b_mut(&mut self) -> &mut TestContext<B> {
+    pub fn get_ctx_b_mut(&mut self) -> &mut StoreGenericTestContext<S, B> {
         &mut self.ctx_b
     }
 
     /// Creates a light client of second context on the first context.
     /// Returns the client identifier of the created client.
     pub fn create_client_on_a(&mut self, signer: Signer) -> ClientId {
-        TypedRelayerOps::<A, B>::create_client_on_a(&mut self.ctx_a, &self.ctx_b, signer)
+        TypedRelayerOps::<A, B, S>::create_client_on_a(&mut self.ctx_a, &self.ctx_b, signer)
     }
 
     /// Creates a light client of first context on the second context.
     /// Returns the client identifier of the created client.
     pub fn create_client_on_b(&mut self, signer: Signer) -> ClientId {
-        TypedRelayerOps::<B, A>::create_client_on_a(&mut self.ctx_b, &self.ctx_a, signer)
+        TypedRelayerOps::<B, A, S>::create_client_on_a(&mut self.ctx_b, &self.ctx_a, signer)
     }
 
     /// Updates the client on the first context with the latest header of the second context.
     pub fn update_client_on_a_with_sync(&mut self, client_id_on_a: ClientId, signer: Signer) {
-        TypedRelayerOps::<A, B>::update_client_on_a_with_sync(
+        TypedRelayerOps::<A, B, S>::update_client_on_a_with_sync(
             &mut self.ctx_a,
             &mut self.ctx_b,
             client_id_on_a,
@@ -87,7 +92,7 @@ where
 
     /// Updates the client on the second context with the latest header of the first context.
     pub fn update_client_on_b_with_sync(&mut self, client_id_on_b: ClientId, signer: Signer) {
-        TypedRelayerOps::<B, A>::update_client_on_a_with_sync(
+        TypedRelayerOps::<B, A, S>::update_client_on_a_with_sync(
             &mut self.ctx_b,
             &mut self.ctx_a,
             client_id_on_b,
@@ -103,7 +108,7 @@ where
         client_id_on_b: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
-        TypedRelayerOps::<A, B>::create_connection_on_a(
+        TypedRelayerOps::<A, B, S>::create_connection_on_a(
             &mut self.ctx_a,
             &mut self.ctx_b,
             client_id_on_a,
@@ -120,7 +125,7 @@ where
         client_id_on_a: ClientId,
         signer: Signer,
     ) -> (ConnectionId, ConnectionId) {
-        TypedRelayerOps::<B, A>::create_connection_on_a(
+        TypedRelayerOps::<B, A, S>::create_connection_on_a(
             &mut self.ctx_b,
             &mut self.ctx_a,
             client_id_on_b,
@@ -155,7 +160,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<A, B>::create_channel_on_a(
+        TypedRelayerOps::<A, B, S>::create_channel_on_a(
             &mut self.ctx_a,
             &mut self.ctx_b,
             client_id_on_a,
@@ -194,7 +199,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<B, A>::create_channel_on_a(
+        TypedRelayerOps::<B, A, S>::create_channel_on_a(
             &mut self.ctx_b,
             &mut self.ctx_a,
             client_id_on_b,
@@ -248,7 +253,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<A, B>::close_channel_on_a(
+        TypedRelayerOps::<A, B, S>::close_channel_on_a(
             &mut self.ctx_a,
             &mut self.ctx_b,
             client_id_on_a,
@@ -302,7 +307,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<B, A>::close_channel_on_a(
+        TypedRelayerOps::<B, A, S>::close_channel_on_a(
             &mut self.ctx_b,
             &mut self.ctx_a,
             client_id_on_b,
@@ -358,7 +363,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<A, B>::submit_packet_on_b(
+        TypedRelayerOps::<A, B, S>::submit_packet_on_b(
             &mut self.ctx_a,
             &mut self.ctx_b,
             packet,
@@ -411,7 +416,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<A, B>::timeout_packet_from_a(
+        TypedRelayerOps::<A, B, S>::timeout_packet_from_a(
             &mut self.ctx_a,
             &mut self.ctx_b,
             packet,
@@ -464,7 +469,7 @@ where
             .client_id()
             .clone();
 
-        TypedRelayerOps::<A, B>::timeout_packet_from_a_on_channel_close(
+        TypedRelayerOps::<A, B, S>::timeout_packet_from_a_on_channel_close(
             &mut self.ctx_a,
             &mut self.ctx_b,
             packet,

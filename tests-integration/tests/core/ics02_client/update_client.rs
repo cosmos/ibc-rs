@@ -24,7 +24,7 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
-use ibc_testkit::context::{MockContext, TendermintContext, TestContext};
+use ibc_testkit::context::{MockContext, MockStore, TendermintContext, TestContext};
 use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
 use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
@@ -58,7 +58,7 @@ fn fixture() -> Fixture {
 
     let ctx = MockContext::default().with_light_client(
         &client_id,
-        LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
+        LightClientState::<MockHost, MockStore>::with_latest_height(Height::new(0, 42).unwrap()),
     );
 
     let router = MockRouter::new_with_transfer();
@@ -1209,7 +1209,7 @@ fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
 
     let ctx = MockContext::default().with_light_client(
         &client_id,
-        LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
+        LightClientState::<MockHost, MockStore>::with_latest_height(Height::new(0, 42).unwrap()),
     );
     let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
@@ -1225,7 +1225,7 @@ fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
 
     let ctx = MockContext::default().with_light_client(
         &client_id,
-        LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
+        LightClientState::<MockHost, MockStore>::with_latest_height(Height::new(0, 42).unwrap()),
     );
     let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
