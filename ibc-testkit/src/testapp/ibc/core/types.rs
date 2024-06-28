@@ -2,8 +2,6 @@
 
 use alloc::sync::Arc;
 use core::fmt::Debug;
-use ibc::core::client::context::ClientExecutionContext;
-use ibc::core::client::types::error::ClientError;
 
 use basecoin_store::context::{ProvableStore, Store};
 use basecoin_store::impls::SharedStore;
@@ -12,6 +10,8 @@ use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::client::context::client_state::{ClientStateExecution, ClientStateValidation};
 use ibc::core::client::context::consensus_state::ConsensusState;
+use ibc::core::client::context::ClientExecutionContext;
+use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::handler::types::events::IbcEvent;
@@ -180,16 +180,12 @@ impl<S, ACL, ACS> Default for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug + Default,
     ACL: ClientStateValidation<Self> + Clone,
-    ACS: ConsensusState + Clone,
+    ACS: ConsensusState + Clone + Default,
 {
     fn default() -> Self {
         let mut ibc_store = Self::new(0, S::default());
         ibc_store.store.commit().expect("no error");
-        // // FIXME(rano): store a consensus state.
-        // ibc_store.store_host_consensus_state(
-        //     ibc_store.store.current_height(),
-        //     MockHeader::default().into_consensus_state().into(),
-        // );
+        ibc_store.store_host_consensus_state(ibc_store.store.current_height(), ACS::default());
         ibc_store.store_ibc_commitment_proof(
             ibc_store.store.current_height(),
             CommitmentProof::default(),

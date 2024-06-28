@@ -20,8 +20,7 @@ use ibc::core::host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, ConnectionPath,
     SeqAckPath, SeqRecvPath, SeqSendPath,
 };
-use ibc::core::host::ExecutionContext;
-use ibc::core::host::ValidationContext;
+use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::primitives::prelude::*;
 use ibc::primitives::proto::Any;
 use ibc::primitives::Timestamp;

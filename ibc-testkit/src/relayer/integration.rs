@@ -2,6 +2,7 @@ use core::fmt::Debug;
 
 use basecoin_store::context::ProvableStore;
 use ibc::core::client::context::client_state::ClientStateExecution;
+use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::context::ClientExecutionContext;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
@@ -12,7 +13,6 @@ use crate::fixtures::core::signer::dummy_account_id;
 use crate::hosts::{HostClientState, HostConsensusState, TestHost};
 use crate::relayer::context::RelayerContext;
 use crate::testapp::ibc::core::types::MockIbcStore;
-use ibc::core::client::context::consensus_state::ConsensusState;
 
 /// Integration test for IBC implementation. This test creates clients,
 /// connections, channels between two [`TestHost`]s.
