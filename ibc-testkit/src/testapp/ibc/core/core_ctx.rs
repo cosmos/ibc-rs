@@ -18,11 +18,11 @@ use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::{ConnectionEnd, IdentifiedConnectionEnd};
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::IbcEvent;
-use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
+use ibc::core::host::types::identifiers::{CapabilityKey, ClientId, ConnectionId, Sequence};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath,
-    NextChannelSequencePath, NextClientSequencePath, NextConnectionSequencePath, Path, ReceiptPath,
-    SeqAckPath, SeqRecvPath, SeqSendPath,
+    NextChannelSequencePath, NextClientSequencePath, NextConnectionSequencePath, Path, PortPath,
+    ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ClientStateRef, ConsensusStateRef, ExecutionContext, ValidationContext};
 use ibc::core::primitives::prelude::*;
@@ -233,10 +233,7 @@ where
     ) -> Result<AcknowledgementCommitment, ContextError> {
         Ok(self
             .packet_ack_store
-            .get(
-                StoreHeight::Pending,
-                &AckPath::new(&ack_path.port_id, &ack_path.channel_id, ack_path.sequence),
-            )
+            .get(StoreHeight::Pending, ack_path)
             .ok_or(PacketError::PacketAcknowledgementNotFound {
                 sequence: ack_path.sequence,
             })?)
@@ -265,6 +262,30 @@ where
 
     fn get_client_validation_context(&self) -> &Self::V {
         self
+    }
+
+    fn available_port_capability(&self, port_path: &PortPath) -> Result<(), ContextError> {
+        self.port_capabilities
+            .get(StoreHeight::Pending, port_path)
+            .is_none()
+            .then_some(())
+            .ok_or_else(|| {
+                ContextError::ChannelError(ChannelError::CapabilityAlreadyExists(port_path.clone()))
+            })
+    }
+
+    fn has_port_capability(
+        &self,
+        port_path: &PortPath,
+        capability: CapabilityKey,
+    ) -> Result<(), ContextError> {
+        self.port_capabilities
+            .get(StoreHeight::Pending, port_path)
+            .filter(|stored_capability| stored_capability == &capability)
+            .ok_or_else(|| {
+                ContextError::ChannelError(ChannelError::CapabilityNotFound(port_path.clone()))
+            })
+            .map(|_| ())
     }
 }
 
@@ -773,6 +794,20 @@ where
             .map_err(|_| ChannelError::Other {
                 description: "Channel end store error".to_string(),
             })?;
+        Ok(())
+    }
+
+    fn claim_port_capability(
+        &mut self,
+        port_path: &PortPath,
+        capability: CapabilityKey,
+    ) -> Result<(), ContextError> {
+        self.port_capabilities
+            .set(port_path.clone(), capability)
+            .map_err(|_| ChannelError::Other {
+                description: "Port capability claim store error".to_string(),
+            })?;
+
         Ok(())
     }
 

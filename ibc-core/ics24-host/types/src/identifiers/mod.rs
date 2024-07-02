@@ -1,5 +1,6 @@
 //! Defines identifier types
 
+mod capability_key;
 mod chain_id;
 mod channel_id;
 mod client_id;
@@ -8,6 +9,7 @@ mod connection_id;
 mod port_id;
 mod sequence;
 
+pub use capability_key::CapabilityKey;
 pub use chain_id::ChainId;
 pub use channel_id::ChannelId;
 pub use client_id::ClientId;

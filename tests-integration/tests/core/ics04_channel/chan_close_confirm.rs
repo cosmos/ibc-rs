@@ -15,6 +15,7 @@ use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_close_confirm;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::hosts::MockHost;
+use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::LightClientState;
@@ -61,6 +62,7 @@ fn test_chan_close_confirm_validate() {
         )
         .with_connection(conn_id, conn_end)
         .with_channel(
+            &DummyTransferModule,
             msg_chan_close_confirm.port_id_on_b.clone(),
             msg_chan_close_confirm.chan_id_on_b,
             chan_end,
@@ -118,6 +120,7 @@ fn test_chan_close_confirm_execute() {
         )
         .with_connection(conn_id, conn_end)
         .with_channel(
+            &DummyTransferModule,
             msg_chan_close_confirm.port_id_on_b.clone(),
             msg_chan_close_confirm.chan_id_on_b,
             chan_end,

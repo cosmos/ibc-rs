@@ -15,6 +15,7 @@ use ibc::core::primitives::*;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_timeout_on_close;
 use ibc_testkit::hosts::MockHost;
+use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
@@ -117,7 +118,12 @@ fn timeout_on_close_success_no_packet_commitment(fixture: Fixture) {
         ..
     } = fixture;
     let context = context
-        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
+        .with_channel(
+            &DummyTransferModule,
+            PortId::transfer(),
+            ChannelId::zero(),
+            chan_end_on_a,
+        )
         .with_connection(ConnectionId::zero(), conn_end_on_a);
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
@@ -142,7 +148,12 @@ fn timeout_on_close_success_happy_path(fixture: Fixture) {
         ..
     } = fixture;
     let context = context
-        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a)
+        .with_channel(
+            &DummyTransferModule,
+            PortId::transfer(),
+            ChannelId::zero(),
+            chan_end_on_a,
+        )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),
