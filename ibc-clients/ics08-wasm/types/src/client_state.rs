@@ -1,23 +1,29 @@
 //! Defines the client state type for the ICS-08 Wasm light client.
 
-#[cfg(feature = "schema")]
+#[cfg(feature = "cosmwasm")]
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Binary;
 use ibc_core_client::types::Height;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_proto::ibc::lightclients::wasm::v1::ClientState as RawClientState;
 
 use crate::error::Error;
+#[cfg(feature = "cosmwasm")]
+use crate::serializer::Base64;
+use crate::Bytes;
 
 pub const WASM_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.ClientState";
 
-#[cfg_attr(feature = "schema", cw_serde)]
-#[cfg_attr(not(feature = "schema"), derive(Clone, Debug, PartialEq))]
+#[cfg_attr(feature = "cosmwasm", cw_serde)]
+#[cfg_attr(not(feature = "cosmwasm"), derive(Clone, Debug, PartialEq))]
 #[derive(Eq)]
 pub struct ClientState {
-    pub data: Binary,
-    pub checksum: Binary,
+    #[cfg_attr(feature = "cosmwasm", schemars(with = "String"))]
+    #[cfg_attr(feature = "cosmwasm", serde(with = "Base64", default))]
+    pub data: Bytes,
+    #[cfg_attr(feature = "cosmwasm", schemars(with = "String"))]
+    #[cfg_attr(feature = "cosmwasm", serde(with = "Base64", default))]
+    pub checksum: Bytes,
     pub latest_height: Height,
 }
 
@@ -26,8 +32,8 @@ impl Protobuf<RawClientState> for ClientState {}
 impl From<ClientState> for RawClientState {
     fn from(value: ClientState) -> Self {
         Self {
-            data: value.data.into(),
-            checksum: value.checksum.into(),
+            data: value.data,
+            checksum: value.checksum,
             latest_height: Some(value.latest_height.into()),
         }
     }
@@ -47,8 +53,8 @@ impl TryFrom<RawClientState> for ClientState {
                 reason: "invalid protobuf latest height".to_string(),
             })?;
         Ok(Self {
-            data: raw.data.into(),
-            checksum: raw.checksum.into(),
+            data: raw.data,
+            checksum: raw.checksum,
             latest_height,
         })
     }

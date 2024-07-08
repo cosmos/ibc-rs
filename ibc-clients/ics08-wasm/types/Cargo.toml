@@ -21,7 +21,6 @@ base64          = { workspace = true, features = [ "alloc" ] }
 displaydoc      = { workspace = true }
 serde           = { workspace = true, optional = true }
 cosmwasm-schema = { workspace = true, optional = true }
-cosmwasm-std    = { workspace = true }
 
 # ibc dependencies
 ibc-core-client     = { workspace = true }
@@ -57,5 +56,8 @@ schema = [
   "ibc-proto/json-schema",
   "serde",
   "std",
-  "cosmwasm-schema"
+]
+cosmwasm = [
+  "cosmwasm-schema",
+  "schema",
 ]

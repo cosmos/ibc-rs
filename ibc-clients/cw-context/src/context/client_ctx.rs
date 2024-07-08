@@ -32,7 +32,7 @@ where
                 description: e.to_string(),
             })?;
 
-        let sov_client_state = C::ClientState::decode_any_vec(any_wasm.data.into())?;
+        let sov_client_state = C::ClientState::decode_any_vec(any_wasm.data)?;
 
         Ok(sov_client_state)
     }
@@ -46,7 +46,7 @@ where
         let any_wasm: WasmConsensusState =
             C::ConsensusState::decode_any_vec(consensus_state_value)?;
 
-        let consensus_state = C::ConsensusState::decode_any_vec(any_wasm.data.into())?;
+        let consensus_state = C::ConsensusState::decode_any_vec(any_wasm.data)?;
 
         Ok(consensus_state)
     }
@@ -118,7 +118,7 @@ where
         let encoded_consensus_state = C::ConsensusState::encode_to_any_vec(consensus_state);
 
         let wasm_consensus_state = WasmConsensusState {
-            data: encoded_consensus_state.into(),
+            data: encoded_consensus_state,
         };
 
         let encoded_wasm_consensus_state =

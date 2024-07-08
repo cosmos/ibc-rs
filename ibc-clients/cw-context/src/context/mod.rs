@@ -287,7 +287,7 @@ where
                         }
                     })?;
 
-                Ok(wasm_client_state.checksum)
+                Ok(wasm_client_state.checksum.into())
             }
         }
     }
@@ -298,9 +298,9 @@ where
         client_state: C::ClientState,
     ) -> Result<Vec<u8>, ClientError> {
         let wasm_client_state = WasmClientState {
-            checksum: self.obtain_checksum()?,
+            checksum: self.obtain_checksum()?.into(),
             latest_height: client_state.latest_height(),
-            data: C::ClientState::encode_to_any_vec(client_state).into(),
+            data: C::ClientState::encode_to_any_vec(client_state),
         };
 
         Ok(Any::from(wasm_client_state).encode_to_vec())
