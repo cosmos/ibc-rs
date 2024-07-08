@@ -21,7 +21,7 @@ use crate::api::ClientType;
 use crate::types::{ContractError, GenesisMetadata, HeightTravel, MigrationPrefix};
 use crate::utils::AnyCodec;
 
-type Checksum = Vec<u8>;
+type Checksum = cosmwasm_std::Binary;
 
 /// - [`Height`] cannot be used directly as keys in the map,
 ///   as it doesn't implement some cw_storage specific traits.
@@ -241,13 +241,13 @@ where
 
             let processed_height_key = self.client_update_height_key(&height);
             metadata.push(GenesisMetadata {
-                key: processed_height_key.clone(),
-                value: self.retrieve(&processed_height_key)?,
+                key: processed_height_key.clone().into(),
+                value: self.retrieve(&processed_height_key)?.into(),
             });
             let processed_time_key = self.client_update_time_key(&height);
             metadata.push(GenesisMetadata {
-                key: processed_time_key.clone(),
-                value: self.retrieve(&processed_time_key)?,
+                key: processed_time_key.clone().into(),
+                value: self.retrieve(&processed_time_key)?.into(),
             });
         }
 
@@ -265,8 +265,8 @@ where
             let height = height_result?;
 
             metadata.push(GenesisMetadata {
-                key: iteration_key(height.revision_number(), height.revision_height()),
-                value: height.encode_vec(),
+                key: iteration_key(height.revision_number(), height.revision_height()).into(),
+                value: height.encode_vec().into(),
             });
         }
 
@@ -300,7 +300,7 @@ where
         let wasm_client_state = WasmClientState {
             checksum: self.obtain_checksum()?,
             latest_height: client_state.latest_height(),
-            data: C::ClientState::encode_to_any_vec(client_state),
+            data: C::ClientState::encode_to_any_vec(client_state).into(),
         };
 
         Ok(Any::from(wasm_client_state).encode_to_vec())

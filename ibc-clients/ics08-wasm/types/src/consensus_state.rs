@@ -1,29 +1,24 @@
 //! Defines the consensus state type for the ICS-08 Wasm light client.
 
-#[cfg(feature = "cosmwasm")]
+#[cfg(feature = "schema")]
 use cosmwasm_schema::cw_serde;
+use cosmwasm_std::Binary;
 use ibc_core_client::types::error::ClientError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_proto::ibc::lightclients::wasm::v1::ConsensusState as RawConsensusState;
 
-#[cfg(feature = "cosmwasm")]
-use crate::serializer::Base64;
-use crate::Bytes;
-
 pub const WASM_CONSENSUS_STATE_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.ConsensusState";
 
-#[cfg_attr(feature = "cosmwasm", cw_serde)]
-#[cfg_attr(not(feature = "cosmwasm"), derive(Clone, Debug, PartialEq))]
+#[cfg_attr(feature = "schema", cw_serde)]
+#[cfg_attr(not(feature = "schema"), derive(Clone, Debug, PartialEq))]
 #[derive(Eq)]
 pub struct ConsensusState {
-    #[cfg_attr(feature = "cosmwasm", schemars(with = "String"))]
-    #[cfg_attr(feature = "cosmwasm", serde(with = "Base64", default))]
-    pub data: Bytes,
+    pub data: Binary,
 }
 
 impl ConsensusState {
-    pub fn new(data: Bytes) -> Self {
+    pub fn new(data: Binary) -> Self {
         Self { data }
     }
 }
@@ -32,15 +27,17 @@ impl Protobuf<RawConsensusState> for ConsensusState {}
 
 impl From<ConsensusState> for RawConsensusState {
     fn from(value: ConsensusState) -> Self {
-        Self { data: value.data }
+        Self {
+            data: value.data.into(),
+        }
     }
 }
 
-impl TryFrom<RawConsensusState> for ConsensusState {
-    type Error = ClientError;
-
-    fn try_from(value: RawConsensusState) -> Result<Self, Self::Error> {
-        Ok(Self { data: value.data })
+impl From<RawConsensusState> for ConsensusState {
+    fn from(value: RawConsensusState) -> Self {
+        Self {
+            data: value.data.into(),
+        }
     }
 }
 
@@ -87,7 +84,7 @@ mod tests {
         let raw_msg = RawConsensusState {
             data: data.to_vec(),
         };
-        let msg = ConsensusState::try_from(raw_msg.clone()).unwrap();
+        let msg = ConsensusState::from(raw_msg.clone());
         assert_eq!(RawConsensusState::from(msg.clone()), raw_msg);
         assert_eq!(
             ConsensusState::try_from(Any::from(msg.clone())).unwrap(),

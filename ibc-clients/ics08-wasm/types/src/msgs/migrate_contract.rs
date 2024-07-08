@@ -1,5 +1,6 @@
 use core::str::FromStr;
 
+use cosmwasm_std::Binary;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -7,7 +8,6 @@ use ibc_proto::ibc::lightclients::wasm::v1::MsgMigrateContract as RawMsgMigrateC
 use ibc_proto::Protobuf;
 
 use crate::error::Error;
-use crate::Bytes;
 
 pub const MIGRATE_CONTRACT_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.MsgMigrateContract";
 
@@ -16,8 +16,8 @@ pub const MIGRATE_CONTRACT_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.MsgMigrat
 pub struct MsgMigrateContract {
     pub signer: Signer,
     pub client_id: ClientId,
-    pub checksum: Bytes,
-    pub msg: Bytes,
+    pub checksum: Binary,
+    pub msg: Binary,
 }
 
 impl Protobuf<RawMsgMigrateContract> for MsgMigrateContract {}
@@ -27,8 +27,8 @@ impl From<MsgMigrateContract> for RawMsgMigrateContract {
         Self {
             signer: value.signer.to_string(),
             client_id: value.client_id.to_string(),
-            checksum: value.checksum,
-            msg: value.msg,
+            checksum: value.checksum.into(),
+            msg: value.msg.into(),
         }
     }
 }
@@ -40,8 +40,8 @@ impl TryFrom<RawMsgMigrateContract> for MsgMigrateContract {
         Ok(Self {
             signer: Signer::from(value.signer),
             client_id: ClientId::from_str(&value.client_id)?,
-            checksum: value.checksum,
-            msg: value.msg,
+            checksum: value.checksum.into(),
+            msg: value.msg.into(),
         })
     }
 }

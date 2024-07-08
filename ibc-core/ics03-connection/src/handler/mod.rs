@@ -73,7 +73,7 @@ where
         use ibc_client_wasm_types::consensus_state::ConsensusState as WasmConsensusState;
         use prost::Message;
 
-        let wasm_consensus_state = WasmConsensusState::new(any_value.encode_to_vec());
+        let wasm_consensus_state = WasmConsensusState::new(any_value.encode_to_vec().into());
 
         wasm_consensus_state.into()
     } else {
