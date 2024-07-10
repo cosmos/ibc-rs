@@ -161,7 +161,7 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
 
     fn try_from(mut raw: VerifyMembershipMsgRaw) -> Result<Self, Self::Error> {
         let proof = CommitmentProofBytes::try_from(raw.proof)?;
-        let prefix = raw.path.key_path.remove(0);
+        let prefix = CommitmentPrefix::try_from(raw.path.key_path.remove(0).into_vec())?;
         let path = PathBytes::concat(raw.path.key_path);
         let height = Height::try_from(raw.height)?;
 
@@ -170,7 +170,7 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
             path,
             value: raw.value,
             height,
-            prefix: CommitmentPrefix::try_from(prefix.into_vec())?,
+            prefix,
             delay_block_period: raw.delay_block_period,
             delay_time_period: raw.delay_time_period,
         })
@@ -202,7 +202,7 @@ impl TryFrom<VerifyNonMembershipMsgRaw> for VerifyNonMembershipMsg {
 
     fn try_from(mut raw: VerifyNonMembershipMsgRaw) -> Result<Self, Self::Error> {
         let proof = CommitmentProofBytes::try_from(raw.proof)?;
-        let prefix = raw.path.key_path.remove(0);
+        let prefix = CommitmentPrefix::try_from(raw.path.key_path.remove(0).into_vec())?;
         let path = PathBytes::concat(raw.path.key_path);
         let height = raw.height.try_into()?;
 
@@ -210,7 +210,7 @@ impl TryFrom<VerifyNonMembershipMsgRaw> for VerifyNonMembershipMsg {
             proof,
             path,
             height,
-            prefix: CommitmentPrefix::try_from(prefix.into_vec())?,
+            prefix,
             delay_block_period: raw.delay_block_period,
             delay_time_period: raw.delay_time_period,
         })
