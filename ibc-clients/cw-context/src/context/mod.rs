@@ -274,7 +274,7 @@ where
     /// Returns the checksum of the current contract.
     pub fn obtain_checksum(&self) -> Result<Checksum, ClientError> {
         match &self.checksum {
-            Some(checksum) => Ok(checksum.clone()),
+            Some(checksum) => Ok(*checksum),
             None => {
                 let client_state_value = self.retrieve(ClientStatePath::leaf())?;
 
