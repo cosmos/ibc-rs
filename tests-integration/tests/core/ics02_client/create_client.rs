@@ -195,7 +195,7 @@ fn test_tm_create_client_proof_verification_ok() {
             &ctx_tm.ibc_store().commitment_prefix(),
             &proof,
             &root,
-            client_validation_ctx_mk
+            tm_client_state
                 .serialize_path(next_client_seq_path.clone())
                 .expect("path"),
             serde_json::to_vec(&next_client_seq_value).expect("valid json serialization"),
@@ -209,7 +209,7 @@ fn test_tm_create_client_proof_verification_ok() {
                 &ctx_tm.ibc_store().commitment_prefix(),
                 &proof,
                 &root,
-                client_validation_ctx_mk
+                tm_client_state
                     .serialize_path(next_client_seq_path.clone())
                     .expect("path"),
                 serde_json::to_vec(&(next_client_seq_value + 1)).expect("valid json serialization"),

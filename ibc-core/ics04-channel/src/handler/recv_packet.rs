@@ -206,9 +206,9 @@ where
             msg.packet.seq_on_a,
         );
 
-        let path_bytes = client_val_ctx_b.serialize_path(commitment_path_on_a)?;
-
         verify_conn_delay_passed(ctx_b, msg.proof_height_on_a, &conn_end_on_b)?;
+
+        let path_bytes = client_state_of_a_on_b.serialize_path(commitment_path_on_a)?;
 
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b

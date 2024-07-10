@@ -9,7 +9,7 @@ use ibc::core::commitment_types::commitment::{
 };
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::{ClientId, ClientType};
-use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, PathBytes};
+use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path, PathBytes};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
@@ -184,6 +184,29 @@ impl ClientStateCommon for MockClientState {
         Ok(())
     }
 
+    fn serialize_path(&self, path: impl Into<Path>) -> Result<PathBytes, ClientError> {
+        Ok(path.into().to_string().into_bytes().into())
+    }
+
+    fn verify_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+        _proof_upgrade_client: CommitmentProofBytes,
+        _proof_upgrade_consensus_state: CommitmentProofBytes,
+        _root: &CommitmentRoot,
+    ) -> Result<(), ClientError> {
+        let upgraded_mock_client_state = Self::try_from(upgraded_client_state)?;
+        MockConsensusState::try_from(upgraded_consensus_state)?;
+        if self.latest_height() >= upgraded_mock_client_state.latest_height() {
+            return Err(UpgradeClientError::LowUpgradeHeight {
+                upgraded_height: self.latest_height(),
+                client_height: upgraded_mock_client_state.latest_height(),
+            })?;
+        }
+        Ok(())
+    }
+
     fn verify_membership(
         &self,
         _prefix: &CommitmentPrefix,
@@ -285,26 +308,6 @@ where
         }
 
         Ok(Status::Active)
-    }
-
-    fn verify_upgrade_client(
-        &self,
-        _ctx: &V,
-        _client_id: ClientId,
-        upgraded_client_state: Any,
-        _upgraded_consensus_state: Any,
-        _proof_upgrade_client: CommitmentProofBytes,
-        _proof_upgrade_consensus_state: CommitmentProofBytes,
-    ) -> Result<(), ClientError> {
-        let upgraded_mock_client_state = Self::try_from(upgraded_client_state)?;
-        // MockConsensusState::try_from(upgraded_consensus_state)?;
-        if self.latest_height() >= upgraded_mock_client_state.latest_height() {
-            return Err(UpgradeClientError::LowUpgradeHeight {
-                upgraded_height: self.latest_height(),
-                client_height: upgraded_mock_client_state.latest_height(),
-            })?;
-        }
-        Ok(())
     }
 
     fn check_substitute(&self, _ctx: &V, _substitute_client_state: Any) -> Result<(), ClientError> {

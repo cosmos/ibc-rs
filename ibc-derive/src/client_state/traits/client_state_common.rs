@@ -35,6 +35,18 @@ pub(crate) fn impl_ClientStateCommon(
         quote! {validate_proof_height(cs, proof_height)},
         imports,
     );
+    let verify_upgrade_client_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        quote! {verify_upgrade_client(cs, upgraded_client_state, upgraded_consensus_state, proof_upgrade_client, proof_upgrade_consensus_state, root)},
+        imports,
+    );
+    let serialize_path_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        quote! {serialize_path(cs, path)},
+        imports,
+    );
     let verify_membership_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
@@ -58,6 +70,7 @@ pub(crate) fn impl_ClientStateCommon(
     let ClientType = imports.client_type();
     let ClientError = imports.client_error();
     let Height = imports.height();
+    let Path = imports.path();
     let PathBytes = imports.path_bytes();
 
     quote! {
@@ -82,6 +95,25 @@ pub(crate) fn impl_ClientStateCommon(
             fn validate_proof_height(&self, proof_height: #Height) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#validate_proof_height_impl),*
+                }
+            }
+
+            fn verify_upgrade_client(
+                &self,
+                upgraded_client_state: #Any,
+                upgraded_consensus_state: #Any,
+                proof_upgrade_client: #CommitmentProofBytes,
+                proof_upgrade_consensus_state: #CommitmentProofBytes,
+                root: &#CommitmentRoot,
+            ) -> core::result::Result<(), #ClientError> {
+                match self {
+                    #(#verify_upgrade_client_impl),*
+                }
+            }
+
+            fn serialize_path(&self, path: impl Into<#Path>) -> core::result::Result<#PathBytes, #ClientError> {
+                match self {
+                    #(#serialize_path_impl),*
                 }
             }
 

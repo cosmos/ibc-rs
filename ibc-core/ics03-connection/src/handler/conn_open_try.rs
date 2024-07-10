@@ -84,9 +84,6 @@ where
         let prefix_on_b = ctx_b.commitment_prefix();
 
         {
-            let path_bytes =
-                client_val_ctx_b.serialize_path(ConnectionPath::new(&vars.conn_id_on_a))?;
-
             let expected_conn_end_on_a = ConnectionEnd::new(
                 State::Init,
                 client_id_on_a.clone(),
@@ -94,6 +91,9 @@ where
                 msg.versions_on_a.clone(),
                 msg.delay_period,
             )?;
+
+            let path_bytes =
+                client_state_of_a_on_b.serialize_path(ConnectionPath::new(&vars.conn_id_on_a))?;
 
             client_state_of_a_on_b
                 .verify_membership(
@@ -107,7 +107,7 @@ where
         }
 
         let path_bytes =
-            client_val_ctx_b.serialize_path(ClientStatePath::new(client_id_on_a.clone()))?;
+            client_state_of_a_on_b.serialize_path(ClientStatePath::new(client_id_on_a.clone()))?;
 
         client_state_of_a_on_b
             .verify_membership(
@@ -134,7 +134,7 @@ where
             msg.consensus_height_of_b_on_a.revision_height(),
         );
 
-        let path_bytes = client_val_ctx_b.serialize_path(client_cons_state_path_on_a)?;
+        let path_bytes = client_state_of_a_on_b.serialize_path(client_cons_state_path_on_a)?;
 
         client_state_of_a_on_b
             .verify_membership(

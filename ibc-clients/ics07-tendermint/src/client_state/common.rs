@@ -1,7 +1,7 @@
 use ibc_client_tendermint_types::{client_type as tm_client_type, ClientState as ClientStateType};
 use ibc_core_client::context::client_state::ClientStateCommon;
 use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::types::error::ClientError;
+use ibc_core_client::types::error::{ClientError, UpgradeClientError};
 use ibc_core_client::types::Height;
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
@@ -10,9 +10,10 @@ use ibc_core_commitment_types::merkle::{MerklePath, MerkleProof};
 use ibc_core_commitment_types::proto::ics23::{HostFunctionsManager, HostFunctionsProvider};
 use ibc_core_commitment_types::specs::ProofSpecs;
 use ibc_core_host::types::identifiers::ClientType;
-use ibc_core_host::types::path::PathBytes;
+use ibc_core_host::types::path::{Path, PathBytes, UpgradeClientPath};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
+use ibc_primitives::ToVec;
 
 use super::ClientState;
 use crate::consensus_state::ConsensusState as TmConsensusState;
@@ -32,6 +33,38 @@ impl ClientStateCommon for ClientState {
 
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
         validate_proof_height(self.inner(), proof_height)
+    }
+
+    fn verify_upgrade_client(
+        &self,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+        proof_upgrade_client: CommitmentProofBytes,
+        proof_upgrade_consensus_state: CommitmentProofBytes,
+        root: &CommitmentRoot,
+    ) -> Result<(), ClientError> {
+        let last_height = self.latest_height().revision_height();
+
+        let upgrade_client_path_bytes =
+            self.serialize_path(UpgradeClientPath::UpgradedClientState(last_height))?;
+
+        let upgrade_consensus_path_bytes =
+            self.serialize_path(UpgradeClientPath::UpgradedClientConsensusState(last_height))?;
+
+        verify_upgrade_client::<HostFunctionsManager>(
+            self.inner(),
+            upgraded_client_state,
+            upgraded_consensus_state,
+            proof_upgrade_client,
+            proof_upgrade_consensus_state,
+            upgrade_client_path_bytes,
+            upgrade_consensus_path_bytes,
+            root,
+        )
+    }
+
+    fn serialize_path(&self, path: impl Into<Path>) -> Result<PathBytes, ClientError> {
+        Ok(path.into().to_string().into_bytes().into())
     }
 
     fn verify_membership(
@@ -105,6 +138,82 @@ pub fn validate_proof_height(
             proof_height,
         });
     }
+
+    Ok(())
+}
+
+/// Perform client-specific verifications and check all data in the new
+/// client state to be the same across all valid Tendermint clients for the
+/// new chain.
+///
+/// You can learn more about how to upgrade IBC-connected SDK chains in
+/// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html)
+/// guide.
+///
+/// Note that this function is typically implemented as part of the
+/// [`ClientStateCommon`] trait, but has been made a standalone function
+/// in order to make the ClientState APIs more flexible.
+#[allow(clippy::too_many_arguments)]
+pub fn verify_upgrade_client<H: HostFunctionsProvider>(
+    client_state: &ClientStateType,
+    upgraded_client_state: Any,
+    upgraded_consensus_state: Any,
+    proof_upgrade_client: CommitmentProofBytes,
+    proof_upgrade_consensus_state: CommitmentProofBytes,
+    upgrade_client_path_bytes: PathBytes,
+    upgrade_consensus_path_bytes: PathBytes,
+    root: &CommitmentRoot,
+) -> Result<(), ClientError> {
+    // Make sure that the client type is of Tendermint type `ClientState`
+    let upgraded_tm_client_state = ClientState::try_from(upgraded_client_state.clone())?;
+
+    // Make sure that the consensus type is of Tendermint type `ConsensusState`
+    TmConsensusState::try_from(upgraded_consensus_state.clone())?;
+
+    let latest_height = client_state.latest_height;
+    let upgraded_tm_client_state_height = upgraded_tm_client_state.latest_height();
+
+    // Make sure the latest height of the current client is not greater then
+    // the upgrade height This condition checks both the revision number and
+    // the height
+    if latest_height >= upgraded_tm_client_state_height {
+        Err(UpgradeClientError::LowUpgradeHeight {
+            upgraded_height: latest_height,
+            client_height: upgraded_tm_client_state_height,
+        })?
+    }
+
+    // Check to see if the upgrade path is set
+    let mut upgrade_path = client_state.upgrade_path.clone();
+
+    if upgrade_path.pop().is_none() {
+        return Err(ClientError::ClientSpecific {
+            description: "cannot upgrade client as no upgrade path has been set".to_string(),
+        });
+    };
+
+    let upgrade_path_prefix = CommitmentPrefix::try_from(upgrade_path[0].clone().into_bytes())
+        .map_err(ClientError::InvalidCommitmentProof)?;
+
+    // Verify the proof of the upgraded client state
+    verify_membership::<H>(
+        &client_state.proof_specs,
+        &upgrade_path_prefix,
+        &proof_upgrade_client,
+        root,
+        upgrade_client_path_bytes,
+        upgraded_client_state.to_vec(),
+    )?;
+
+    // Verify the proof of the upgraded consensus state
+    verify_membership::<H>(
+        &client_state.proof_specs,
+        &upgrade_path_prefix,
+        &proof_upgrade_consensus_state,
+        root,
+        upgrade_consensus_path_bytes,
+        upgraded_consensus_state.to_vec(),
+    )?;
 
     Ok(())
 }

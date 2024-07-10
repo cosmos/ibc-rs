@@ -221,7 +221,7 @@ where
                 let seq_recv_path_on_b =
                     SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
 
-                let path_bytes = client_val_ctx_a.serialize_path(seq_recv_path_on_b)?;
+                let path_bytes = client_state_of_b_on_a.serialize_path(seq_recv_path_on_b)?;
 
                 client_state_of_b_on_a.verify_membership(
                     conn_end_on_a.counterparty().prefix(),
@@ -238,7 +238,7 @@ where
                     msg.packet.seq_on_a,
                 );
 
-                let path_bytes = client_val_ctx_a.serialize_path(receipt_path_on_b)?;
+                let path_bytes = client_state_of_b_on_a.serialize_path(receipt_path_on_b)?;
 
                 client_state_of_b_on_a.verify_non_membership(
                     conn_end_on_a.counterparty().prefix(),

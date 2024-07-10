@@ -2,29 +2,21 @@ use ibc_client_tendermint_types::{
     ClientState as ClientStateType, ConsensusState as ConsensusStateType, Header as TmHeader,
     Misbehaviour as TmMisbehaviour, TENDERMINT_HEADER_TYPE_URL, TENDERMINT_MISBEHAVIOUR_TYPE_URL,
 };
-use ibc_core_client::context::client_state::{ClientStateCommon, ClientStateValidation};
-use ibc_core_client::context::consensus_state::ConsensusState;
-use ibc_core_client::context::{ClientValidationContext, Convertible, ExtClientValidationContext};
-use ibc_core_client::types::error::{ClientError, UpgradeClientError};
+use ibc_core_client::context::client_state::ClientStateValidation;
+use ibc_core_client::context::{Convertible, ExtClientValidationContext};
+use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Status;
-use ibc_core_commitment_types::commitment::{CommitmentPrefix, CommitmentProofBytes};
-use ibc_core_commitment_types::proto::ics23::{HostFunctionsManager, HostFunctionsProvider};
 use ibc_core_host::types::identifiers::ClientId;
-use ibc_core_host::types::path::{ClientConsensusStatePath, UpgradeClientPath};
+use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
-use ibc_primitives::ToVec;
 use tendermint::crypto::default::Sha256;
 use tendermint::crypto::Sha256 as Sha256Trait;
 use tendermint::merkle::MerkleHash;
 use tendermint_light_client_verifier::{ProdVerifier, Verifier};
 
-use super::{
-    check_for_misbehaviour_on_misbehavior, check_for_misbehaviour_on_update, verify_membership,
-    ClientState,
-};
+use super::{check_for_misbehaviour_on_misbehavior, check_for_misbehaviour_on_update, ClientState};
 use crate::client_state::{verify_header, verify_misbehaviour};
-use crate::consensus_state::ConsensusState as TmConsensusState;
 
 impl<V> ClientStateValidation<V> for ClientState
 where
@@ -77,26 +69,6 @@ where
 
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError> {
         status(self.inner(), ctx, client_id)
-    }
-
-    fn verify_upgrade_client(
-        &self,
-        ctx: &V,
-        client_id: ClientId,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-        proof_upgrade_client: CommitmentProofBytes,
-        proof_upgrade_consensus_state: CommitmentProofBytes,
-    ) -> Result<(), ClientError> {
-        verify_upgrade_client::<V, HostFunctionsManager>(
-            self.inner(),
-            ctx,
-            client_id,
-            upgraded_client_state,
-            upgraded_consensus_state,
-            proof_upgrade_client,
-            proof_upgrade_consensus_state,
-        )
     }
 
     fn check_substitute(&self, _ctx: &V, substitute_client_state: Any) -> Result<(), ClientError> {
@@ -255,99 +227,6 @@ where
     }
 
     Ok(Status::Active)
-}
-
-/// Perform client-specific verifications and check all data in the new
-/// client state to be the same across all valid Tendermint clients for the
-/// new chain.
-///
-/// You can learn more about how to upgrade IBC-connected SDK chains in
-/// [this](https://ibc.cosmos.network/main/ibc/upgrades/quick-guide.html)
-/// guide.
-///
-/// Note that this function is typically implemented as part of the
-/// [`ClientStateCommon`] trait, but has been made a standalone function
-/// in order to make the ClientState APIs more flexible.
-pub fn verify_upgrade_client<V, H>(
-    client_state: &ClientStateType,
-    ctx: &V,
-    client_id: ClientId,
-    upgraded_client_state: Any,
-    upgraded_consensus_state: Any,
-    proof_upgrade_client: CommitmentProofBytes,
-    proof_upgrade_consensus_state: CommitmentProofBytes,
-) -> Result<(), ClientError>
-where
-    V: ClientValidationContext,
-    H: HostFunctionsProvider,
-{
-    // Read the latest consensus state from the host chain store.
-    let old_client_cons_state_path = ClientConsensusStatePath::new(
-        client_id.clone(),
-        client_state.latest_height.revision_number(),
-        client_state.latest_height.revision_height(),
-    );
-    let old_consensus_state = ctx
-        .consensus_state(&old_client_cons_state_path)
-        .map_err(|_| ClientError::ConsensusStateNotFound {
-            client_id,
-            height: client_state.latest_height,
-        })?;
-
-    // Make sure that the client type is of Tendermint type `ClientState`
-    let upgraded_tm_client_state = ClientState::try_from(upgraded_client_state.clone())?;
-
-    // Make sure that the consensus type is of Tendermint type `ConsensusState`
-    TmConsensusState::try_from(upgraded_consensus_state.clone())?;
-
-    let latest_height = client_state.latest_height;
-    let upgraded_tm_client_state_height = upgraded_tm_client_state.latest_height();
-
-    // Make sure the latest height of the current client is not greater then
-    // the upgrade height This condition checks both the revision number and
-    // the height
-    if latest_height >= upgraded_tm_client_state_height {
-        Err(UpgradeClientError::LowUpgradeHeight {
-            upgraded_height: latest_height,
-            client_height: upgraded_tm_client_state_height,
-        })?
-    }
-
-    // Check to see if the upgrade path is set
-    let mut upgrade_path = client_state.upgrade_path.clone();
-
-    if upgrade_path.pop().is_none() {
-        return Err(ClientError::ClientSpecific {
-            description: "cannot upgrade client as no upgrade path has been set".to_string(),
-        });
-    };
-
-    let upgrade_path_prefix = CommitmentPrefix::try_from(upgrade_path[0].clone().into_bytes())
-        .map_err(ClientError::InvalidCommitmentProof)?;
-
-    let last_height = latest_height.revision_height();
-
-    // Verify the proof of the upgraded client state
-    verify_membership::<H>(
-        &client_state.proof_specs,
-        &upgrade_path_prefix,
-        &proof_upgrade_client,
-        old_consensus_state.root(),
-        ctx.serialize_path(UpgradeClientPath::UpgradedClientState(last_height))?,
-        upgraded_client_state.to_vec(),
-    )?;
-
-    // Verify the proof of the upgraded consensus state
-    verify_membership::<H>(
-        &client_state.proof_specs,
-        &upgrade_path_prefix,
-        &proof_upgrade_consensus_state,
-        old_consensus_state.root(),
-        ctx.serialize_path(UpgradeClientPath::UpgradedClientConsensusState(last_height))?,
-        upgraded_consensus_state.to_vec(),
-    )?;
-
-    Ok(())
 }
 
 /// Check that the subject and substitute client states match as part of

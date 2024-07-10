@@ -188,9 +188,9 @@ where
         let ack_path_on_b =
             AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
 
-        let path_bytes = client_val_ctx_a.serialize_path(ack_path_on_b)?;
-
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
+
+        let path_bytes = client_state_of_b_on_a.serialize_path(ack_path_on_b)?;
 
         // Verify the proof for the packet against the chain store.
         client_state_of_b_on_a

@@ -61,8 +61,6 @@ where
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
 
-        let path_bytes = client_val_ctx_b.serialize_path(ConnectionPath::new(conn_id_on_a))?;
-
         let expected_conn_end_on_a = ConnectionEnd::new(
             State::Open,
             client_id_on_a.clone(),
@@ -74,6 +72,9 @@ where
             conn_end_on_b.versions().to_vec(),
             conn_end_on_b.delay_period(),
         )?;
+
+        let path_bytes =
+            client_state_of_a_on_b.serialize_path(ConnectionPath::new(conn_id_on_a))?;
 
         client_state_of_a_on_b
             .verify_membership(

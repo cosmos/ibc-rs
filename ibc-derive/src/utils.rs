@@ -45,6 +45,11 @@ impl Imports {
         quote! {#Prefix::commitment_types::commitment::CommitmentProofBytes}
     }
 
+    pub fn path(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::host::types::path::Path}
+    }
+
     pub fn path_bytes(&self) -> TokenStream {
         let Prefix = self.prefix();
         quote! {#Prefix::host::types::path::PathBytes}
