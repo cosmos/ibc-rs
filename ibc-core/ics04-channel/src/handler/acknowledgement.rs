@@ -9,7 +9,7 @@ use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, SeqAckPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqAckPath,
 };
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
@@ -188,6 +188,8 @@ where
         let ack_path_on_b =
             AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
 
+        let path_bytes = client_val_ctx_a.serialize_path(ack_path_on_b)?;
+
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 
         // Verify the proof for the packet against the chain store.
@@ -196,7 +198,7 @@ where
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_acked_on_b,
                 consensus_state_of_b_on_a.root(),
-                Path::Ack(ack_path_on_b),
+                path_bytes,
                 ack_commitment.into_vec(),
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {

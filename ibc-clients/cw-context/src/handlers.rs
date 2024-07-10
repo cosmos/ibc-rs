@@ -103,20 +103,13 @@ where
             SudoMsg::VerifyUpgradeAndUpdateState(msg) => {
                 let msg = VerifyUpgradeAndUpdateStateMsg::try_from(msg)?;
 
-                let client_cons_state_path = ClientConsensusStatePath::new(
-                    client_id.clone(),
-                    client_state.latest_height().revision_number(),
-                    client_state.latest_height().revision_height(),
-                );
-
-                let consensus_state = self.consensus_state(&client_cons_state_path)?;
-
                 client_state.verify_upgrade_client(
+                    self,
+                    client_id.clone(),
                     msg.upgrade_client_state.clone(),
                     msg.upgrade_consensus_state.clone(),
                     msg.proof_upgrade_client,
                     msg.proof_upgrade_consensus_state,
-                    consensus_state.root(),
                 )?;
 
                 client_state.update_state_on_upgrade(

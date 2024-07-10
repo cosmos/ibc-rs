@@ -8,7 +8,7 @@ use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::{ClientId, ConnectionId};
-use ibc_core_host::types::path::{ClientConsensusStatePath, ConnectionPath, Path};
+use ibc_core_host::types::path::{ClientConsensusStatePath, ConnectionPath};
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
@@ -61,6 +61,8 @@ where
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let prefix_on_b = ctx_b.commitment_prefix();
 
+        let path_bytes = client_val_ctx_b.serialize_path(ConnectionPath::new(conn_id_on_a))?;
+
         let expected_conn_end_on_a = ConnectionEnd::new(
             State::Open,
             client_id_on_a.clone(),
@@ -78,7 +80,7 @@ where
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                Path::Connection(ConnectionPath::new(conn_id_on_a)),
+                path_bytes,
                 expected_conn_end_on_a.encode_vec(),
             )
             .map_err(ConnectionError::VerifyConnectionState)?;

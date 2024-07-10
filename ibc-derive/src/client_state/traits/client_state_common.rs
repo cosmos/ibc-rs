@@ -35,12 +35,6 @@ pub(crate) fn impl_ClientStateCommon(
         quote! {validate_proof_height(cs, proof_height)},
         imports,
     );
-    let verify_upgrade_client_impl = delegate_call_in_match(
-        client_state_enum_name,
-        enum_variants.iter(),
-        quote! {verify_upgrade_client(cs, upgraded_client_state, upgraded_consensus_state, proof_upgrade_client, proof_upgrade_consensus_state, root)},
-        imports,
-    );
     let verify_membership_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
@@ -64,7 +58,7 @@ pub(crate) fn impl_ClientStateCommon(
     let ClientType = imports.client_type();
     let ClientError = imports.client_error();
     let Height = imports.height();
-    let Path = imports.path();
+    let PathBytes = imports.path_bytes();
 
     quote! {
         impl #ClientStateCommon for #HostClientState {
@@ -91,25 +85,12 @@ pub(crate) fn impl_ClientStateCommon(
                 }
             }
 
-            fn verify_upgrade_client(
-                &self,
-                upgraded_client_state: #Any,
-                upgraded_consensus_state: #Any,
-                proof_upgrade_client: #CommitmentProofBytes,
-                proof_upgrade_consensus_state: #CommitmentProofBytes,
-                root: &#CommitmentRoot,
-            ) -> core::result::Result<(), #ClientError> {
-                match self {
-                    #(#verify_upgrade_client_impl),*
-                }
-            }
-
             fn verify_membership(
                 &self,
                 prefix: &#CommitmentPrefix,
                 proof: &#CommitmentProofBytes,
                 root: &#CommitmentRoot,
-                path: #Path,
+                path: #PathBytes,
                 value: Vec<u8>,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
@@ -122,7 +103,7 @@ pub(crate) fn impl_ClientStateCommon(
                 prefix: &#CommitmentPrefix,
                 proof: &#CommitmentProofBytes,
                 root: &#CommitmentRoot,
-                path: #Path,
+                path: #PathBytes,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#verify_non_membership_impl),*

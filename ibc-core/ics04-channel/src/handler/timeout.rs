@@ -8,7 +8,7 @@ use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
@@ -221,11 +221,13 @@ where
                 let seq_recv_path_on_b =
                     SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
 
+                let path_bytes = client_val_ctx_a.serialize_path(seq_recv_path_on_b)?;
+
                 client_state_of_b_on_a.verify_membership(
                     conn_end_on_a.counterparty().prefix(),
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
-                    Path::SeqRecv(seq_recv_path_on_b),
+                    path_bytes,
                     msg.packet.seq_on_a.to_vec(),
                 )
             }
@@ -236,11 +238,13 @@ where
                     msg.packet.seq_on_a,
                 );
 
+                let path_bytes = client_val_ctx_a.serialize_path(receipt_path_on_b)?;
+
                 client_state_of_b_on_a.verify_non_membership(
                     conn_end_on_a.counterparty().prefix(),
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
-                    Path::Receipt(receipt_path_on_b),
+                    path_bytes,
                 )
             }
             Order::None => {

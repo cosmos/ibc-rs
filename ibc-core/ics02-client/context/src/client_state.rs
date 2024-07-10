@@ -6,7 +6,7 @@ use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use ibc_core_host_types::identifiers::{ClientId, ClientType};
-use ibc_core_host_types::path::Path;
+use ibc_core_host_types::path::PathBytes;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
@@ -33,25 +33,6 @@ pub trait ClientStateCommon: Convertible<Any> {
     /// Validate that the client is at a sufficient height
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError>;
 
-    /// Verify the upgraded client and consensus states and validate proofs
-    /// against the given root.
-    ///
-    /// NOTE: proof heights are not included, as upgrade to a new revision is
-    /// expected to pass only on the last height committed by the current
-    /// revision. Clients are responsible for ensuring that the planned last
-    /// height of the current revision is somehow encoded in the proof
-    /// verification process. This is to ensure that no premature upgrades
-    /// occur, since upgrade plans committed to by the counterparty may be
-    /// cancelled or modified before the last planned height.
-    fn verify_upgrade_client(
-        &self,
-        upgraded_client_state: Any,
-        upgraded_consensus_state: Any,
-        proof_upgrade_client: CommitmentProofBytes,
-        proof_upgrade_consensus_state: CommitmentProofBytes,
-        root: &CommitmentRoot,
-    ) -> Result<(), ClientError>;
-
     // Verify_membership is a generic proof verification method which verifies a
     // proof of the existence of a value at a given Path.
     fn verify_membership(
@@ -59,7 +40,7 @@ pub trait ClientStateCommon: Convertible<Any> {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        path: Path,
+        path: PathBytes,
         value: Vec<u8>,
     ) -> Result<(), ClientError>;
 
@@ -70,7 +51,7 @@ pub trait ClientStateCommon: Convertible<Any> {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        path: Path,
+        path: PathBytes,
     ) -> Result<(), ClientError>;
 }
 
@@ -121,6 +102,26 @@ where
 
     /// Returns the status of the client. Only Active clients are allowed to process packets.
     fn status(&self, ctx: &V, client_id: &ClientId) -> Result<Status, ClientError>;
+
+    /// Verify the upgraded client and consensus states and validate proofs
+    /// against the given root.
+    ///
+    /// NOTE: proof heights are not included, as upgrade to a new revision is
+    /// expected to pass only on the last height committed by the current
+    /// revision. Clients are responsible for ensuring that the planned last
+    /// height of the current revision is somehow encoded in the proof
+    /// verification process. This is to ensure that no premature upgrades
+    /// occur, since upgrade plans committed to by the counterparty may be
+    /// cancelled or modified before the last planned height.
+    fn verify_upgrade_client(
+        &self,
+        ctx: &V,
+        client_id: ClientId,
+        upgraded_client_state: Any,
+        upgraded_consensus_state: Any,
+        proof_upgrade_client: CommitmentProofBytes,
+        proof_upgrade_consensus_state: CommitmentProofBytes,
+    ) -> Result<(), ClientError>;
 
     /// Verifies whether the calling (subject) client state matches the substitute
     /// client state for the purposes of client recovery.

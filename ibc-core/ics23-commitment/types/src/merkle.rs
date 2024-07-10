@@ -1,22 +1,44 @@
 //! Merkle proof utilities
 
+use ibc_core_host_types::path::PathBytes;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
-use ibc_proto::ibc::core::commitment::v1::{MerklePath, MerkleProof as RawMerkleProof, MerkleRoot};
+use ibc_proto::ibc::core::commitment::v1::{
+    MerklePath as RawMerklePath, MerkleProof as RawMerkleProof, MerkleRoot,
+};
 use ibc_proto::ics23::commitment_proof::Proof;
 use ibc_proto::ics23::{
     calculate_existence_root, verify_membership, verify_non_membership, CommitmentProof,
     HostFunctionsProvider, NonExistenceProof,
 };
 
-use crate::commitment::{CommitmentPrefix, CommitmentRoot};
+use crate::commitment::CommitmentRoot;
 use crate::error::CommitmentError;
 use crate::specs::ProofSpecs;
 
-pub fn apply_prefix(prefix: &CommitmentPrefix, mut path: Vec<String>) -> MerklePath {
-    let mut key_path: Vec<String> = vec![format!("{prefix:?}")];
-    key_path.append(&mut path);
-    MerklePath { key_path }
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, Debug, PartialEq)]
+pub struct MerklePath {
+    pub key_path: Vec<PathBytes>,
+}
+
+impl MerklePath {
+    pub fn new(key_path: Vec<PathBytes>) -> Self {
+        Self { key_path }
+    }
+}
+
+impl From<RawMerklePath> for MerklePath {
+    fn from(path: RawMerklePath) -> Self {
+        Self {
+            key_path: path
+                .key_path
+                .into_iter()
+                .map(|p| p.into_bytes().into())
+                .collect(),
+        }
+    }
 }
 
 impl From<CommitmentRoot> for MerkleRoot {
@@ -99,7 +121,7 @@ impl MerkleProof {
                     subroot = calculate_existence_root::<H>(existence_proof)
                         .map_err(|_| CommitmentError::InvalidMerkleProof)?;
 
-                    if !verify_membership::<H>(proof, spec, &subroot, key.as_bytes(), &value) {
+                    if !verify_membership::<H>(proof, spec, &subroot, key.as_ref(), &value) {
                         return Err(CommitmentError::VerificationFailure);
                     }
                     value.clone_from(&subroot);
@@ -154,7 +176,7 @@ impl MerkleProof {
             Some(Proof::Nonexist(non_existence_proof)) => {
                 let subroot = calculate_non_existence_root::<H>(non_existence_proof)?;
 
-                if !verify_non_membership::<H>(proof, spec, &subroot, key.as_bytes()) {
+                if !verify_non_membership::<H>(proof, spec, &subroot, key.as_ref()) {
                     return Err(CommitmentError::VerificationFailure);
                 }
 

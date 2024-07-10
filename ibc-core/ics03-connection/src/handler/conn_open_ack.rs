@@ -84,6 +84,9 @@ where
         let prefix_on_b = vars.conn_end_on_a.counterparty().prefix();
 
         {
+            let path_bytes =
+                client_val_ctx_a.serialize_path(ConnectionPath::new(&msg.conn_id_on_b))?;
+
             let expected_conn_end_on_b = ConnectionEnd::new(
                 State::TryOpen,
                 vars.client_id_on_b().clone(),
@@ -101,18 +104,21 @@ where
                     prefix_on_b,
                     &msg.proof_conn_end_on_b,
                     consensus_state_of_b_on_a.root(),
-                    Path::Connection(ConnectionPath::new(&msg.conn_id_on_b)),
+                    path_bytes,
                     expected_conn_end_on_b.encode_vec(),
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
         }
+
+        let path_bytes =
+            client_val_ctx_a.serialize_path(ClientStatePath::new(vars.client_id_on_b().clone()))?;
 
         client_state_of_b_on_a
             .verify_membership(
                 prefix_on_b,
                 &msg.proof_client_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
-                Path::ClientState(ClientStatePath::new(vars.client_id_on_b().clone())),
+                path_bytes,
                 msg.client_state_of_a_on_b.to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
@@ -132,12 +138,15 @@ where
             msg.consensus_height_of_a_on_b.revision_height(),
         );
 
+        let path_bytes = client_val_ctx_a
+            .serialize_path(Path::ClientConsensusState(client_cons_state_path_on_b))?;
+
         client_state_of_b_on_a
             .verify_membership(
                 prefix_on_b,
                 &msg.proof_consensus_state_of_a_on_b,
                 consensus_state_of_b_on_a.root(),
-                Path::ClientConsensusState(client_cons_state_path_on_b),
+                path_bytes,
                 stored_consensus_state_of_a_on_b.to_vec(),
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {

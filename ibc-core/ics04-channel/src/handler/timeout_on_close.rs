@@ -6,7 +6,7 @@ use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
 };
 use ibc_core_host::ValidationContext;
 use ibc_primitives::prelude::*;
@@ -104,6 +104,8 @@ where
 
         let chan_end_path_on_b = ChannelEndPath(port_id_on_b, chan_id_on_b.clone());
 
+        let path_bytes = client_val_ctx_a.serialize_path(chan_end_path_on_b)?;
+
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_b_on_a
@@ -111,7 +113,7 @@ where
                 prefix_on_b,
                 &msg.proof_close_on_b,
                 consensus_state_of_b_on_a.root(),
-                Path::ChannelEnd(chan_end_path_on_b),
+                path_bytes,
                 expected_chan_end_on_b.encode_vec(),
             )
             .map_err(ChannelError::VerifyChannelFailed)
@@ -131,11 +133,13 @@ where
                 let seq_recv_path_on_b =
                     SeqRecvPath::new(&packet.port_id_on_b, &packet.chan_id_on_b);
 
+                let path_bytes = client_val_ctx_a.serialize_path(seq_recv_path_on_b)?;
+
                 client_state_of_b_on_a.verify_membership(
                     conn_end_on_a.counterparty().prefix(),
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
-                    Path::SeqRecv(seq_recv_path_on_b),
+                    path_bytes,
                     packet.seq_on_a.to_vec(),
                 )
             }
@@ -146,11 +150,13 @@ where
                     msg.packet.seq_on_a,
                 );
 
+                let path_bytes = client_val_ctx_a.serialize_path(receipt_path_on_b)?;
+
                 client_state_of_b_on_a.verify_non_membership(
                     conn_end_on_a.counterparty().prefix(),
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
-                    Path::Receipt(receipt_path_on_b),
+                    path_bytes,
                 )
             }
             Order::None => {

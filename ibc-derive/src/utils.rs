@@ -45,9 +45,9 @@ impl Imports {
         quote! {#Prefix::commitment_types::commitment::CommitmentProofBytes}
     }
 
-    pub fn path(&self) -> TokenStream {
+    pub fn path_bytes(&self) -> TokenStream {
         let Prefix = self.prefix();
-        quote! {#Prefix::host::types::path::Path}
+        quote! {#Prefix::host::types::path::PathBytes}
     }
 
     pub fn consensus_state(&self) -> TokenStream {

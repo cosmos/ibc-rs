@@ -1,7 +1,7 @@
 use ibc_core_client_types::Height;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_host_types::identifiers::ClientId;
-use ibc_core_host_types::path::{ClientConsensusStatePath, ClientStatePath};
+use ibc_core_host_types::path::{ClientConsensusStatePath, ClientStatePath, Path, PathBytes};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 
@@ -39,6 +39,10 @@ pub trait ClientValidationContext: Sized {
         client_id: &ClientId,
         height: &Height,
     ) -> Result<(Timestamp, Height), ContextError>;
+
+    fn serialize_path(&self, path: impl Into<Path>) -> Result<PathBytes, ContextError> {
+        Ok(path.into().to_string().into_bytes().into())
+    }
 }
 
 /// Defines the methods that all client `ExecutionContext`s (precisely the

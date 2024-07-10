@@ -42,6 +42,30 @@ pub const UPGRADED_CLIENT_STATE: &str = "upgradedClient";
 /// - The key identifying the upgraded consensus state
 pub const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 
+/// Represents a general-purpose path structure using the byte representation of
+/// a path. This struct abstracts over different path types and can handle bytes
+/// may obtained from various serialization formats (e.g., Protobuf, borsh).
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From)]
+pub struct PathBytes(Vec<u8>);
+
+impl PathBytes {
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn into_vec(self) -> Vec<u8> {
+        self.0
+    }
+}
+
+impl AsRef<[u8]> for PathBytes {
+    fn as_ref(&self) -> &[u8] {
+        &self.0
+    }
+}
+
 /// The Path enum abstracts out the different sub-paths.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Display)]
 pub enum Path {
