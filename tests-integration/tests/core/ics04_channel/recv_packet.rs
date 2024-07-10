@@ -65,7 +65,7 @@ fn fixture() -> Fixture {
         ConnectionCounterparty::new(
             client_id.clone(),
             Some(ConnectionId::zero()),
-            CommitmentPrefix::try_from(vec![0]).expect("no error"),
+            CommitmentPrefix::from(vec![0]),
         ),
         ConnectionVersion::compatibles(),
         ZERO_DURATION,

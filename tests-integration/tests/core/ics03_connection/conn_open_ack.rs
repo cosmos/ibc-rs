@@ -48,7 +48,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
         Counterparty::new(
             client_id.clone(),
             Some(msg.conn_id_on_b.clone()),
-            CommitmentPrefix::try_from(b"ibc".to_vec()).unwrap(),
+            CommitmentPrefix::from(b"ibc".to_vec()),
         ),
         vec![msg.version.clone()],
         ZERO_DURATION,
