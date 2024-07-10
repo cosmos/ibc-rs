@@ -52,7 +52,13 @@ pub trait ClientStateCommon: Convertible<Any> {
         root: &CommitmentRoot,
     ) -> Result<(), ClientError>;
 
-    /// Determines how a path should be serialized into a `PathBytes` object.
+    /// Serializes a given path into a `PathBytes` object.
+    ///
+    /// This method provides essential information for IBC modules, enabling
+    /// them to understand how path serialization is performed on the
+    /// counterparty chain (where this light client represents it) before
+    /// passing the path bytes to either `verify_membership()` or
+    /// `verify_non_membership()`.
     fn serialize_path(&self, path: impl Into<Path>) -> Result<PathBytes, ClientError>;
 
     // Verify_membership is a generic proof verification method which verifies a

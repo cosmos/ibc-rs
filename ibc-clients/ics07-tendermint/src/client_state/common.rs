@@ -231,7 +231,7 @@ pub fn verify_membership<H: HostFunctionsProvider>(
     path: PathBytes,
     value: Vec<u8>,
 ) -> Result<(), ClientError> {
-    let merkle_path = MerklePath::new(vec![prefix.clone().into_vec().into(), path]);
+    let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
     let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
     merkle_proof
@@ -251,7 +251,7 @@ pub fn verify_non_membership<H: HostFunctionsProvider>(
     root: &CommitmentRoot,
     path: PathBytes,
 ) -> Result<(), ClientError> {
-    let merkle_path = MerklePath::new(vec![prefix.clone().into_vec().into(), path]);
+    let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
     let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
     merkle_proof

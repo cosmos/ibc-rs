@@ -16,6 +16,14 @@ use crate::commitment::CommitmentRoot;
 use crate::error::CommitmentError;
 use crate::specs::ProofSpecs;
 
+/// A wrapper type representing a Merkle path, consisting of a sequence of path
+/// bytes.
+///
+/// This struct by definition is compatible with Cosmos SDK chains, but it is
+/// also applicable to other blockchain implementations that follow similar path
+/// structures. Note that while Cosmos SDK chains and some non-Cosmos chains
+/// adhere to this definition, it may not be universally applicable to all
+/// non-Cosmos chains.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq)]
@@ -24,6 +32,7 @@ pub struct MerklePath {
 }
 
 impl MerklePath {
+    /// Constructs a new `MerklePath` from a given `Vec<PathBytes>`.
     pub fn new(key_path: Vec<PathBytes>) -> Self {
         Self { key_path }
     }
@@ -40,6 +49,10 @@ impl From<RawMerklePath> for MerklePath {
         }
     }
 }
+
+// The conversion from `MerklePath`` to `RawMerklePath` is not provided as we
+// cannot assume how the key paths of `Vec<PathBytes>` type should be serialized
+// to the `Vec<String>`.
 
 impl From<CommitmentRoot> for MerkleRoot {
     fn from(root: CommitmentRoot) -> Self {
