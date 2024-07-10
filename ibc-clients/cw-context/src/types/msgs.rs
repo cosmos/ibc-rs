@@ -3,7 +3,7 @@
 use std::str::FromStr;
 
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::Binary;
+use cosmwasm_std::{Binary, Checksum};
 use ibc_core::client::types::proto::v1::Height as RawHeight;
 use ibc_core::client::types::Height;
 use ibc_core::commitment_types::commitment::{CommitmentPrefix, CommitmentProofBytes};
@@ -21,7 +21,7 @@ use super::error::ContractError;
 pub struct InstantiateMsg {
     pub client_state: Binary,
     pub consensus_state: Binary,
-    pub checksum: Binary,
+    pub checksum: Checksum,
 }
 
 // ------------------------------------------------------------
