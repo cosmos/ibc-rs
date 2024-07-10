@@ -44,7 +44,7 @@ pub const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 
 /// Represents a general-purpose path structure using the byte representation of
 /// a path. This struct abstracts over different path types and can handle bytes
-/// may obtained from various serialization formats (e.g., Protobuf, borsh).
+/// may obtained from various serialization formats (e.g., Protobuf, Borsh).
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From)]
@@ -57,6 +57,15 @@ impl PathBytes {
 
     pub fn into_vec(self) -> Vec<u8> {
         self.0
+    }
+
+    /// Concatenates a list of path bytes into a single path.
+    pub fn concat(paths: Vec<PathBytes>) -> Self {
+        let mut bytes = Vec::new();
+        paths.iter().for_each(|path| {
+            bytes.extend_from_slice(&path.0);
+        });
+        Self(bytes)
     }
 }
 
