@@ -7,4 +7,4 @@ disallowed-types = [
 disallowed-methods = [
     "std::time::Duration::as_secs_f64",
 ]
-msrv = "1.71.1"
+msrv = "1.72.1"
