@@ -38,7 +38,6 @@ tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
 cosmwasm-std   = { workspace = true }
-hex            = { workspace = true }
 rstest         = { workspace = true }
 test-log       = { version = "0.2.16", features = [ "trace" ] }
 tendermint-rpc = { workspace = true }

@@ -3,7 +3,7 @@ pub mod custom_ctx;
 
 use std::str::FromStr;
 
-use cosmwasm_std::{Deps, DepsMut, Empty, Env, Order, Storage};
+use cosmwasm_std::{Checksum, Deps, DepsMut, Empty, Env, Order, Storage};
 use cw_storage_plus::{Bound, Map};
 use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
 use ibc_core::client::context::client_state::ClientStateCommon;
@@ -20,8 +20,6 @@ use prost::Message;
 use crate::api::ClientType;
 use crate::types::{ContractError, GenesisMetadata, HeightTravel, MigrationPrefix};
 use crate::utils::AnyCodec;
-
-type Checksum = Vec<u8>;
 
 /// - [`Height`] cannot be used directly as keys in the map,
 ///   as it doesn't implement some cw_storage specific traits.
@@ -241,13 +239,13 @@ where
 
             let processed_height_key = self.client_update_height_key(&height);
             metadata.push(GenesisMetadata {
-                key: processed_height_key.clone(),
-                value: self.retrieve(&processed_height_key)?,
+                key: processed_height_key.clone().into(),
+                value: self.retrieve(&processed_height_key)?.into(),
             });
             let processed_time_key = self.client_update_time_key(&height);
             metadata.push(GenesisMetadata {
-                key: processed_time_key.clone(),
-                value: self.retrieve(&processed_time_key)?,
+                key: processed_time_key.clone().into(),
+                value: self.retrieve(&processed_time_key)?.into(),
             });
         }
 
@@ -265,8 +263,8 @@ where
             let height = height_result?;
 
             metadata.push(GenesisMetadata {
-                key: iteration_key(height.revision_number(), height.revision_height()),
-                value: height.encode_vec(),
+                key: iteration_key(height.revision_number(), height.revision_height()).into(),
+                value: height.encode_vec().into(),
             });
         }
 
@@ -276,7 +274,7 @@ where
     /// Returns the checksum of the current contract.
     pub fn obtain_checksum(&self) -> Result<Checksum, ClientError> {
         match &self.checksum {
-            Some(checksum) => Ok(checksum.clone()),
+            Some(checksum) => Ok(*checksum),
             None => {
                 let client_state_value = self.retrieve(ClientStatePath::leaf())?;
 
@@ -287,7 +285,14 @@ where
                         }
                     })?;
 
-                Ok(wasm_client_state.checksum)
+                let checksum =
+                    Checksum::try_from(wasm_client_state.checksum.as_slice()).map_err(|e| {
+                        ClientError::Other {
+                            description: e.to_string(),
+                        }
+                    })?;
+
+                Ok(checksum)
             }
         }
     }
@@ -298,7 +303,7 @@ where
         client_state: C::ClientState,
     ) -> Result<Vec<u8>, ClientError> {
         let wasm_client_state = WasmClientState {
-            checksum: self.obtain_checksum()?,
+            checksum: self.obtain_checksum()?.into(),
             latest_height: client_state.latest_height(),
             data: C::ClientState::encode_to_any_vec(client_state),
         };

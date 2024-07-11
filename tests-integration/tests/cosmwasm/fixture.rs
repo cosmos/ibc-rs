@@ -97,8 +97,8 @@ impl Fixture {
         let tm_consensus_state = dummy_sov_consensus_state(self.trusted_timestamp);
 
         InstantiateMsg {
-            client_state: TmClientState::encode_to_any_vec(tm_client_state),
-            consensus_state: TmConsensusState::encode_to_any_vec(tm_consensus_state),
+            client_state: TmClientState::encode_to_any_vec(tm_client_state).into(),
+            consensus_state: TmConsensusState::encode_to_any_vec(tm_consensus_state).into(),
             checksum: dummy_checksum(),
         }
     }
@@ -139,7 +139,13 @@ impl Fixture {
 
     pub fn verify_client_message(&self, deps: Deps<'_>, client_message: Vec<u8>) {
         let resp = self
-            .query(deps, VerifyClientMessageRaw { client_message }.into())
+            .query(
+                deps,
+                VerifyClientMessageRaw {
+                    client_message: client_message.into(),
+                }
+                .into(),
+            )
             .unwrap();
 
         assert!(resp.is_valid);
@@ -149,7 +155,13 @@ impl Fixture {
 
     pub fn check_for_misbehaviour(&self, deps: Deps<'_>, client_message: Vec<u8>) {
         let resp = self
-            .query(deps, CheckForMisbehaviourMsgRaw { client_message }.into())
+            .query(
+                deps,
+                CheckForMisbehaviourMsgRaw {
+                    client_message: client_message.into(),
+                }
+                .into(),
+            )
             .unwrap();
 
         assert!(resp.is_valid);
@@ -199,7 +211,12 @@ impl Fixture {
 
         let mut ctx = self.ctx_mut(deps_mut);
 
-        let data = ctx.sudo(UpdateStateMsgRaw { client_message }.into())?;
+        let data = ctx.sudo(
+            UpdateStateMsgRaw {
+                client_message: client_message.into(),
+            }
+            .into(),
+        )?;
 
         Ok(Response::default().set_data(data))
     }
@@ -212,7 +229,12 @@ impl Fixture {
         let mut ctx = self.ctx_mut(deps_mut);
 
         let data = ctx
-            .sudo(UpdateStateOnMisbehaviourMsgRaw { client_message }.into())
+            .sudo(
+                UpdateStateOnMisbehaviourMsgRaw {
+                    client_message: client_message.into(),
+                }
+                .into(),
+            )
             .unwrap();
 
         Response::default().set_data(data)

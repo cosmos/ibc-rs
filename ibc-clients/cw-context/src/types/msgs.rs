@@ -1,8 +1,7 @@
 //! Defines the messages sent to the CosmWasm contract by the 08-wasm proxy
 //! light client.
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use ibc_client_wasm_types::serializer::Base64;
-use ibc_client_wasm_types::Bytes;
+use cosmwasm_std::{Binary, Checksum};
 use ibc_core::client::types::proto::v1::Height as RawHeight;
 use ibc_core::client::types::Height;
 use ibc_core::commitment_types::commitment::{CommitmentPrefix, CommitmentProofBytes};
@@ -19,15 +18,9 @@ use super::error::ContractError;
 
 #[cw_serde]
 pub struct InstantiateMsg {
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub client_state: Bytes,
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub consensus_state: Bytes,
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub checksum: Bytes,
+    pub client_state: Binary,
+    pub consensus_state: Binary,
+    pub checksum: Checksum,
 }
 
 // ------------------------------------------------------------
@@ -47,9 +40,7 @@ pub enum SudoMsg {
 
 #[cw_serde]
 pub struct UpdateStateOnMisbehaviourMsgRaw {
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub client_message: Bytes,
+    pub client_message: Binary,
 }
 
 pub struct UpdateStateOnMisbehaviourMsg {
@@ -68,9 +59,7 @@ impl TryFrom<UpdateStateOnMisbehaviourMsgRaw> for UpdateStateOnMisbehaviourMsg {
 
 #[cw_serde]
 pub struct UpdateStateMsgRaw {
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub client_message: Bytes,
+    pub client_message: Binary,
 }
 
 pub struct UpdateStateMsg {
@@ -92,18 +81,10 @@ pub struct CheckSubstituteAndUpdateStateMsg {}
 
 #[cw_serde]
 pub struct VerifyUpgradeAndUpdateStateMsgRaw {
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub upgrade_client_state: Bytes,
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub upgrade_consensus_state: Bytes,
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub proof_upgrade_client: Bytes,
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub proof_upgrade_consensus_state: Bytes,
+    pub upgrade_client_state: Binary,
+    pub upgrade_consensus_state: Binary,
+    pub proof_upgrade_client: Binary,
+    pub proof_upgrade_consensus_state: Binary,
 }
 
 pub struct VerifyUpgradeAndUpdateStateMsg {
@@ -124,9 +105,11 @@ impl TryFrom<VerifyUpgradeAndUpdateStateMsgRaw> for VerifyUpgradeAndUpdateStateM
         Ok(VerifyUpgradeAndUpdateStateMsg {
             upgrade_client_state,
             upgrade_consensus_state,
-            proof_upgrade_client: CommitmentProofBytes::try_from(raw.proof_upgrade_client)?,
+            proof_upgrade_client: CommitmentProofBytes::try_from(
+                raw.proof_upgrade_client.to_vec(),
+            )?,
             proof_upgrade_consensus_state: CommitmentProofBytes::try_from(
-                raw.proof_upgrade_consensus_state,
+                raw.proof_upgrade_consensus_state.to_vec(),
             )?,
         })
     }
@@ -134,13 +117,9 @@ impl TryFrom<VerifyUpgradeAndUpdateStateMsgRaw> for VerifyUpgradeAndUpdateStateM
 
 #[cw_serde]
 pub struct VerifyMembershipMsgRaw {
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub proof: Bytes,
+    pub proof: Binary,
     pub path: MerklePath,
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub value: Bytes,
+    pub value: Binary,
     pub height: RawHeight,
     pub delay_block_period: u64,
     pub delay_time_period: u64,
@@ -160,7 +139,7 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
     type Error = ContractError;
 
     fn try_from(mut raw: VerifyMembershipMsgRaw) -> Result<Self, Self::Error> {
-        let proof = CommitmentProofBytes::try_from(raw.proof)?;
+        let proof = CommitmentProofBytes::try_from(raw.proof.to_vec())?;
         let prefix = CommitmentPrefix::try_from(raw.path.key_path.remove(0).into_vec())?;
         let path = PathBytes::concat(raw.path.key_path);
         let height = Height::try_from(raw.height)?;
@@ -168,7 +147,7 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
         Ok(Self {
             proof,
             path,
-            value: raw.value,
+            value: raw.value.into(),
             height,
             prefix,
             delay_block_period: raw.delay_block_period,
@@ -179,9 +158,7 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
 
 #[cw_serde]
 pub struct VerifyNonMembershipMsgRaw {
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub proof: Bytes,
+    pub proof: Binary,
     pub path: MerklePath,
     pub height: RawHeight,
     pub delay_block_period: u64,
@@ -201,7 +178,7 @@ impl TryFrom<VerifyNonMembershipMsgRaw> for VerifyNonMembershipMsg {
     type Error = ContractError;
 
     fn try_from(mut raw: VerifyNonMembershipMsgRaw) -> Result<Self, Self::Error> {
-        let proof = CommitmentProofBytes::try_from(raw.proof)?;
+        let proof = CommitmentProofBytes::try_from(raw.proof.to_vec())?;
         let prefix = CommitmentPrefix::try_from(raw.path.key_path.remove(0).into_vec())?;
         let path = PathBytes::concat(raw.path.key_path);
         let height = raw.height.try_into()?;
@@ -252,9 +229,7 @@ pub struct TimestampAtHeightMsg {
 
 #[cw_serde]
 pub struct VerifyClientMessageRaw {
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub client_message: Bytes,
+    pub client_message: Binary,
 }
 
 pub struct VerifyClientMessageMsg {
@@ -273,9 +248,7 @@ impl TryFrom<VerifyClientMessageRaw> for VerifyClientMessageMsg {
 
 #[cw_serde]
 pub struct CheckForMisbehaviourMsgRaw {
-    #[schemars(with = "String")]
-    #[serde(with = "Base64", default)]
-    pub client_message: Bytes,
+    pub client_message: Binary,
 }
 
 pub struct CheckForMisbehaviourMsg {
