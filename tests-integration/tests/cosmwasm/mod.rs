@@ -110,7 +110,7 @@ fn test_cw_client_expiry() {
     let resp = fxt.query(
         deps.as_ref(),
         VerifyClientMessageRaw {
-            client_message: client_message.clone(),
+            client_message: client_message.into(),
         }
         .into(),
     );
