@@ -3,7 +3,6 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::time::Duration;
 
-use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentPrefix;
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
 use ibc_primitives::prelude::*;
@@ -392,8 +391,7 @@ impl TryFrom<RawCounterparty> for Counterparty {
                 .prefix
                 .ok_or(ConnectionError::MissingCounterparty)?
                 .key_prefix
-                .try_into()
-                .map_err(|_| ConnectionError::Client(ClientError::EmptyPrefix))?,
+                .into(),
         ))
     }
 }

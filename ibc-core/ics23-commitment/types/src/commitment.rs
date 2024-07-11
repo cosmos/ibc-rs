@@ -143,7 +143,7 @@ impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash, derive_more::From)]
 pub struct CommitmentPrefix {
     bytes: Vec<u8>,
 }
@@ -160,17 +160,9 @@ impl CommitmentPrefix {
     pub fn empty() -> Self {
         Self { bytes: Vec::new() }
     }
-}
 
-impl TryFrom<Vec<u8>> for CommitmentPrefix {
-    type Error = CommitmentError;
-
-    fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
-        if bytes.is_empty() {
-            Err(Self::Error::EmptyCommitmentPrefix)
-        } else {
-            Ok(Self { bytes })
-        }
+    pub fn is_empty(&self) -> bool {
+        self.bytes.is_empty()
     }
 }
 

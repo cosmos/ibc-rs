@@ -156,7 +156,7 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
             path,
             value: raw.value.into(),
             height,
-            prefix: CommitmentPrefix::try_from(prefix)?,
+            prefix: CommitmentPrefix::from(prefix),
             delay_block_period: raw.delay_block_period,
             delay_time_period: raw.delay_time_period,
         })
@@ -194,7 +194,7 @@ impl TryFrom<VerifyNonMembershipMsgRaw> for VerifyNonMembershipMsg {
             proof,
             path,
             height,
-            prefix: CommitmentPrefix::try_from(prefix)?,
+            prefix: CommitmentPrefix::from(prefix),
             delay_block_period: raw.delay_block_period,
             delay_time_period: raw.delay_time_period,
         })
