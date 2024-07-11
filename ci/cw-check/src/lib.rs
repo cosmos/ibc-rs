@@ -14,7 +14,7 @@ pub struct Msg {
     pub test: String,
 }
 
-#[cfg_attr(not(feature = "library"), cosmwasm_std::entry_point)]
+#[cosmwasm_std::entry_point]
 pub fn instantiate(
     _deps: DepsMut,
     _env: Env,
@@ -49,7 +49,7 @@ pub fn instantiate(
         .add_attribute(msg.test.clone(), msg.test.clone()))
 }
 
-#[cfg_attr(not(feature = "library"), cosmwasm_std::entry_point)]
+#[cosmwasm_std::entry_point]
 pub fn execute(
     _deps: DepsMut,
     _env: Env,
