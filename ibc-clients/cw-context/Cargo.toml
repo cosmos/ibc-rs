@@ -29,6 +29,7 @@ ibc-client-wasm-types = { workspace = true, features = [ "cosmwasm" ] }
 # cosmwasm dependencies
 cosmwasm-schema = { workspace = true }
 cosmwasm-std    = { workspace = true }
+cosmwasm-crypto = { workspace = true } # Not used anywhere, but required to keep compatibility with other cosmwasm libraries.
 cw-storage-plus = { workspace = true }
 
 [features]
