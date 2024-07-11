@@ -75,7 +75,7 @@ fn fixture() -> Fixture {
         ConnectionCounterparty::new(
             default_client_id,
             Some(ConnectionId::zero()),
-            CommitmentPrefix::from(vec![0]),
+            CommitmentPrefix::empty(),
         ),
         ConnectionVersion::compatibles(),
         ZERO_DURATION,
