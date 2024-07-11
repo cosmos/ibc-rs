@@ -3,7 +3,7 @@ pub mod custom_ctx;
 
 use std::str::FromStr;
 
-use cosmwasm_std::{Checksum, ChecksumError, Deps, DepsMut, Empty, Env, Order, Storage};
+use cosmwasm_std::{Checksum, Deps, DepsMut, Empty, Env, Order, Storage};
 use cw_storage_plus::{Bound, Map};
 use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
 use ibc_core::client::context::client_state::ClientStateCommon;
@@ -285,11 +285,12 @@ where
                         }
                     })?;
 
-                let checksum = wasm_client_state.checksum.as_slice().try_into().map_err(
-                    |e: ChecksumError| ClientError::Other {
-                        description: e.to_string(),
-                    },
-                )?;
+                let checksum =
+                    Checksum::try_from(wasm_client_state.checksum.as_slice()).map_err(|e| {
+                        ClientError::Other {
+                            description: e.to_string(),
+                        }
+                    })?;
 
                 Ok(checksum)
             }
