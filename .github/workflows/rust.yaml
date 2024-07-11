@@ -135,7 +135,7 @@ jobs:
   test-msrv:
     timeout-minutes: 30
     env:
-      CARGO_MSRV_VERSION: 0.16.0-beta.20
+      CARGO_MSRV_VERSION: 0.16.0-beta.23
       MSRV: 1.72.1
     strategy:
       matrix:
