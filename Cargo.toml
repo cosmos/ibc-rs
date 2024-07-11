@@ -119,9 +119,6 @@ tendermint-rpc                   = { version = "0.37.0", default-features = fals
 tendermint-testgen               = { version = "0.37.0", default-features = false }
 
 # cosmwasm dependencies
-### Note: Kept at the following version to match the CosmWasm module version
-### used by chains supporting the wasm-enabled version of ibc-go v7.3
-### (This is the min version of `ibc-go` that supports `08-wasm` light clients)
 cosmwasm-schema = { version = "2.1.0" }
 cosmwasm-std    = { version = "2.1.0" }
 cosmwasm-vm     = { version = "2.1.0" }
