@@ -57,7 +57,7 @@ jobs:
           -v "$(pwd)":/code \
           -v "$(pwd)"/target:/target \
           -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
-          cosmwasm/optimizer:0.15.1 ./ibc-clients/ics07-tendermint/cw-contract
+          cosmwasm/optimizer:0.16.0 ./ibc-clients/ics07-tendermint/cw-contract
 
       - name: Fix permissions
         run: |
