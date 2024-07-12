@@ -135,7 +135,7 @@ where
     fn commitment_prefix(&self) -> CommitmentPrefix {
         // this is prefix of ibc store
         // using a dummy prefix as in our mock context
-        CommitmentPrefix::try_from(b"mock".to_vec()).expect("Never fails")
+        CommitmentPrefix::from(b"mock".to_vec())
     }
 
     fn connection_counter(&self) -> Result<u64, ContextError> {

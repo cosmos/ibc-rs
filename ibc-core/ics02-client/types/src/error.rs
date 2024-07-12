@@ -46,8 +46,6 @@ pub enum ClientError {
     FailedTrustThresholdConversion { numerator: u64, denominator: u64 },
     /// unknown client state type: `{client_state_type}`
     UnknownClientStateType { client_state_type: String },
-    /// empty prefix
-    EmptyPrefix,
     /// unknown client consensus state type: `{consensus_state_type}`
     UnknownConsensusStateType { consensus_state_type: String },
     /// unknown header type: `{header_type}`

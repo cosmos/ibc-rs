@@ -31,7 +31,7 @@ fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
     let counterparty = Counterparty::new(
         client_id.clone(),
         Some(msg.conn_id_on_b.clone()),
-        CommitmentPrefix::try_from(b"ibc".to_vec()).unwrap(),
+        CommitmentPrefix::from(b"ibc".to_vec()),
     );
 
     let ctx_default = MockContext::default();

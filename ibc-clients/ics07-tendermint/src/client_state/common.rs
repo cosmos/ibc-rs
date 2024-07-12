@@ -6,6 +6,7 @@ use ibc_core_client::types::Height;
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
+use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_commitment_types::merkle::{MerklePath, MerkleProof};
 use ibc_core_commitment_types::proto::ics23::{HostFunctionsManager, HostFunctionsProvider};
 use ibc_core_commitment_types::specs::ProofSpecs;
@@ -192,8 +193,7 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
         });
     };
 
-    let upgrade_path_prefix = CommitmentPrefix::try_from(upgrade_path[0].clone().into_bytes())
-        .map_err(ClientError::InvalidCommitmentProof)?;
+    let upgrade_path_prefix = CommitmentPrefix::from(upgrade_path[0].clone().into_bytes());
 
     // Verify the proof of the upgraded client state
     verify_membership::<H>(
@@ -231,6 +231,12 @@ pub fn verify_membership<H: HostFunctionsProvider>(
     path: PathBytes,
     value: Vec<u8>,
 ) -> Result<(), ClientError> {
+    if prefix.is_empty() {
+        return Err(ClientError::Ics23Verification(
+            CommitmentError::EmptyCommitmentPrefix,
+        ));
+    }
+
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
     let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
