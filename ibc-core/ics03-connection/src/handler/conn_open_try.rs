@@ -92,29 +92,23 @@ where
                 msg.delay_period,
             )?;
 
-            let path_bytes =
-                client_state_of_a_on_b.serialize_path(ConnectionPath::new(&vars.conn_id_on_a))?;
-
             client_state_of_a_on_b
                 .verify_membership(
                     prefix_on_a,
                     &msg.proof_conn_end_on_a,
                     consensus_state_of_a_on_b.root(),
-                    path_bytes,
+                    ConnectionPath::new(&vars.conn_id_on_a),
                     expected_conn_end_on_a.encode_vec(),
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
         }
-
-        let path_bytes =
-            client_state_of_a_on_b.serialize_path(ClientStatePath::new(client_id_on_a.clone()))?;
 
         client_state_of_a_on_b
             .verify_membership(
                 prefix_on_a,
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                path_bytes,
+                ClientStatePath::new(client_id_on_a.clone()),
                 msg.client_state_of_b_on_a.to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
@@ -134,14 +128,12 @@ where
             msg.consensus_height_of_b_on_a.revision_height(),
         );
 
-        let path_bytes = client_state_of_a_on_b.serialize_path(client_cons_state_path_on_a)?;
-
         client_state_of_a_on_b
             .verify_membership(
                 prefix_on_a,
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                path_bytes,
+                client_cons_state_path_on_a,
                 stored_consensus_state_of_b_on_a.to_vec(),
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {

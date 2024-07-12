@@ -52,18 +52,16 @@ pub trait ClientStateCommon: Convertible<Any> {
         root: &CommitmentRoot,
     ) -> Result<(), ClientError>;
 
-    /// Serializes a given path into a `PathBytes` object.
+    /// Serializes a given path object into a raw path bytes.
     ///
     /// This method provides essential information for IBC modules, enabling
-    /// them to understand how path serialization is performed on the
-    /// counterparty chain (where this light client represents it) before
-    /// passing the path bytes to either `verify_membership()` or
-    /// `verify_non_membership()`.
+    /// them to understand how path serialization is performed on the chain this
+    /// light client represents it before passing the path bytes to either
+    /// `verify_membership_raw()` or `verify_non_membership_raw()`.
     fn serialize_path(&self, path: impl Into<Path>) -> Result<PathBytes, ClientError>;
 
-    // Verify_membership is a generic proof verification method which verifies a
-    // proof of the existence of a value at a given Path.
-    fn verify_membership(
+    /// Verifies a proof of the existence of a value at a given raw path bytes.
+    fn verify_membership_raw(
         &self,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
@@ -72,15 +70,39 @@ pub trait ClientStateCommon: Convertible<Any> {
         value: Vec<u8>,
     ) -> Result<(), ClientError>;
 
-    // Verify_non_membership is a generic proof verification method which
-    // verifies the absence of a given commitment.
-    fn verify_non_membership(
+    /// Verifies a proof of the existence of a value at a given path object.
+    fn verify_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: impl Into<Path>,
+        value: Vec<u8>,
+    ) -> Result<(), ClientError> {
+        let path_bytes = self.serialize_path(path)?;
+        self.verify_membership_raw(prefix, proof, root, path_bytes, value)
+    }
+
+    /// Verifies the absence of a given proof at a given raw path bytes.
+    fn verify_non_membership_raw(
         &self,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
         path: PathBytes,
     ) -> Result<(), ClientError>;
+
+    /// Verifies the absence of a given proof at a given path object.
+    fn verify_non_membership(
+        &self,
+        prefix: &CommitmentPrefix,
+        proof: &CommitmentProofBytes,
+        root: &CommitmentRoot,
+        path: impl Into<Path>,
+    ) -> Result<(), ClientError> {
+        let path_bytes = self.serialize_path(path)?;
+        self.verify_non_membership_raw(prefix, proof, root, path_bytes)
+    }
 }
 
 /// `ClientState` methods which require access to the client's validation

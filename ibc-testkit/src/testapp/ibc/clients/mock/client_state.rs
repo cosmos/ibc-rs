@@ -207,7 +207,7 @@ impl ClientStateCommon for MockClientState {
         Ok(())
     }
 
-    fn verify_membership(
+    fn verify_membership_raw(
         &self,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
@@ -218,7 +218,7 @@ impl ClientStateCommon for MockClientState {
         Ok(())
     }
 
-    fn verify_non_membership(
+    fn verify_non_membership_raw(
         &self,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,

@@ -190,15 +190,13 @@ where
 
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 
-        let path_bytes = client_state_of_b_on_a.serialize_path(ack_path_on_b)?;
-
         // Verify the proof for the packet against the chain store.
         client_state_of_b_on_a
             .verify_membership(
                 conn_end_on_a.counterparty().prefix(),
                 &msg.proof_acked_on_b,
                 consensus_state_of_b_on_a.root(),
-                path_bytes,
+                ack_path_on_b,
                 ack_commitment.into_vec(),
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {

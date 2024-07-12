@@ -149,8 +149,6 @@ where
         )?;
         let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, chan_id_on_a);
 
-        let path_bytes = client_state_of_a_on_b.serialize_path(chan_end_path_on_a)?;
-
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_a_on_b
@@ -158,7 +156,7 @@ where
                 prefix_on_a,
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                path_bytes,
+                chan_end_path_on_a,
                 expected_chan_end_on_a.encode_vec(),
             )
             .map_err(ChannelError::VerifyChannelFailed)?;

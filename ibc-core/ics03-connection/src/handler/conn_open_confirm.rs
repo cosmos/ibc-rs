@@ -73,15 +73,12 @@ where
             conn_end_on_b.delay_period(),
         )?;
 
-        let path_bytes =
-            client_state_of_a_on_b.serialize_path(ConnectionPath::new(conn_id_on_a))?;
-
         client_state_of_a_on_b
             .verify_membership(
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                path_bytes,
+                ConnectionPath::new(conn_id_on_a),
                 expected_conn_end_on_a.encode_vec(),
             )
             .map_err(ConnectionError::VerifyConnectionState)?;

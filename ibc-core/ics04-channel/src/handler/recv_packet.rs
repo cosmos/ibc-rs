@@ -208,15 +208,13 @@ where
 
         verify_conn_delay_passed(ctx_b, msg.proof_height_on_a, &conn_end_on_b)?;
 
-        let path_bytes = client_state_of_a_on_b.serialize_path(commitment_path_on_a)?;
-
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b
             .verify_membership(
                 conn_end_on_b.counterparty().prefix(),
                 &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
-                path_bytes,
+                commitment_path_on_a,
                 expected_commitment_on_a.into_vec(),
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {

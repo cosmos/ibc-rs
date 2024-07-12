@@ -70,7 +70,7 @@ where
 
                 let consensus_state = self.consensus_state(&client_cons_state_path)?;
 
-                client_state.verify_membership(
+                client_state.verify_membership_raw(
                     &msg.prefix,
                     &msg.proof,
                     consensus_state.root(),
@@ -91,7 +91,7 @@ where
 
                 let consensus_state = self.consensus_state(&client_cons_state_path)?;
 
-                client_state.verify_non_membership(
+                client_state.verify_non_membership_raw(
                     &msg.prefix,
                     &msg.proof,
                     consensus_state.root(),

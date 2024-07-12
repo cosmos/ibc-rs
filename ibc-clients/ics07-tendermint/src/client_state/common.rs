@@ -67,7 +67,7 @@ impl ClientStateCommon for ClientState {
         Ok(path.into().to_string().into_bytes().into())
     }
 
-    fn verify_membership(
+    fn verify_membership_raw(
         &self,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
@@ -85,7 +85,7 @@ impl ClientStateCommon for ClientState {
         )
     }
 
-    fn verify_non_membership(
+    fn verify_non_membership_raw(
         &self,
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,

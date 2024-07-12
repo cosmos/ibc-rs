@@ -47,10 +47,22 @@ pub(crate) fn impl_ClientStateCommon(
         quote! {serialize_path(cs, path)},
         imports,
     );
+    let verify_membership_raw_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        quote! {verify_membership_raw(cs, prefix, proof, root, path, value)},
+        imports,
+    );
     let verify_membership_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
         quote! {verify_membership(cs, prefix, proof, root, path, value)},
+        imports,
+    );
+    let verify_non_membership_raw_impl = delegate_call_in_match(
+        client_state_enum_name,
+        enum_variants.iter(),
+        quote! {verify_non_membership_raw(cs, prefix, proof, root, path)},
         imports,
     );
     let verify_non_membership_impl = delegate_call_in_match(
@@ -117,7 +129,7 @@ pub(crate) fn impl_ClientStateCommon(
                 }
             }
 
-            fn verify_membership(
+            fn verify_membership_raw(
                 &self,
                 prefix: &#CommitmentPrefix,
                 proof: &#CommitmentProofBytes,
@@ -126,7 +138,32 @@ pub(crate) fn impl_ClientStateCommon(
                 value: Vec<u8>,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
+                    #(#verify_membership_raw_impl),*
+                }
+            }
+
+            fn verify_membership(
+                &self,
+                prefix: &#CommitmentPrefix,
+                proof: &#CommitmentProofBytes,
+                root: &#CommitmentRoot,
+                path: impl Into<#Path>,
+                value: Vec<u8>,
+            ) -> core::result::Result<(), #ClientError> {
+                match self {
                     #(#verify_membership_impl),*
+                }
+            }
+
+            fn verify_non_membership_raw(
+                &self,
+                prefix: &#CommitmentPrefix,
+                proof: &#CommitmentProofBytes,
+                root: &#CommitmentRoot,
+                path: #PathBytes,
+            ) -> core::result::Result<(), #ClientError> {
+                match self {
+                    #(#verify_non_membership_raw_impl),*
                 }
             }
 
@@ -135,7 +172,7 @@ pub(crate) fn impl_ClientStateCommon(
                 prefix: &#CommitmentPrefix,
                 proof: &#CommitmentProofBytes,
                 root: &#CommitmentRoot,
-                path: #PathBytes,
+                path: impl Into<#Path>,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#verify_non_membership_impl),*
