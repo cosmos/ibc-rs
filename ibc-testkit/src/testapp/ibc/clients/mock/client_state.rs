@@ -9,7 +9,7 @@ use ibc::core::commitment_types::commitment::{
 };
 use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::identifiers::{ClientId, ClientType};
-use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path};
+use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path, PathBytes};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
@@ -184,6 +184,10 @@ impl ClientStateCommon for MockClientState {
         Ok(())
     }
 
+    fn serialize_path(&self, path: Path) -> Result<PathBytes, ClientError> {
+        Ok(path.to_string().into_bytes().into())
+    }
+
     fn verify_upgrade_client(
         &self,
         upgraded_client_state: Any,
@@ -203,23 +207,23 @@ impl ClientStateCommon for MockClientState {
         Ok(())
     }
 
-    fn verify_membership(
+    fn verify_membership_raw(
         &self,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _path: Path,
+        _path: PathBytes,
         _value: Vec<u8>,
     ) -> Result<(), ClientError> {
         Ok(())
     }
 
-    fn verify_non_membership(
+    fn verify_non_membership_raw(
         &self,
         _prefix: &CommitmentPrefix,
         _proof: &CommitmentProofBytes,
         _root: &CommitmentRoot,
-        _path: Path,
+        _path: PathBytes,
     ) -> Result<(), ClientError> {
         Ok(())
     }

@@ -1,13 +1,12 @@
 //! Defines the messages sent to the CosmWasm contract by the 08-wasm proxy
 //! light client.
-use std::str::FromStr;
-
 use cosmwasm_schema::{cw_serde, QueryResponses};
 use cosmwasm_std::{Binary, Checksum};
 use ibc_core::client::types::proto::v1::Height as RawHeight;
 use ibc_core::client::types::Height;
 use ibc_core::commitment_types::commitment::{CommitmentPrefix, CommitmentProofBytes};
-use ibc_core::host::types::path::Path;
+use ibc_core::commitment_types::merkle::MerklePath;
+use ibc_core::host::types::path::PathBytes;
 use ibc_core::primitives::proto::Any;
 use prost::Message;
 
@@ -117,11 +116,6 @@ impl TryFrom<VerifyUpgradeAndUpdateStateMsgRaw> for VerifyUpgradeAndUpdateStateM
 }
 
 #[cw_serde]
-pub struct MerklePath {
-    pub key_path: Vec<String>,
-}
-
-#[cw_serde]
 pub struct VerifyMembershipMsgRaw {
     pub proof: Binary,
     pub path: MerklePath,
@@ -134,7 +128,7 @@ pub struct VerifyMembershipMsgRaw {
 pub struct VerifyMembershipMsg {
     pub prefix: CommitmentPrefix,
     pub proof: CommitmentProofBytes,
-    pub path: Path,
+    pub path: PathBytes,
     pub value: Vec<u8>,
     pub height: Height,
     pub delay_block_period: u64,
@@ -146,9 +140,8 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
 
     fn try_from(mut raw: VerifyMembershipMsgRaw) -> Result<Self, Self::Error> {
         let proof = CommitmentProofBytes::try_from(raw.proof.to_vec())?;
-        let prefix = raw.path.key_path.remove(0).into_bytes();
-        let path_str = raw.path.key_path.join("");
-        let path = Path::from_str(&path_str)?;
+        let prefix = CommitmentPrefix::from(raw.path.key_path.remove(0).into_vec());
+        let path = PathBytes::flatten(raw.path.key_path);
         let height = Height::try_from(raw.height)?;
 
         Ok(Self {
@@ -156,7 +149,7 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
             path,
             value: raw.value.into(),
             height,
-            prefix: CommitmentPrefix::from(prefix),
+            prefix,
             delay_block_period: raw.delay_block_period,
             delay_time_period: raw.delay_time_period,
         })
@@ -175,7 +168,7 @@ pub struct VerifyNonMembershipMsgRaw {
 pub struct VerifyNonMembershipMsg {
     pub prefix: CommitmentPrefix,
     pub proof: CommitmentProofBytes,
-    pub path: Path,
+    pub path: PathBytes,
     pub height: Height,
     pub delay_block_period: u64,
     pub delay_time_period: u64,
@@ -186,15 +179,15 @@ impl TryFrom<VerifyNonMembershipMsgRaw> for VerifyNonMembershipMsg {
 
     fn try_from(mut raw: VerifyNonMembershipMsgRaw) -> Result<Self, Self::Error> {
         let proof = CommitmentProofBytes::try_from(raw.proof.to_vec())?;
-        let prefix = raw.path.key_path.remove(0).into_bytes();
-        let path_str = raw.path.key_path.join("");
-        let path = Path::from_str(&path_str)?;
+        let prefix = CommitmentPrefix::from(raw.path.key_path.remove(0).into_vec());
+        let path = PathBytes::flatten(raw.path.key_path);
         let height = raw.height.try_into()?;
+
         Ok(Self {
             proof,
             path,
             height,
-            prefix: CommitmentPrefix::from(prefix),
+            prefix,
             delay_block_period: raw.delay_block_period,
             delay_time_period: raw.delay_time_period,
         })

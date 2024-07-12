@@ -930,6 +930,7 @@ version = "0.53.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
+ "ibc-core-host-types",
  "ibc-primitives",
  "ibc-proto",
  "ics23",

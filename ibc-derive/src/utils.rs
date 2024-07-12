@@ -50,6 +50,11 @@ impl Imports {
         quote! {#Prefix::host::types::path::Path}
     }
 
+    pub fn path_bytes(&self) -> TokenStream {
+        let Prefix = self.prefix();
+        quote! {#Prefix::host::types::path::PathBytes}
+    }
+
     pub fn consensus_state(&self) -> TokenStream {
         let Prefix = self.prefix();
         quote! {#Prefix::client::context::consensus_state::ConsensusState}
