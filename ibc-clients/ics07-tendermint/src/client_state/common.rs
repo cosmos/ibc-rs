@@ -46,11 +46,13 @@ impl ClientStateCommon for ClientState {
     ) -> Result<(), ClientError> {
         let last_height = self.latest_height().revision_height();
 
-        let upgrade_client_path_bytes =
-            self.serialize_path(UpgradeClientPath::UpgradedClientState(last_height))?;
+        let upgrade_client_path_bytes = self.serialize_path(Path::UpgradeClient(
+            UpgradeClientPath::UpgradedClientState(last_height),
+        ))?;
 
-        let upgrade_consensus_path_bytes =
-            self.serialize_path(UpgradeClientPath::UpgradedClientConsensusState(last_height))?;
+        let upgrade_consensus_path_bytes = self.serialize_path(Path::UpgradeClient(
+            UpgradeClientPath::UpgradedClientConsensusState(last_height),
+        ))?;
 
         verify_upgrade_client::<HostFunctionsManager>(
             self.inner(),
@@ -64,8 +66,8 @@ impl ClientStateCommon for ClientState {
         )
     }
 
-    fn serialize_path(&self, path: impl Into<Path>) -> Result<PathBytes, ClientError> {
-        Ok(path.into().to_string().into_bytes().into())
+    fn serialize_path(&self, path: Path) -> Result<PathBytes, ClientError> {
+        Ok(path.to_string().into_bytes().into())
     }
 
     fn verify_membership_raw(

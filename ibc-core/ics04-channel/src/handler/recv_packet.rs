@@ -10,7 +10,8 @@ use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
+    SeqRecvPath,
 };
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
@@ -214,7 +215,7 @@ where
                 conn_end_on_b.counterparty().prefix(),
                 &msg.proof_commitment_on_a,
                 consensus_state_of_a_on_b.root(),
-                commitment_path_on_a,
+                Path::Commitment(commitment_path_on_a),
                 expected_commitment_on_a.into_vec(),
             )
             .map_err(|e| ChannelError::PacketVerificationFailed {

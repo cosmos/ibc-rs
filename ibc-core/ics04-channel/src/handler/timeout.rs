@@ -8,7 +8,7 @@ use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, ReceiptPath, SeqRecvPath,
+    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
@@ -225,7 +225,7 @@ where
                     conn_end_on_a.counterparty().prefix(),
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
-                    seq_recv_path_on_b,
+                    Path::SeqRecv(seq_recv_path_on_b),
                     msg.packet.seq_on_a.to_vec(),
                 )
             }
@@ -240,7 +240,7 @@ where
                     conn_end_on_a.counterparty().prefix(),
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
-                    receipt_path_on_b,
+                    Path::Receipt(receipt_path_on_b),
                 )
             }
             Order::None => {

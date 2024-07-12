@@ -59,8 +59,8 @@ impl PathBytes {
         self.0
     }
 
-    /// Concatenates a list of path bytes into a single path.
-    pub fn concat(paths: Vec<PathBytes>) -> Self {
+    /// Flattens a list of path bytes into a single path.
+    pub fn flatten(paths: Vec<PathBytes>) -> Self {
         let mut bytes = Vec::new();
         paths.iter().for_each(|path| {
             bytes.extend_from_slice(&path.0);

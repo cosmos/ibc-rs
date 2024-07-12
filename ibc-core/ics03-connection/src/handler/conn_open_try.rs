@@ -9,7 +9,7 @@ use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::{ClientId, ConnectionId};
 use ibc_core_host::types::path::{
-    ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath,
+    ClientConnectionPath, ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path,
 };
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
@@ -97,7 +97,7 @@ where
                     prefix_on_a,
                     &msg.proof_conn_end_on_a,
                     consensus_state_of_a_on_b.root(),
-                    ConnectionPath::new(&vars.conn_id_on_a),
+                    Path::Connection(ConnectionPath::new(&vars.conn_id_on_a)),
                     expected_conn_end_on_a.encode_vec(),
                 )
                 .map_err(ConnectionError::VerifyConnectionState)?;
@@ -108,7 +108,7 @@ where
                 prefix_on_a,
                 &msg.proof_client_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                ClientStatePath::new(client_id_on_a.clone()),
+                Path::ClientState(ClientStatePath::new(client_id_on_a.clone())),
                 msg.client_state_of_b_on_a.to_vec(),
             )
             .map_err(|e| ConnectionError::ClientStateVerificationFailure {
@@ -133,7 +133,7 @@ where
                 prefix_on_a,
                 &msg.proof_consensus_state_of_b_on_a,
                 consensus_state_of_a_on_b.root(),
-                client_cons_state_path_on_a,
+                Path::ClientConsensusState(client_cons_state_path_on_a),
                 stored_consensus_state_of_b_on_a.to_vec(),
             )
             .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {

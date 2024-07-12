@@ -58,7 +58,7 @@ pub trait ClientStateCommon: Convertible<Any> {
     /// them to understand how path serialization is performed on the chain this
     /// light client represents it before passing the path bytes to either
     /// `verify_membership_raw()` or `verify_non_membership_raw()`.
-    fn serialize_path(&self, path: impl Into<Path>) -> Result<PathBytes, ClientError>;
+    fn serialize_path(&self, path: Path) -> Result<PathBytes, ClientError>;
 
     /// Verifies a proof of the existence of a value at a given raw path bytes.
     fn verify_membership_raw(
@@ -76,7 +76,7 @@ pub trait ClientStateCommon: Convertible<Any> {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        path: impl Into<Path>,
+        path: Path,
         value: Vec<u8>,
     ) -> Result<(), ClientError> {
         let path_bytes = self.serialize_path(path)?;
@@ -98,7 +98,7 @@ pub trait ClientStateCommon: Convertible<Any> {
         prefix: &CommitmentPrefix,
         proof: &CommitmentProofBytes,
         root: &CommitmentRoot,
-        path: impl Into<Path>,
+        path: Path,
     ) -> Result<(), ClientError> {
         let path_bytes = self.serialize_path(path)?;
         self.verify_non_membership_raw(prefix, proof, root, path_bytes)

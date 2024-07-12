@@ -8,7 +8,7 @@ use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::{ClientId, ConnectionId};
-use ibc_core_host::types::path::{ClientConsensusStatePath, ConnectionPath};
+use ibc_core_host::types::path::{ClientConsensusStatePath, ConnectionPath, Path};
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
@@ -78,7 +78,7 @@ where
                 prefix_on_a,
                 &msg.proof_conn_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                ConnectionPath::new(conn_id_on_a),
+                Path::Connection(ConnectionPath::new(conn_id_on_a)),
                 expected_conn_end_on_a.encode_vec(),
             )
             .map_err(ConnectionError::VerifyConnectionState)?;

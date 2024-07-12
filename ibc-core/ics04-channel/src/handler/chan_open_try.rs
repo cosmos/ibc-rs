@@ -10,7 +10,7 @@ use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ChannelId;
 use ibc_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    ChannelEndPath, ClientConsensusStatePath, Path, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
@@ -175,7 +175,7 @@ where
                 prefix_on_a,
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                chan_end_path_on_a,
+                Path::ChannelEnd(chan_end_path_on_a),
                 expected_chan_end_on_a.encode_vec(),
             )
             .map_err(ChannelError::VerifyChannelFailed)?;

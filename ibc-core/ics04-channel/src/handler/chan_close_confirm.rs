@@ -8,7 +8,7 @@ use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath};
+use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
@@ -156,7 +156,7 @@ where
                 prefix_on_a,
                 &msg.proof_chan_end_on_a,
                 consensus_state_of_a_on_b.root(),
-                chan_end_path_on_a,
+                Path::ChannelEnd(chan_end_path_on_a),
                 expected_chan_end_on_a.encode_vec(),
             )
             .map_err(ChannelError::VerifyChannelFailed)?;
