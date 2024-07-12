@@ -184,8 +184,8 @@ impl ClientStateCommon for MockClientState {
         Ok(())
     }
 
-    fn serialize_path(&self, path: impl Into<Path>) -> Result<PathBytes, ClientError> {
-        Ok(path.into().to_string().into_bytes().into())
+    fn serialize_path(&self, path: Path) -> Result<PathBytes, ClientError> {
+        Ok(path.to_string().into_bytes().into())
     }
 
     fn verify_upgrade_client(

@@ -123,7 +123,7 @@ pub(crate) fn impl_ClientStateCommon(
                 }
             }
 
-            fn serialize_path(&self, path: impl Into<#Path>) -> core::result::Result<#PathBytes, #ClientError> {
+            fn serialize_path(&self, path: #Path) -> core::result::Result<#PathBytes, #ClientError> {
                 match self {
                     #(#serialize_path_impl),*
                 }
@@ -147,7 +147,7 @@ pub(crate) fn impl_ClientStateCommon(
                 prefix: &#CommitmentPrefix,
                 proof: &#CommitmentProofBytes,
                 root: &#CommitmentRoot,
-                path: impl Into<#Path>,
+                path: #Path,
                 value: Vec<u8>,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
@@ -172,7 +172,7 @@ pub(crate) fn impl_ClientStateCommon(
                 prefix: &#CommitmentPrefix,
                 proof: &#CommitmentProofBytes,
                 root: &#CommitmentRoot,
-                path: impl Into<#Path>,
+                path: #Path,
             ) -> core::result::Result<(), #ClientError> {
                 match self {
                     #(#verify_non_membership_impl),*
