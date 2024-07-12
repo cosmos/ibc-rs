@@ -50,7 +50,7 @@ impl From<RawMerklePath> for MerklePath {
     }
 }
 
-// The conversion from `MerklePath`` to `RawMerklePath` is not provided as we
+// The conversion from `MerklePath` to `RawMerklePath` is not provided, as we
 // cannot assume how the key paths of `Vec<PathBytes>` type should be serialized
 // to the `Vec<String>`.
 
