@@ -44,7 +44,7 @@ pub const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 
 /// Represents a general-purpose path structure using the byte representation of
 /// a path. This struct abstracts over different path types and can handle bytes
-/// may obtained from various serialization formats (e.g., Protobuf, Borsh).
+/// obtained from various serialization formats (e.g., Protobuf, Borsh).
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From)]
