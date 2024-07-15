@@ -5,7 +5,7 @@ use ibc_core::client::types::Height;
 
 /// The response to [`super::msgs::QueryMsg::Status`]
 #[cw_serde]
-pub struct Status {
+pub struct StatusResponse {
     /// The status of the client
     // TODO: Turn this into an enum
     pub status: String,
@@ -13,28 +13,29 @@ pub struct Status {
 
 /// The response to [`super::msgs::QueryMsg::ExportMetadata`]
 #[cw_serde]
-pub struct ExportMetadata {
+pub struct ExportMetadataResponse {
     /// The genesis metadata
-    pub metadata: Vec<GenesisMetadata>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<Vec<GenesisMetadata>>,
 }
 
 /// The response to [`super::msgs::QueryMsg::TimestampAtHeight`]
 #[cw_serde]
-pub struct TimestampAtHeight {
+pub struct TimestampAtHeightResponse {
     /// The timestamp at the given height
     pub timestamp: u64,
 }
 
 /// The response to [`super::QueryMsg::VerifyClientMessage`]
 #[cw_serde]
-pub struct VerifyClientMessage {
+pub struct VerifyClientMessageResponse {
     /// Whether the client message is valid
     pub is_valid: bool,
 }
 
 /// The response to [`super::msgs::QueryMsg::CheckForMisbehaviour`]
 #[cw_serde]
-pub struct CheckForMisbehaviour {
+pub struct CheckForMisbehaviourResponse {
     /// Whether misbehaviour was found
     pub found_misbehaviour: bool,
 }
