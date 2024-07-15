@@ -108,15 +108,17 @@ fn test_cw_client_expiry() {
 
     let client_message = fxt.dummy_client_message(target_height);
 
-    let resp = fxt.query::<VerifyClientMessageResponse>(
-        deps.as_ref(),
-        VerifyClientMessageRaw {
-            client_message: client_message.into(),
-        }
-        .into(),
-    );
+    let resp: VerifyClientMessageResponse = fxt
+        .query(
+            deps.as_ref(),
+            VerifyClientMessageRaw {
+                client_message: client_message.into(),
+            },
+        )
+        .and_then(from_json)
+        .unwrap();
 
-    assert!(!resp.unwrap().is_valid);
+    assert!(!resp.is_valid);
 
     // ------------------- Check client status -------------------
 
