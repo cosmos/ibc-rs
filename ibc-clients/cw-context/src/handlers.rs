@@ -176,7 +176,7 @@ where
             }
             QueryMsg::ExportMetadata(ExportMetadataMsg {}) => {
                 to_json_binary(&ExportMetadataResponse {
-                    metadata: self.get_metadata()?,
+                    genesis_metadata: self.get_metadata()?,
                 })
             }
             QueryMsg::TimestampAtHeight(msg) => {

@@ -16,7 +16,7 @@ pub struct StatusResponse {
 pub struct ExportMetadataResponse {
     /// The genesis metadata
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<Vec<GenesisMetadata>>,
+    pub genesis_metadata: Option<Vec<GenesisMetadata>>,
 }
 
 /// The response to [`super::msgs::QueryMsg::TimestampAtHeight`]

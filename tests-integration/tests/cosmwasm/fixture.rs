@@ -8,13 +8,15 @@ use ibc::core::client::types::{Height, Status};
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::Timestamp;
 use ibc_client_cw::types::{
-    CheckForMisbehaviourMsgRaw, ContractError, ExportMetadataMsg, GenesisMetadata, InstantiateMsg,
-    MigrationPrefix, QueryMsg, QueryResponse, StatusMsg, UpdateStateMsgRaw,
-    UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw,
+    CheckForMisbehaviourMsgRaw, CheckForMisbehaviourResponse, ContractError, ExportMetadataMsg,
+    ExportMetadataResponse, GenesisMetadata, InstantiateMsg, MigrationPrefix, QueryMsg, StatusMsg,
+    StatusResponse, UpdateStateMsgRaw, UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw,
+    VerifyClientMessageResponse,
 };
 use ibc_client_cw::utils::AnyCodec;
 use ibc_client_tendermint_cw::entrypoint::TendermintContext;
 use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
+use serde::de::DeserializeOwned;
 use tendermint::Time;
 use tendermint_testgen::{Generator, Validator};
 
@@ -139,7 +141,7 @@ impl Fixture {
 
     pub fn verify_client_message(&self, deps: Deps<'_>, client_message: Vec<u8>) {
         let resp = self
-            .query(
+            .query::<VerifyClientMessageResponse>(
                 deps,
                 VerifyClientMessageRaw {
                     client_message: client_message.into(),
@@ -149,13 +151,11 @@ impl Fixture {
             .unwrap();
 
         assert!(resp.is_valid);
-        assert!(resp.status.is_none());
-        assert!(resp.found_misbehaviour.is_none());
     }
 
     pub fn check_for_misbehaviour(&self, deps: Deps<'_>, client_message: Vec<u8>) {
         let resp = self
-            .query(
+            .query::<CheckForMisbehaviourResponse>(
                 deps,
                 CheckForMisbehaviourMsgRaw {
                     client_message: client_message.into(),
@@ -164,23 +164,24 @@ impl Fixture {
             )
             .unwrap();
 
-        assert!(resp.is_valid);
-        assert_eq!(resp.found_misbehaviour, Some(true));
+        assert!(resp.found_misbehaviour);
     }
 
     pub fn check_client_status(&self, deps: Deps<'_>, expected: Status) {
-        let resp = self.query(deps, StatusMsg {}.into()).unwrap();
+        let resp = self
+            .query::<StatusResponse>(deps, StatusMsg {}.into())
+            .unwrap();
 
-        assert_eq!(resp.status, Some(expected.to_string()));
+        assert_eq!(resp.status, expected.to_string());
     }
 
     pub fn get_metadata(&self, deps: Deps<'_>) -> Option<Vec<GenesisMetadata>> {
-        self.query(deps, ExportMetadataMsg {}.into())
+        self.query::<ExportMetadataResponse>(deps, ExportMetadataMsg {}.into())
             .map(|resp| resp.genesis_metadata)
             .unwrap()
     }
 
-    pub fn query(&self, deps: Deps<'_>, msg: QueryMsg) -> StdResult<QueryResponse> {
+    pub fn query<T: DeserializeOwned>(&self, deps: Deps<'_>, msg: QueryMsg) -> StdResult<T> {
         let ctx = self.ctx_ref(deps);
 
         let resp_bytes = ctx
