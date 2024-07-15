@@ -204,15 +204,15 @@ pub struct MigrateClientStoreMsg {}
 #[derive(QueryResponses, derive_more::From)]
 #[cw_serde]
 pub enum QueryMsg {
-    #[returns(crate::types::response::QueryResponse)]
+    #[returns(crate::types::response::Status)]
     Status(StatusMsg),
-    #[returns(crate::types::response::QueryResponse)]
+    #[returns(crate::types::response::ExportMetadata)]
     ExportMetadata(ExportMetadataMsg),
-    #[returns(crate::types::response::QueryResponse)]
+    #[returns(crate::types::response::TimestampAtHeight)]
     TimestampAtHeight(TimestampAtHeightMsg),
-    #[returns(crate::types::response::QueryResponse)]
+    #[returns(crate::types::response::VerifyClientMessage)]
     VerifyClientMessage(VerifyClientMessageRaw),
-    #[returns(crate::types::response::QueryResponse)]
+    #[returns(crate::types::response::CheckForMisbehaviour)]
     CheckForMisbehaviour(CheckForMisbehaviourMsgRaw),
 }
 
