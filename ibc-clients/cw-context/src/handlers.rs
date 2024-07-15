@@ -9,10 +9,10 @@ use crate::api::ClientType;
 use crate::context::Context;
 use crate::types::{
     CheckForMisbehaviourMsg, CheckForMisbehaviourResponse, ContractError, ContractResult,
-    ExportMetadataMsg, ExportMetadataResponse, InstantiateMsg, QueryMsg, StatusMsg, StatusResponse,
-    SudoMsg, TimestampAtHeightResponse, UpdateStateMsg, UpdateStateOnMisbehaviourMsg,
-    VerifyClientMessageMsg, VerifyClientMessageResponse, VerifyMembershipMsg,
-    VerifyNonMembershipMsg, VerifyUpgradeAndUpdateStateMsg,
+    InstantiateMsg, QueryMsg, StatusMsg, StatusResponse, SudoMsg, TimestampAtHeightResponse,
+    UpdateStateMsg, UpdateStateOnMisbehaviourMsg, VerifyClientMessageMsg,
+    VerifyClientMessageResponse, VerifyMembershipMsg, VerifyNonMembershipMsg,
+    VerifyUpgradeAndUpdateStateMsg,
 };
 
 impl<'a, C: ClientType<'a>> Context<'a, C>
@@ -173,11 +173,6 @@ where
                         status: s.to_string(),
                     },
                 ))
-            }
-            QueryMsg::ExportMetadata(ExportMetadataMsg {}) => {
-                to_json_binary(&ExportMetadataResponse {
-                    genesis_metadata: self.get_metadata()?,
-                })
             }
             QueryMsg::TimestampAtHeight(msg) => {
                 let client_cons_state_path = ClientConsensusStatePath::new(

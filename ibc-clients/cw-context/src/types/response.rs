@@ -1,6 +1,5 @@
 //! Contains the response types for the CosmWasm contract.
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Binary;
 use ibc_core::client::types::Height;
 
 /// The response to [`super::msgs::QueryMsg::Status`]
@@ -9,14 +8,6 @@ pub struct StatusResponse {
     /// The status of the client
     // TODO: Turn this into an enum
     pub status: String,
-}
-
-/// The response to [`super::msgs::QueryMsg::ExportMetadata`]
-#[cw_serde]
-pub struct ExportMetadataResponse {
-    /// The genesis metadata
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub genesis_metadata: Option<Vec<GenesisMetadata>>,
 }
 
 /// The response to [`super::msgs::QueryMsg::TimestampAtHeight`]
@@ -38,12 +29,6 @@ pub struct VerifyClientMessageResponse {
 pub struct CheckForMisbehaviourResponse {
     /// Whether misbehaviour was found
     pub found_misbehaviour: bool,
-}
-
-#[cw_serde]
-pub struct GenesisMetadata {
-    pub key: Binary,
-    pub value: Binary,
 }
 
 #[cw_serde]

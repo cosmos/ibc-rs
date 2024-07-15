@@ -11,14 +11,13 @@ use ibc_core::client::types::error::ClientError;
 use ibc_core::client::types::Height;
 use ibc_core::host::types::identifiers::ClientId;
 use ibc_core::host::types::path::{
-    iteration_key, ClientStatePath, ClientUpdateHeightPath, ClientUpdateTimePath,
-    ITERATE_CONSENSUS_STATE_PREFIX,
+    ClientStatePath, ClientUpdateHeightPath, ClientUpdateTimePath, ITERATE_CONSENSUS_STATE_PREFIX,
 };
 use ibc_core::primitives::proto::{Any, Protobuf};
 use prost::Message;
 
 use crate::api::ClientType;
-use crate::types::{ContractError, GenesisMetadata, HeightTravel, MigrationPrefix};
+use crate::types::{ContractError, HeightTravel, MigrationPrefix};
 use crate::utils::AnyCodec;
 
 /// - [`Height`] cannot be used directly as keys in the map,
@@ -217,58 +216,6 @@ where
         );
 
         client_update_height_path.leaf().into_bytes()
-    }
-
-    /// Returns the genesis metadata by iterating over the stored consensus
-    /// state metadata.
-    pub fn get_metadata(&self) -> Result<Option<Vec<GenesisMetadata>>, ContractError> {
-        let mut metadata = Vec::<GenesisMetadata>::new();
-
-        let iterator = CONSENSUS_STATE_HEIGHT_MAP
-            .keys(self.storage_ref(), None, None, Order::Ascending)
-            .map(|deserialized_result| {
-                let (rev_number, rev_height) =
-                    deserialized_result.map_err(|e| ClientError::Other {
-                        description: e.to_string(),
-                    })?;
-                Height::new(rev_number, rev_height)
-            });
-
-        for height_result in iterator {
-            let height = height_result?;
-
-            let processed_height_key = self.client_update_height_key(&height);
-            metadata.push(GenesisMetadata {
-                key: processed_height_key.clone().into(),
-                value: self.retrieve(&processed_height_key)?.into(),
-            });
-            let processed_time_key = self.client_update_time_key(&height);
-            metadata.push(GenesisMetadata {
-                key: processed_time_key.clone().into(),
-                value: self.retrieve(&processed_time_key)?.into(),
-            });
-        }
-
-        let iterator = CONSENSUS_STATE_HEIGHT_MAP
-            .keys(self.storage_ref(), None, None, Order::Ascending)
-            .map(|deserialized_result| {
-                let (rev_number, rev_height) =
-                    deserialized_result.map_err(|e| ClientError::Other {
-                        description: e.to_string(),
-                    })?;
-                Height::new(rev_number, rev_height)
-            });
-
-        for height_result in iterator {
-            let height = height_result?;
-
-            metadata.push(GenesisMetadata {
-                key: iteration_key(height.revision_number(), height.revision_height()).into(),
-                value: height.encode_vec().into(),
-            });
-        }
-
-        Ok(Some(metadata))
     }
 
     /// Returns the checksum of the current contract.

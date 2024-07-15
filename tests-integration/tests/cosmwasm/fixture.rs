@@ -8,10 +8,9 @@ use ibc::core::client::types::{Height, Status};
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::Timestamp;
 use ibc_client_cw::types::{
-    CheckForMisbehaviourMsgRaw, CheckForMisbehaviourResponse, ContractError, ExportMetadataMsg,
-    ExportMetadataResponse, GenesisMetadata, InstantiateMsg, MigrationPrefix, QueryMsg, StatusMsg,
-    StatusResponse, UpdateStateMsgRaw, UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw,
-    VerifyClientMessageResponse,
+    CheckForMisbehaviourMsgRaw, CheckForMisbehaviourResponse, ContractError, InstantiateMsg,
+    MigrationPrefix, QueryMsg, StatusMsg, StatusResponse, UpdateStateMsgRaw,
+    UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw, VerifyClientMessageResponse,
 };
 use ibc_client_cw::utils::AnyCodec;
 use ibc_client_tendermint_cw::entrypoint::TendermintContext;
@@ -173,12 +172,6 @@ impl Fixture {
             .unwrap();
 
         assert_eq!(resp.status, expected.to_string());
-    }
-
-    pub fn get_metadata(&self, deps: Deps<'_>) -> Option<Vec<GenesisMetadata>> {
-        self.query::<ExportMetadataResponse>(deps, ExportMetadataMsg {}.into())
-            .map(|resp| resp.genesis_metadata)
-            .unwrap()
     }
 
     pub fn query<T: DeserializeOwned>(&self, deps: Deps<'_>, msg: QueryMsg) -> StdResult<T> {
