@@ -823,6 +823,7 @@ version = "0.53.0"
 dependencies = [
  "base64 0.22.1",
  "displaydoc",
+ "hex",
  "ibc-core-client",
  "ibc-core-host-types",
  "ibc-primitives",

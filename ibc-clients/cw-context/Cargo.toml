@@ -24,7 +24,7 @@ serde       = { workspace = true, features = [ "derive" ] }
 
 # ibc dependencies
 ibc-core              = { workspace = true }
-ibc-client-wasm-types = { workspace = true, features = [ "cosmwasm" ] }
+ibc-client-wasm-types = { workspace = true, features = ["schema"] }
 
 # cosmwasm dependencies
 cosmwasm-schema = { workspace = true }

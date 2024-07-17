@@ -46,6 +46,7 @@ rstest = { workspace = true }
 [features]
 default = [ "std" ]
 std = [
+  "hex/std",
   "serde/std",
   "serde-json/std",
   "ibc/std",

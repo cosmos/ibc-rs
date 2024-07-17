@@ -95,6 +95,3 @@ parity-scale-codec = [
   "ibc-client-tendermint-types/parity-scale-codec",
   "ibc-primitives/parity-scale-codec",
 ]
-cosmwasm = [
-  "ibc-client-wasm-types/cosmwasm",
-]
