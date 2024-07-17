@@ -1,7 +1,7 @@
 //! Defines the messages sent to the CosmWasm contract by the 08-wasm proxy
 //! light client.
 use cosmwasm_schema::{cw_serde, QueryResponses};
-use cosmwasm_std::{Binary, Checksum};
+use cosmwasm_std::Binary;
 use ibc_core::client::types::proto::v1::Height as RawHeight;
 use ibc_core::client::types::Height;
 use ibc_core::commitment_types::commitment::{CommitmentPrefix, CommitmentProofBytes};
@@ -20,7 +20,16 @@ use super::error::ContractError;
 pub struct InstantiateMsg {
     pub client_state: Binary,
     pub consensus_state: Binary,
-    pub checksum: Checksum,
+    /// The checksum of the contract.
+    ///
+    /// NOTE: The checksum included in any type of 08-wasm messages, such as
+    /// [`WasmClientState`](ibc_client_wasm_types::client_state::ClientState),
+    /// is hex-encoded bytes. The ibc-go 08-wasm light client initially
+    /// hex-decodes this to a valid checksum. In a subsequent step, the entire
+    /// payload, including the checksum, is base64-encoded by the VM before
+    /// being passed to a CosmWasm contract entry point. Therefore, we use the
+    /// `Binary` type here to properly deserialize a base64-encoded checksum.
+    pub checksum: Binary,
 }
 
 // ------------------------------------------------------------
