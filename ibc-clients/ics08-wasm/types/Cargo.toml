@@ -18,6 +18,7 @@ description = """
 [dependencies]
 # external dependencies
 base64          = { workspace = true, features = [ "alloc" ] }
+hex             = { workspace = true }
 displaydoc      = { workspace = true }
 serde           = { workspace = true, optional = true }
 cosmwasm-schema = { workspace = true, optional = true }
