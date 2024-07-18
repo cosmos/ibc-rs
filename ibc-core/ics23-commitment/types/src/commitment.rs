@@ -149,6 +149,12 @@ pub struct CommitmentPrefix {
 }
 
 impl CommitmentPrefix {
+    pub fn from_bytes(bytes: impl AsRef<[u8]>) -> Self {
+        Self {
+            bytes: bytes.as_ref().to_vec(),
+        }
+    }
+
     pub fn as_bytes(&self) -> &[u8] {
         &self.bytes
     }
