@@ -18,7 +18,6 @@ description = """
 [dependencies]
 # external dependencies
 base64     = { workspace = true, features = [ "alloc" ] }
-hex        = { workspace = true }
 displaydoc = { workspace = true }
 schemars   = { workspace = true, optional = true }
 serde      = { workspace = true, optional = true }
@@ -41,7 +40,6 @@ std = [
   "ibc-primitives/std",
   "ibc-proto/std",
   "base64/std",
-  "hex/std",
   "serde/std",
 ]
 serde = [

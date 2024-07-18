@@ -3,7 +3,7 @@ pub mod custom_ctx;
 
 use std::str::FromStr;
 
-use cosmwasm_std::{Checksum, Deps, DepsMut, Empty, Env, Order, Storage};
+use cosmwasm_std::{Binary, Deps, DepsMut, Empty, Env, Order, Storage};
 use cw_storage_plus::{Bound, Map};
 use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
 use ibc_core::client::context::client_state::ClientStateCommon;
@@ -40,7 +40,7 @@ where
     deps_mut: Option<DepsMut<'a>>,
     env: Env,
     client_id: ClientId,
-    checksum: Option<Checksum>,
+    checksum: Option<Binary>,
     migration_prefix: MigrationPrefix,
     client_type: std::marker::PhantomData<C>,
 }
@@ -96,7 +96,7 @@ where
     }
 
     /// Sets the checksum of the context.
-    pub fn set_checksum(&mut self, checksum: Checksum) {
+    pub fn set_checksum(&mut self, checksum: Binary) {
         self.checksum = Some(checksum);
     }
 
@@ -272,9 +272,9 @@ where
     }
 
     /// Returns the checksum of the current contract.
-    pub fn obtain_checksum(&self) -> Result<Checksum, ClientError> {
+    pub fn obtain_checksum(&self) -> Result<Binary, ClientError> {
         match &self.checksum {
-            Some(checksum) => Ok(*checksum),
+            Some(checksum) => Ok(checksum.clone()),
             None => {
                 let client_state_value = self.retrieve(ClientStatePath::leaf())?;
 
@@ -285,14 +285,7 @@ where
                         }
                     })?;
 
-                let checksum =
-                    Checksum::try_from(wasm_client_state.checksum.as_slice()).map_err(|e| {
-                        ClientError::Other {
-                            description: e.to_string(),
-                        }
-                    })?;
-
-                Ok(checksum)
+                Ok(wasm_client_state.checksum.into())
             }
         }
     }

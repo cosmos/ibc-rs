@@ -27,7 +27,7 @@ where
 
         let any_consensus_state = Any::decode(&mut msg.consensus_state.as_slice())?;
 
-        self.set_checksum(msg.checksum.to_array()?.into());
+        self.set_checksum(msg.checksum);
 
         client_state.initialise(self, &self.client_id(), any_consensus_state)?;
 

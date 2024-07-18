@@ -20,15 +20,6 @@ use super::error::ContractError;
 pub struct InstantiateMsg {
     pub client_state: Binary,
     pub consensus_state: Binary,
-    /// The checksum of the contract.
-    ///
-    /// NOTE: The checksum included in any type of 08-wasm messages, such as
-    /// [`WasmClientState`](ibc_client_wasm_types::client_state::ClientState),
-    /// is hex-encoded bytes. The ibc-go 08-wasm light client initially
-    /// hex-decodes this to a valid checksum. In a subsequent step, the entire
-    /// payload, including the checksum, is base64-encoded by the VM before
-    /// being passed to a CosmWasm contract entry point. Therefore, we use the
-    /// `Binary` type here to properly deserialize a base64-encoded checksum.
     pub checksum: Binary,
 }
 

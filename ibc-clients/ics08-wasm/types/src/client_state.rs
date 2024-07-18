@@ -7,7 +7,7 @@ use ibc_proto::ibc::lightclients::wasm::v1::ClientState as RawClientState;
 
 use crate::error::Error;
 #[cfg(feature = "serde")]
-use crate::serializer::{Base64, Hex};
+use crate::serializer::Base64;
 use crate::Bytes;
 
 pub const WASM_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.ClientState";
@@ -20,7 +20,7 @@ pub struct ClientState {
     #[cfg_attr(feature = "serde", serde(with = "Base64", default))]
     pub data: Bytes,
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
-    #[cfg_attr(feature = "serde", serde(with = "Hex", default))]
+    #[cfg_attr(feature = "serde", serde(with = "Base64", default))]
     pub checksum: Bytes,
     pub latest_height: Height,
 }
