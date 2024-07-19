@@ -271,10 +271,10 @@ impl TryFrom<CheckForMisbehaviourMsgRaw> for CheckForMisbehaviourMsg {
 
 #[cfg(test)]
 mod test {
-    use super::SudoMsg;
+    use super::{InstantiateMsg, SudoMsg};
 
     #[test]
-    fn deserialize_from_json() {
+    fn verify_membership_from_json() {
         let sudo_msg = r#"{
             "verify_membership":{
                 "height":
@@ -286,6 +286,19 @@ mod test {
                 "value":"Cg8wNy10ZW5kZXJtaW50LTASIwoBMRINT1JERVJfT1JERVJFRBIPT1JERVJfVU5PUkRFUkVEGAIiIAoJMDgtd2FzbS0wEgxjb25uZWN0aW9uLTAaBQoDaWJj"
             }
         }"#;
-        serde_json::from_str::<SudoMsg>(sudo_msg).unwrap();
+        assert!(matches!(
+            serde_json::from_str::<SudoMsg>(sudo_msg).unwrap(),
+            SudoMsg::VerifyMembership(_)
+        ));
+    }
+
+    #[test]
+    fn instantiate_msg_from_json() {
+        let instantiate_msg = r#"{
+            "client_state":"Y2xpZW50X3N0YXRlCg==",
+            "consensus_state":"Y29uc2Vuc3VzX3N0YXRlCg==",
+            "checksum":"Y2hlY2tzdW0K"
+        }"#;
+        serde_json::from_str::<InstantiateMsg>(instantiate_msg).unwrap();
     }
 }
