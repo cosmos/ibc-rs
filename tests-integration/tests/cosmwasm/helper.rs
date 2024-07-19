@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use cosmwasm_std::testing::{message_info, mock_dependencies, mock_env};
-use cosmwasm_std::{coins, Checksum, Env, MessageInfo, Timestamp as CwTimestamp};
+use cosmwasm_std::{coins, Binary, Checksum, Env, MessageInfo, Timestamp as CwTimestamp};
 use ibc::clients::tendermint::types::ConsensusState;
 use ibc::core::primitives::Timestamp as IbcTimestamp;
 use tendermint::Hash;
@@ -13,9 +13,12 @@ pub fn dummy_msg_info() -> MessageInfo {
     message_info(&creator, &coins(1000, "ibc"))
 }
 
-pub fn dummy_checksum() -> Checksum {
-    Checksum::from_hex("2469f43c3ca20d476442bd3d98cbd97a180776ab37332aa7b02cae5a620acfc6")
-        .expect("Never fails")
+pub fn dummy_checksum() -> Binary {
+    let hex_bytes =
+        Checksum::from_hex("2469f43c3ca20d476442bd3d98cbd97a180776ab37332aa7b02cae5a620acfc6")
+            .expect("Never fails");
+
+    hex_bytes.as_slice().into()
 }
 
 pub fn dummy_sov_consensus_state(timestamp: IbcTimestamp) -> ConsensusState {

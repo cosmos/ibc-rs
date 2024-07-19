@@ -51,6 +51,10 @@ pub const UPGRADED_CLIENT_CONSENSUS_STATE: &str = "upgradedConsState";
 pub struct PathBytes(Vec<u8>);
 
 impl PathBytes {
+    pub fn from_bytes(bytes: impl AsRef<[u8]>) -> Self {
+        Self(bytes.as_ref().to_vec())
+    }
+
     pub fn is_empty(&self) -> bool {
         self.0.is_empty()
     }
@@ -60,10 +64,10 @@ impl PathBytes {
     }
 
     /// Flattens a list of path bytes into a single path.
-    pub fn flatten(paths: Vec<PathBytes>) -> Self {
+    pub fn flatten<T: AsRef<[u8]>>(paths: Vec<T>) -> Self {
         let mut bytes = Vec::new();
         paths.iter().for_each(|path| {
-            bytes.extend_from_slice(&path.0);
+            bytes.extend_from_slice(path.as_ref());
         });
         Self(bytes)
     }
