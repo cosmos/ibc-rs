@@ -86,6 +86,7 @@ use cases.
 |  9 | Near Protocol                   |    Octopus    |    :100:     |                   [`near-ibc`][near-ibc]                    | :hourglass_flowing_sand: |
 | 10 | Tendermint Light Client         | Electron Labs |   `ics07`    | [`Electron-Labs/tendermint-rs`][electronlabs-tendermint-rs] | :hourglass_flowing_sand: |
 | 11 | Starknet                        |   Informal    |    :eyes:    |                           :eyes:                            |          :eyes:          |
+| 12 | SP1 Tendermint Light Client     |  Interchain   |   `ics07`    |        [`cosmos/sp1-ics07-tendermint`][sp1-tendermint]      | :hourglass_flowing_sand: |
 
 Legend:
 
@@ -104,6 +105,7 @@ Legend:
 [substrate-ibc]: https://github.com/octopus-network/substrate-ibc
 [near-ibc]: https://github.com/octopus-network/near-ibc
 [electronlabs-tendermint-rs]: https://github.com/Electron-Labs/tendermint-rs
+[sp1-tendermint]: https://github.com/cosmos/sp1-ics07-tendermint
 
 ## License
 

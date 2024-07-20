@@ -1,28 +1,26 @@
 //! Defines the client state type for the ICS-08 Wasm light client.
 
-#[cfg(feature = "cosmwasm")]
-use cosmwasm_schema::cw_serde;
 use ibc_core_client::types::Height;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_proto::ibc::lightclients::wasm::v1::ClientState as RawClientState;
 
 use crate::error::Error;
-#[cfg(feature = "cosmwasm")]
+#[cfg(feature = "serde")]
 use crate::serializer::Base64;
 use crate::Bytes;
 
 pub const WASM_CLIENT_STATE_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.ClientState";
 
-#[cfg_attr(feature = "cosmwasm", cw_serde)]
-#[cfg_attr(not(feature = "cosmwasm"), derive(Clone, Debug, PartialEq))]
-#[derive(Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct ClientState {
-    #[cfg_attr(feature = "cosmwasm", schemars(with = "String"))]
-    #[cfg_attr(feature = "cosmwasm", serde(with = "Base64", default))]
+    #[cfg_attr(feature = "schema", schemars(with = "String"))]
+    #[cfg_attr(feature = "serde", serde(with = "Base64", default))]
     pub data: Bytes,
-    #[cfg_attr(feature = "cosmwasm", schemars(with = "String"))]
-    #[cfg_attr(feature = "cosmwasm", serde(with = "Base64", default))]
+    #[cfg_attr(feature = "schema", schemars(with = "String"))]
+    #[cfg_attr(feature = "serde", serde(with = "Base64", default))]
     pub checksum: Bytes,
     pub latest_height: Height,
 }

@@ -18,7 +18,7 @@ pub mod consensus_state;
 pub mod error;
 pub mod msgs;
 
-#[cfg(feature = "cosmwasm")]
+#[cfg(feature = "serde")]
 pub mod serializer;
 
 use core::str::FromStr;

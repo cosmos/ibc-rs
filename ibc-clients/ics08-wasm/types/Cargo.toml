@@ -17,10 +17,10 @@ description = """
 
 [dependencies]
 # external dependencies
-base64          = { workspace = true, features = [ "alloc" ] }
-displaydoc      = { workspace = true }
-serde           = { workspace = true, optional = true }
-cosmwasm-schema = { workspace = true, optional = true }
+base64     = { workspace = true, features = [ "alloc" ] }
+displaydoc = { workspace = true }
+schemars   = { workspace = true, optional = true }
+serde      = { workspace = true, optional = true }
 
 # ibc dependencies
 ibc-core-client     = { workspace = true }
@@ -54,10 +54,7 @@ schema = [
   "ibc-core-host-types/schema",
   "ibc-primitives/schema",
   "ibc-proto/json-schema",
+  "schemars",
   "serde",
   "std",
-]
-cosmwasm = [
-  "cosmwasm-schema",
-  "schema",
 ]
