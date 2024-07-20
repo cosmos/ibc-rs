@@ -165,14 +165,8 @@ where
 
         match msg {
             QueryMsg::Status(StatusMsg {}) => {
-                to_json_binary(&client_state.status(self, &client_id).map_or_else(
-                    |e| StatusResponse {
-                        status: e.to_string(),
-                    },
-                    |s| StatusResponse {
-                        status: s.to_string(),
-                    },
-                ))
+                let status = client_state.status(self, &client_id)?;
+                to_json_binary(&StatusResponse { status })
             }
             QueryMsg::TimestampAtHeight(msg) => {
                 let client_cons_state_path = ClientConsensusStatePath::new(
@@ -183,7 +177,6 @@ where
 
                 let consensus_state = self.consensus_state(&client_cons_state_path)?;
                 let timestamp = consensus_state.timestamp().nanoseconds();
-
                 to_json_binary(&TimestampAtHeightResponse { timestamp })
             }
             QueryMsg::VerifyClientMessage(msg) => {
@@ -192,7 +185,6 @@ where
                 let is_valid = client_state
                     .verify_client_message(self, &client_id, msg.client_message)
                     .is_ok();
-
                 to_json_binary(&VerifyClientMessageResponse { is_valid })
             }
             QueryMsg::CheckForMisbehaviour(msg) => {
@@ -200,7 +192,6 @@ where
 
                 let found_misbehaviour =
                     client_state.check_for_misbehaviour(self, &client_id, msg.client_message)?;
-
                 to_json_binary(&CheckForMisbehaviourResponse { found_misbehaviour })
             }
         }

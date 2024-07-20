@@ -168,7 +168,7 @@ impl Fixture {
     pub fn check_client_status(&self, deps: Deps<'_>, expected: Status) {
         let resp: StatusResponse = self.query(deps, StatusMsg {}).and_then(from_json).unwrap();
 
-        assert_eq!(resp.status, expected.to_string());
+        assert_eq!(resp.status, expected);
     }
 
     pub fn query(&self, deps: Deps<'_>, msg: impl Into<QueryMsg>) -> StdResult<Binary> {

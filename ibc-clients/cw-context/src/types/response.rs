@@ -1,13 +1,12 @@
 //! Contains the response types for the CosmWasm contract.
 use cosmwasm_schema::cw_serde;
-use ibc_core::client::types::Height;
+use ibc_core::client::types::{Height, Status};
 
 /// The response to [`super::msgs::QueryMsg::Status`]
 #[cw_serde]
 pub struct StatusResponse {
     /// The status of the client
-    // TODO: Turn this into an enum
-    pub status: String,
+    pub status: Status,
 }
 
 /// The response to [`super::msgs::QueryMsg::TimestampAtHeight`]
