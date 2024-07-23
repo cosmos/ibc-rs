@@ -9,6 +9,7 @@ use fixture::Fixture;
 use ibc::core::client::types::{Height, Status};
 use ibc_client_cw::types::{
     ContractResult, MigrateClientStoreMsg, MigrationPrefix, VerifyClientMessageRaw,
+    VerifyClientMessageResponse,
 };
 use ibc_client_tendermint_cw::entrypoint::sudo;
 
@@ -107,15 +108,17 @@ fn test_cw_client_expiry() {
 
     let client_message = fxt.dummy_client_message(target_height);
 
-    let resp = fxt.query(
-        deps.as_ref(),
-        VerifyClientMessageRaw {
-            client_message: client_message.into(),
-        }
-        .into(),
-    );
+    let resp: VerifyClientMessageResponse = fxt
+        .query(
+            deps.as_ref(),
+            VerifyClientMessageRaw {
+                client_message: client_message.into(),
+            },
+        )
+        .and_then(from_json)
+        .unwrap();
 
-    assert!(resp.is_err());
+    assert!(!resp.is_valid);
 
     // ------------------- Check client status -------------------
 

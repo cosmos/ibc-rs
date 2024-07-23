@@ -1,57 +1,33 @@
 //! Contains the response types for the CosmWasm contract.
 use cosmwasm_schema::cw_serde;
-use cosmwasm_std::Binary;
-use ibc_core::client::types::Height;
+use ibc_core::client::types::{Height, Status};
 
+/// The response to [`super::msgs::QueryMsg::Status`]
 #[cw_serde]
-pub struct GenesisMetadata {
-    pub key: Binary,
-    pub value: Binary,
+pub struct StatusResponse {
+    /// The status of the client
+    pub status: Status,
 }
 
+/// The response to [`super::msgs::QueryMsg::TimestampAtHeight`]
 #[cw_serde]
-pub struct QueryResponse {
+pub struct TimestampAtHeightResponse {
+    /// The timestamp at the given height
+    pub timestamp: u64,
+}
+
+/// The response to [`super::QueryMsg::VerifyClientMessage`]
+#[cw_serde]
+pub struct VerifyClientMessageResponse {
+    /// Whether the client message is valid
     pub is_valid: bool,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub genesis_metadata: Option<Vec<GenesisMetadata>>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub found_misbehaviour: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<u64>,
 }
 
-impl QueryResponse {
-    pub fn success() -> Self {
-        Self {
-            is_valid: true,
-            status: None,
-            genesis_metadata: None,
-            found_misbehaviour: None,
-            timestamp: None,
-        }
-    }
-
-    pub fn status(mut self, status: String) -> Self {
-        self.status = Some(status);
-        self
-    }
-
-    pub fn genesis_metadata(mut self, genesis_metadata: Option<Vec<GenesisMetadata>>) -> Self {
-        self.genesis_metadata = genesis_metadata;
-        self
-    }
-
-    pub fn misbehaviour(mut self, found_misbehavior: bool) -> Self {
-        self.found_misbehaviour = Some(found_misbehavior);
-        self
-    }
-
-    pub fn timestamp(mut self, timestamp: u64) -> Self {
-        self.timestamp = Some(timestamp);
-        self
-    }
+/// The response to [`super::msgs::QueryMsg::CheckForMisbehaviour`]
+#[cw_serde]
+pub struct CheckForMisbehaviourResponse {
+    /// Whether misbehaviour was found
+    pub found_misbehaviour: bool,
 }
 
 #[cw_serde]

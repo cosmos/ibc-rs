@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use cosmwasm_std::{from_json, Deps, DepsMut, Empty, Response, StdError, StdResult};
+use cosmwasm_std::{from_json, Binary, Deps, DepsMut, Empty, Response, StdError, StdResult};
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
 use ibc::clients::tendermint::types::Header;
@@ -8,9 +8,9 @@ use ibc::core::client::types::{Height, Status};
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::Timestamp;
 use ibc_client_cw::types::{
-    CheckForMisbehaviourMsgRaw, ContractError, ExportMetadataMsg, GenesisMetadata, InstantiateMsg,
-    MigrationPrefix, QueryMsg, QueryResponse, StatusMsg, UpdateStateMsgRaw,
-    UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw,
+    CheckForMisbehaviourMsgRaw, CheckForMisbehaviourResponse, ContractError, InstantiateMsg,
+    MigrationPrefix, QueryMsg, StatusMsg, StatusResponse, UpdateStateMsgRaw,
+    UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw, VerifyClientMessageResponse,
 };
 use ibc_client_cw::utils::AnyCodec;
 use ibc_client_tendermint_cw::entrypoint::TendermintContext;
@@ -138,56 +138,44 @@ impl Fixture {
     }
 
     pub fn verify_client_message(&self, deps: Deps<'_>, client_message: Vec<u8>) {
-        let resp = self
+        let resp: VerifyClientMessageResponse = self
             .query(
                 deps,
                 VerifyClientMessageRaw {
                     client_message: client_message.into(),
-                }
-                .into(),
+                },
             )
+            .and_then(from_json)
             .unwrap();
 
         assert!(resp.is_valid);
-        assert!(resp.status.is_none());
-        assert!(resp.found_misbehaviour.is_none());
     }
 
     pub fn check_for_misbehaviour(&self, deps: Deps<'_>, client_message: Vec<u8>) {
-        let resp = self
+        let resp: CheckForMisbehaviourResponse = self
             .query(
                 deps,
                 CheckForMisbehaviourMsgRaw {
                     client_message: client_message.into(),
-                }
-                .into(),
+                },
             )
+            .and_then(from_json)
             .unwrap();
 
-        assert!(resp.is_valid);
-        assert_eq!(resp.found_misbehaviour, Some(true));
+        assert!(resp.found_misbehaviour);
     }
 
     pub fn check_client_status(&self, deps: Deps<'_>, expected: Status) {
-        let resp = self.query(deps, StatusMsg {}.into()).unwrap();
+        let resp: StatusResponse = self.query(deps, StatusMsg {}).and_then(from_json).unwrap();
 
-        assert_eq!(resp.status, Some(expected.to_string()));
+        assert_eq!(resp.status, expected);
     }
 
-    pub fn get_metadata(&self, deps: Deps<'_>) -> Option<Vec<GenesisMetadata>> {
-        self.query(deps, ExportMetadataMsg {}.into())
-            .map(|resp| resp.genesis_metadata)
-            .unwrap()
-    }
-
-    pub fn query(&self, deps: Deps<'_>, msg: QueryMsg) -> StdResult<QueryResponse> {
+    pub fn query(&self, deps: Deps<'_>, msg: impl Into<QueryMsg>) -> StdResult<Binary> {
         let ctx = self.ctx_ref(deps);
 
-        let resp_bytes = ctx
-            .query(msg)
-            .map_err(|e| StdError::generic_err(e.to_string()))?;
-
-        from_json(resp_bytes)
+        ctx.query(msg.into())
+            .map_err(|e| StdError::generic_err(e.to_string()))
     }
 
     pub fn create_client(&self, deps_mut: DepsMut<'_>) -> Result<Response, ContractError> {

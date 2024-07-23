@@ -8,9 +8,10 @@ use prost::Message;
 use crate::api::ClientType;
 use crate::context::Context;
 use crate::types::{
-    CheckForMisbehaviourMsg, ContractError, ContractResult, ExportMetadataMsg, InstantiateMsg,
-    QueryMsg, QueryResponse, StatusMsg, SudoMsg, UpdateStateMsg, UpdateStateOnMisbehaviourMsg,
-    VerifyClientMessageMsg, VerifyMembershipMsg, VerifyNonMembershipMsg,
+    CheckForMisbehaviourMsg, CheckForMisbehaviourResponse, ContractError, ContractResult,
+    InstantiateMsg, QueryMsg, StatusMsg, StatusResponse, SudoMsg, TimestampAtHeightResponse,
+    UpdateStateMsg, UpdateStateOnMisbehaviourMsg, VerifyClientMessageMsg,
+    VerifyClientMessageResponse, VerifyMembershipMsg, VerifyNonMembershipMsg,
     VerifyUpgradeAndUpdateStateMsg,
 };
 
@@ -162,13 +163,10 @@ where
 
         let client_state = self.client_state(&client_id)?;
 
-        let resp = match msg {
-            QueryMsg::Status(StatusMsg {}) => match client_state.status(self, &client_id) {
-                Ok(status) => QueryResponse::success().status(status.to_string()),
-                Err(err) => QueryResponse::success().status(err.to_string()),
-            },
-            QueryMsg::ExportMetadata(ExportMetadataMsg {}) => {
-                QueryResponse::success().genesis_metadata(self.get_metadata()?)
+        match msg {
+            QueryMsg::Status(StatusMsg {}) => {
+                let status = client_state.status(self, &client_id)?;
+                to_json_binary(&StatusResponse { status })
             }
             QueryMsg::TimestampAtHeight(msg) => {
                 let client_cons_state_path = ClientConsensusStatePath::new(
@@ -178,26 +176,25 @@ where
                 );
 
                 let consensus_state = self.consensus_state(&client_cons_state_path)?;
-
-                QueryResponse::success().timestamp(consensus_state.timestamp().nanoseconds())
+                let timestamp = consensus_state.timestamp().nanoseconds();
+                to_json_binary(&TimestampAtHeightResponse { timestamp })
             }
             QueryMsg::VerifyClientMessage(msg) => {
                 let msg = VerifyClientMessageMsg::try_from(msg)?;
 
-                client_state.verify_client_message(self, &client_id, msg.client_message)?;
-
-                QueryResponse::success()
+                let is_valid = client_state
+                    .verify_client_message(self, &client_id, msg.client_message)
+                    .is_ok();
+                to_json_binary(&VerifyClientMessageResponse { is_valid })
             }
             QueryMsg::CheckForMisbehaviour(msg) => {
                 let msg = CheckForMisbehaviourMsg::try_from(msg)?;
 
-                let result =
+                let found_misbehaviour =
                     client_state.check_for_misbehaviour(self, &client_id, msg.client_message)?;
-
-                QueryResponse::success().misbehaviour(result)
+                to_json_binary(&CheckForMisbehaviourResponse { found_misbehaviour })
             }
-        };
-
-        Ok(to_json_binary(&resp)?)
+        }
+        .map_err(Into::into)
     }
 }
