@@ -223,7 +223,7 @@ where
     {
         // Note: The equality is considered as expired to stay consistent with
         // the check in tendermint-rs, where a header at `trusted_header_time +
-        // trusting_period` is considered as expired.
+        // trusting_period` is considered expired.
         if elapsed_since_latest_consensus_state >= client_state.trusting_period {
             return Ok(Status::Expired);
         }
