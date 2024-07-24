@@ -221,7 +221,10 @@ where
     if let Some(elapsed_since_latest_consensus_state) =
         now.duration_since(&latest_consensus_state.timestamp().into())
     {
-        if elapsed_since_latest_consensus_state > client_state.trusting_period {
+        // Note: The equality is considered as expired to stay consistent with
+        // the check in tendermint-rs, where a header at `trusted_header_time +
+        // trusting_period` is considered as expired.
+        if elapsed_since_latest_consensus_state >= client_state.trusting_period {
             return Ok(Status::Expired);
         }
     }

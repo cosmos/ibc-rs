@@ -1431,7 +1431,7 @@ fn test_expired_client() {
         );
 
     while ctx.ibc_store.host_timestamp().expect("no error")
-        < (timestamp + trusting_period).expect("no error")
+        <= (timestamp + trusting_period).expect("no error")
     {
         ctx.advance_block_height();
     }
