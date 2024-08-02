@@ -13,11 +13,10 @@ use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId};
 use ibc::core::primitives::*;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{DefaultLightClientState, MockContext};
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_acknowledgement;
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
 use test_log::test;
 
@@ -39,7 +38,7 @@ fn fixture() -> Fixture {
     let client_height = Height::new(0, 2).unwrap();
     let ctx = MockContext::default().with_light_client(
         &ClientId::new("07-tendermint", 0).expect("no error"),
-        LightClientState::<MockHost>::with_latest_height(client_height),
+        DefaultLightClientState::<MockHost>::with_latest_height(client_height),
     );
 
     let router = MockRouter::new_with_transfer();
@@ -125,7 +124,7 @@ fn ack_success_no_packet_commitment(fixture: Fixture) {
     let ctx = ctx
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            DefaultLightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_channel(
             PortId::transfer(),
@@ -159,7 +158,7 @@ fn ack_success_happy_path(fixture: Fixture) {
     let ctx = ctx
         .with_light_client(
             &ClientId::new("07-tendermint", 0).expect("no error"),
-            LightClientState::<MockHost>::with_latest_height(client_height),
+            DefaultLightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_channel(
             PortId::transfer(),

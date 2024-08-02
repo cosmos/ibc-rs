@@ -24,13 +24,13 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
 use ibc::primitives::ToVec;
-use ibc_testkit::context::{MockContext, TendermintContext, TestContext};
+use ibc_testkit::context::{DefaultLightClientState, MockContext, TendermintContext, TestContext};
 use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
 use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::tendermint::BlockParams;
 use ibc_testkit::hosts::{
-    HostClientState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost,
+    HostClientState, HostConsensusState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost,
 };
 use ibc_testkit::relayer::error::RelayerError;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
@@ -38,11 +38,9 @@ use ibc_testkit::testapp::ibc::clients::mock::client_state::{
 };
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as MockMisbehaviour;
-use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
+use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{
-    DefaultIbcStore, LightClientBuilder, LightClientState, MockIbcStore,
-};
+use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, MockIbcStore};
 use rstest::*;
 use tendermint_testgen::Validator as TestgenValidator;
 use tracing::debug;
@@ -58,7 +56,7 @@ fn fixture() -> Fixture {
 
     let ctx = MockContext::default().with_light_client(
         &client_id,
-        LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
+        DefaultLightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
 
     let router = MockRouter::new_with_transfer();
@@ -1153,7 +1151,7 @@ fn test_update_client_events(fixture: Fixture) {
 }
 
 fn ensure_misbehaviour<S: ProvableStore + Debug>(
-    ctx: &MockIbcStore<S>,
+    ctx: &MockIbcStore<S, AnyClientState, AnyConsensusState>,
     client_id: &ClientId,
     client_type: &ClientType,
 ) {
@@ -1209,7 +1207,7 @@ fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
 
     let ctx = MockContext::default().with_light_client(
         &client_id,
-        LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
+        DefaultLightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
     let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
@@ -1225,7 +1223,7 @@ fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
 
     let ctx = MockContext::default().with_light_client(
         &client_id,
-        LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
+        DefaultLightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
     let res = validate(&ctx.ibc_store, &router, msg_envelope);
     assert!(res.is_err());
@@ -1530,6 +1528,8 @@ pub(crate) fn build_client_update_datagram<H: TestHeader, Dst: TestHost>(
     src_header: &H,
 ) -> Result<ClientMsg, RelayerError>
 where
+    AnyClientState: From<HostClientState<Dst>>,
+    AnyConsensusState: From<HostConsensusState<Dst>>,
     HostClientState<Dst>: ClientStateValidation<DefaultIbcStore>,
 {
     // Check if client for ibc0 on ibc1 has been updated to latest height:

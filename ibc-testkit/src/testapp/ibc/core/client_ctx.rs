@@ -2,6 +2,8 @@ use core::fmt::Debug;
 
 use basecoin_store::context::{ProvableStore, Store};
 use basecoin_store::types::Height as StoreHeight;
+use ibc::core::client::context::client_state::{ClientStateExecution, ClientStateValidation};
+use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::context::{
     ClientExecutionContext, ClientValidationContext, ExtClientValidationContext,
 };
@@ -18,24 +20,25 @@ use ibc::primitives::prelude::*;
 
 use super::types::MockIbcStore;
 use crate::testapp::ibc::clients::mock::client_state::MockClientContext;
-use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 
 pub type PortChannelIdMap<V> = BTreeMap<PortId, BTreeMap<ChannelId, V>>;
 
 /// A mock of an IBC client record as it is stored in a mock context.
 /// For testing ICS02 handlers mostly, cf. `MockClientContext`.
 #[derive(Clone, Debug)]
-pub struct MockClientRecord {
+pub struct MockClientRecord<ACL, ACS> {
     /// The client state (representing only the latest height at the moment).
-    pub client_state: Option<AnyClientState>,
+    pub client_state: Option<ACL>,
 
     /// Mapping of heights to consensus states for this client.
-    pub consensus_states: BTreeMap<Height, AnyConsensusState>,
+    pub consensus_states: BTreeMap<Height, ACS>,
 }
 
-impl<S> MockClientContext for MockIbcStore<S>
+impl<S, ACL, ACS> MockClientContext for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateValidation<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         ValidationContext::host_timestamp(self)
@@ -46,9 +49,11 @@ where
     }
 }
 
-impl<S> ExtClientValidationContext for MockIbcStore<S>
+impl<S, ACL, ACS> ExtClientValidationContext for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateValidation<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         ValidationContext::host_timestamp(self)
@@ -152,12 +157,14 @@ where
     }
 }
 
-impl<S> ClientValidationContext for MockIbcStore<S>
+impl<S, ACL, ACS> ClientValidationContext for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateValidation<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
-    type ClientStateRef = AnyClientState;
-    type ConsensusStateRef = AnyConsensusState;
+    type ClientStateRef = ACL;
+    type ConsensusStateRef = ACS;
 
     fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError> {
         Ok(self
@@ -171,7 +178,7 @@ where
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<AnyConsensusState, ContextError> {
+    ) -> Result<ACS, ContextError> {
         let height = Height::new(
             client_cons_state_path.revision_number,
             client_cons_state_path.revision_height,
@@ -224,11 +231,13 @@ where
     }
 }
 
-impl<S> ClientExecutionContext for MockIbcStore<S>
+impl<S, ACL, ACS> ClientExecutionContext for MockIbcStore<S, ACL, ACS>
 where
     S: ProvableStore + Debug,
+    ACL: ClientStateExecution<Self> + Clone,
+    ACS: ConsensusState + Clone,
 {
-    type ClientStateMut = AnyClientState;
+    type ClientStateMut = ACL;
 
     /// Called upon successful client creation and update
     fn store_client_state(

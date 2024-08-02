@@ -8,7 +8,7 @@ use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::path::ClientConsensusStatePath;
-use ibc_testkit::context::MockContext;
+use ibc_testkit::context::{DefaultLightClientState, MockContext};
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tendermint_header, dummy_tm_client_state_from_header,
 };
@@ -18,7 +18,6 @@ use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::LightClientState;
 
 enum Ctx {
     Default,
@@ -37,7 +36,7 @@ fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<Msg
     let ctx_default = MockContext::default();
     let ctx_with_client = MockContext::default().with_light_client(
         &client_id,
-        LightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
+        DefaultLightClientState::<MockHost>::with_latest_height(Height::new(0, 42).unwrap()),
     );
     let ctx = match ctx_variant {
         Ctx::Default => ctx_default.ibc_store,

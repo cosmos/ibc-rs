@@ -15,8 +15,10 @@ use ibc::core::client::types::Height;
 use ibc::core::primitives::prelude::*;
 use ibc::derive::{ClientState, ConsensusState};
 use ibc::primitives::proto::{Any, Protobuf};
+use mock::header::MockHeader;
 
 use super::core::types::MockIbcStore;
+use crate::hosts::TestHeader;
 use crate::testapp::ibc::clients::mock::client_state::{
     MockClientState, MOCK_CLIENT_STATE_TYPE_URL,
 };
@@ -24,9 +26,11 @@ use crate::testapp::ibc::clients::mock::consensus_state::{
     MockConsensusState, MOCK_CONSENSUS_STATE_TYPE_URL,
 };
 
+type AnyMockIbcStore<S> = MockIbcStore<S, AnyClientState, AnyConsensusState>;
+
 #[derive(Debug, Clone, From, PartialEq, ClientState)]
-#[validation(MockIbcStore<S: ProvableStore + Debug>)]
-#[execution(MockIbcStore<S: ProvableStore + Debug>)]
+#[validation(AnyMockIbcStore<S: ProvableStore + Debug>)]
+#[execution(AnyMockIbcStore<S: ProvableStore + Debug>)]
 pub enum AnyClientState {
     Tendermint(TmClientState),
     Mock(MockClientState),
@@ -106,6 +110,12 @@ impl TryFrom<Any> for AnyConsensusState {
                 description: "failed to deserialize message".to_string(),
             })
         }
+    }
+}
+
+impl Default for AnyConsensusState {
+    fn default() -> Self {
+        Self::Mock(MockHeader::default().into_consensus_state())
     }
 }
 
