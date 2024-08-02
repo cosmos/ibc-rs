@@ -1,6 +1,7 @@
 use core::str::FromStr;
 use core::time::Duration;
 
+use ibc::clients::tendermint::client_state::consensus_state_status;
 use ibc::core::client::context::prelude::*;
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
 use ibc::core::client::types::{Height, Status};
@@ -160,8 +161,33 @@ pub trait MockClientContext {
 }
 
 impl ClientStateCommon for MockClientState {
-    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
-        let _mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
+    fn verify_consensus_state(
+        &self,
+        consensus_state: Any,
+        host_timestamp: &Timestamp,
+    ) -> Result<(), ClientError> {
+        let mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
+
+        let consensus_state_timestamp = mock_consensus_state.timestamp();
+
+        if !consensus_state_timestamp.is_set() {
+            return Err(ClientError::InvalidConsensusStateTimestamp {
+                time1: *host_timestamp,
+                time2: consensus_state_timestamp,
+            });
+        }
+
+        if consensus_state_status(
+            &consensus_state_timestamp,
+            host_timestamp,
+            self.trusting_period,
+        )?
+        .is_expired()
+        {
+            return Err(ClientError::ClientNotActive {
+                status: Status::Expired,
+            });
+        }
 
         Ok(())
     }

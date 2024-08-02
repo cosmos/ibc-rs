@@ -112,12 +112,24 @@ impl ClientStateConfig {
 }
 
 #[cfg(feature = "serde")]
-pub fn dummy_tendermint_header() -> tendermint::block::Header {
+pub fn dummy_valid_tendermint_header() -> tendermint::block::Header {
     use tendermint::block::signed_header::SignedHeader;
 
     serde_json::from_str::<SignedHeader>(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/data/json/signed_header.json"
+        "/src/data/json/valid_signed_header.json"
+    )))
+    .expect("Never fails")
+    .header
+}
+
+#[cfg(feature = "serde")]
+pub fn dummy_expired_tendermint_header() -> tendermint::block::Header {
+    use tendermint::block::signed_header::SignedHeader;
+
+    serde_json::from_str::<SignedHeader>(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/data/json/expired_signed_header.json"
     )))
     .expect("Never fails")
     .header
@@ -147,7 +159,7 @@ pub fn dummy_ics07_header() -> Header {
     // Build a SignedHeader from a JSON file.
     let shdr = serde_json::from_str::<SignedHeader>(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/data/json/signed_header.json"
+        "/src/data/json/valid_signed_header.json"
     )))
     .expect("Never fails");
 
@@ -222,7 +234,7 @@ mod tests {
     #[test]
     fn tm_client_state_from_header_healthy() {
         // check client state creation path from a tendermint header
-        let tm_header = dummy_tendermint_header();
+        let tm_header = dummy_valid_tendermint_header();
         let tm_client_state_from_header = dummy_tm_client_state_from_header(tm_header);
         let any_from_header = Any::from(tm_client_state_from_header.clone());
         let tm_client_state_from_any = ClientStateType::try_from(any_from_header);

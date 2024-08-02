@@ -15,7 +15,10 @@ use tendermint::crypto::Sha256 as Sha256Trait;
 use tendermint::merkle::MerkleHash;
 use tendermint_light_client_verifier::{ProdVerifier, Verifier};
 
-use super::{check_for_misbehaviour_on_misbehavior, check_for_misbehaviour_on_update, ClientState};
+use super::{
+    check_for_misbehaviour_on_misbehavior, check_for_misbehaviour_on_update,
+    consensus_state_status, ClientState,
+};
 use crate::client_state::{verify_header, verify_misbehaviour};
 
 impl<V> ClientStateValidation<V> for ClientState
@@ -218,18 +221,13 @@ where
     // to be expired.
     let now = ctx.host_timestamp()?;
 
-    if let Some(elapsed_since_latest_consensus_state) =
-        now.duration_since(&latest_consensus_state.timestamp().into())
-    {
-        // Note: The equality is considered as expired to stay consistent with
-        // the check in tendermint-rs, where a header at `trusted_header_time +
-        // trusting_period` is considered expired.
-        if elapsed_since_latest_consensus_state >= client_state.trusting_period {
-            return Ok(Status::Expired);
-        }
-    }
+    let status = consensus_state_status(
+        &latest_consensus_state.timestamp().into(),
+        &now,
+        client_state.trusting_period,
+    )?;
 
-    Ok(Status::Active)
+    Ok(status)
 }
 
 /// Check that the subject and substitute client states match as part of
