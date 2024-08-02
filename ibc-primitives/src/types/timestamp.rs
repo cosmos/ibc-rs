@@ -26,10 +26,12 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 ///  It is also encoded as part of the
 /// `ibc::channel::types::timeout::TimeoutTimestamp` type for expressly keeping
 /// track of timeout timestamps.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash)]
 pub struct Timestamp {
     // Note: The schema representation is the timestamp in nanoseconds (as we do with borsh).
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = arb_tendermint_time))]
     #[cfg_attr(feature = "schema", schemars(with = "u64"))]
     time: PrimitiveDateTime,
 }
@@ -434,4 +436,18 @@ mod tests {
         let encode_timestamp = timestamp.encode();
         let _ = Timestamp::decode(&mut encode_timestamp.as_slice()).unwrap();
     }
+}
+
+#[cfg(feature = "arbitrary")]
+fn arb_tendermint_time(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Option<Time>> {
+    Ok(if <bool as arbitrary::Arbitrary>::arbitrary(u)? {
+        let secs: i64 = u.int_in_range(0..=i64::MAX)?;
+        let nanos: u32 = u.int_in_range(0..=999_999_999)?;
+        Some(
+            Time::from_unix_timestamp(secs, nanos)
+                .map_err(|_| arbitrary::Error::IncorrectFormat)?,
+        )
+    } else {
+        None
+    })
 }

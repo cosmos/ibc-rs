@@ -71,3 +71,4 @@ wasm-client = [
   "dep:ibc-client-wasm-types",
   "dep:prost",
 ]
+arbitrary = [ "ibc-core-connection-types/arbitrary" ]

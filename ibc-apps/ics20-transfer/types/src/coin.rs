@@ -21,6 +21,7 @@ pub type RawCoin = Coin<String>;
 const VALID_DENOM_CHARACTERS: &str = "/:._-";
 
 /// Coin defines a token with a denomination and an amount.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(

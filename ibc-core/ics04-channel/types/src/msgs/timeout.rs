@@ -15,6 +15,7 @@ pub const TIMEOUT_TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeout";
 /// Message definition for packet timeout domain type,
 /// which is sent on chain A and needs to prove that a previously sent packet was not received on chain B
 ///
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

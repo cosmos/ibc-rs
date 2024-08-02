@@ -54,6 +54,7 @@ authors      = [ "Informal Systems <hello@informal.systems>" ]
 
 [workspace.dependencies]
 # external dependencies
+arbitrary       = { version = "1.4", features = [ "derive" ] }
 base64          = { version = "0.22", default-features = false }
 borsh           = { version = "1", default-features = false, features = [ "derive" ] }
 displaydoc      = { version = "0.2.5", default-features = false }

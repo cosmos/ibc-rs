@@ -11,6 +11,7 @@ pub const CHAN_CLOSE_INIT_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelClose
 /// Message definition for the first step in the channel close handshake (`ChanCloseInit` datagram).
 /// Per our convention, this message is sent to chain A.
 ///
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

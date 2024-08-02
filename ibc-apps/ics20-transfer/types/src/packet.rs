@@ -10,6 +10,7 @@ use ibc_proto::ibc::applications::transfer::v2::FungibleTokenPacketData as RawPa
 use super::{Amount, Memo, PrefixedCoin, PrefixedDenom};
 
 /// Defines the structure of token transfers' packet bytes
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(
     feature = "serde",

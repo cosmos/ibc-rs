@@ -20,6 +20,7 @@ all-features = true
 
 [dependencies]
 # external dependencies
+arbitrary   = { workspace = true, optional = true }
 borsh       = { workspace = true, optional = true }
 base64      = { workspace = true, features = [ "alloc" ] }
 derive_more = { workspace = true }
@@ -81,3 +82,4 @@ parity-scale-codec = [
   "ibc-proto/parity-scale-codec",
   "ibc-app-transfer-types/parity-scale-codec",
 ]
+arbitrary = [ "dep:arbitrary", "ibc-core/arbitrary" ]
