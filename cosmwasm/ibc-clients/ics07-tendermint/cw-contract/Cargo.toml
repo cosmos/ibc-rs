@@ -7,7 +7,7 @@ repository   = { workspace = true }
 rust-version = { workspace = true }
 version      = { workspace = true }
 keywords     = [ "ibc", "light-client", "CosmWasm", "ICS-07", "Tendermint" ]
-readme       = "./../README.md"
+readme       = "./README.md"
 
 description = """
     Contains the implementation of the ICS-07 Tendermint Client logic as a CosmWasm contract.
@@ -36,9 +36,9 @@ serde-json = { workspace = true }
 [features]
 default = [ "std" ]
 std = [
-  "prost/std",
-  "serde/std",
-  "ibc-client-tendermint/std",
-  "ibc-client-cw/std",
-  "ibc-core/std",
+    "prost/std",
+    "serde/std",
+    "ibc-client-tendermint/std",
+    "ibc-client-cw/std",
+    "ibc-core/std",
 ]
