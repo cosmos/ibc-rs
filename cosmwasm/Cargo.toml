@@ -15,10 +15,9 @@ authors      = [ "Informal Systems <hello@informal.systems>" ]
 
 [workspace.dependencies]
 # external dependencies
-derive_more = { version = "0.99.18", default-features = false, features = [ "from", "into", "display", "try_into" ] }
-prost       = { version = "0.12", default-features = false }
-serde       = { version = "1.0", default-features = false }
-serde-json  = { package = "serde-json-wasm", version = "1.0.1", default-features = false }
+prost      = { version = "0.12", default-features = false }
+serde      = { version = "1.0", default-features = false }
+serde-json = { package = "serde-json-wasm", version = "1.0.1", default-features = false }
 
 # cosmwasm dependencies
 cosmwasm-std    = { version = "2.1.0", default-features = false, features = [ "std" ] }

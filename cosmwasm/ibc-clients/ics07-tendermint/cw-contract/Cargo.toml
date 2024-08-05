@@ -36,9 +36,9 @@ serde-json = { workspace = true }
 [features]
 default = [ "std" ]
 std = [
-    "prost/std",
-    "serde/std",
-    "ibc-client-tendermint/std",
-    "ibc-client-cw/std",
-    "ibc-core/std",
+  "prost/std",
+  "serde/std",
+  "ibc-client-tendermint/std",
+  "ibc-client-cw/std",
+  "ibc-core/std",
 ]
