@@ -37,8 +37,8 @@ serde-json = { workspace = true }
 [features]
 default = [ "std" ]
 std = [
-    "prost/std",
-    "serde/std",
-    "ibc-core/std",
-    "ibc-client-wasm-types/std",
+  "prost/std",
+  "serde/std",
+  "ibc-core/std",
+  "ibc-client-wasm-types/std",
 ]

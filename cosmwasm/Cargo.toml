@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "ibc-clients/cw-context",
-    "ibc-clients/ics07-tendermint/cw-contract",
+  "ibc-clients/cw-context",
+  "ibc-clients/ics07-tendermint/cw-contract",
 ]
 
 [dependencies]
