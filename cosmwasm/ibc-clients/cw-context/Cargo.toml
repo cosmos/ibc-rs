@@ -28,7 +28,7 @@ ibc-client-wasm-types = { workspace = true, features = [ "schema" ] }
 
 # cosmwasm dependencies
 cosmwasm-schema = { workspace = true }
-cosmwasm-std    = { workspace = true }
+cosmwasm-std    = { workspace = true, version = "2.1.0" }
 cw-storage-plus = { workspace = true }
 
 [dev-dependencies]

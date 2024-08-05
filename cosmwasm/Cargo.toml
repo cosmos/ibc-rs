@@ -1,0 +1,8 @@
+[workspace]
+members = [
+  "ibc-clients/cw-context",
+  "ibc-clients/ics07-tendermint/cw-contract",
+]
+
+[dependencies]
+cosmwasm-std = "2.1.0"
