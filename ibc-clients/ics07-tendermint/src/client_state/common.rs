@@ -196,6 +196,11 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
         })?;
 
     let upgrade_path_prefix = CommitmentPrefix::from(upgrade_path.into_bytes());
+    if upgrade_path_prefix.is_empty() {
+        return Err(ClientError::InvalidCommitmentProof(
+            CommitmentError::EmptyCommitmentPrefix,
+        ));
+    }
 
     // Verify the proof of the upgraded client state
     verify_membership::<H>(
