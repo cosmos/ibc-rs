@@ -1,7 +1,9 @@
 [workspace]
+resolver = "2"
+
 members = [
-  "ibc-clients/cw-context",
-  "ibc-clients/ics07-tendermint/cw-contract",
+    "ibc-clients/cw-context",
+    "ibc-clients/ics07-tendermint/cw-contract",
 ]
 
 [workspace.package]
@@ -15,16 +17,18 @@ authors      = [ "Informal Systems <hello@informal.systems>" ]
 
 [workspace.dependencies]
 # external dependencies
-prost      = { version = "0.12", default-features = false }
-serde      = { version = "1.0", default-features = false }
-serde-json = { package = "serde-json-wasm", version = "1.0.1", default-features = false }
+derive_more = { version = "0.99.18", default-features = false }
+prost       = { version = "0.12", default-features = false }
+serde       = { version = "1.0", default-features = false }
+serde-json  = { package = "serde-json-wasm", version = "1.0.1", default-features = false }
 
 # cosmwasm dependencies
-cosmwasm-std    = { version = "2.1.0", default-features = false, features = [ "std" ] }
-cosmwasm-schema = { version = "2.1.0", default-features = false }
+cosmwasm-std    = { version = "2.1.0", features = [ "std" ] }
+cosmwasm-schema = { version = "2.1.0" }
+cw-storage-plus = { version = "2.0.0" }
 
 # ibc dependencies
-ibc-core                 = { version = "0.53.0", path = "./../ibc-core", default-features = false }
-ibc-client-cw            = { version = "0.53.0", path = "./ibc-clients/cw-context", default-features = false }
-ibc-client-tendermint-cw = { version = "0.53.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
-ibc-client-wasm-types    = { version = "0.53.0", path = "./../ibc-clients/ics08-wasm/types", default-features = false }
+ibc-core              = { version = "0.53.0", path = "./../ibc-core", default-features = false }
+ibc-client-cw         = { version = "0.53.0", path = "./ibc-clients/cw-context", default-features = false }
+ibc-client-tendermint = { version = "0.53.0", path = "./../ibc-clients/ics07-tendermint", default-features = false }
+ibc-client-wasm-types = { version = "0.53.0", path = "./../ibc-clients/ics08-wasm/types", default-features = false }
