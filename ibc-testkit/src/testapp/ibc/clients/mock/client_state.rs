@@ -177,12 +177,8 @@ impl ClientStateCommon for MockClientState {
             });
         }
 
-        if consensus_state_status(
-            &consensus_state_timestamp,
-            host_timestamp,
-            self.trusting_period,
-        )?
-        .is_expired()
+        if consensus_state_status(&mock_consensus_state, host_timestamp, self.trusting_period)?
+            .is_expired()
         {
             return Err(ClientError::ClientNotActive {
                 status: Status::Expired,

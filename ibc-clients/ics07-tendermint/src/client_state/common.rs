@@ -134,13 +134,7 @@ pub fn verify_consensus_state(
         });
     };
 
-    if consensus_state_status(
-        &tm_consensus_state.timestamp().into(),
-        host_timestamp,
-        trusting_period,
-    )?
-    .is_expired()
-    {
+    if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
         return Err(ClientError::ClientNotActive {
             status: Status::Expired,
         });
@@ -151,8 +145,8 @@ pub fn verify_consensus_state(
 
 /// Determines the `Status`, whether it is `Active` or `Expired`, of a consensus
 /// state, given its timestamp, the host's timestamp, and the trusting period.
-pub fn consensus_state_status(
-    consensus_timestamp: &Timestamp,
+pub fn consensus_state_status<CS: ConsensusState>(
+    consensus_state: &CS,
     host_timestamp: &Timestamp,
     trusting_period: Duration,
 ) -> Result<Status, ClientError> {
@@ -166,7 +160,7 @@ pub fn consensus_state_status(
     // consensus state is in the future, then we don't consider the client
     // to be expired.
     if let Some(elapsed_since_latest_consensus_state) =
-        host_timestamp.duration_since(consensus_timestamp)
+        host_timestamp.duration_since(&consensus_state.timestamp())
     {
         // Note: The equality is considered as expired to stay consistent with
         // the check in tendermint-rs, where a header at `trusted_header_time +

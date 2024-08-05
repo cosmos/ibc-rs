@@ -222,7 +222,7 @@ where
     let now = ctx.host_timestamp()?;
 
     let status = consensus_state_status(
-        &latest_consensus_state.timestamp().into(),
+        &latest_consensus_state.into(),
         &now,
         client_state.trusting_period,
     )?;
