@@ -149,6 +149,8 @@ pub fn verify_consensus_state(
     Ok(())
 }
 
+/// Determines the `Status`, whether it is `Active` or `Expired`, of a consensus
+/// state, given its timestamp, the host's timestamp, and the trusting period.
 pub fn consensus_state_status(
     consensus_timestamp: &Timestamp,
     host_timestamp: &Timestamp,
