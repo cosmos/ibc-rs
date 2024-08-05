@@ -189,13 +189,14 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
     // Check to see if the upgrade path is set
     let mut upgrade_path = client_state.upgrade_path.clone();
 
-    if upgrade_path.pop().is_none() {
-        return Err(ClientError::ClientSpecific {
+    let upgrade_path = upgrade_path
+        .pop()
+        .ok_or_else(|| ClientError::ClientSpecific {
             description: "cannot upgrade client as no upgrade path has been set".to_string(),
-        });
-    };
+        })?;
 
-    let upgrade_path_prefix = CommitmentPrefix::from(upgrade_path[0].clone().into_bytes());
+    let upgrade_path_prefix = CommitmentPrefix::try_from(upgrade_path.into_bytes())
+        .map_err(ClientError::InvalidCommitmentProof)?;
 
     // Verify the proof of the upgraded client state
     verify_membership::<H>(
