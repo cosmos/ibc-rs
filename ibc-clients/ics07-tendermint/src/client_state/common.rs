@@ -195,8 +195,7 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
             description: "cannot upgrade client as no upgrade path has been set".to_string(),
         })?;
 
-    let upgrade_path_prefix = CommitmentPrefix::try_from(upgrade_path.into_bytes())
-        .map_err(ClientError::InvalidCommitmentProof)?;
+    let upgrade_path_prefix = CommitmentPrefix::from(upgrade_path.into_bytes());
 
     // Verify the proof of the upgraded client state
     verify_membership::<H>(
