@@ -18,7 +18,7 @@ use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
 use tendermint::Time;
 use tendermint_testgen::{Generator, Validator};
 
-use super::helper::{dummy_checksum, dummy_sov_consensus_state, mock_env_with_timestamp_now};
+use crate::helper::{dummy_checksum, dummy_sov_consensus_state, mock_env_with_timestamp_now};
 
 /// Test fixture
 #[derive(Clone, Debug)]

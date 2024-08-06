@@ -2,8 +2,8 @@
 resolver = "2"
 
 members = [
-  "ibc-clients/cw-context",
-  "ibc-clients/ics07-tendermint/cw-contract",
+    "ibc-clients/cw-context",
+    "ibc-clients/ics07-tendermint",
 ]
 
 [workspace.package]
@@ -28,7 +28,13 @@ cosmwasm-schema = { version = "2.1.0" }
 cw-storage-plus = { version = "2.0.0" }
 
 # ibc dependencies
+ibc                   = { version = "0.53.0", path = "./../ibc", default-features = false }
 ibc-core              = { version = "0.53.0", path = "./../ibc-core", default-features = false }
 ibc-client-cw         = { version = "0.53.0", path = "./ibc-clients/cw-context", default-features = false }
 ibc-client-tendermint = { version = "0.53.0", path = "./../ibc-clients/ics07-tendermint", default-features = false }
 ibc-client-wasm-types = { version = "0.53.0", path = "./../ibc-clients/ics08-wasm/types", default-features = false }
+ibc-testkit           = { version = "0.53.0", path = "./../ibc-testkit", default-features = false }
+
+# cosmos dependencies
+tendermint         = { version = "0.37.0", default-features = false }
+tendermint-testgen = { version = "0.37.0", default-features = false }
