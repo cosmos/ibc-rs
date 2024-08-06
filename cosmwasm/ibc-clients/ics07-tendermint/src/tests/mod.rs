@@ -8,7 +8,8 @@ use ibc_client_cw::types::{
     ContractResult, MigrateClientStoreMsg, MigrationPrefix, VerifyClientMessageRaw,
     VerifyClientMessageResponse,
 };
-use ibc_client_tendermint_cw::entrypoint::sudo;
+
+use crate::entrypoint::sudo;
 
 pub mod fixture;
 pub mod helper;

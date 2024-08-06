@@ -1,6 +1,7 @@
 use std::time::Duration;
 
 use cosmwasm_std::{from_json, Binary, Deps, DepsMut, Empty, Response, StdError, StdResult};
+
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
 use ibc::clients::tendermint::types::Header;
@@ -13,12 +14,15 @@ use ibc_client_cw::types::{
     UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw, VerifyClientMessageResponse,
 };
 use ibc_client_cw::utils::AnyCodec;
-use ibc_client_tendermint_cw::entrypoint::TendermintContext;
 use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
+
 use tendermint::Time;
 use tendermint_testgen::{Generator, Validator};
 
-use crate::helper::{dummy_checksum, dummy_sov_consensus_state, mock_env_with_timestamp_now};
+use crate::entrypoint::TendermintContext;
+use crate::tests::helper::{
+    dummy_checksum, dummy_sov_consensus_state, mock_env_with_timestamp_now,
+};
 
 /// Test fixture
 #[derive(Clone, Debug)]
