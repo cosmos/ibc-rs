@@ -1,6 +1,6 @@
 use ibc_client_tendermint::types::ClientState as TmClientState;
 use ibc_core_client_types::error::UpgradeClientError;
-use ibc_core_host_types::path::UpgradeClientPath;
+use ibc_core_host_types::path::{UpgradeClientStatePath, UPGRADED_IBC_STATE};
 use ibc_primitives::prelude::*;
 use tendermint::abci::Event as TmEvent;
 
@@ -37,7 +37,10 @@ where
 
     ctx.schedule_upgrade(plan.clone())?;
 
-    let upgraded_client_state_path = UpgradeClientPath::UpgradedClientState(plan.height);
+    let upgraded_client_state_path = UpgradeClientStatePath {
+        upgrade_path: UPGRADED_IBC_STATE.to_string(),
+        height: plan.height,
+    };
 
     ctx.store_upgraded_client_state(upgraded_client_state_path, client_state.into())?;
 
