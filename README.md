@@ -38,6 +38,7 @@ sub-crates that can be used independently or together.
 | [ibc-testkit](ibc-testkit)           | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests.               |
 | [ibc-query](ibc-query)               | Contains utility traits and implementations for querying states of an integrated IBC module.         |
 | [ibc-derive](ibc-derive)             | Derive macros for `ClientState` and `ConsensusState` traits, reducing boilerplate.                   |
+| [cosmwasm](cosmwasm)                 | Contains libraries that implement `ibc-rs` modules as CosmWasm contracts.                            |
 
 ## Contributing
 
