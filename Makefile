@@ -50,7 +50,7 @@ release: ## Perform an actual release and publishes to crates.io.
 
 build-tendermint-cw: ## Build the WASM file for the ICS-07 Tendermint light client.
 	@echo "Building the WASM file for the ICS-07 Tendermint light client"
-	cd cosmwasm/
-	RUSTFLAGS='-C link-arg=-s' cargo build -p ibc-client-tendermint-cw --target wasm32-unknown-unknown --release --lib --locked
-	mkdir -p cw-contracts
-	cp target/wasm32-unknown-unknown/release/ibc_client_tendermint_cw.wasm cw-contracts/
+	cd cosmwasm && 	\
+	    RUSTFLAGS='-C link-arg=-s' cargo build -p ibc-client-tendermint-cw --target wasm32-unknown-unknown --release --lib --locked && \
+	    mkdir -p cw-contracts && \
+	    cp target/wasm32-unknown-unknown/release/ibc_client_tendermint_cw.wasm cw-contracts/
