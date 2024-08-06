@@ -49,29 +49,17 @@ jobs:
       - name: Run cargo hack
         run: make check-features
 
-  doc_all_features:
+  check-docs:
+    name: Check Documentations
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --all-features --release
-
-  doc_no_default_features:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: doc
-          args: --no-default-features --release
+          components: rust-docs
+      - name: Run cargo docs
+        run: make check-docs
 
   test-stable:
     runs-on: ubuntu-latest

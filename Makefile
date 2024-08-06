@@ -15,7 +15,6 @@ lint: ## Lint the code using rustfmt, clippy and whitespace lints.
 	$(MAKE) clippy
 	$(MAKE) lint-toml
 	$(MAKE) -C ./cosmwasm lint $@
-	typos --config $(CURDIR)/.github/typos.toml
 	bash ./ci/code-quality/whitespace-lints.sh
 
 fmt: ## Format the code using nightly rustfmt.
@@ -27,6 +26,9 @@ clippy: ## Lint the code using clippy.
 
 lint-toml: ## Lint the TOML files using taplo.
 	taplo fmt --check
+
+typos: ## Check for typos in the code.
+	typos --config $(CURDIR)/.github/typos.toml
 
 check-features: ## Check that project compiles with all combinations of features.
 	cargo hack check --workspace --feature-powerset --exclude-features default

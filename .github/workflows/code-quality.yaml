@@ -33,12 +33,13 @@ jobs:
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
-      - name: Install Rust toolchains
+      - name: Install Rust nightly toolchain with rustfmt
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
             toolchain: nightly
             components: rustfmt
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install Rust stable toolchain with clippy
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
             components: clippy
       - uses: actions-rs/clippy-check@v1
@@ -48,9 +49,9 @@ jobs:
         uses: baptiste0928/cargo-install@v3
         with:
             crate: taplo-cli
+      - name: Run Lint Checks (fmt, clippy, taplo)
+        run: make lint
       - name: Spell Check with Typos
         uses: crate-ci/typos@master
         with:
             config: ./.github/typos.toml
-      - name: Run make lint
-        run: make lint
