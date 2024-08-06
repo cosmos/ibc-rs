@@ -15,6 +15,7 @@ on:
       - ibc-query/**
       - ibc-testkit/**
       - ibc-derive/**
+      - tests-integration/**
   push:
     tags:
       - v[0-9]+.*
@@ -35,19 +36,37 @@ env:
   RUSTUP_MAX_RETRIES: 10
 
 jobs:
-  check-features:
-    name: Check features
+  check-lints:
+    name: Check Lints
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      RIPGREP_VERSION: 14.1.0
+      FD_VERSION: 9.0.0
     steps:
       - uses: actions/checkout@v4
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
+      - name: Install Rust nightly toolchain with rustfmt
+        uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-          toolchain: stable
-      - name: Install cargo-hack
-        uses: taiki-e/install-action@cargo-hack
-      - name: Run cargo hack
-        run: make check-features
+            toolchain: nightly
+            components: rustfmt
+      - name: Install Rust stable toolchain with clippy
+        uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+            components: clippy
+      - uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Install Taplo
+        uses: baptiste0928/cargo-install@v3
+        with:
+            crate: taplo-cli
+      - name: Run Lint Checks (fmt, clippy, taplo)
+        run: make lint
+      - name: Spell Check with Typos
+        uses: crate-ci/typos@master
+        with:
+            config: ./.github/typos.toml
 
   check-docs:
     name: Check Documentations
@@ -61,7 +80,22 @@ jobs:
       - name: Run cargo docs
         run: make check-docs
 
-  test-stable:
+  check-features:
+    name: Check Features
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rust-lang/setup-rust-toolchain@v1
+        with:
+          toolchain: stable
+      - name: Install cargo-hack
+        uses: taiki-e/install-action@cargo-hack
+      - name: Run cargo hack
+        run: make check-features
+
+  tests:
+    name: Run Tests
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -69,18 +103,8 @@ jobs:
       - uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
           toolchain: stable
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features --no-fail-fast --no-run
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --all-features --no-fail-fast --workspace -- --nocapture
-      - uses: actions-rs/cargo@v1
-        with:
-          command: test
-          args: --no-default-features --no-fail-fast --no-run
+      - name: Run cargo test
+        run: make test
 
   test-msrv:
     timeout-minutes: 30

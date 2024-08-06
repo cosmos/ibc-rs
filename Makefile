@@ -46,8 +46,8 @@ check-cw: ## Check that the CosmWasm smart contract compiles.
 	&& cargo build --target wasm32-unknown-unknown --no-default-features --release
 
 test: ## Run tests with all features and without default features.
-	cargo test --all-targets --all-features
-	cargo test --all-targets --no-default-features
+	cargo test --all-targets --all-features --no-fail-fast --release
+	cargo test --all-targets --no-default-features  --no-fail-fast --release
 	$(MAKE) -C ./cosmwasm test $@
 
 check-release: ## Check that the release build compiles.

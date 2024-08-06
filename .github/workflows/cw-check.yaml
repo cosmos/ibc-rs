@@ -6,7 +6,6 @@ on:
       - '*.toml'
       - Cargo.lock
       - ci/cw-check/**
-      - ci/**
       - ibc/**
       - ibc-core/**
       - ibc-apps/**
