@@ -4,6 +4,7 @@ on:
     paths:
       - .github/workflows/rust.yaml
       - Cargo.toml
+      - cosmwasm/**
       - ci/**
       - ibc/**
       - ibc-core/**

@@ -20,7 +20,6 @@ description = """
 # external dependencies
 derive_more = { workspace = true }
 prost       = { workspace = true }
-serde       = { workspace = true, features = [ "derive" ] }
 
 # ibc dependencies
 ibc-core              = { workspace = true }
@@ -38,7 +37,6 @@ serde-json = { workspace = true }
 default = [ "std" ]
 std = [
   "prost/std",
-  "serde/std",
   "ibc-core/std",
   "ibc-client-wasm-types/std",
 ]

@@ -1262,7 +1262,6 @@ dependencies = [
  "ibc-client-wasm-types",
  "ibc-core",
  "prost",
- "serde",
  "serde-json-wasm",
 ]
 
