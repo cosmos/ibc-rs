@@ -8,7 +8,6 @@ rust-version = { workspace = true }
 version      = { workspace = true }
 keywords     = [ "ibc", "light-client", "CosmWasm", "ICS-08" ]
 readme       = "./../README.md"
-
 description = """
     Contains types and implementations that are needed to integrate a light client, built using ibc-rs,
     into CosmWasm contract. It functions as a library, allowing users to import the ready-made `Context`

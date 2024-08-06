@@ -4,7 +4,7 @@ help: ## Display help message.
 	@echo "Usage: make <target>"
 	@awk 'BEGIN {FS = ":.*?## "}/^[a-zA-Z_-]+:.*?## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
-install-tools: ## Install development tools including nightly rustfmt, cargo-hack and cargo-release.
+setup: ## Install development tools including nightly rustfmt, cargo-hack and cargo-release.
 	rustup component add rustfmt --toolchain nightly
 	cargo install cargo-hack
 	cargo install cargo-release
