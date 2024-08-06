@@ -7,7 +7,7 @@ repository   = { workspace = true }
 rust-version = { workspace = true }
 version      = { workspace = true }
 keywords     = [ "ibc", "light-client", "CosmWasm", "ICS-07", "Tendermint" ]
-readme       = "./../README.md"
+readme       = "./../../README.md"
 
 description = """
     Contains the implementation of the ICS-07 Tendermint Client logic as a CosmWasm contract.

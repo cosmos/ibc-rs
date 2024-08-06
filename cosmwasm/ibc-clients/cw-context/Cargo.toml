@@ -7,7 +7,7 @@ repository   = { workspace = true }
 rust-version = { workspace = true }
 version      = { workspace = true }
 keywords     = [ "ibc", "light-client", "CosmWasm", "ICS-08" ]
-readme       = "./../README.md"
+readme       = "./../../README.md"
 
 description = """
     Contains types and implementations that are needed to integrate a light client, built using ibc-rs,
