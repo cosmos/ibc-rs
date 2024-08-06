@@ -14,37 +14,28 @@ description = """
     It leverages the `ibc-client-cw` crate to integrate the Tendermint light client into a CosmWasm contract.
 """
 
-[dependencies]
-# external dependencies
-derive_more = { workspace = true }
-prost       = { workspace = true }
-serde       = { workspace = true, features = [ "derive" ] }
+[lib]
+crate-type = [ "cdylib", "rlib" ]
 
+[dependencies]
 # ibc dependencies
-ibc-client-tendermint = { workspace = true }
-ibc-client-cw         = { workspace = true }
 ibc-core              = { workspace = true }
-ibc                   = { workspace = true }
-ibc-testkit           = { workspace = true }
+ibc-client-cw         = { workspace = true }
+ibc-client-tendermint = { workspace = true }
 
 # cosmwasm dependencies
-cosmwasm-schema = { workspace = true }
-cosmwasm-std    = { workspace = true }
-cw-storage-plus = { workspace = true }
-
-# cosmos dependencies
-tendermint = { workspace = true }
+cosmwasm-std = { workspace = true }
 
 [dev-dependencies]
+ibc-testkit        = { workspace = true }
 serde-json         = { workspace = true }
+tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [features]
 default = [ "std" ]
 std = [
-    "prost/std",
-    "serde/std",
-    "ibc-client-tendermint/std",
-    "ibc-client-cw/std",
-    "ibc-core/std",
+  "ibc-core/std",
+  "ibc-client-cw/std",
+  "ibc-client-tendermint/std",
 ]

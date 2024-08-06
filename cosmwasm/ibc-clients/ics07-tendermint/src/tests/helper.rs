@@ -2,10 +2,8 @@ use std::str::FromStr;
 
 use cosmwasm_std::testing::mock_env;
 use cosmwasm_std::{Binary, Checksum, Env, Timestamp as CwTimestamp};
-
-use ibc::clients::tendermint::types::ConsensusState;
-use ibc::core::primitives::Timestamp as IbcTimestamp;
-
+use ibc_client_tendermint::types::ConsensusState;
+use ibc_core::primitives::Timestamp as IbcTimestamp;
 use tendermint::Hash;
 
 pub fn dummy_checksum() -> Binary {

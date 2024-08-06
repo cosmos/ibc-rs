@@ -2,8 +2,8 @@
 resolver = "2"
 
 members = [
-    "ibc-clients/cw-context",
-    "ibc-clients/ics07-tendermint",
+  "ibc-clients/cw-context",
+  "ibc-clients/ics07-tendermint",
 ]
 
 [workspace.package]
@@ -23,7 +23,7 @@ serde       = { version = "1.0", default-features = false }
 serde-json  = { package = "serde-json-wasm", version = "1.0.1", default-features = false }
 
 # cosmwasm dependencies
-cosmwasm-std    = { version = "2.1.0", features = [ "std" ] }
+cosmwasm-std    = { version = "2.1.0" }
 cosmwasm-schema = { version = "2.1.0" }
 cw-storage-plus = { version = "2.0.0" }
 

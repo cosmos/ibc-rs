@@ -2,12 +2,11 @@ use std::time::Duration;
 
 use cosmwasm_std::from_json;
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
-
-use ibc::core::client::types::{Height, Status};
 use ibc_client_cw::types::{
     ContractResult, MigrateClientStoreMsg, MigrationPrefix, VerifyClientMessageRaw,
     VerifyClientMessageResponse,
 };
+use ibc_core::client::types::{Height, Status};
 
 use crate::entrypoint::sudo;
 

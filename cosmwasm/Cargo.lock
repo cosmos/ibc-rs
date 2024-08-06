@@ -1286,17 +1286,11 @@ dependencies = [
 name = "ibc-client-tendermint-cw"
 version = "0.53.0"
 dependencies = [
- "cosmwasm-schema",
  "cosmwasm-std",
- "cw-storage-plus",
- "derive_more 0.99.18",
- "ibc",
  "ibc-client-cw",
  "ibc-client-tendermint",
  "ibc-core",
  "ibc-testkit",
- "prost",
- "serde",
  "serde-json-wasm",
  "tendermint 0.37.0",
  "tendermint-testgen",

@@ -1,21 +1,19 @@
 use std::time::Duration;
 
 use cosmwasm_std::{from_json, Binary, Deps, DepsMut, Empty, Response, StdError, StdResult};
-
-use ibc::clients::tendermint::client_state::ClientState as TmClientState;
-use ibc::clients::tendermint::consensus_state::ConsensusState as TmConsensusState;
-use ibc::clients::tendermint::types::Header;
-use ibc::core::client::types::{Height, Status};
-use ibc::core::host::types::identifiers::ChainId;
-use ibc::core::primitives::Timestamp;
 use ibc_client_cw::types::{
     CheckForMisbehaviourMsgRaw, CheckForMisbehaviourResponse, ContractError, InstantiateMsg,
     MigrationPrefix, QueryMsg, StatusMsg, StatusResponse, UpdateStateMsgRaw,
     UpdateStateOnMisbehaviourMsgRaw, VerifyClientMessageRaw, VerifyClientMessageResponse,
 };
 use ibc_client_cw::utils::AnyCodec;
+use ibc_client_tendermint::client_state::ClientState as TmClientState;
+use ibc_client_tendermint::consensus_state::ConsensusState as TmConsensusState;
+use ibc_client_tendermint::types::Header;
+use ibc_core::client::types::{Height, Status};
+use ibc_core::host::types::identifiers::ChainId;
+use ibc_core::primitives::Timestamp;
 use ibc_testkit::fixtures::clients::tendermint::ClientStateConfig;
-
 use tendermint::Time;
 use tendermint_testgen::{Generator, Validator};
 
