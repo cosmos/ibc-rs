@@ -39,25 +39,20 @@ jobs:
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      # `cosmwasm/optimizer` requires `Cargo.lock`. but currently,
-      # `Cargo.lock` is not committed, because `ibc-rs` is treated as library.
-      - name: Produce `Cargo.lock` file
-        run: cargo update -p ibc-client-tendermint-cw
-
       - name: Create mount directories
-        run: mkdir -p "${HOME}/.cargo/registry" "$(pwd)"/cosmwasm/target
+        run: mkdir -p "${HOME}/.cargo/registry" "$(pwd)"/target
 
       - name: Compile cosmwasm blob for tendermint light client
         run: |
           docker run \
           -v "$(pwd)":/code \
-          -v "$(pwd)"/cosmwasm/target:/target \
+          -v "$(pwd)"/target:/target \
           -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
           cosmwasm/optimizer:0.16.0 ./cosmwasm/ibc-clients/ics07-tendermint
 
       - name: Fix permissions
         run: |
-          sudo chown -R $(id -u):$(id -g) "$(pwd)"/cosmwasm/target
+          sudo chown -R $(id -u):$(id -g) "$(pwd)"/target
           sudo chown -R $(id -u):$(id -g) "${HOME}/.cargo/registry"
 
       - name: Install `cosmwasm-check` from crates.io

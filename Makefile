@@ -11,12 +11,22 @@ install-tools: ## Install development tools including nightly rustfmt, cargo-hac
 	cargo install typos-cli taplo-cli
 
 lint: ## Lint the code using rustfmt, clippy and whitespace lints.
-	cargo +nightly fmt --all --check
-	cargo clippy --all-targets --all-features
-	cargo clippy --all-targets --no-default-features
+	$(MAKE) fmt
+	$(MAKE) clippy
+	$(MAKE) lint-toml
 	$(MAKE) -C ./cosmwasm lint $@
 	typos --config $(CURDIR)/.github/typos.toml
 	bash ./ci/code-quality/whitespace-lints.sh
+
+fmt: ## Format the code using nightly rustfmt.
+	cargo +nightly fmt --all --check
+
+clippy: ## Lint the code using clippy.
+	cargo clippy --all-targets --all-features
+	cargo clippy --all-targets --no-default-features
+
+lint-toml: ## Lint the TOML files using taplo.
+	taplo fmt --check
 
 check-features: ## Check that project compiles with all combinations of features.
 	cargo hack check --workspace --feature-powerset --exclude-features default

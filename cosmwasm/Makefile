@@ -7,8 +7,12 @@ help: ## Display help message.
 install-tools: ## Install development tools including nightly rustfmt, cargo-hack and cargo-release.
 	rustup target add wasm32-unknown-unknown
 
-lint: ## Lint the code using rustfmt, clippy and whitespace lints.
+lint: fmt clippy ## Lint the code using rustfmt, clippy.
+
+fmt: ## Format the code using nightly rustfmt.
 	cargo +nightly fmt --all --check
+
+clippy: ## Lint the code using clippy.
 	cargo clippy --all-targets --all-features
 	cargo clippy --all-targets --no-default-features
 
