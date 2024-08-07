@@ -19,7 +19,7 @@ description = """
 displaydoc = { workspace = true, default-features = false }
 schemars   = { workspace = true, optional = true }
 serde      = { workspace = true, optional = true }
-tonic      = { version = "0.12.1" }
+tonic      = { version = "0.11" }
 
 # ibc dependencies
 ibc       = { workspace = true }
