@@ -88,6 +88,7 @@ impl<'de> serde::Deserialize<'de> for Data {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[cfg_attr(not(feature = "std"), allow(dead_code))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Ics721Data(BTreeMap<String, DataValue>);
 
@@ -100,6 +101,7 @@ impl FromStr for Ics721Data {
     }
 }
 
+#[cfg_attr(not(feature = "std"), allow(dead_code))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct DataValue {
     value: String,

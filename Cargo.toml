@@ -22,8 +22,6 @@ members = [
   "ibc-clients/ics07-tendermint/types",
   "ibc-clients/ics07-tendermint",
   "ibc-clients/ics08-wasm/types",
-  "ibc-clients/cw-context",
-  "ibc-clients/ics07-tendermint/cw-contract",
   "ibc-clients",
   "ibc-apps/ics20-transfer/types",
   "ibc-apps/ics20-transfer",
@@ -87,9 +85,8 @@ ibc-core-handler    = { version = "0.53.0", path = "./ibc-core/ics25-handler", d
 ibc-core-router     = { version = "0.53.0", path = "./ibc-core/ics26-routing", default-features = false }
 ibc-query           = { version = "0.53.0", path = "./ibc-query", default-features = false }
 
-ibc-client-cw            = { version = "0.53.0", path = "./ibc-clients/cw-context", default-features = false }
-ibc-client-tendermint    = { version = "0.53.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
-ibc-client-tendermint-cw = { version = "0.53.0", path = "./ibc-clients/ics07-tendermint/cw-contract", default-features = false }
+ibc-client-cw         = { version = "0.53.0", path = "./ibc-clients/cw-context", default-features = false }
+ibc-client-tendermint = { version = "0.53.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
 
 ibc-app-transfer     = { version = "0.53.0", path = "./ibc-apps/ics20-transfer", default-features = false }
 ibc-app-nft-transfer = { version = "0.53.0", path = "./ibc-apps/ics721-nft-transfer", default-features = false }
@@ -117,12 +114,6 @@ tendermint-light-client-verifier = { version = "0.37.0", default-features = fals
 tendermint-proto                 = { version = "0.37.0", default-features = false }
 tendermint-rpc                   = { version = "0.37.0", default-features = false }
 tendermint-testgen               = { version = "0.37.0", default-features = false }
-
-# cosmwasm dependencies
-cosmwasm-schema = { version = "2.1.0" }
-cosmwasm-std    = { version = "2.1.0" }
-cosmwasm-vm     = { version = "2.1.0" }
-cw-storage-plus = { version = "2.0.0" }
 
 # parity dependencies
 parity-scale-codec = { version = "3.6.12", default-features = false, features = [ "derive" ] }

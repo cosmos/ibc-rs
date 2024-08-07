@@ -33,7 +33,7 @@ mc.log
 /Cargo.lock
 
 # Ignore CosmWasm artifacts
-/cw-contracts
+cw-contracts/
 
 # Ignore dotenv
 .env

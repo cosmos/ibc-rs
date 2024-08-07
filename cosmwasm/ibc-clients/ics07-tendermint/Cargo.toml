@@ -6,11 +6,12 @@ license      = { workspace = true }
 repository   = { workspace = true }
 rust-version = { workspace = true }
 version      = { workspace = true }
-keywords     = [ "ibc", "light-client", "ics07", "tendermint", "CosmWasm" ]
+keywords     = [ "ibc", "light-client", "CosmWasm", "ICS-07", "Tendermint" ]
 readme       = "./../../README.md"
 
 description = """
-    The ICS-08 CosmWasm contract implementation of the ICS-07 Tendermint light client.
+    Contains the implementation of the ICS-07 Tendermint Client logic as a CosmWasm contract.
+    It leverages the `ibc-client-cw` crate to integrate the Tendermint light client into a CosmWasm contract.
 """
 
 [lib]
@@ -24,6 +25,12 @@ ibc-client-tendermint = { workspace = true }
 
 # cosmwasm dependencies
 cosmwasm-std = { workspace = true }
+
+[dev-dependencies]
+ibc-testkit        = { workspace = true }
+serde-json         = { workspace = true }
+tendermint         = { workspace = true }
+tendermint-testgen = { workspace = true }
 
 [features]
 default = [ "std" ]
