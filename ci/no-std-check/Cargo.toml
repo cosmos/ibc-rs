@@ -11,9 +11,9 @@ ibc-proto = { version = "0.47", default-features = false, features = [
     "borsh",
     "serde",
 ] }
-tendermint = { version = "0.39", default-features = false }
-tendermint-proto = { version = "0.39", default-features = false }
-tendermint-light-client-verifier = { version = "0.39", default-features = false, features = [ "rust-crypto" ] }
+tendermint = { version = "0.38", default-features = false }
+tendermint-proto = { version = "0.38", default-features = false }
+tendermint-light-client-verifier = { version = "0.38", default-features = false, features = [ "rust-crypto" ] }
 
 sp-core    = { version = "34.0", default-features = false, optional = true }
 sp-io      = { version = "37.0", default-features = false, optional = true }
