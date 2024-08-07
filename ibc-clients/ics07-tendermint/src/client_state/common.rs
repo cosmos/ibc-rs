@@ -144,7 +144,7 @@ pub fn verify_consensus_state(
 }
 
 /// Determines the `Status`, whether it is `Active` or `Expired`, of a consensus
-/// state, given its timestamp, the host's timestamp, and the trusting period.
+/// state, using its timestamp, the host's timestamp, and the trusting period.
 pub fn consensus_state_status<CS: ConsensusState>(
     consensus_state: &CS,
     host_timestamp: &Timestamp,
