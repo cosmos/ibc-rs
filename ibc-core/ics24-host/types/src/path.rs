@@ -1490,7 +1490,7 @@ mod tests {
         assert_eq!(
             parse_upgrade_consensus_state(&components),
             Some(Path::UpgradeConsensusState(UpgradeConsensusStatePath {
-                upgrade_path: UPGRADED_CLIENT_STATE.to_string(),
+                upgrade_path: UPGRADED_IBC_STATE.to_string(),
                 height: 0,
             })),
         )
