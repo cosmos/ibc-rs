@@ -7,9 +7,9 @@ resolver = "2"
 [dependencies]
 ibc = { path = "../../ibc", default-features = false, features = [ "serde" ] }
 ibc-proto = { version = "0.47", default-features = false, features = [
-    "parity-scale-codec",
-    "borsh",
-    "serde",
+  "parity-scale-codec",
+  "borsh",
+  "serde",
 ] }
 tendermint = { version = "0.38", default-features = false }
 tendermint-proto = { version = "0.38", default-features = false }

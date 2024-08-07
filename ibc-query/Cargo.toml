@@ -28,18 +28,18 @@ ibc-proto = { workspace = true, features = [ "server" ] }
 [features]
 default = [ "std" ]
 std = [
-    "ibc/std",
-    "ibc-proto/std",
+  "ibc/std",
+  "ibc-proto/std",
 ]
 serde = [
-    "dep:serde",
-    "ibc/serde",
-    "ibc-proto/serde",
+  "dep:serde",
+  "ibc/serde",
+  "ibc-proto/serde",
 ]
 schema = [
-    "dep:schemars",
-    "ibc/schema",
-    "ibc-proto/json-schema",
-    "serde",
-    "std",
+  "dep:schemars",
+  "ibc/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
 ]

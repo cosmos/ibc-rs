@@ -2,8 +2,8 @@
 resolver = "2"
 
 members = [
-    "ibc-clients/cw-context",
-    "ibc-clients/ics07-tendermint",
+  "ibc-clients/cw-context",
+  "ibc-clients/ics07-tendermint",
 ]
 
 [workspace.package]
