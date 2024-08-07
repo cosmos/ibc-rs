@@ -5,8 +5,9 @@ on:
       - .codecov.yaml
       - .github/workflows/rust.yaml
       - .github/workflows/coverage.yaml
-      - Cargo.toml
+      - '*.toml'
       - ci/**
+      - cosmwasm/**
       - ibc/**
       - ibc-core/**
       - ibc-apps/**
@@ -16,6 +17,7 @@ on:
       - ibc-query/**
       - ibc-testkit/**
       - ibc-derive/**
+      - tests-integration/**
   push:
     branches:
       - main

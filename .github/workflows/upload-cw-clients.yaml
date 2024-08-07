@@ -4,14 +4,12 @@ on:
     paths:
       - .github/workflows/upload-cw-clients.yaml
       - Cargo.toml
-      - ci/**
+      - cosmwasm/**
       - ibc/**
       - ibc-core/**
       - ibc-apps/**
-      - ibc-data-types/**
       - ibc-clients/**
       - ibc-primitives/**
-      - ibc-query/**
       - ibc-testkit/**
       - ibc-derive/**
   push:
@@ -19,14 +17,12 @@ on:
     paths:
       - .github/workflows/upload-cw-clients.yaml
       - Cargo.toml
-      - ci/**
+      - cosmwasm/**
       - ibc/**
       - ibc-core/**
       - ibc-apps/**
-      - ibc-data-types/**
       - ibc-clients/**
       - ibc-primitives/**
-      - ibc-query/**
       - ibc-testkit/**
       - ibc-derive/**
 
@@ -43,11 +39,6 @@ jobs:
 
       - uses: actions-rust-lang/setup-rust-toolchain@v1
 
-      # `cosmwasm/optimizer` requires `Cargo.lock`. but currently,
-      # `Cargo.lock` is not committed, because `ibc-rs` is treated as library.
-      - name: Produce `Cargo.lock` file
-        run: cargo update -p ibc-client-tendermint-cw
-
       - name: Create mount directories
         run: mkdir -p "${HOME}/.cargo/registry" "$(pwd)"/target
 
@@ -57,7 +48,7 @@ jobs:
           -v "$(pwd)":/code \
           -v "$(pwd)"/target:/target \
           -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
-          cosmwasm/optimizer:0.16.0 ./ibc-clients/ics07-tendermint/cw-contract
+          cosmwasm/optimizer:0.16.0 ./cosmwasm/ibc-clients/ics07-tendermint
 
       - name: Fix permissions
         run: |
