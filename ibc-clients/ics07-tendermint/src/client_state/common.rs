@@ -192,8 +192,7 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
         ),
         _ => {
             return Err(ClientError::ClientSpecific {
-                description: "upgrade client failed: upgrade path is too long"
-                    .to_string(),
+                description: "upgrade client failed: upgrade path is too long".to_string(),
             })
         }
     };
