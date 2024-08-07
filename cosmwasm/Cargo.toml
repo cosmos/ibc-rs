@@ -2,8 +2,8 @@
 resolver = "2"
 
 members = [
-  "ibc-clients/cw-context",
-  "ibc-clients/ics07-tendermint",
+    "ibc-clients/cw-context",
+    "ibc-clients/ics07-tendermint",
 ]
 
 [workspace.package]
@@ -34,5 +34,5 @@ ibc-client-wasm-types = { version = "0.53.0", path = "./../ibc-clients/ics08-was
 ibc-testkit           = { version = "0.53.0", path = "./../ibc-testkit", default-features = false }
 
 # cosmos dependencies
-tendermint         = { version = "0.37.0", default-features = false }
-tendermint-testgen = { version = "0.37.0", default-features = false }
+tendermint         = { version = "0.39.0", default-features = false }
+tendermint-testgen = { version = "0.39.0", default-features = false }
