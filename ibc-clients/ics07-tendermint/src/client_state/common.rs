@@ -176,7 +176,12 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
         })?
     }
 
-    // Check to see if the upgrade path is set
+    // The client state's upgrade path vector needs to parsed into a tuple in the form
+    // of `(upgrade_path_prefix, upgrade_path)`. Given the length of the client
+    // state's upgrade path vector, the following determinations are made:
+    // 0: The tuple defaults to an empty commitment prefix and `UPGRADED_IBC_STATE` as the path.
+    // 1: The commitment prefix is left empty and the upgrade path is used as-is.
+    // 2: The commitment prefix and upgrade path are both taken as-is.
     let upgrade_path = &client_state.upgrade_path;
     let (upgrade_path_prefix, upgrade_path) = match upgrade_path.len() {
         0 => (CommitmentPrefix::empty(), UPGRADED_IBC_STATE),
