@@ -122,7 +122,7 @@ pub struct MerklePath {
 #[cw_serde]
 pub struct VerifyMembershipMsgRaw {
     pub proof: Binary,
-    pub path: MerklePath,
+    pub merkle_path: MerklePath,
     pub value: Binary,
     pub height: RawHeight,
     pub delay_block_period: u64,
@@ -144,8 +144,8 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
 
     fn try_from(mut raw: VerifyMembershipMsgRaw) -> Result<Self, Self::Error> {
         let proof = CommitmentProofBytes::try_from(raw.proof.to_vec())?;
-        let prefix = CommitmentPrefix::from_bytes(raw.path.key_path.remove(0));
-        let path = PathBytes::flatten(raw.path.key_path);
+        let prefix = CommitmentPrefix::from_bytes(raw.merkle_path.key_path.remove(0));
+        let path = PathBytes::flatten(raw.merkle_path.key_path);
         let height = Height::try_from(raw.height)?;
 
         Ok(Self {
@@ -163,7 +163,7 @@ impl TryFrom<VerifyMembershipMsgRaw> for VerifyMembershipMsg {
 #[cw_serde]
 pub struct VerifyNonMembershipMsgRaw {
     pub proof: Binary,
-    pub path: MerklePath,
+    pub merkle_path: MerklePath,
     pub height: RawHeight,
     pub delay_block_period: u64,
     pub delay_time_period: u64,
@@ -183,8 +183,8 @@ impl TryFrom<VerifyNonMembershipMsgRaw> for VerifyNonMembershipMsg {
 
     fn try_from(mut raw: VerifyNonMembershipMsgRaw) -> Result<Self, Self::Error> {
         let proof = CommitmentProofBytes::try_from(raw.proof.to_vec())?;
-        let prefix = CommitmentPrefix::from_bytes(raw.path.key_path.remove(0));
-        let path = PathBytes::flatten(raw.path.key_path);
+        let prefix = CommitmentPrefix::from_bytes(raw.merkle_path.key_path.remove(0));
+        let path = PathBytes::flatten(raw.merkle_path.key_path);
         let height = raw.height.try_into()?;
 
         Ok(Self {
@@ -277,7 +277,7 @@ mod test {
                 "delay_time_period":0,
                 "delay_block_period":0,
                 "proof":"CuECCt4CChhjb25uZWN0aW9ucy9jb25uZWN0aW9uLTASWgoPMDctdGVuZGVybWludC0wEiMKATESDU9SREVSX09SREVSRUQSD09SREVSX1VOT1JERVJFRBgCIiAKCTA4LXdhc20tMBIMY29ubmVjdGlvbi0wGgUKA2liYxoLCAEYASABKgMAAkgiKQgBEiUCBHAg3HTYmBAMxlr6u0mv6wCpm3ur2WQc7A3Af6aV7Ye0Fe0gIisIARIEBAZwIBohIHXEkQ9RIH08ZZYBIP6THxOOJiRmjXWGn1G4RCWT3V6rIisIARIEBgxwIBohIEUjGWV7YLPEzdFVLAb0lv4VvP7A+l1TqFkjpx1kDKAPIikIARIlCBhwILWsAKEot+2MknVyn5zcS0qsqVhRj4AHpgDx7fNPbfhtICIpCAESJQxAcCCzyYMGE+CdCltudr1ddHvCJrqv3kl/i7YnMLx3XWJt/yAK/AEK+QEKA2liYxIg2nvqL76rejXXGlX6ng/UKrbw+72C8uKKgM2vP0JKj1QaCQgBGAEgASoBACIlCAESIQEGuZwNgRn/HtvL4WXQ8ZM327wIDmd8iOV6oq52fr8PDyInCAESAQEaIKplBAbqDXbjndQ9LqapHj/aockI/CGnymjl5izIEVY5IiUIARIhAdt4G8DCLINAaaJnhUMIzv74AV3zZiugAyyZ/lWYRv+cIiUIARIhAf+sohoEV+uWeKThAPEbqCUivWT4H8KNT7Giw9//LsyvIicIARIBARogNHO4HC5KxPCwBdQGgBCscVtEKw+YSn2pnf654Y3Oxik=",
-                "path":{"key_path":["aWJj","Y29ubmVjdGlvbnMvY29ubmVjdGlvbi0w"]},
+                "merkle_path":{"key_path":["aWJj","Y29ubmVjdGlvbnMvY29ubmVjdGlvbi0w"]},
                 "value":"Cg8wNy10ZW5kZXJtaW50LTASIwoBMRINT1JERVJfT1JERVJFRBIPT1JERVJfVU5PUkRFUkVEGAIiIAoJMDgtd2FzbS0wEgxjb25uZWN0aW9uLTAaBQoDaWJj"
             }
         }"#;

@@ -10,6 +10,7 @@ use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Signer;
+use ibc_primitives::Timestamp;
 use ibc_testkit::context::{MockContext, TendermintContext};
 use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
@@ -42,11 +43,16 @@ fn setup_client_recovery_fixture(
     substitute_trusting_period: Duration,
     substitute_height: Height,
 ) -> Fixture {
-    let mut ctx = TendermintContext::default();
+    let latest_timestamp = Timestamp::now();
+
+    let mut ctx_a: TendermintContext = TestContextConfig::builder()
+        .latest_timestamp(latest_timestamp)
+        .build();
 
     // create a ctx_b
     let ctx_b: MockContext = TestContextConfig::builder()
         .latest_height(substitute_height)
+        .latest_timestamp(latest_timestamp)
         .build();
 
     let signer = dummy_account_id();
@@ -68,9 +74,11 @@ fn setup_client_recovery_fixture(
     let subject_msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
     let client_type = mock_client_type();
-    let subject_client_id = client_type.build_client_id(ctx.ibc_store().client_counter().unwrap());
+    let subject_client_id =
+        client_type.build_client_id(ctx_a.ibc_store().client_counter().unwrap());
 
-    ctx.dispatch(subject_msg_envelope)
+    ctx_a
+        .dispatch(subject_msg_envelope)
         .expect("create subject client execution");
 
     let substitute_client_header = ctx_b
@@ -90,17 +98,18 @@ fn setup_client_recovery_fixture(
     let substitute_msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
 
     let substitute_client_id =
-        client_type.build_client_id(ctx.ibc_store().client_counter().unwrap());
+        client_type.build_client_id(ctx_a.ibc_store().client_counter().unwrap());
 
-    ctx.dispatch(substitute_msg_envelope)
+    ctx_a
+        .dispatch(substitute_msg_envelope)
         .expect("create substitute client execution");
 
     let subject_client_trusted_timestamp =
         (subject_client_header.timestamp() + subject_trusting_period).expect("no error");
 
     // Let the subject client state expire.
-    while ctx.latest_timestamp() <= subject_client_trusted_timestamp {
-        ctx.advance_block_height();
+    while ctx_a.latest_timestamp() <= subject_client_trusted_timestamp {
+        ctx_a.advance_block_height();
     }
 
     // at this point, the subject client should be expired.
@@ -108,7 +117,7 @@ fn setup_client_recovery_fixture(
     // to the fixture arguments
 
     Fixture {
-        ctx,
+        ctx: ctx_a,
         subject_client_id,
         substitute_client_id,
         signer,
@@ -117,8 +126,10 @@ fn setup_client_recovery_fixture(
 
 #[rstest]
 fn test_recover_client_ok() {
-    let subject_trusting_period = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS);
-    let substitute_trusting_period = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS) * 10;
+    // NOTE: The trusting periods are extended by 1 second as clients expire
+    // when the elapsed time since a trusted header MATCHES the trusting period.
+    let subject_trusting_period = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS + 1);
+    let substitute_trusting_period = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS + 1) * 10;
     let subject_height = Height::new(0, 42).unwrap();
     let substitute_height = Height::new(0, 43).unwrap();
 

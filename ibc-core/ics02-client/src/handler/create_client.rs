@@ -41,7 +41,9 @@ where
         .into());
     };
 
-    client_state.verify_consensus_state(consensus_state)?;
+    let host_timestamp = ctx.host_timestamp()?;
+
+    client_state.verify_consensus_state(consensus_state, &host_timestamp)?;
 
     if client_val_ctx.client_state(&client_id).is_ok() {
         return Err(ClientError::ClientStateAlreadyExists { client_id }.into());

@@ -14,7 +14,7 @@ pub(crate) fn impl_ClientStateCommon(
     let verify_consensus_state_impl = delegate_call_in_match(
         client_state_enum_name,
         enum_variants.iter(),
-        quote! { verify_consensus_state(cs, consensus_state) },
+        quote! { verify_consensus_state(cs, consensus_state, &host_timestamp) },
         imports,
     );
     let client_type_impl = delegate_call_in_match(
@@ -82,12 +82,13 @@ pub(crate) fn impl_ClientStateCommon(
     let ClientType = imports.client_type();
     let ClientError = imports.client_error();
     let Height = imports.height();
+    let Timestamp = imports.timestamp();
     let Path = imports.path();
     let PathBytes = imports.path_bytes();
 
     quote! {
         impl #ClientStateCommon for #HostClientState {
-            fn verify_consensus_state(&self, consensus_state: #Any) -> Result<(), #ClientError> {
+            fn verify_consensus_state(&self, consensus_state: #Any, host_timestamp: &#Timestamp) -> Result<(), #ClientError> {
                 match self {
                     #(#verify_consensus_state_impl),*
                 }

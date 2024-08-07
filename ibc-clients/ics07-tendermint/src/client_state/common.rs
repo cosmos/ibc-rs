@@ -1,8 +1,10 @@
+use core::time::Duration;
+
 use ibc_client_tendermint_types::{client_type as tm_client_type, ClientState as ClientStateType};
 use ibc_core_client::context::client_state::ClientStateCommon;
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::{ClientError, UpgradeClientError};
-use ibc_core_client::types::Height;
+use ibc_core_client::types::{Height, Status};
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -14,14 +16,22 @@ use ibc_core_host::types::identifiers::ClientType;
 use ibc_core_host::types::path::{Path, PathBytes, UpgradeClientPath};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
-use ibc_primitives::ToVec;
+use ibc_primitives::{Timestamp, ToVec};
 
 use super::ClientState;
 use crate::consensus_state::ConsensusState as TmConsensusState;
 
 impl ClientStateCommon for ClientState {
-    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError> {
-        verify_consensus_state(consensus_state)
+    fn verify_consensus_state(
+        &self,
+        consensus_state: Any,
+        host_timestamp: &Timestamp,
+    ) -> Result<(), ClientError> {
+        verify_consensus_state(
+            consensus_state,
+            host_timestamp,
+            self.inner().trusting_period,
+        )
     }
 
     fn client_type(&self) -> ClientType {
@@ -111,7 +121,11 @@ impl ClientStateCommon for ClientState {
 /// Note that this function is typically implemented as part of the
 /// [`ClientStateCommon`] trait, but has been made a standalone function
 /// in order to make the ClientState APIs more flexible.
-pub fn verify_consensus_state(consensus_state: Any) -> Result<(), ClientError> {
+pub fn verify_consensus_state(
+    consensus_state: Any,
+    host_timestamp: &Timestamp,
+    trusting_period: Duration,
+) -> Result<(), ClientError> {
     let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
     if tm_consensus_state.root().is_empty() {
@@ -120,7 +134,43 @@ pub fn verify_consensus_state(consensus_state: Any) -> Result<(), ClientError> {
         });
     };
 
+    if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
+        return Err(ClientError::ClientNotActive {
+            status: Status::Expired,
+        });
+    }
+
     Ok(())
+}
+
+/// Determines the `Status`, whether it is `Active` or `Expired`, of a consensus
+/// state, using its timestamp, the host's timestamp, and the trusting period.
+pub fn consensus_state_status<CS: ConsensusState>(
+    consensus_state: &CS,
+    host_timestamp: &Timestamp,
+    trusting_period: Duration,
+) -> Result<Status, ClientError> {
+    if !host_timestamp.is_set() {
+        return Err(ClientError::Other {
+            description: "host timestamp is none".into(),
+        });
+    }
+
+    // Note: if the `duration_since()` is `None`, indicating that the latest
+    // consensus state is in the future, then we don't consider the client
+    // to be expired.
+    if let Some(elapsed_since_latest_consensus_state) =
+        host_timestamp.duration_since(&consensus_state.timestamp())
+    {
+        // Note: The equality is considered as expired to stay consistent with
+        // the check in tendermint-rs, where a header at `trusted_header_time +
+        // trusting_period` is considered expired.
+        if elapsed_since_latest_consensus_state >= trusting_period {
+            return Ok(Status::Expired);
+        }
+    }
+
+    Ok(Status::Active)
 }
 
 /// Validate the given proof height against the client state's latest height, returning
