@@ -59,7 +59,7 @@ borsh           = { version = "1", default-features = false, features = [ "deriv
 displaydoc      = { version = "0.2.5", default-features = false }
 prost           = { version = "0.12", default-features = false }
 derive_more     = { version = "0.99.18", default-features = false, features = [ "from", "into", "display", "try_into" ] }
-rstest          = { version = "0.21" }
+rstest          = { version = "0.22" }
 schemars        = { version = "0.8.21" }
 sha2            = { version = "0.10.8", default-features = false }
 serde           = { version = "1.0", default-features = false }
