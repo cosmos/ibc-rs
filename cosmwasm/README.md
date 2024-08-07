@@ -8,7 +8,7 @@ contracts. Currently, the available packages are:
 
 ## IBC Clients
 
-- [ibc-client-cw](./cw-context): Provides utilities and a generic `Context` object
+- [ibc-client-cw](./ibc-clients/cw-context): Provides utilities and a generic `Context` object
   to streamline the implementation of any ibc-rs-powered light clients as
   CosmWasm contracts.
   - To utilize the CosmWasm contracts developed with this library, hosting
@@ -20,7 +20,7 @@ contracts. Currently, the available packages are:
     deployed for production use. Users are advised to exercise caution and test
     thoroughly in non-production environments.
 
-- [ibc-client-tendermint-cw](./../cosmwasm/ibc-clients/ics07-tendermint): CosmWasm Contract
+- [ibc-client-tendermint-cw](./ibc-clients/ics07-tendermint): CosmWasm Contract
 
   > [!TIP]
   > The pre-compiled CosmWasm contract for `ibc-client-tendermint-cw` is available
