@@ -10,7 +10,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::path::ClientConsensusStatePath;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::clients::tendermint::{
-    dummy_tendermint_header, dummy_tm_client_state_from_header,
+    dummy_tm_client_state_from_header, dummy_valid_tendermint_header,
 };
 use ibc_testkit::fixtures::core::client::dummy_msg_upgrade_client;
 use ibc_testkit::fixtures::{Expect, Fixture};
@@ -51,7 +51,8 @@ fn msg_upgrade_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<Msg
     let msg_with_low_upgrade_height = dummy_msg_upgrade_client(client_id, low_upgrade_height);
 
     let msg_with_unknown_upgraded_cs = MsgUpgradeClient {
-        upgraded_client_state: dummy_tm_client_state_from_header(dummy_tendermint_header()).into(),
+        upgraded_client_state: dummy_tm_client_state_from_header(dummy_valid_tendermint_header())
+            .into(),
         ..msg_default.clone()
     };
 

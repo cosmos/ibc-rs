@@ -9,6 +9,7 @@ use ibc_core_host_types::identifiers::{ClientId, ClientType};
 use ibc_core_host_types::path::{Path, PathBytes};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
+use ibc_primitives::Timestamp;
 
 use crate::context::{ClientExecutionContext, ClientValidationContext};
 use crate::Convertible;
@@ -22,7 +23,11 @@ pub trait ClientStateCommon: Convertible<Any> {
     ///
     /// Notably, an implementation should verify that it can properly
     /// deserialize the object into the expected format.
-    fn verify_consensus_state(&self, consensus_state: Any) -> Result<(), ClientError>;
+    fn verify_consensus_state(
+        &self,
+        consensus_state: Any,
+        host_timestamp: &Timestamp,
+    ) -> Result<(), ClientError>;
 
     /// Type of client associated with this state (eg. Tendermint)
     fn client_type(&self) -> ClientType;

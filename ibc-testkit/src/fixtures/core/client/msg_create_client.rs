@@ -3,13 +3,13 @@ use ibc::core::client::types::proto::v1::MsgCreateClient as RawMsgCreateClient;
 use ibc::primitives::proto::Any;
 
 use crate::fixtures::clients::tendermint::{
-    dummy_tendermint_header, dummy_tm_client_state_from_header,
+    dummy_tm_client_state_from_header, dummy_valid_tendermint_header,
 };
 use crate::fixtures::core::signer::dummy_bech32_account;
 
 /// Returns a dummy `RawMsgCreateClient`, for testing purposes only!
 pub fn dummy_raw_msg_create_client() -> RawMsgCreateClient {
-    let tm_header = dummy_tendermint_header();
+    let tm_header = dummy_valid_tendermint_header();
 
     let tm_client_state = dummy_tm_client_state_from_header(tm_header.clone());
 

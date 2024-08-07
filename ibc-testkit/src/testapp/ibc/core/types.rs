@@ -188,7 +188,10 @@ where
         ibc_store.store.commit().expect("no error");
         ibc_store.store_host_consensus_state(
             ibc_store.store.current_height(),
-            MockHeader::default().into_consensus_state().into(),
+            MockHeader::default()
+                .with_current_timestamp()
+                .into_consensus_state()
+                .into(),
         );
         ibc_store.store_ibc_commitment_proof(
             ibc_store.store.current_height(),

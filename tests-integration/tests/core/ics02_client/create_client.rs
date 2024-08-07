@@ -1,4 +1,3 @@
-use basecoin_store::impls::InMemoryStore;
 use ibc::clients::tendermint::types::{
     client_type as tm_client_type, ConsensusState as TmConsensusState,
 };
@@ -14,13 +13,17 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::{ClientConsensusStatePath, NextClientSequencePath};
 use ibc::core::host::{ClientStateRef, ValidationContext};
+use ibc_core_client_types::Status;
 use ibc_query::core::context::ProvableContext;
 use ibc_testkit::context::{MockContext, TendermintContext};
-#[cfg(feature = "serde")]
-use ibc_testkit::fixtures::clients::tendermint::dummy_tendermint_header;
 use ibc_testkit::fixtures::clients::tendermint::dummy_tm_client_state_from_header;
+#[cfg(feature = "serde")]
+use ibc_testkit::fixtures::clients::tendermint::{
+    dummy_expired_tendermint_header, dummy_valid_tendermint_header,
+};
 use ibc_testkit::fixtures::core::context::TestContextConfig;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
+use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
 };
@@ -28,109 +31,201 @@ use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusStat
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, MockIbcStore};
+use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder};
+use ibc_testkit::utils::year_2023;
 use test_log::test;
 
-#[test]
-fn test_create_client_ok() {
-    let mut ctx = DefaultIbcStore::default();
-    let mut router = MockRouter::new_with_transfer();
+enum Ctx {
+    Default,
+}
+
+#[allow(warnings)]
+enum Msg {
+    ValidMockHeader,
+    ExpiredMockHeader,
+    ValidTendermintHeader,
+    ExpiredTendermintHeader,
+    FrozenTendermintHeader,
+    NoHostTimestamp,
+}
+
+fn create_client_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgCreateClient> {
+    let ctx = match ctx_variant {
+        Ctx::Default => DefaultIbcStore::default(),
+    };
+
     let signer = dummy_account_id();
     let height = Height::new(0, 42).unwrap();
 
-    let msg = MsgCreateClient::new(
-        MockClientState::new(MockHeader::new(height)).into(),
-        MockConsensusState::new(MockHeader::new(height)).into(),
-        signer,
-    );
+    let msg = match msg_variant {
+        Msg::ValidMockHeader => {
+            let header = MockHeader::new(height).with_current_timestamp();
 
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
+            MsgCreateClient::new(
+                MockClientState::new(header).into(),
+                MockConsensusState::new(header).into(),
+                signer,
+            )
+        }
+        Msg::ExpiredMockHeader => {
+            let header = MockHeader::new(height).with_timestamp(year_2023());
 
-    let client_type = mock_client_type();
-    let client_id = client_type.build_client_id(ctx.client_counter().unwrap());
+            MsgCreateClient::new(
+                MockClientState::new(header).into(),
+                MockConsensusState::new(header).into(),
+                signer,
+            )
+        }
+        Msg::ValidTendermintHeader => {
+            let tm_header = dummy_valid_tendermint_header();
 
-    let res = validate(&ctx, &router, msg_envelope.clone());
+            MsgCreateClient::new(
+                dummy_tm_client_state_from_header(tm_header.clone()).into(),
+                TmConsensusState::from(tm_header).into(),
+                signer,
+            )
+        }
+        Msg::ExpiredTendermintHeader => {
+            let tm_header = dummy_expired_tendermint_header();
 
-    assert!(res.is_ok(), "validation happy path");
+            MsgCreateClient::new(
+                dummy_tm_client_state_from_header(tm_header.clone()).into(),
+                TmConsensusState::from(tm_header).into(),
+                signer,
+            )
+        }
+        Msg::FrozenTendermintHeader => {
+            let tm_header = dummy_valid_tendermint_header();
 
-    let res = execute(&mut ctx, &mut router, msg_envelope);
+            MsgCreateClient::new(
+                dummy_tm_client_state_from_header(tm_header.clone())
+                    .inner()
+                    .clone()
+                    .with_frozen_height(Height::min(0))
+                    .into(),
+                TmConsensusState::from(tm_header).into(),
+                signer,
+            )
+        }
+        Msg::NoHostTimestamp => {
+            let header = MockHeader::new(height);
 
-    assert!(res.is_ok(), "execution happy path");
+            MsgCreateClient::new(
+                MockClientState::new(header).into(),
+                MockConsensusState::new(header).into(),
+                signer,
+            )
+        }
+    };
 
-    let expected_client_state =
-        ClientStateRef::<DefaultIbcStore>::try_from(msg.client_state).unwrap();
-    assert_eq!(expected_client_state.client_type(), client_type);
-    assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
+    Fixture { ctx, msg }
 }
 
-#[cfg(feature = "serde")]
-#[test]
-fn test_tm_create_client_ok() {
-    let signer = dummy_account_id();
-
-    let mut ctx = DefaultIbcStore::default();
-
-    let mut router = MockRouter::new_with_transfer();
-
-    let tm_header = dummy_tendermint_header();
-
-    let tm_client_state = dummy_tm_client_state_from_header(tm_header.clone()).into();
-
-    let client_type = tm_client_type();
-    let client_id = client_type.build_client_id(ctx.client_counter().unwrap());
-
-    let msg = MsgCreateClient::new(
-        tm_client_state,
-        TmConsensusState::from(tm_header).into(),
-        signer,
-    );
-
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg.clone()));
-
-    let res = validate(&ctx, &router, msg_envelope.clone());
-
-    assert!(res.is_ok(), "tendermint client validation happy path");
-
-    let res = execute(&mut ctx, &mut router, msg_envelope);
-
-    assert!(res.is_ok(), "tendermint client execution happy path");
-
-    let expected_client_state =
-        ClientStateRef::<MockIbcStore<InMemoryStore>>::try_from(msg.client_state).unwrap();
-    assert_eq!(expected_client_state.client_type(), client_type);
-    assert_eq!(ctx.client_state(&client_id).unwrap(), expected_client_state);
-}
-
-#[cfg(feature = "serde")]
-#[test]
-fn test_invalid_frozen_tm_client_creation() {
-    let signer = dummy_account_id();
-
-    let ctx = DefaultIbcStore::default();
-
+fn create_client_validate(fxt: &Fixture<MsgCreateClient>, expect: Expect) {
     let router = MockRouter::new_with_transfer();
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(fxt.msg.clone()));
+    let res = validate(&fxt.ctx, &router, msg_envelope);
+    let err_msg = fxt.generate_error_msg(&expect, "validation", &res);
+    match expect {
+        Expect::Failure(err) => match err {
+            Some(_e) => {
+                assert!(matches!(res, Err(_e)));
+            }
+            _ => {
+                assert!(res.is_err(), "{err_msg}");
+            }
+        },
+        Expect::Success => {
+            assert!(res.is_ok(), "{err_msg}");
+        }
+    }
+}
 
-    let tm_header = dummy_tendermint_header();
+fn create_client_execute(fxt: &mut Fixture<MsgCreateClient>, expect: Expect) {
+    let mut router = MockRouter::new_with_transfer();
+    let msg_envelope = MsgEnvelope::from(ClientMsg::from(fxt.msg.clone()));
+    let expected_client_state =
+        ClientStateRef::<DefaultIbcStore>::try_from(fxt.msg.client_state.clone()).unwrap();
 
-    let tm_client_state = dummy_tm_client_state_from_header(tm_header.clone())
-        .inner()
-        .clone()
-        .with_frozen_height(Height::min(0));
+    let client_type = match expected_client_state {
+        AnyClientState::Mock(_) => mock_client_type(),
+        AnyClientState::Tendermint(_) => tm_client_type(),
+    };
+    let client_id = client_type.build_client_id(fxt.ctx.client_counter().unwrap());
+    let res = execute(&mut fxt.ctx, &mut router, msg_envelope);
+    let err_msg = fxt.generate_error_msg(&expect, "execution", &res);
+    match expect {
+        Expect::Failure(_) => {
+            assert!(res.is_err(), "{err_msg}")
+        }
+        Expect::Success => {
+            assert_eq!(
+                fxt.ctx.client_state(&client_id).unwrap(),
+                expected_client_state
+            );
+            assert!(res.is_ok(), "{err_msg}");
+        }
+    }
+}
 
-    let msg = MsgCreateClient::new(
-        tm_client_state.into(),
-        TmConsensusState::from(tm_header).into(),
-        signer,
+#[test]
+fn test_create_mock_client_ok() {
+    let mut fxt = create_client_fixture(Ctx::Default, Msg::ValidMockHeader);
+    create_client_validate(&fxt, Expect::Success);
+    create_client_execute(&mut fxt, Expect::Success);
+}
+
+#[test]
+fn test_create_expired_mock_client() {
+    let fxt = create_client_fixture(Ctx::Default, Msg::ExpiredMockHeader);
+    create_client_validate(
+        &fxt,
+        Expect::Failure(Some(ContextError::ClientError(
+            ClientError::ClientNotActive {
+                status: Status::Expired,
+            },
+        ))),
     );
+}
 
-    let msg_envelope = MsgEnvelope::from(ClientMsg::from(msg));
+#[test]
+fn test_create_mock_client_without_timestamp() {
+    let fxt = create_client_fixture(Ctx::Default, Msg::NoHostTimestamp);
+    create_client_validate(&fxt, Expect::Failure(None));
+}
 
-    let res = validate(&ctx, &router, msg_envelope);
+#[cfg(feature = "serde")]
+#[test]
+fn test_create_tm_client_ok() {
+    let mut fxt = create_client_fixture(Ctx::Default, Msg::ValidTendermintHeader);
+    create_client_validate(&fxt, Expect::Success);
+    create_client_execute(&mut fxt, Expect::Success);
+}
 
-    assert!(matches!(
-        res,
-        Err(ContextError::ClientError(ClientError::ClientFrozen { .. }))
-    ))
+#[cfg(feature = "serde")]
+#[test]
+fn test_create_expired_tm_client() {
+    let fxt = create_client_fixture(Ctx::Default, Msg::ExpiredTendermintHeader);
+    create_client_validate(
+        &fxt,
+        Expect::Failure(Some(ContextError::ClientError(
+            ClientError::ClientNotActive {
+                status: Status::Expired,
+            },
+        ))),
+    );
+}
+
+#[cfg(feature = "serde")]
+#[test]
+fn test_create_frozen_tm_client() {
+    let fxt = create_client_fixture(Ctx::Default, Msg::FrozenTendermintHeader);
+    create_client_validate(
+        &fxt,
+        Expect::Failure(Some(ContextError::ClientError(ClientError::ClientFrozen {
+            description: "the client is frozen".to_string(),
+        }))),
+    );
 }
 
 #[test]
