@@ -21,8 +21,6 @@ tracing         = { version = "0.1.40", default-features = false }
 ibc                         = { workspace = true }
 ibc-core-client-types       = { workspace = true }
 ibc-core-commitment-types   = { workspace = true }
-ibc-client-cw               = { workspace = true }
-ibc-client-tendermint-cw    = { workspace = true }
 ibc-client-tendermint-types = { workspace = true }
 ibc-core-host-types         = { workspace = true }
 ibc-primitives              = { workspace = true }
@@ -37,7 +35,6 @@ tendermint         = { workspace = true }
 tendermint-testgen = { workspace = true }
 
 [dev-dependencies]
-cosmwasm-std   = { workspace = true }
 rstest         = { workspace = true }
 test-log       = { version = "0.2.16", features = [ "trace" ] }
 tendermint-rpc = { workspace = true }

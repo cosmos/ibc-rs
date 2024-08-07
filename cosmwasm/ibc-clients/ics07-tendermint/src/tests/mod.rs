@@ -1,17 +1,19 @@
-pub mod fixture;
-pub mod helper;
-
 use std::time::Duration;
 
 use cosmwasm_std::from_json;
 use cosmwasm_std::testing::{mock_dependencies, mock_env};
-use fixture::Fixture;
-use ibc::core::client::types::{Height, Status};
 use ibc_client_cw::types::{
     ContractResult, MigrateClientStoreMsg, MigrationPrefix, VerifyClientMessageRaw,
     VerifyClientMessageResponse,
 };
-use ibc_client_tendermint_cw::entrypoint::sudo;
+use ibc_core::client::types::{Height, Status};
+
+use crate::entrypoint::sudo;
+
+pub mod fixture;
+pub mod helper;
+
+use fixture::Fixture;
 
 #[test]
 fn test_cw_create_client_ok() {

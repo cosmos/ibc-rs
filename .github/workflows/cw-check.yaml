@@ -3,10 +3,9 @@ on:
   pull_request:
     paths:
       - .github/workflows/cw-check.yaml
-      - Cargo.toml
+      - '*.toml'
       - Cargo.lock
       - ci/cw-check/**
-      - ci/**
       - ibc/**
       - ibc-core/**
       - ibc-apps/**
@@ -43,7 +42,7 @@ jobs:
           -v "$(pwd)":/code \
           -v "$(pwd)"/target:/target \
           -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
-          cosmwasm/optimizer:0.15.1 ./ci/cw-check
+          cosmwasm/optimizer:0.16.0 ./ci/cw-check
 
       - name: Fix permissions
         run: |
