@@ -30,7 +30,7 @@ subtle-encoding = { workspace = true }
 # ibc dependencies
 ibc-proto           = { workspace = true }
 ibc-primitives      = { workspace = true }
-ics23               = { version = "0.11", default-features = false, features = [ "host-functions" ] }
+ics23               = { version = "0.12", default-features = false, features = [ "host-functions" ] }
 ibc-core-host-types = { workspace = true }
 
 # parity dependencies
@@ -43,39 +43,39 @@ rstest = { workspace = true }
 [features]
 default = [ "std" ]
 std = [
-  "displaydoc/std",
-  "serde/std",
-  "subtle-encoding/std",
-  "ibc-primitives/std",
-  "ibc-core-host-types/std",
-  "ibc-proto/std",
-  "ics23/std",
+    "displaydoc/std",
+    "serde/std",
+    "subtle-encoding/std",
+    "ibc-primitives/std",
+    "ibc-core-host-types/std",
+    "ibc-proto/std",
+    "ics23/std",
 ]
 serde = [
-  "dep:serde",
-  "ibc-primitives/serde",
-  "ibc-core-host-types/serde",
-  "ibc-proto/serde",
-  "ics23/serde",
+    "dep:serde",
+    "ibc-primitives/serde",
+    "ibc-core-host-types/serde",
+    "ibc-proto/serde",
+    "ics23/serde",
 ]
 schema = [
-  "dep:schemars",
-  "ibc-proto/json-schema",
-  "ibc-primitives/schema",
-  "ibc-core-host-types/schema",
-  "serde",
-  "std",
+    "dep:schemars",
+    "ibc-proto/json-schema",
+    "ibc-primitives/schema",
+    "ibc-core-host-types/schema",
+    "serde",
+    "std",
 ]
 borsh = [
-  "dep:borsh",
-  "ibc-proto/borsh",
-  "ibc-primitives/borsh",
-  "ibc-core-host-types/borsh",
+    "dep:borsh",
+    "ibc-proto/borsh",
+    "ibc-primitives/borsh",
+    "ibc-core-host-types/borsh",
 ]
 parity-scale-codec = [
-  "dep:parity-scale-codec",
-  "dep:scale-info",
-  "ibc-primitives/parity-scale-codec",
-  "ibc-core-host-types/parity-scale-codec",
-  "ibc-proto/parity-scale-codec",
+    "dep:parity-scale-codec",
+    "dep:scale-info",
+    "ibc-primitives/parity-scale-codec",
+    "ibc-core-host-types/parity-scale-codec",
+    "ibc-proto/parity-scale-codec",
 ]

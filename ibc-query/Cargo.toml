@@ -19,7 +19,7 @@ description = """
 displaydoc = { workspace = true, default-features = false }
 schemars   = { workspace = true, optional = true }
 serde      = { workspace = true, optional = true }
-tonic      = { version = "0.11" }
+tonic      = { version = "0.12.1" }
 
 # ibc dependencies
 ibc       = { workspace = true }
@@ -28,18 +28,18 @@ ibc-proto = { workspace = true, features = [ "server" ] }
 [features]
 default = [ "std" ]
 std = [
-  "ibc/std",
-  "ibc-proto/std",
+    "ibc/std",
+    "ibc-proto/std",
 ]
 serde = [
-  "dep:serde",
-  "ibc/serde",
-  "ibc-proto/serde",
+    "dep:serde",
+    "ibc/serde",
+    "ibc-proto/serde",
 ]
 schema = [
-  "dep:schemars",
-  "ibc/schema",
-  "ibc-proto/json-schema",
-  "serde",
-  "std",
+    "dep:schemars",
+    "ibc/schema",
+    "ibc-proto/json-schema",
+    "serde",
+    "std",
 ]
