@@ -23,7 +23,10 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 /// keep track of host timestamps.
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[serde(try_from = "RawTimestamp", into = "Timestamp")]
+#[cfg_attr(
+    feature = "serde",
+    serde(try_from = "RawTimestamp", into = "Timestamp")
+)]
 #[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash)]
 pub struct Timestamp {
     // Note: The schema representation is the timestamp in nanoseconds (as we do with borsh).
@@ -189,6 +192,10 @@ impl Sub<Duration> for Timestamp {
             .time
             .checked_sub(duration)
             .ok_or(TimestampError::DateOutOfRange)?;
+
+        if t.assume_utc().unix_timestamp() < 0 {
+            return Err(TimestampError::DateOutOfRange);
+        }
         Self::from_utc(t.assume_utc())
     }
 }
@@ -284,44 +291,33 @@ mod tests {
     use core::time::Duration;
     use std::thread::sleep;
 
+    use rstest::rstest;
     use time::OffsetDateTime;
 
     use super::{Timestamp, ZERO_DURATION};
 
-    #[test]
-    fn test_timestamp_comparisons() {
-        let nil_timestamp = Timestamp::from_nanoseconds(0).unwrap();
-        assert_eq!(nil_timestamp.nanoseconds(), 0);
+    #[rstest]
+    #[case::zero(0)]
+    #[case::one(1)]
+    #[case::billions(1_000_000_000)]
+    #[case::u64_max(u64::MAX)]
+    #[case::i64_max(i64::MAX.try_into().unwrap())]
+    fn test_timestamp_from_nanoseconds(#[case] nanos: u64) {
+        let timestamp = Timestamp::from_nanoseconds(nanos).unwrap();
+        let dt: OffsetDateTime = timestamp.into();
+        assert_eq!(dt.unix_timestamp_nanos(), nanos as i128);
+        assert_eq!(timestamp.nanoseconds(), nanos);
+    }
 
-        let timestamp1 = Timestamp::from_nanoseconds(1).unwrap();
-        let dt: OffsetDateTime = timestamp1.into();
-        assert_eq!(dt.unix_timestamp_nanos(), 1);
-        assert_eq!(timestamp1.nanoseconds(), 1);
-
-        let timestamp2 = Timestamp::from_nanoseconds(1_000_000_000).unwrap();
-        let dt: OffsetDateTime = timestamp2.into();
-        assert_eq!(dt.unix_timestamp_nanos(), 1_000_000_000);
-        assert_eq!(timestamp2.nanoseconds(), 1_000_000_000);
-
-        assert!(Timestamp::from_nanoseconds(u64::MAX).is_ok());
-        assert!(Timestamp::from_nanoseconds(i64::MAX.try_into().unwrap()).is_ok());
-
-        // assert_eq!(timestamp1.check_expiry(&timestamp2), Expiry::NotExpired);
-        // assert_eq!(timestamp1.check_expiry(&timestamp1), Expiry::NotExpired);
-        // assert_eq!(timestamp2.check_expiry(&timestamp2), Expiry::NotExpired);
-        // assert_eq!(timestamp2.check_expiry(&timestamp1), Expiry::Expired);
-        // assert_eq!(
-        //     timestamp1.check_expiry(&nil_timestamp),
-        //     Expiry::InvalidTimestamp
-        // );
-        // assert_eq!(
-        //     nil_timestamp.check_expiry(&timestamp2),
-        //     Expiry::InvalidTimestamp
-        // );
-        // assert_eq!(
-        //     nil_timestamp.check_expiry(&nil_timestamp),
-        //     Expiry::InvalidTimestamp
-        // );
+    #[rstest]
+    #[case::one(1, 0)]
+    #[case::billions(1_000_000_000, 0)]
+    #[case::u64_max(u64::MAX, 0)]
+    #[case::u64_from_i62_max(u64::MAX, i64::MAX.try_into().unwrap())]
+    fn test_timestamp_comparisons(#[case] nanos_1: u64, #[case] nanos_2: u64) {
+        let t_1 = Timestamp::from_nanoseconds(nanos_1).unwrap();
+        let t_2 = Timestamp::from_nanoseconds(nanos_2).unwrap();
+        assert!(t_1 > t_2);
     }
 
     #[test]
@@ -335,8 +331,8 @@ mod tests {
         assert_eq!(time1, (time1 + ZERO_DURATION).unwrap());
         assert_eq!(time2, (time1 + duration).unwrap());
         assert_eq!(time3, (time1 - duration).unwrap());
-        assert_eq!(time0, (time0 + duration).unwrap());
-        assert_eq!(time0, (time0 - duration).unwrap());
+        assert_eq!(time0, (time3 - duration).unwrap());
+        assert!((time0 - duration).is_err());
     }
 
     #[test]
