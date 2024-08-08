@@ -21,7 +21,7 @@ use ibc::core::host::types::path::{
 };
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
-use ibc_proto::google::protobuf::{Any, Timestamp as RawTimestamp};
+use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::channel::v1::Channel as RawChannelEnd;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::core::connection::v1::ConnectionEnd as RawConnectionEnd;
@@ -57,8 +57,7 @@ where
     /// A typed-store for next channel counter sequence
     pub channel_counter: JsonStore<SharedStore<S>, NextChannelSequencePath, u64>,
     /// Tracks the processed time for client updates
-    pub client_processed_times:
-        ProtobufStore<SharedStore<S>, ClientUpdateTimePath, Timestamp, RawTimestamp>,
+    pub client_processed_times: JsonStore<SharedStore<S>, ClientUpdateTimePath, Timestamp>,
     /// A typed-store to track the processed height for client updates
     pub client_processed_heights:
         ProtobufStore<SharedStore<S>, ClientUpdateHeightPath, Height, RawHeight>,
