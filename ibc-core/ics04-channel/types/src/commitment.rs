@@ -1,10 +1,9 @@
 //! Types and utilities related to packet commitments.
 
 use ibc_primitives::prelude::*;
-use ibc_primitives::Timestamp;
 
 use super::acknowledgement::Acknowledgement;
-use crate::timeout::TimeoutHeight;
+use crate::timeout::{TimeoutHeight, TimeoutTimestamp};
 
 /// Packet commitment
 #[cfg_attr(
@@ -87,7 +86,7 @@ impl From<Vec<u8>> for AcknowledgementCommitment {
 pub fn compute_packet_commitment(
     packet_data: &[u8],
     timeout_height: &TimeoutHeight,
-    timeout_timestamp: &Timestamp,
+    timeout_timestamp: &TimeoutTimestamp,
 ) -> PacketCommitment {
     let mut hash_input = [0; 8 * 3 + 32];
 
@@ -128,7 +127,7 @@ mod test {
         let actual = compute_packet_commitment(
             b"packet data",
             &TimeoutHeight::At(ibc_core_client_types::Height::new(42, 24).unwrap()),
-            &Timestamp::from_nanoseconds(0x42).unwrap(),
+            &TimeoutTimestamp::from(0x42),
         );
         assert_eq!(&expected[..], actual.as_ref());
     }

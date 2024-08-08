@@ -479,8 +479,8 @@ where
         use ibc::apps::transfer::handler::send_transfer;
         use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
         use ibc::apps::transfer::types::packet::PacketData;
+        use ibc::core::channel::types::timeout::TimeoutTimestamp;
         use ibc::core::handler::types::events::IbcEvent;
-        use ibc::primitives::Timestamp;
 
         use crate::testapp::ibc::applications::transfer::types::DummyTransferModule;
 
@@ -501,7 +501,7 @@ where
             // setting timeout height to 10 blocks from B's current height.
             timeout_height_on_b: self.get_ctx_b().latest_height().add(10).into(),
             // not setting timeout timestamp.
-            timeout_timestamp_on_b: Timestamp::none(),
+            timeout_timestamp_on_b: TimeoutTimestamp::Never,
         };
 
         // module creates the send_packet

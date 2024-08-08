@@ -7,6 +7,7 @@ use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
 
 use crate::testapp::ibc::clients::mock::proto::Header as RawMockHeader;
+use crate::utils::year_2023;
 
 pub const MOCK_HEADER_TYPE_URL: &str = "/ibc.mock.Header";
 
@@ -21,7 +22,7 @@ impl Default for MockHeader {
     fn default() -> Self {
         Self {
             height: Height::min(0),
-            timestamp: Timestamp::none(),
+            timestamp: year_2023(),
         }
     }
 }
@@ -49,11 +50,7 @@ impl TryFrom<RawMockHeader> for MockHeader {
                     description: "missing height".into(),
                 })?
                 .try_into()?,
-            timestamp: Timestamp::from_nanoseconds(raw.timestamp).map_err(|err| {
-                ClientError::Other {
-                    description: err.to_string(),
-                }
-            })?,
+            timestamp: Timestamp::from_nanoseconds(raw.timestamp),
         })
     }
 }
@@ -75,7 +72,7 @@ impl MockHeader {
     pub fn new(height: Height) -> Self {
         Self {
             height,
-            timestamp: Timestamp::none(),
+            timestamp: year_2023(),
         }
     }
 
@@ -126,15 +123,14 @@ mod tests {
 
     #[test]
     fn encode_any() {
-        let header = MockHeader::new(Height::new(1, 10).expect("Never fails"))
-            .with_timestamp(Timestamp::none());
+        let header = MockHeader::new(Height::new(1, 10).expect("Never fails"));
         let bytes = <MockHeader as Protobuf<Any>>::encode_vec(header);
 
         assert_eq!(
             &bytes,
             &[
                 10, 16, 47, 105, 98, 99, 46, 109, 111, 99, 107, 46, 72, 101, 97, 100, 101, 114, 18,
-                6, 10, 4, 8, 1, 16, 10
+                16, 10, 4, 8, 1, 16, 10, 16, 128, 128, 136, 158, 189, 200, 129, 155, 23
             ]
         );
     }

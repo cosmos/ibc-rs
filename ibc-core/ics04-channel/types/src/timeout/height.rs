@@ -2,10 +2,11 @@
 
 use core::fmt::{Display, Error as FmtError, Formatter};
 
-use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
+
+use crate::error::PacketError;
 
 /// Indicates a consensus height on the destination chain after which the packet
 /// will no longer be processed, and will instead count as having timed-out.
@@ -85,7 +86,7 @@ impl TimeoutHeight {
 }
 
 impl TryFrom<RawHeight> for TimeoutHeight {
-    type Error = ClientError;
+    type Error = PacketError;
 
     // Note: it is important for `revision_number` to also be `0`, otherwise
     // packet commitment proofs will be incorrect (proof construction in
@@ -95,14 +96,16 @@ impl TryFrom<RawHeight> for TimeoutHeight {
         if raw_height.revision_number == 0 && raw_height.revision_height == 0 {
             Ok(TimeoutHeight::Never)
         } else {
-            let height: Height = raw_height.try_into()?;
+            let height = raw_height
+                .try_into()
+                .map_err(PacketError::InvalidTimeoutHeight)?;
             Ok(TimeoutHeight::At(height))
         }
     }
 }
 
 impl TryFrom<Option<RawHeight>> for TimeoutHeight {
-    type Error = ClientError;
+    type Error = PacketError;
 
     fn try_from(maybe_raw_height: Option<RawHeight>) -> Result<Self, Self::Error> {
         match maybe_raw_height {
@@ -137,13 +140,13 @@ impl Display for TimeoutHeight {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         match self {
             TimeoutHeight::At(timeout_height) => write!(f, "{timeout_height}"),
-            TimeoutHeight::Never => write!(f, "no timeout"),
+            TimeoutHeight::Never => write!(f, "no timeout height"),
         }
     }
 }
 
 #[cfg(feature = "serde")]
-mod tests {
+mod serialize {
     use serde::{Deserialize, Serialize};
 
     use super::TimeoutHeight;

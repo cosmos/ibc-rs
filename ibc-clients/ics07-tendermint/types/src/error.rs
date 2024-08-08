@@ -9,6 +9,7 @@ use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
+use ibc_primitives::TimestampError;
 use tendermint::{Error as TendermintError, Hash};
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 use tendermint_light_client_verifier::operations::VotingPowerTally;
@@ -58,10 +59,8 @@ pub enum Error {
     InvalidRawHeader(TendermintError),
     /// invalid raw misbehaviour: `{reason}`
     InvalidRawMisbehaviour { reason: String },
-    /// given other previous updates, header timestamp should be at most `{max}`, but was `{actual}`
-    HeaderTimestampTooHigh { actual: String, max: String },
-    /// given other previous updates, header timestamp should be at least `{min}`, but was `{actual}`
-    HeaderTimestampTooLow { actual: String, min: String },
+    /// invalid header timestamp: `{0}`
+    InvalidHeaderTimestamp(TimestampError),
     /// header revision height = `{height}` is invalid
     InvalidHeaderHeight { height: u64 },
     /// frozen height is missing

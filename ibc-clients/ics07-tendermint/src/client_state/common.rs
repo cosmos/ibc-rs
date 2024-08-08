@@ -150,12 +150,6 @@ pub fn consensus_state_status<CS: ConsensusState>(
     host_timestamp: &Timestamp,
     trusting_period: Duration,
 ) -> Result<Status, ClientError> {
-    if !host_timestamp.is_set() {
-        return Err(ClientError::Other {
-            description: "host timestamp is none".into(),
-        });
-    }
-
     // Note: if the `duration_since()` is `None`, indicating that the latest
     // consensus state is in the future, then we don't consider the client
     // to be expired.

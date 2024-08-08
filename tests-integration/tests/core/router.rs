@@ -167,12 +167,6 @@ fn routing_module_and_keepers() {
         .packet_data(packet_data.clone())
         .build();
 
-    let msg_transfer_no_timeout_or_timestamp = MsgTransferConfig::builder()
-        .packet_data(packet_data)
-        // Timestamp::from_nanoseconds(0) and Timestamp::none() are equivalent
-        .timeout_timestamp_on_b(Timestamp::from_nanoseconds(0).unwrap())
-        .build();
-
     let mut msg_to_on_close =
         MsgTimeoutOnClose::try_from(dummy_raw_msg_timeout_on_close(36, 5)).unwrap();
     msg_to_on_close.packet.seq_on_a = 2.into();
@@ -362,12 +356,6 @@ fn routing_module_and_keepers() {
         Test {
             name: "Transfer message no timeout".to_string(),
             msg: msg_transfer_no_timeout.into(),
-            want_pass: false,
-            state_check: None,
-        },
-        Test {
-            name: "Transfer message no timeout nor timestamp".to_string(),
-            msg: msg_transfer_no_timeout_or_timestamp.into(),
             want_pass: false,
             state_check: None,
         },

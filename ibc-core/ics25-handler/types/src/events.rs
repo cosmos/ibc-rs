@@ -8,7 +8,7 @@ use ibc_core_connection_types::{error as connection_error, events as ConnectionE
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_router_types::event::ModuleEvent;
 use ibc_primitives::prelude::*;
-use ibc_primitives::ParseTimestampError;
+use ibc_primitives::TimestampError;
 use tendermint::abci;
 
 /// All error variants related to IBC events
@@ -25,7 +25,7 @@ pub enum Error {
     /// channel error: `{0}`
     Channel(channel_error::ChannelError),
     /// parsing timestamp error: `{0}`
-    Timestamp(ParseTimestampError),
+    Timestamp(TimestampError),
     /// incorrect event type: `{event}`
     IncorrectEventType { event: String },
     /// module event cannot use core event types: `{event:?}`

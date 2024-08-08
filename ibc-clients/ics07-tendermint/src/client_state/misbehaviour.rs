@@ -84,7 +84,7 @@ pub fn verify_misbehaviour_header<H>(
     header: &TmHeader,
     chain_id: &ChainId,
     options: &Options,
-    trusted_timestamp: Time,
+    trusted_time: Time,
     trusted_next_validator_hash: Hash,
     current_timestamp: Timestamp,
     verifier: &impl Verifier,
@@ -97,12 +97,15 @@ where
 
     // ensure trusted consensus state is within trusting period
     {
-        let duration_since_consensus_state = current_timestamp
-            .duration_since(&trusted_timestamp.into())
-            .ok_or_else(|| ClientError::InvalidConsensusStateTimestamp {
-                time1: trusted_timestamp.into(),
-                time2: current_timestamp,
-            })?;
+        let trusted_timestamp = trusted_time.try_into().expect("time conversion failed");
+
+        let duration_since_consensus_state =
+            current_timestamp.duration_since(&trusted_timestamp).ok_or(
+                ClientError::InvalidConsensusStateTimestamp {
+                    time1: trusted_timestamp,
+                    time2: current_timestamp,
+                },
+            )?;
 
         if duration_since_consensus_state >= options.trusting_period {
             return Err(Error::ConsensusStateTimestampGteTrustingPeriod {
@@ -123,15 +126,10 @@ where
             description: format!("failed to parse chain id: {e}"),
         })?;
 
-    let trusted_state = header.as_trusted_block_state(
-        tm_chain_id,
-        trusted_timestamp,
-        trusted_next_validator_hash,
-    )?;
+    let trusted_state =
+        header.as_trusted_block_state(tm_chain_id, trusted_time, trusted_next_validator_hash)?;
 
-    let current_timestamp = current_timestamp.into_tm_time().ok_or(ClientError::Other {
-        description: "host timestamp must not be zero".to_string(),
-    })?;
+    let current_timestamp = current_timestamp.into_tm_time();
 
     verifier
         .verify_misbehaviour_header(untrusted_state, trusted_state, options, current_timestamp)

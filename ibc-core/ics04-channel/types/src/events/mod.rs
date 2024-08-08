@@ -5,7 +5,6 @@ mod packet_attributes;
 
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_primitives::prelude::*;
-use ibc_primitives::Timestamp;
 use tendermint::abci;
 
 use self::channel_attributes::{
@@ -24,6 +23,7 @@ use super::timeout::TimeoutHeight;
 use super::Version;
 use crate::error::ChannelError;
 use crate::packet::Packet;
+use crate::timeout::TimeoutTimestamp;
 
 /// Channel event types corresponding to ibc-go's channel events:
 /// https://github.com/cosmos/ibc-go/blob/c4413c5877f9ef883494da1721cb18caaba7f7f5/modules/core/04-channel/types/events.go#L52-L72
@@ -633,7 +633,7 @@ impl SendPacket {
         &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+    pub fn timeout_timestamp_on_b(&self) -> &TimeoutTimestamp {
         &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 
@@ -744,7 +744,7 @@ impl ReceivePacket {
         &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+    pub fn timeout_timestamp_on_b(&self) -> &TimeoutTimestamp {
         &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 
@@ -859,7 +859,7 @@ impl WriteAcknowledgement {
         &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+    pub fn timeout_timestamp_on_b(&self) -> &TimeoutTimestamp {
         &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 
@@ -964,7 +964,7 @@ impl AcknowledgePacket {
         &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+    pub fn timeout_timestamp_on_b(&self) -> &TimeoutTimestamp {
         &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 
@@ -1065,7 +1065,7 @@ impl TimeoutPacket {
         &self.timeout_height_attr_on_b.timeout_height
     }
 
-    pub fn timeout_timestamp_on_b(&self) -> &Timestamp {
+    pub fn timeout_timestamp_on_b(&self) -> &TimeoutTimestamp {
         &self.timeout_timestamp_attr_on_b.timeout_timestamp
     }
 

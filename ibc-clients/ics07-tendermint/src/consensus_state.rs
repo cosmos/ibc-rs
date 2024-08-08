@@ -93,6 +93,9 @@ impl ConsensusStateTrait for ConsensusState {
     }
 
     fn timestamp(&self) -> Timestamp {
-        self.0.timestamp.into()
+        self.0
+            .timestamp
+            .try_into()
+            .expect("UNIX Timestamp can't be negative")
     }
 }

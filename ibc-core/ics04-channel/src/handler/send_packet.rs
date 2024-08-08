@@ -10,7 +10,6 @@ use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;
-use ibc_primitives::Expiry;
 
 use crate::context::{SendPacketExecutionContext, SendPacketValidationContext};
 
@@ -81,7 +80,7 @@ pub fn send_packet_validate(
         client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
     let latest_timestamp = consensus_state_of_b_on_a.timestamp();
     let packet_timestamp = packet.timeout_timestamp_on_b;
-    if let Expiry::Expired = latest_timestamp.check_expiry(&packet_timestamp) {
+    if packet_timestamp.has_expired(&latest_timestamp) {
         return Err(PacketError::LowPacketTimestamp.into());
     }
 

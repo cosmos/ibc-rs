@@ -1358,8 +1358,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
     // Generate `header2` for chain-B which is identical to `header1` but with a conflicting
     // timestamp
     let header2 = {
-        let timestamp =
-            Timestamp::from_nanoseconds(Timestamp::now().nanoseconds() + 1_000_000_000).unwrap();
+        let timestamp = Timestamp::from_nanoseconds(Timestamp::now().nanoseconds() + 1_000_000_000);
         let mut tm_block = TendermintHost::builder()
             .chain_id(chain_id_b)
             .build()

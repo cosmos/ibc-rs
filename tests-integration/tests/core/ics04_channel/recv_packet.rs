@@ -1,6 +1,7 @@
 use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State};
 use ibc::core::channel::types::msgs::{MsgRecvPacket, PacketMsg};
 use ibc::core::channel::types::packet::Packet;
+use ibc::core::channel::types::timeout::TimeoutTimestamp;
 use ibc::core::channel::types::Version;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
@@ -172,7 +173,7 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
         chan_id_on_b: ChannelId::zero(),
         data: Vec::new(),
         timeout_height_on_b: client_height.into(),
-        timeout_timestamp_on_b: Timestamp::from_nanoseconds(1).unwrap(),
+        timeout_timestamp_on_b: TimeoutTimestamp::from_nanoseconds(1),
     };
 
     let msg_packet_old = dummy_msg_recv_packet(

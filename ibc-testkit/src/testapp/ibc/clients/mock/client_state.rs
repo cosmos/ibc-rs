@@ -168,15 +168,6 @@ impl ClientStateCommon for MockClientState {
     ) -> Result<(), ClientError> {
         let mock_consensus_state = MockConsensusState::try_from(consensus_state)?;
 
-        let consensus_state_timestamp = mock_consensus_state.timestamp();
-
-        if !consensus_state_timestamp.is_set() {
-            return Err(ClientError::InvalidConsensusStateTimestamp {
-                time1: *host_timestamp,
-                time2: consensus_state_timestamp,
-            });
-        }
-
         if consensus_state_status(&mock_consensus_state, host_timestamp, self.trusting_period)?
             .is_expired()
         {
@@ -521,7 +512,8 @@ mod test {
         use super::{MockClientState, MockHeader};
 
         let client_state = MockClientState::new(MockHeader::default());
-        let expected = r#"{"typeUrl":"/ibc.mock.ClientState","value":"CgQKAhABEICAkMrSxg4="}"#;
+        let expected =
+            r#"{"typeUrl":"/ibc.mock.ClientState","value":"Cg4KAhABEICAiJ69yIGbFxCAgJDK0sYO"}"#;
         let json = serde_json::to_string(&Any::from(client_state)).unwrap();
         assert_eq!(json, expected);
 
