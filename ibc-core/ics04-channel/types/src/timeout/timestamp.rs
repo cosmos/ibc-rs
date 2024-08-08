@@ -27,7 +27,7 @@ use crate::error::PacketError;
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-// #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Copy, Debug, Hash, Eq, PartialEq)]
 pub enum TimeoutTimestamp {
     Never,
@@ -70,6 +70,12 @@ impl TimeoutTimestamp {
             // When there's no timeout, timestamps are never expired
             Self::Never => false,
         }
+    }
+}
+
+impl From<Timestamp> for TimeoutTimestamp {
+    fn from(timestamp: Timestamp) -> Self {
+        TimeoutTimestamp::At(timestamp)
     }
 }
 
@@ -124,31 +130,20 @@ impl Sub<Duration> for TimeoutTimestamp {
     }
 }
 
-#[cfg(feature = "serde")]
-mod serialize {
-    use serde::{Deserialize, Serialize};
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    use super::TimeoutTimestamp;
+    #[cfg(feature = "serde")]
+    #[rstest::rstest]
+    #[case::never(TimeoutTimestamp::Never)]
+    #[case::at_zero(TimeoutTimestamp::At(Timestamp::from_nanoseconds(0).unwrap()))]
+    #[case::at_some(TimeoutTimestamp::At(Timestamp::from_nanoseconds(123456).unwrap()))]
+    #[case::at_u64_max(TimeoutTimestamp::At(Timestamp::from_nanoseconds(u64::MAX).unwrap()))]
+    fn test_timeout_timestamp_serde(#[case] timeout_timestamp: TimeoutTimestamp) {
+        let serialized = serde_json::to_string(&timeout_timestamp).unwrap();
+        let deserialized: TimeoutTimestamp = serde_json::from_str(&serialized).unwrap();
 
-    impl Serialize for TimeoutTimestamp {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer,
-        {
-            match self {
-                TimeoutTimestamp::At(timestamp) => timestamp.serialize(serializer),
-                TimeoutTimestamp::Never => 0.serialize(serializer),
-            }
-        }
-    }
-
-    impl<'de> Deserialize<'de> for TimeoutTimestamp {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de>,
-        {
-            let timestamp = u64::deserialize(deserializer)?;
-            TimeoutTimestamp::try_from(timestamp).map_err(serde::de::Error::custom)
-        }
+        assert_eq!(timeout_timestamp, deserialized);
     }
 }

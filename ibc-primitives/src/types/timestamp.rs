@@ -10,6 +10,8 @@ use core::time::Duration;
 use displaydoc::Display;
 use ibc_proto::google::protobuf::Timestamp as RawTimestamp;
 use ibc_proto::Protobuf;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 use tendermint::Time;
 use time::error::ComponentRange;
 use time::macros::offset;
@@ -22,11 +24,6 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 /// A new type wrapper over `PrimitiveDateTime` with extended capabilities to
 /// keep track of host timestamps.
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(
-    feature = "serde",
-    serde(try_from = "RawTimestamp", into = "Timestamp")
-)]
 #[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash)]
 pub struct Timestamp {
     // Note: The schema representation is the timestamp in nanoseconds (as we do with borsh).
@@ -212,6 +209,27 @@ impl TryFrom<Time> for Timestamp {
     }
 }
 
+#[cfg(feature = "serde")]
+impl Serialize for Timestamp {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.nanoseconds().serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for Timestamp {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let timestamp = u64::deserialize(deserializer)?;
+        Timestamp::from_nanoseconds(timestamp).map_err(serde::de::Error::custom)
+    }
+}
+
 #[cfg(feature = "borsh")]
 impl borsh::BorshSerialize for Timestamp {
     fn serialize<W: borsh::io::Write>(&self, writer: &mut W) -> borsh::io::Result<()> {
@@ -348,6 +366,19 @@ mod tests {
 
         let inner = res.unwrap();
         assert!(inner > sleep_duration);
+    }
+
+    #[cfg(feature = "serde")]
+    #[rstest]
+    #[case::zero(0)]
+    #[case::one(1)]
+    #[case::billions(1_000_000_000)]
+    #[case::u64_max(u64::MAX)]
+    fn test_timestamp_serde(#[case] nanos: u64) {
+        let timestamp = Timestamp::from_nanoseconds(nanos).unwrap();
+        let serialized = serde_json::to_string(&timestamp).unwrap();
+        let deserialized = serde_json::from_str::<Timestamp>(&serialized).unwrap();
+        assert_eq!(timestamp, deserialized);
     }
 
     #[test]
