@@ -173,7 +173,7 @@ fn recv_packet_timeout_expired(fixture: Fixture) {
         chan_id_on_b: ChannelId::zero(),
         data: Vec::new(),
         timeout_height_on_b: client_height.into(),
-        timeout_timestamp_on_b: TimeoutTimestamp::from_nanoseconds(1).unwrap(),
+        timeout_timestamp_on_b: TimeoutTimestamp::from_nanoseconds(1),
     };
 
     let msg_packet_old = dummy_msg_recv_packet(

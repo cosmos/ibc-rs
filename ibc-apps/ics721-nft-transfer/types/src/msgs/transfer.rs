@@ -56,10 +56,7 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
             .try_into()
             .map_err(ContextError::from)?;
 
-        let timeout_timestamp_on_b: TimeoutTimestamp = raw_msg
-            .timeout_timestamp
-            .try_into()
-            .map_err(ContextError::from)?;
+        let timeout_timestamp_on_b: TimeoutTimestamp = raw_msg.timeout_timestamp.into();
 
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !timeout_height_on_b.is_set() && !timeout_timestamp_on_b.is_set() {

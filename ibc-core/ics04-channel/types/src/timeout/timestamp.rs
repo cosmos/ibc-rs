@@ -36,8 +36,8 @@ pub enum TimeoutTimestamp {
 
 impl TimeoutTimestamp {
     /// Creates a new timeout timestamp from a given nanosecond value.
-    pub fn from_nanoseconds(nanoseconds: u64) -> Result<Self, PacketError> {
-        Self::try_from(nanoseconds)
+    pub fn from_nanoseconds(nanoseconds: u64) -> Self {
+        Self::from(nanoseconds)
     }
 
     /// Returns the timestamp in nanoseconds, where 0 indicates that the absence
@@ -79,16 +79,13 @@ impl From<Timestamp> for TimeoutTimestamp {
     }
 }
 
-impl TryFrom<u64> for TimeoutTimestamp {
-    type Error = PacketError;
-    fn try_from(timestamp: u64) -> Result<Self, Self::Error> {
-        let timeout_timestamp = if timestamp == 0 {
+impl From<u64> for TimeoutTimestamp {
+    fn from(timestamp: u64) -> Self {
+        if timestamp == 0 {
             TimeoutTimestamp::Never
         } else {
             TimeoutTimestamp::At(Timestamp::from_nanoseconds(timestamp))
-        };
-
-        Ok(timeout_timestamp)
+        }
     }
 }
 

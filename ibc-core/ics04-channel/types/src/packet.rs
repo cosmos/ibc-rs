@@ -185,7 +185,7 @@ impl TryFrom<RawPacket> for Packet {
         // should be used.
         let packet_timeout_height: TimeoutHeight = raw_pkt.timeout_height.try_into()?;
 
-        let timeout_timestamp_on_b: TimeoutTimestamp = raw_pkt.timeout_timestamp.try_into()?;
+        let timeout_timestamp_on_b: TimeoutTimestamp = raw_pkt.timeout_timestamp.into();
 
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !packet_timeout_height.is_set() && !timeout_timestamp_on_b.is_set() {
