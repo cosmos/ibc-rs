@@ -49,7 +49,7 @@ impl TimeoutTimestamp {
         }
     }
 
-    /// Returns if the timeout timestamp is set.
+    /// Returns `true` if the timeout timestamp is set.
     pub fn is_set(&self) -> bool {
         match self {
             TimeoutTimestamp::At(_) => true,

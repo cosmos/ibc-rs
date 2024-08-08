@@ -21,8 +21,11 @@ use crate::prelude::*;
 
 pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 
-/// A new type wrapper over `PrimitiveDateTime` with extended capabilities to
-/// keep track of host timestamps.
+/// A newtype wrapper over `PrimitiveDateTime` which serves as the foundational
+/// basis for capturing timestamps. It is used directly to keep track of host
+/// timestamps. It is also encoded as part of the
+/// [ibc::channel::types::timeout::TimeoutTimestamp] type for expressly keeping
+/// track of timeout timestamps.
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash)]
 pub struct Timestamp {
