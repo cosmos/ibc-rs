@@ -128,7 +128,71 @@ impl Sub<Duration> for TimeoutTimestamp {
 
 #[cfg(test)]
 mod tests {
+    use rstest::rstest;
+
+    fn never() -> TimeoutTimestamp {
+        TimeoutTimestamp::Never
+    }
+
+    fn some(t: u64) -> TimeoutTimestamp {
+        TimeoutTimestamp::At(Timestamp::from_nanoseconds(t))
+    }
+
     use super::*;
+    #[rstest]
+    #[case::zero_plus_zero(some(0), 0, some(0))] // NOTE: zero timestamp is 1970-01-01T00:00:00Z
+    #[case::zero_plus_one(some(0), 1, some(1))]
+    #[case::some_plus_zero(some(123456), 0, some(123456))]
+    #[case::some_plus_one(some(123456), 1, some(123457))]
+    fn test_timeout_add_arithmetic(
+        #[case] timeout_timestamp: TimeoutTimestamp,
+        #[case] duration: u64,
+        #[case] expect: TimeoutTimestamp,
+    ) {
+        let duration = Duration::from_nanos(duration);
+        let result = timeout_timestamp + duration;
+        assert_eq!(result.unwrap(), expect);
+    }
+
+    #[rstest]
+    #[case::never(never(), 0)]
+    #[case::never_plus_one(never(), 1)]
+    fn test_invalid_timeout_add_arithmetic(
+        #[case] timeout_timestamp: TimeoutTimestamp,
+        #[case] duration: u64,
+    ) {
+        let duration = Duration::from_nanos(duration);
+        let result = timeout_timestamp + duration;
+        assert!(result.is_err());
+    }
+
+    #[rstest]
+    #[case::zero_minus_zero(some(0), 0, some(0))]
+    #[case::some_minus(some(123456), 123456, some(0))]
+    #[case::some_minus_zero(some(123456), 0, some(123456))]
+    #[case::some_minus_one(some(123456), 1, some(123455))]
+    fn test_timeout_sub_arithmetic(
+        #[case] timeout_timestamp: TimeoutTimestamp,
+        #[case] duration: u64,
+        #[case] expect: TimeoutTimestamp,
+    ) {
+        let duration = Duration::from_nanos(duration);
+        let result = timeout_timestamp - duration;
+        assert_eq!(result.unwrap(), expect);
+    }
+
+    #[rstest]
+    #[case::never(never(), 0)]
+    #[case::never_minus_one(never(), 1)]
+    #[case::zero_minus_one(some(0), 1)]
+    fn test_invalid_sub_arithmetic(
+        #[case] timeout_timestamp: TimeoutTimestamp,
+        #[case] duration: u64,
+    ) {
+        let duration = Duration::from_nanos(duration);
+        let result = timeout_timestamp - duration;
+        assert!(result.is_err());
+    }
 
     #[cfg(feature = "serde")]
     #[rstest::rstest]
