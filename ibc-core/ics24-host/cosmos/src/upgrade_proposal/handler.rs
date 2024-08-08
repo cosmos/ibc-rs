@@ -1,6 +1,6 @@
 use ibc_client_tendermint::types::ClientState as TmClientState;
 use ibc_core_client_types::error::UpgradeClientError;
-use ibc_core_host_types::path::{UpgradeClientStatePath, UPGRADED_IBC_STATE};
+use ibc_core_host_types::path::UpgradeClientStatePath;
 use ibc_primitives::prelude::*;
 use tendermint::abci::Event as TmEvent;
 
