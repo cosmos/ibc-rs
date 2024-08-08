@@ -56,10 +56,10 @@ impl ClientStateCommon for ClientState {
         let upgrade_path = &self.inner().upgrade_path;
         let (upgrade_path_prefix, upgrade_path) = match upgrade_path.len() {
             0 => {
-                return Err(ClientError::ClientSpecific {
-                    description: "cannot upgrade client as no upgrade path has been set"
-                        .to_string(),
-                });
+                return Err(UpgradeClientError::InvalidUpgradePath {
+                    reason: "no upgrade path has been set".to_string(),
+                }
+                .into());
             }
             1 => (CommitmentPrefix::empty(), upgrade_path[0].clone()),
             2 => (
@@ -67,9 +67,10 @@ impl ClientStateCommon for ClientState {
                 upgrade_path[1].clone(),
             ),
             _ => {
-                return Err(ClientError::ClientSpecific {
-                    description: "upgrade client failed: upgrade path is too long".to_string(),
-                })
+                return Err(UpgradeClientError::InvalidUpgradePath {
+                    reason: "upgrade path is too long".to_string(),
+                }
+                .into());
             }
         };
 

@@ -151,6 +151,8 @@ pub enum UpgradeClientError {
         upgraded_height: Height,
         client_height: Height,
     },
+    /// Invalid upgrade path: `{reason}`
+    InvalidUpgradePath { reason: String },
     /// invalid upgrade proposal: `{reason}`
     InvalidUpgradeProposal { reason: String },
     /// invalid upgrade plan: `{reason}`
