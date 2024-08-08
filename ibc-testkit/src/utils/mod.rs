@@ -1,7 +1,6 @@
 use ibc::primitives::Timestamp;
 #[cfg(feature = "serde")]
 use serde::{de::DeserializeOwned, Serialize};
-use tendermint::Time;
 
 /// Returns a `Timestamp` representation of the beginning of year 2023.
 ///
@@ -13,9 +12,7 @@ use tendermint::Time;
 /// We can still set a custom timestamp via [`TestContextConfig`](crate::fixtures::core::context::TestContextConfig).
 pub fn year_2023() -> Timestamp {
     // Sun Jan 01 2023 00:00:00 GMT+0000
-    Time::from_unix_timestamp(1_672_531_200, 0)
-        .expect("should be a valid time")
-        .into()
+    Timestamp::from_unix_timestamp(1_672_531_200, 0).expect("should be a valid time")
 }
 
 /// Utility function that asserts that the given JSON input can be

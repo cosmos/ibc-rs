@@ -6,14 +6,13 @@ use core::str;
 use derive_more::From;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_primitives::prelude::*;
-use ibc_primitives::Timestamp;
 use subtle_encoding::hex;
 use tendermint::abci;
 
 use crate::acknowledgement::Acknowledgement;
 use crate::channel::Order;
 use crate::error::ChannelError;
-use crate::timeout::TimeoutHeight;
+use crate::timeout::{TimeoutHeight, TimeoutTimestamp};
 
 const PKT_SEQ_ATTRIBUTE_KEY: &str = "packet_sequence";
 const PKT_DATA_ATTRIBUTE_KEY: &str = "packet_data";
@@ -113,7 +112,7 @@ impl From<TimeoutHeightAttribute> for abci::EventAttribute {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, From, PartialEq, Eq)]
 pub struct TimeoutTimestampAttribute {
-    pub timeout_timestamp: Timestamp,
+    pub timeout_timestamp: TimeoutTimestamp,
 }
 
 impl From<TimeoutTimestampAttribute> for abci::EventAttribute {

@@ -4,7 +4,7 @@ use core::time::Duration;
 use ibc::core::channel::handler::send_packet;
 use ibc::core::channel::types::channel::{ChannelEnd, Counterparty, Order, State};
 use ibc::core::channel::types::packet::Packet;
-use ibc::core::channel::types::timeout::TimeoutHeight;
+use ibc::core::channel::types::timeout::{TimeoutHeight, TimeoutTimestamp};
 use ibc::core::channel::types::Version;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
@@ -88,7 +88,7 @@ fn send_packet_processing() {
     let packet_with_no_timeout: Packet = {
         let mut packet: Packet = dummy_raw_packet(10, 10).try_into().unwrap();
         packet.timeout_height_on_b = TimeoutHeight::no_timeout();
-        packet.timeout_timestamp_on_b = Timestamp::none();
+        packet.timeout_timestamp_on_b = TimeoutTimestamp::no_timeout();
         packet
     };
 

@@ -1,10 +1,9 @@
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::proto::v1::Packet as RawPacket;
-use ibc::core::channel::types::timeout::TimeoutHeight;
+use ibc::core::channel::types::timeout::{TimeoutHeight, TimeoutTimestamp};
 use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::host::types::identifiers::{ChannelId, PortId, Sequence};
 use ibc::core::primitives::prelude::*;
-use ibc::core::primitives::Timestamp;
 use typed_builder::TypedBuilder;
 
 /// Configuration of the `PacketData` type for building dummy packets.
@@ -25,8 +24,8 @@ pub struct PacketConfig {
     pub data: Vec<u8>,
     #[builder(default = TimeoutHeight::Never)]
     pub timeout_height_on_b: TimeoutHeight,
-    #[builder(default = Timestamp::none())]
-    pub timeout_timestamp_on_b: Timestamp,
+    #[builder(default = TimeoutTimestamp::Never)]
+    pub timeout_timestamp_on_b: TimeoutTimestamp,
 }
 
 impl From<PacketConfig> for Packet {

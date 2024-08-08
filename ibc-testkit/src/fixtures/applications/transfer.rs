@@ -2,9 +2,9 @@ use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
 use ibc::apps::transfer::types::packet::PacketData;
 use ibc::apps::transfer::types::{Memo, PrefixedCoin};
 use ibc::core::channel::types::packet::Packet;
-use ibc::core::channel::types::timeout::TimeoutHeight;
+use ibc::core::channel::types::timeout::{TimeoutHeight, TimeoutTimestamp};
 use ibc::core::host::types::identifiers::{ChannelId, PortId, Sequence};
-use ibc::core::primitives::{Signer, Timestamp};
+use ibc::core::primitives::Signer;
 use typed_builder::TypedBuilder;
 
 use crate::fixtures::core::signer::dummy_account_id;
@@ -20,8 +20,8 @@ pub struct MsgTransferConfig {
     pub packet_data: PacketData,
     #[builder(default = TimeoutHeight::Never)]
     pub timeout_height_on_b: TimeoutHeight,
-    #[builder(default = Timestamp::none())]
-    pub timeout_timestamp_on_b: Timestamp,
+    #[builder(default = TimeoutTimestamp::Never)]
+    pub timeout_timestamp_on_b: TimeoutTimestamp,
 }
 
 impl From<MsgTransferConfig> for MsgTransfer {

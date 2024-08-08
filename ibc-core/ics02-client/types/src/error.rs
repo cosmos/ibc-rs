@@ -81,8 +81,6 @@ pub enum ClientError {
     },
     /// invalid commitment proof bytes error: `{0}`
     InvalidCommitmentProof(CommitmentError),
-    /// invalid packet timeout timestamp value error: `{0}`
-    InvalidPacketTimestamp(ibc_primitives::ParseTimestampError),
     /// mismatch between client and arguments types
     ClientArgsTypeMismatch { client_type: ClientType },
     /// timestamp is invalid or missing, timestamp=`{time1}`,  now=`{time2}`
@@ -133,7 +131,6 @@ impl std::error::Error for ClientError {
             | Self::InvalidClientIdentifier(e)
             | Self::InvalidRawMisbehaviour(e) => Some(e),
             Self::InvalidCommitmentProof(e) | Self::Ics23Verification(e) => Some(e),
-            Self::InvalidPacketTimestamp(e) => Some(e),
             _ => None,
         }
     }

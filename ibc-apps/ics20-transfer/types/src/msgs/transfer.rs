@@ -1,11 +1,10 @@
 //! Defines the token transfer message type
 
 use ibc_core::channel::types::error::PacketError;
-use ibc_core::channel::types::timeout::TimeoutHeight;
+use ibc_core::channel::types::timeout::{TimeoutHeight, TimeoutTimestamp};
 use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::Protobuf;
@@ -45,19 +44,20 @@ pub struct MsgTransfer {
     pub timeout_height_on_b: TimeoutHeight,
     /// Timeout timestamp relative to the current block timestamp.
     /// The timeout is disabled when set to 0.
-    pub timeout_timestamp_on_b: Timestamp,
+    pub timeout_timestamp_on_b: TimeoutTimestamp,
 }
 
 impl TryFrom<RawMsgTransfer> for MsgTransfer {
     type Error = TokenTransferError;
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
-        let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_msg.timeout_timestamp)
-            .map_err(PacketError::InvalidPacketTimestamp)
-            .map_err(ContextError::from)?;
-
         let timeout_height_on_b: TimeoutHeight = raw_msg
             .timeout_height
+            .try_into()
+            .map_err(ContextError::from)?;
+
+        let timeout_timestamp_on_b: TimeoutTimestamp = raw_msg
+            .timeout_timestamp
             .try_into()
             .map_err(ContextError::from)?;
 

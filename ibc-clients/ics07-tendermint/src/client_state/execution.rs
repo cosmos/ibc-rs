@@ -336,12 +336,7 @@ where
         let tm_consensus_state: ConsensusStateType =
             consensus_state.try_into().map_err(Into::into)?;
 
-        let host_timestamp =
-            ctx.host_timestamp()?
-                .into_tm_time()
-                .ok_or_else(|| ClientError::Other {
-                    description: String::from("host timestamp is not a valid TM timestamp"),
-                })?;
+        let host_timestamp = ctx.host_timestamp()?.into_tm_time();
 
         let tm_consensus_state_timestamp = tm_consensus_state.timestamp();
         let tm_consensus_state_expiry = (tm_consensus_state_timestamp

@@ -83,12 +83,7 @@ where
             next_validators: None,
         };
 
-        let now =
-            ctx.host_timestamp()?
-                .into_tm_time()
-                .ok_or_else(|| ClientError::ClientSpecific {
-                    description: "host timestamp is not a valid TM timestamp".to_string(),
-                })?;
+        let now = ctx.host_timestamp()?.into_tm_time();
 
         // main header verification, delegated to the tendermint-light-client crate.
         verifier

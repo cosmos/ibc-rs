@@ -2,12 +2,12 @@
 use ibc_core_client_types::Height;
 use ibc_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
-use ibc_primitives::Expiry::Expired;
 use ibc_primitives::Timestamp;
 use ibc_proto::ibc::core::channel::v1::{Packet as RawPacket, PacketState as RawPacketState};
 
 use super::timeout::TimeoutHeight;
 use crate::error::PacketError;
+use crate::timeout::TimeoutTimestamp;
 
 /// Enumeration of proof carrying ICS4 message, helper for relayer.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -80,7 +80,7 @@ pub struct Packet {
     )]
     pub data: Vec<u8>,
     pub timeout_height_on_b: TimeoutHeight,
-    pub timeout_timestamp_on_b: Timestamp,
+    pub timeout_timestamp_on_b: TimeoutTimestamp,
 }
 
 struct PacketData<'a>(&'a [u8]);
@@ -140,8 +140,7 @@ impl Packet {
     pub fn timed_out(&self, dst_chain_ts: &Timestamp, dst_chain_height: Height) -> bool {
         let height_timed_out = self.timeout_height_on_b.has_expired(dst_chain_height);
 
-        let timestamp_timed_out = self.timeout_timestamp_on_b.is_set()
-            && dst_chain_ts.check_expiry(&self.timeout_timestamp_on_b) == Expired;
+        let timestamp_timed_out = self.timeout_timestamp_on_b.has_expired(dst_chain_ts);
 
         height_timed_out || timestamp_timed_out
     }
@@ -184,13 +183,9 @@ impl TryFrom<RawPacket> for Packet {
         // revision_number as soon as the chain starts,
         // `{revision_number: old_rev + 1, revision_height: 1}`
         // should be used.
-        let packet_timeout_height: TimeoutHeight = raw_pkt
-            .timeout_height
-            .try_into()
-            .map_err(|_| PacketError::InvalidTimeoutHeight)?;
+        let packet_timeout_height: TimeoutHeight = raw_pkt.timeout_height.try_into()?;
 
-        let timeout_timestamp_on_b = Timestamp::from_nanoseconds(raw_pkt.timeout_timestamp)
-            .map_err(PacketError::InvalidPacketTimestamp)?;
+        let timeout_timestamp_on_b: TimeoutTimestamp = raw_pkt.timeout_timestamp.try_into()?;
 
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !packet_timeout_height.is_set() && !timeout_timestamp_on_b.is_set() {
