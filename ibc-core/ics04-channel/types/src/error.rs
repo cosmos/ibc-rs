@@ -1,16 +1,18 @@
 //! Defines the main channel, port, and packet error types
 
 use displaydoc::Display;
-use ibc_core_client_types::{error as client_error, Height};
+use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::Height;
 use ibc_core_connection_types::error as connection_error;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{ParseTimestampError, Timestamp};
+use ibc_primitives::{Timestamp, TimestampError};
 
 use super::channel::Counterparty;
 use super::timeout::TimeoutHeight;
 use crate::channel::State;
+use crate::timeout::TimeoutTimestamp;
 use crate::Version;
 
 #[derive(Debug, Display)]
@@ -47,10 +49,10 @@ pub enum ChannelError {
     /// Verification fails for the packet with the sequence number `{sequence}`, error: `{client_error}`
     PacketVerificationFailed {
         sequence: Sequence,
-        client_error: client_error::ClientError,
+        client_error: ClientError,
     },
     /// Error verifying channel state error: `{0}`
-    VerifyChannelFailed(client_error::ClientError),
+    VerifyChannelFailed(ClientError),
     /// String `{value}` cannot be converted to packet sequence, error: `{error}`
     InvalidStringAsSequence {
         value: String,
@@ -111,7 +113,7 @@ pub enum PacketError {
     PacketTimeoutNotReached {
         timeout_height: TimeoutHeight,
         chain_height: Height,
-        timeout_timestamp: Timestamp,
+        timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
     /// Packet acknowledgement exists for the packet with the sequence `{sequence}`
@@ -136,10 +138,10 @@ pub enum PacketError {
     ZeroPacketSequence,
     /// packet data bytes cannot be empty
     ZeroPacketData,
-    /// invalid timeout height for the packet
-    InvalidTimeoutHeight,
-    /// Invalid packet timeout timestamp value error: `{0}`
-    InvalidPacketTimestamp(ParseTimestampError),
+    /// invalid timeout height with error: `{0}`
+    InvalidTimeoutHeight(ClientError),
+    /// Invalid timeout timestamp with error: `{0}`
+    InvalidTimeoutTimestamp(TimestampError),
     /// missing timeout
     MissingTimeout,
     /// invalid identifier error: `{0}`
@@ -179,6 +181,12 @@ impl From<IdentifierError> for ChannelError {
 impl From<IdentifierError> for PacketError {
     fn from(err: IdentifierError) -> Self {
         Self::InvalidIdentifier(err)
+    }
+}
+
+impl From<TimestampError> for PacketError {
+    fn from(err: TimestampError) -> Self {
+        Self::InvalidTimeoutTimestamp(err)
     }
 }
 

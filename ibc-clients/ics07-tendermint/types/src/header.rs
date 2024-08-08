@@ -47,8 +47,12 @@ impl Display for Header {
 }
 
 impl Header {
-    pub fn timestamp(&self) -> Timestamp {
-        self.signed_header.header.time.into()
+    pub fn timestamp(&self) -> Result<Timestamp, Error> {
+        self.signed_header
+            .header
+            .time
+            .try_into()
+            .map_err(Error::InvalidHeaderTimestamp)
     }
 
     pub fn height(&self) -> Height {

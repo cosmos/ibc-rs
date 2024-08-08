@@ -66,7 +66,7 @@ impl TestHost for TendermintHost {
                 .height(height)
                 .chain_id(self.chain_id.as_str())
                 .next_validators(&params.next_validators)
-                .time(timestamp.into_tm_time().expect("Never fails")),
+                .time(timestamp.into_tm_time()),
         )
         .validators(&params.validators)
         .next_validators(&params.next_validators)
@@ -113,7 +113,11 @@ impl TestBlock for TmLightBlock {
     }
 
     fn timestamp(&self) -> Timestamp {
-        self.signed_header.header.time.into()
+        self.signed_header
+            .header
+            .time
+            .try_into()
+            .expect("Never fails")
     }
 
     fn into_header_with_trusted(self, trusted_block: &Self) -> Self::Header {
@@ -192,7 +196,12 @@ impl TestHeader for TendermintHeader {
     }
 
     fn timestamp(&self) -> Timestamp {
-        self.0.signed_header.header.time.into()
+        self.0
+            .signed_header
+            .header
+            .time
+            .try_into()
+            .expect("Never fails")
     }
 }
 

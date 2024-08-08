@@ -16,7 +16,6 @@ use ibc_core_host::types::path::{
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
-use ibc_primitives::Expiry;
 
 pub fn recv_packet_validate<ValCtx>(ctx_b: &ValCtx, msg: MsgRecvPacket) -> Result<(), ContextError>
 where
@@ -171,7 +170,11 @@ where
     }
 
     let latest_timestamp = ctx_b.host_timestamp()?;
-    if let Expiry::Expired = latest_timestamp.check_expiry(&msg.packet.timeout_timestamp_on_b) {
+    if msg
+        .packet
+        .timeout_timestamp_on_b
+        .has_expired(&latest_timestamp)
+    {
         return Err(PacketError::LowPacketTimestamp.into());
     }
 

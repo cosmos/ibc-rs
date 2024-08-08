@@ -5,7 +5,7 @@ use ibc_core_client_types::{error as client_error, Height};
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::{Timestamp, TimestampOverflowError};
+use ibc_primitives::{Timestamp, TimestampError};
 
 use crate::version::Version;
 
@@ -80,7 +80,7 @@ pub enum ConnectionError {
         earliest_valid_time: Timestamp,
     },
     /// timestamp overflowed error: `{0}`
-    TimestampOverflow(TimestampOverflowError),
+    TimestampOverflow(TimestampError),
     /// connection counter overflow error
     CounterOverflow,
     /// other error: `{description}`

@@ -64,9 +64,7 @@ where
             description: "time key cannot be converted to u64".to_string(),
         })?);
 
-        let timestamp = Timestamp::from_nanoseconds(time).map_err(|e| ClientError::Other {
-            description: e.to_string(),
-        })?;
+        let timestamp = Timestamp::from_nanoseconds(time);
 
         let height_key = self.client_update_height_key(height);
 
