@@ -186,10 +186,6 @@ impl Sub<Duration> for Timestamp {
             .time
             .checked_sub(duration)
             .ok_or(TimestampError::DateOutOfRange)?;
-
-        if t.assume_utc().unix_timestamp() < 0 {
-            return Err(TimestampError::DateOutOfRange);
-        }
         Self::from_utc(t.assume_utc())
     }
 }
