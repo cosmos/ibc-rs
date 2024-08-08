@@ -40,7 +40,7 @@ impl TimeoutTimestamp {
         Self::from(nanoseconds)
     }
 
-    /// Returns the timestamp in nanoseconds, where 0 indicates that the absence
+    /// Returns the timestamp in nanoseconds, where 0 indicates the absence
     /// of a timeout.
     pub fn nanoseconds(&self) -> u64 {
         match self {
