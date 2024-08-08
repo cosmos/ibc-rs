@@ -79,6 +79,8 @@ impl From<Timestamp> for TimeoutTimestamp {
     }
 }
 
+// Note: As any `u64` value is interpreted as a Unix timestamp in nanoseconds
+// when used for timeouts, implementing `From<u64>` is appropriate.
 impl From<u64> for TimeoutTimestamp {
     fn from(timestamp: u64) -> Self {
         if timestamp == 0 {
