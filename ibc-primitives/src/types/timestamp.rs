@@ -35,7 +35,9 @@ impl Timestamp {
     pub fn from_nanoseconds(nanoseconds: u64) -> Self {
         // As the `u64` representation can only represent times up to about year
         // 2554, there is no risk of overflowing `Time` or `OffsetDateTime`.
-        Self::from(nanoseconds)
+        let odt = OffsetDateTime::from_unix_timestamp_nanos(nanoseconds.into())
+            .expect("nanoseconds as u64 is in the range");
+        Self::from_utc(odt).expect("nanoseconds as u64 is in the range")
     }
 
     pub fn from_unix_timestamp(secs: u64, nanos: u32) -> Result<Self, TimestampError> {
@@ -56,7 +58,7 @@ impl Timestamp {
     fn from_utc(t: OffsetDateTime) -> Result<Self, TimestampError> {
         debug_assert_eq!(t.offset(), offset!(UTC));
         match t.year() {
-            1..=9999 => Ok(Self {
+            1970..=9999 => Ok(Self {
                 time: PrimitiveDateTime::new(t.date(), t.time()),
             }),
             _ => Err(TimestampError::DateOutOfRange),
@@ -142,20 +144,12 @@ impl From<Timestamp> for OffsetDateTime {
     }
 }
 
-impl From<u64> for Timestamp {
-    fn from(nanoseconds: u64) -> Self {
-        let odt = OffsetDateTime::from_unix_timestamp_nanos(nanoseconds.into())
-            .expect("nanoseconds as u64 is in the range");
-        Self::from_utc(odt).expect("nanoseconds as u64 is in the range")
-    }
-}
-
 impl FromStr for Timestamp {
     type Err = TimestampError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let nanoseconds = u64::from_str(s)?;
-        Ok(Self::from(nanoseconds))
+        Ok(Self::from_nanoseconds(nanoseconds))
     }
 }
 
@@ -200,9 +194,6 @@ impl TryFrom<Time> for Timestamp {
 
     fn try_from(tm_time: Time) -> Result<Self, Self::Error> {
         let odt: OffsetDateTime = tm_time.into();
-        if odt.unix_timestamp() < 0 {
-            return Err(TimestampError::DateOutOfRange);
-        }
         odt.try_into()
     }
 }
@@ -339,9 +330,11 @@ mod tests {
     #[case::zero(0, 0, true)]
     #[case::one_sec(1, 0, true)]
     #[case::one_nano(0, 1, true)]
-    #[case::max(u64::MAX, 999_999_999, true)]
-    #[case::overflow(u64::MAX, 1_000_000_000, false)]
-    #[case::overflow_2(u64::MAX, u32::MAX, false)]
+    #[case::max_nanos(0, 999_999_999, true)]
+    #[case::max_nanos_plus_one(0, 1_000_000_000, false)]
+    #[case::sec_overflow(u64::MAX, 0, false)]
+    #[case::max_valid(253_402_300_799, 999_999_999, true)] // 9999-12-31T23:59:59.999999999
+    #[case::max_plus_one(253_402_300_800, 0, false)]
     fn test_timestamp_from_unix_nanoseconds(
         #[case] secs: u64,
         #[case] nanos: u32,
@@ -349,6 +342,11 @@ mod tests {
     ) {
         let timestamp = Timestamp::from_unix_timestamp(secs, nanos);
         assert_eq!(timestamp.is_ok(), expect);
+        if expect {
+            let odt = timestamp.unwrap().time.assume_utc();
+            assert_eq!(odt.unix_timestamp() as u64, secs);
+            assert_eq!(odt.nanosecond(), nanos);
+        }
     }
 
     #[rstest]
@@ -357,7 +355,7 @@ mod tests {
     #[case::min(u64::MIN)]
     #[case::u64_max(u64::MAX)]
     fn test_timestamp_from_u64(#[case] nanos: u64) {
-        let _ = Timestamp::from(nanos);
+        let _ = Timestamp::from_nanoseconds(nanos);
     }
 
     #[test]
