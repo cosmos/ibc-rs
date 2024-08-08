@@ -50,11 +50,7 @@ impl TryFrom<RawMockHeader> for MockHeader {
                     description: "missing height".into(),
                 })?
                 .try_into()?,
-            timestamp: Timestamp::from_nanoseconds(raw.timestamp).map_err(|err| {
-                ClientError::Other {
-                    description: err.to_string(),
-                }
-            })?,
+            timestamp: Timestamp::from_nanoseconds(raw.timestamp),
         })
     }
 }

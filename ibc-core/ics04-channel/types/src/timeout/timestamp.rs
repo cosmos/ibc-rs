@@ -85,8 +85,7 @@ impl TryFrom<u64> for TimeoutTimestamp {
         let timeout_timestamp = if timestamp == 0 {
             TimeoutTimestamp::Never
         } else {
-            let timestamp = Timestamp::from_nanoseconds(timestamp)?;
-            TimeoutTimestamp::At(timestamp)
+            TimeoutTimestamp::At(Timestamp::from_nanoseconds(timestamp))
         };
 
         Ok(timeout_timestamp)
@@ -137,9 +136,9 @@ mod tests {
     #[cfg(feature = "serde")]
     #[rstest::rstest]
     #[case::never(TimeoutTimestamp::Never)]
-    #[case::at_zero(TimeoutTimestamp::At(Timestamp::from_nanoseconds(0).unwrap()))]
-    #[case::at_some(TimeoutTimestamp::At(Timestamp::from_nanoseconds(123456).unwrap()))]
-    #[case::at_u64_max(TimeoutTimestamp::At(Timestamp::from_nanoseconds(u64::MAX).unwrap()))]
+    #[case::at_zero(TimeoutTimestamp::At(Timestamp::from_nanoseconds(0)))]
+    #[case::at_some(TimeoutTimestamp::At(Timestamp::from_nanoseconds(123456)))]
+    #[case::at_u64_max(TimeoutTimestamp::At(Timestamp::from_nanoseconds(u64::MAX)))]
     fn test_timeout_timestamp_serde(#[case] timeout_timestamp: TimeoutTimestamp) {
         let serialized = serde_json::to_string(&timeout_timestamp).unwrap();
         let deserialized: TimeoutTimestamp = serde_json::from_str(&serialized).unwrap();

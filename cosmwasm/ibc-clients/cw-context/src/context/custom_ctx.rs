@@ -21,10 +21,7 @@ where
     fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
         let time = self.env().block.time;
 
-        let host_timestamp =
-            Timestamp::from_nanoseconds(time.nanos()).map_err(|e| ClientError::Other {
-                description: e.to_string(),
-            })?;
+        let host_timestamp = Timestamp::from_nanoseconds(time.nanos());
 
         Ok(host_timestamp)
     }
