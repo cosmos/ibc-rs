@@ -12,7 +12,7 @@ use ibc_core_commitment_types::proto::ics23::{HostFunctionsManager, HostFunction
 use ibc_core_commitment_types::specs::ProofSpecs;
 use ibc_core_host::types::identifiers::ClientType;
 use ibc_core_host::types::path::{
-    Path, PathBytes, UpgradeClientStatePath, UpgradeConsensusStatePath, UPGRADED_IBC_STATE,
+    Path, PathBytes, UpgradeClientStatePath, UpgradeConsensusStatePath,
 };
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
@@ -46,13 +46,54 @@ impl ClientStateCommon for ClientState {
         proof_upgrade_consensus_state: CommitmentProofBytes,
         root: &CommitmentRoot,
     ) -> Result<(), ClientError> {
+        let last_height = self.latest_height().revision_height();
+
+        // The client state's upgrade path vector needs to parsed into a tuple in the form
+        // of `(upgrade_path_prefix, upgrade_path)`. Given the length of the client
+        // state's upgrade path vector, the following determinations are made:
+        // 1: The commitment prefix is left empty and the upgrade path is used as-is.
+        // 2: The commitment prefix and upgrade path are both taken as-is.
+        let upgrade_path = &self.inner().upgrade_path;
+        let (upgrade_path_prefix, upgrade_path) = match upgrade_path.len() {
+            0 => {
+                return Err(ClientError::ClientSpecific {
+                    description: "cannot upgrade client as no upgrade path has been set"
+                        .to_string(),
+                });
+            }
+            1 => (CommitmentPrefix::empty(), upgrade_path[0].clone()),
+            2 => (
+                upgrade_path[0].as_bytes().to_vec().into(),
+                upgrade_path[1].clone(),
+            ),
+            _ => {
+                return Err(ClientError::ClientSpecific {
+                    description: "upgrade client failed: upgrade path is too long".to_string(),
+                })
+            }
+        };
+
+        let upgrade_client_path_bytes =
+            self.serialize_path(Path::UpgradeClientState(UpgradeClientStatePath {
+                upgrade_path: upgrade_path.clone(),
+                height: last_height,
+            }))?;
+
+        let upgrade_consensus_path_bytes =
+            self.serialize_path(Path::UpgradeConsensusState(UpgradeConsensusStatePath {
+                upgrade_path,
+                height: last_height,
+            }))?;
+
         verify_upgrade_client::<HostFunctionsManager>(
             self.inner(),
             upgraded_client_state,
             upgraded_consensus_state,
             proof_upgrade_client,
             proof_upgrade_consensus_state,
-            self.latest_height(),
+            upgrade_path_prefix,
+            upgrade_client_path_bytes,
+            upgrade_consensus_path_bytes,
             root,
         )
     }
@@ -154,7 +195,9 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
     upgraded_consensus_state: Any,
     proof_upgrade_client: CommitmentProofBytes,
     proof_upgrade_consensus_state: CommitmentProofBytes,
-    last_height: Height,
+    upgrade_path_prefix: CommitmentPrefix,
+    upgrade_client_path_bytes: PathBytes,
+    upgrade_consensus_path_bytes: PathBytes,
     root: &CommitmentRoot,
 ) -> Result<(), ClientError> {
     // Make sure that the client type is of Tendermint type `ClientState`
@@ -171,47 +214,10 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
     // the height
     if latest_height >= upgraded_tm_client_state_height {
         Err(UpgradeClientError::LowUpgradeHeight {
-            upgraded_height: latest_height,
-            client_height: upgraded_tm_client_state_height,
+            upgraded_height: upgraded_tm_client_state_height,
+            client_height: latest_height,
         })?
     }
-
-    // The client state's upgrade path vector needs to parsed into a tuple in the form
-    // of `(upgrade_path_prefix, upgrade_path)`. Given the length of the client
-    // state's upgrade path vector, the following determinations are made:
-    // 0: The tuple defaults to an empty commitment prefix and `UPGRADED_IBC_STATE` as the path.
-    // 1: The commitment prefix is left empty and the upgrade path is used as-is.
-    // 2: The commitment prefix and upgrade path are both taken as-is.
-    let upgrade_path = &client_state.upgrade_path;
-    let (upgrade_path_prefix, upgrade_path) = match upgrade_path.len() {
-        0 => (CommitmentPrefix::empty(), UPGRADED_IBC_STATE),
-        1 => (CommitmentPrefix::empty(), upgrade_path[0].as_ref()),
-        2 => (
-            upgrade_path[0].as_bytes().to_vec().into(),
-            upgrade_path[1].as_ref(),
-        ),
-        _ => {
-            return Err(ClientError::ClientSpecific {
-                description: "upgrade client failed: upgrade path is too long".to_string(),
-            })
-        }
-    };
-
-    let upgrade_client_path_bytes = Path::UpgradeClientState(UpgradeClientStatePath {
-        upgrade_path: upgrade_path.to_string(),
-        height: last_height.revision_height(),
-    })
-    .to_string()
-    .into_bytes()
-    .into();
-
-    let upgrade_consensus_path_bytes = Path::UpgradeConsensusState(UpgradeConsensusStatePath {
-        upgrade_path: upgrade_path.to_string(),
-        height: last_height.revision_height(),
-    })
-    .to_string()
-    .into_bytes()
-    .into();
 
     // Verify the proof of the upgraded client state
     verify_membership::<H>(

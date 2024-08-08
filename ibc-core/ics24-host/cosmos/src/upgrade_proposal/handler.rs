@@ -37,10 +37,7 @@ where
 
     ctx.schedule_upgrade(plan.clone())?;
 
-    let upgraded_client_state_path = UpgradeClientStatePath {
-        upgrade_path: UPGRADED_IBC_STATE.to_string(),
-        height: plan.height,
-    };
+    let upgraded_client_state_path = UpgradeClientStatePath::new_with_default_path(plan.height);
 
     ctx.store_upgraded_client_state(upgraded_client_state_path, client_state.into())?;
 

@@ -701,6 +701,16 @@ pub struct UpgradeClientStatePath {
     pub height: u64,
 }
 
+impl UpgradeClientStatePath {
+    /// Create with the default upgrade path
+    pub fn new_with_default_path(height: u64) -> Self {
+        Self {
+            upgrade_path: UPGRADED_IBC_STATE.to_string(),
+            height,
+        }
+    }
+}
+
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -719,6 +729,16 @@ pub struct UpgradeClientStatePath {
 pub struct UpgradeConsensusStatePath {
     pub upgrade_path: String,
     pub height: u64,
+}
+
+impl UpgradeConsensusStatePath {
+    /// Create with the default upgrade path
+    pub fn new_with_default_path(height: u64) -> Self {
+        Self {
+            upgrade_path: UPGRADED_IBC_STATE.to_string(),
+            height,
+        }
+    }
 }
 
 #[cfg_attr(
