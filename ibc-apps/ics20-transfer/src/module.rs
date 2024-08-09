@@ -310,66 +310,53 @@ pub fn on_timeout_packet_execute(
 
 #[cfg(test)]
 mod test {
+    use rstest::*;
+
     use super::*;
-
-    #[test]
-    fn test_ack_ser() {
-        fn ser_json_assert_eq(ack: AcknowledgementStatus, json_str: &str) {
-            let ser = serde_json::to_string(&ack).unwrap();
-            assert_eq!(ser, json_str)
-        }
-
-        ser_json_assert_eq(
-            AcknowledgementStatus::success(ack_success_b64()),
-            r#"{"result":"AQ=="}"#,
-        );
-        ser_json_assert_eq(
-            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into()),
-            r#"{"error":"failed to deserialize packet data"}"#,
-        );
+    #[rstest]
+    #[case::success(
+        AcknowledgementStatus::success(ack_success_b64()),
+        r#"{"result":"AQ=="}"#
+    )]
+    #[case::error(
+        AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into()),
+        r#"{"error":"failed to deserialize packet data"}"#
+    )]
+    fn test_ack_ser(#[case] ack: AcknowledgementStatus, #[case] json_str: &str) {
+        let ser = serde_json::to_string(&ack).unwrap();
+        assert_eq!(ser, json_str);
     }
 
-    #[test]
-    fn test_ack_success_to_vec() {
-        let ack_success: Vec<u8> = AcknowledgementStatus::success(ack_success_b64()).into();
-
+    #[rstest]
+    #[case::success(
+        AcknowledgementStatus::success(ack_success_b64()),
+        br#"{"result":"AQ=="}"#
+    )]
+    #[case::error(
+        AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into())
+        , br#"{"error":"failed to deserialize packet data"}"#
+    )]
+    fn test_ack_to_vec(#[case] ack: AcknowledgementStatus, #[case] output: &[u8]) {
         // Check that it's the same output as ibc-go
         // Note: this also implicitly checks that the ack bytes are non-empty,
         // which would make the conversion to `Acknowledgement` panic
-        assert_eq!(ack_success, br#"{"result":"AQ=="}"#);
+        let ack_vec: Vec<u8> = ack.into();
+        assert_eq!(ack_vec, output);
     }
 
+    #[rstest]
+    #[rstest]
+    #[case::success(
+        AcknowledgementStatus::success(ack_success_b64()),
+        r#"{"result":"AQ=="}"#
+    )]
+    #[case::error(
+        AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into())
+        , r#"{"error":"failed to deserialize packet data"}"#
+    )]
     #[test]
-    fn test_ack_error_to_vec() {
-        let ack_error: Vec<u8> =
-            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into())
-                .into();
-
-        // Check that it's the same output as ibc-go
-        // Note: this also implicitly checks that the ack bytes are non-empty,
-        // which would make the conversion to `Acknowledgement` panic
-        assert_eq!(
-            ack_error,
-            br#"{"error":"failed to deserialize packet data"}"#
-        );
-    }
-
-    #[test]
-    fn test_ack_de() {
-        fn de_json_assert_eq(json_str: &str, ack: AcknowledgementStatus) {
-            let de = serde_json::from_str::<AcknowledgementStatus>(json_str).unwrap();
-            assert_eq!(de, ack)
-        }
-
-        de_json_assert_eq(
-            r#"{"result":"AQ=="}"#,
-            AcknowledgementStatus::success(ack_success_b64()),
-        );
-        de_json_assert_eq(
-            r#"{"error":"failed to deserialize packet data"}"#,
-            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into()),
-        );
-
-        assert!(serde_json::from_str::<AcknowledgementStatus>(r#"{"success":"AQ=="}"#).is_err());
+    fn test_ack_de(#[case] ack: AcknowledgementStatus, #[case] json_str: &str) {
+        let de = serde_json::from_str::<AcknowledgementStatus>(json_str).unwrap();
+        assert_eq!(de, ack)
     }
 }

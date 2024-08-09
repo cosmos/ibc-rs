@@ -25,6 +25,7 @@ serde-json = { workspace = true, optional = true }
 # ibc dependencies
 ibc-core               = { workspace = true }
 ibc-app-transfer-types = { workspace = true }
+rstest.workspace = true
 
 [dev-dependencies]
 subtle-encoding = { workspace = true }
