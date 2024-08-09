@@ -7,7 +7,7 @@
 
 use ibc_core_client_context::ClientValidationContext;
 use ibc_core_client_types::error::UpgradeClientError;
-use ibc_core_host_types::path::UpgradeClientPath;
+use ibc_core_host_types::path::{UpgradeClientStatePath, UpgradeConsensusStatePath};
 
 use super::Plan;
 
@@ -28,13 +28,13 @@ pub trait UpgradeValidationContext {
     /// Returns the upgraded client state at the specified upgrade path.
     fn upgraded_client_state(
         &self,
-        upgrade_path: &UpgradeClientPath,
+        upgrade_path: &UpgradeClientStatePath,
     ) -> Result<UpgradedClientStateRef<Self>, UpgradeClientError>;
 
     /// Returns the upgraded consensus state at the specified upgrade path.
     fn upgraded_consensus_state(
         &self,
-        upgrade_path: &UpgradeClientPath,
+        upgrade_path: &UpgradeConsensusStatePath,
     ) -> Result<UpgradedConsensusStateRef<Self>, UpgradeClientError>;
 }
 
@@ -50,14 +50,14 @@ pub trait UpgradeExecutionContext: UpgradeValidationContext {
     /// Stores the upgraded client state at the specified upgrade path.
     fn store_upgraded_client_state(
         &mut self,
-        upgrade_path: UpgradeClientPath,
+        upgrade_path: UpgradeClientStatePath,
         client_state: UpgradedClientStateRef<Self>,
     ) -> Result<(), UpgradeClientError>;
 
     /// Stores the upgraded consensus state at the specified upgrade path.
     fn store_upgraded_consensus_state(
         &mut self,
-        upgrade_path: UpgradeClientPath,
+        upgrade_path: UpgradeConsensusStatePath,
         consensus_state: UpgradedConsensusStateRef<Self>,
     ) -> Result<(), UpgradeClientError>;
 }
