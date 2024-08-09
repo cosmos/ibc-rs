@@ -1,5 +1,7 @@
 ## Releases
 
+### ibc-rs
+
 Our release process is as follows:
 
 1. In a new branch `release/vX.Y.Z`, update the [changelog](./CHANGELOG.md) to
