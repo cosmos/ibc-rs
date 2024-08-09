@@ -198,6 +198,8 @@ impl From<RawQueryClientParamsRequest> for QueryClientParamsRequest {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedClientStateRequest {
+    /// The upgrade path
+    pub upgrade_path: Option<String>,
     /// Height at which the chain is scheduled to halt for upgrade
     pub upgrade_height: Option<Height>,
     /// The height at which to query the upgraded client state. If not provided,
@@ -208,6 +210,7 @@ pub struct QueryUpgradedClientStateRequest {
 impl From<RawUpgradedClientStateRequest> for QueryUpgradedClientStateRequest {
     fn from(_request: RawUpgradedClientStateRequest) -> Self {
         Self {
+            upgrade_path: None,
             upgrade_height: None,
             query_height: None,
         }
@@ -220,6 +223,8 @@ impl From<RawUpgradedClientStateRequest> for QueryUpgradedClientStateRequest {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct QueryUpgradedConsensusStateRequest {
+    /// The upgrade path
+    pub upgrade_path: Option<String>,
     /// The height at which the chain is scheduled to halt for upgrade.
     pub upgrade_height: Option<Height>,
     /// The height at which to query the upgraded consensus state. If not
@@ -230,6 +235,7 @@ pub struct QueryUpgradedConsensusStateRequest {
 impl From<RawUpgradedConsensusStateRequest> for QueryUpgradedConsensusStateRequest {
     fn from(_request: RawUpgradedConsensusStateRequest) -> Self {
         Self {
+            upgrade_path: None,
             upgrade_height: None,
             query_height: None,
         }

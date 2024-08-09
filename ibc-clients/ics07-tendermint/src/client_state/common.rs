@@ -13,7 +13,9 @@ use ibc_core_commitment_types::merkle::{MerklePath, MerkleProof};
 use ibc_core_commitment_types::proto::ics23::{HostFunctionsManager, HostFunctionsProvider};
 use ibc_core_commitment_types::specs::ProofSpecs;
 use ibc_core_host::types::identifiers::ClientType;
-use ibc_core_host::types::path::{Path, PathBytes, UpgradeClientPath};
+use ibc_core_host::types::path::{
+    Path, PathBytes, UpgradeClientStatePath, UpgradeConsensusStatePath,
+};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 use ibc_primitives::{Timestamp, ToVec};
@@ -56,13 +58,43 @@ impl ClientStateCommon for ClientState {
     ) -> Result<(), ClientError> {
         let last_height = self.latest_height().revision_height();
 
-        let upgrade_client_path_bytes = self.serialize_path(Path::UpgradeClient(
-            UpgradeClientPath::UpgradedClientState(last_height),
-        ))?;
+        // The client state's upgrade path vector needs to parsed into a tuple in the form
+        // of `(upgrade_path_prefix, upgrade_path)`. Given the length of the client
+        // state's upgrade path vector, the following determinations are made:
+        // 1: The commitment prefix is left empty and the upgrade path is used as-is.
+        // 2: The commitment prefix and upgrade path are both taken as-is.
+        let upgrade_path = &self.inner().upgrade_path;
+        let (upgrade_path_prefix, upgrade_path) = match upgrade_path.len() {
+            0 => {
+                return Err(UpgradeClientError::InvalidUpgradePath {
+                    reason: "no upgrade path has been set".to_string(),
+                }
+                .into());
+            }
+            1 => (CommitmentPrefix::empty(), upgrade_path[0].clone()),
+            2 => (
+                upgrade_path[0].as_bytes().to_vec().into(),
+                upgrade_path[1].clone(),
+            ),
+            _ => {
+                return Err(UpgradeClientError::InvalidUpgradePath {
+                    reason: "upgrade path is too long".to_string(),
+                }
+                .into());
+            }
+        };
 
-        let upgrade_consensus_path_bytes = self.serialize_path(Path::UpgradeClient(
-            UpgradeClientPath::UpgradedClientConsensusState(last_height),
-        ))?;
+        let upgrade_client_path_bytes =
+            self.serialize_path(Path::UpgradeClientState(UpgradeClientStatePath {
+                upgrade_path: upgrade_path.clone(),
+                height: last_height,
+            }))?;
+
+        let upgrade_consensus_path_bytes =
+            self.serialize_path(Path::UpgradeConsensusState(UpgradeConsensusStatePath {
+                upgrade_path,
+                height: last_height,
+            }))?;
 
         verify_upgrade_client::<HostFunctionsManager>(
             self.inner(),
@@ -70,6 +102,7 @@ impl ClientStateCommon for ClientState {
             upgraded_consensus_state,
             proof_upgrade_client,
             proof_upgrade_consensus_state,
+            upgrade_path_prefix,
             upgrade_client_path_bytes,
             upgrade_consensus_path_bytes,
             root,
@@ -207,6 +240,7 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
     upgraded_consensus_state: Any,
     proof_upgrade_client: CommitmentProofBytes,
     proof_upgrade_consensus_state: CommitmentProofBytes,
+    upgrade_path_prefix: CommitmentPrefix,
     upgrade_client_path_bytes: PathBytes,
     upgrade_consensus_path_bytes: PathBytes,
     root: &CommitmentRoot,
@@ -225,21 +259,10 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
     // the height
     if latest_height >= upgraded_tm_client_state_height {
         Err(UpgradeClientError::LowUpgradeHeight {
-            upgraded_height: latest_height,
-            client_height: upgraded_tm_client_state_height,
+            upgraded_height: upgraded_tm_client_state_height,
+            client_height: latest_height,
         })?
     }
-
-    // Check to see if the upgrade path is set
-    let mut upgrade_path = client_state.upgrade_path.clone();
-
-    if upgrade_path.pop().is_none() {
-        return Err(ClientError::ClientSpecific {
-            description: "cannot upgrade client as no upgrade path has been set".to_string(),
-        });
-    };
-
-    let upgrade_path_prefix = CommitmentPrefix::from(upgrade_path[0].clone().into_bytes());
 
     // Verify the proof of the upgraded client state
     verify_membership::<H>(

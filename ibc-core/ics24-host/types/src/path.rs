@@ -99,7 +99,8 @@ pub enum Path {
     Commitment(CommitmentPath),
     Ack(AckPath),
     Receipt(ReceiptPath),
-    UpgradeClient(UpgradeClientPath),
+    UpgradeClientState(UpgradeClientStatePath),
+    UpgradeConsensusState(UpgradeConsensusStatePath),
 }
 
 #[cfg_attr(
@@ -693,13 +694,51 @@ impl ReceiptPath {
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-/// Paths that are specific for client upgrades.
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-pub enum UpgradeClientPath {
-    #[display(fmt = "{UPGRADED_IBC_STATE}/{_0}/{UPGRADED_CLIENT_STATE}")]
-    UpgradedClientState(u64),
-    #[display(fmt = "{UPGRADED_IBC_STATE}/{_0}/{UPGRADED_CLIENT_CONSENSUS_STATE}")]
-    UpgradedClientConsensusState(u64),
+#[display(fmt = "{upgrade_path}/{height}/{UPGRADED_CLIENT_STATE}")]
+pub struct UpgradeClientStatePath {
+    pub upgrade_path: String,
+    pub height: u64,
+}
+
+impl UpgradeClientStatePath {
+    /// Create with the default upgrade path
+    pub fn new_with_default_path(height: u64) -> Self {
+        Self {
+            upgrade_path: UPGRADED_IBC_STATE.to_string(),
+            height,
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(fmt = "{upgrade_path}/{height}/{UPGRADED_CLIENT_CONSENSUS_STATE}")]
+pub struct UpgradeConsensusStatePath {
+    pub upgrade_path: String,
+    pub height: u64,
+}
+
+impl UpgradeConsensusStatePath {
+    /// Create with the default upgrade path
+    pub fn new_with_default_path(height: u64) -> Self {
+        Self {
+            upgrade_path: UPGRADED_IBC_STATE.to_string(),
+            height,
+        }
+    }
 }
 
 #[cfg_attr(
@@ -760,7 +799,8 @@ impl FromStr for Path {
             .or_else(|| parse_commitments(&components))
             .or_else(|| parse_acks(&components))
             .or_else(|| parse_receipts(&components))
-            .or_else(|| parse_upgrades(&components))
+            .or_else(|| parse_upgrade_client_state(&components))
+            .or_else(|| parse_upgrade_consensus_state(&components))
             .ok_or(PathError::ParseFailure {
                 path: s.to_string(),
             })
@@ -1084,28 +1124,52 @@ fn parse_receipts(components: &[&str]) -> Option<Path> {
     )
 }
 
-fn parse_upgrades(components: &[&str]) -> Option<Path> {
+fn parse_upgrade_client_state(components: &[&str]) -> Option<Path> {
     if components.len() != 3 {
-        return None;
-    }
-
-    let first = *components.first()?;
-
-    if first != UPGRADED_IBC_STATE {
         return None;
     }
 
     let last = *components.last()?;
 
-    let height = components[1].parse::<u64>().ok()?;
-
-    match last {
-        UPGRADED_CLIENT_STATE => Some(UpgradeClientPath::UpgradedClientState(height).into()),
-        UPGRADED_CLIENT_CONSENSUS_STATE => {
-            Some(UpgradeClientPath::UpgradedClientConsensusState(height).into())
-        }
-        _ => None,
+    if last != UPGRADED_CLIENT_STATE {
+        return None;
     }
+
+    let upgrade_path = components.first()?.to_string();
+
+    let height = u64::from_str(components[1]).ok()?;
+
+    Some(
+        UpgradeClientStatePath {
+            upgrade_path,
+            height,
+        }
+        .into(),
+    )
+}
+
+fn parse_upgrade_consensus_state(components: &[&str]) -> Option<Path> {
+    if components.len() != 3 {
+        return None;
+    }
+
+    let last = *components.last()?;
+
+    if last != UPGRADED_CLIENT_CONSENSUS_STATE {
+        return None;
+    }
+
+    let upgrade_path = components.first()?.to_string();
+
+    let height = u64::from_str(components[1]).ok()?;
+
+    Some(
+        UpgradeConsensusStatePath {
+            upgrade_path,
+            height,
+        }
+        .into(),
+    )
 }
 
 #[cfg(test)]
@@ -1207,11 +1271,17 @@ mod tests {
     )]
     #[case(
         "upgradedIBCState/0/upgradedClient",
-        Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(0))
+        Path::UpgradeClientState(UpgradeClientStatePath {
+            upgrade_path: UPGRADED_IBC_STATE.to_string(),
+            height: 0,
+        })
     )]
     #[case(
         "upgradedIBCState/0/upgradedConsState",
-        Path::UpgradeClient(UpgradeClientPath::UpgradedClientConsensusState(0))
+        Path::UpgradeConsensusState(UpgradeConsensusStatePath {
+            upgrade_path: UPGRADED_IBC_STATE.to_string(),
+            height: 0,
+        })
     )]
     fn test_successful_parsing(#[case] path_str: &str, #[case] path: Path) {
         // can be parsed into Path
@@ -1419,25 +1489,30 @@ mod tests {
     }
 
     #[test]
-    fn test_parse_upgrades_fn() {
+    fn test_parse_upgrade_client_state_fn() {
         let path = "upgradedIBCState/0/upgradedClient";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
-            parse_upgrades(&components),
-            Some(Path::UpgradeClient(UpgradeClientPath::UpgradedClientState(
-                0
-            ))),
+            parse_upgrade_client_state(&components),
+            Some(Path::UpgradeClientState(UpgradeClientStatePath {
+                upgrade_path: UPGRADED_IBC_STATE.to_string(),
+                height: 0,
+            })),
         );
+    }
 
+    #[test]
+    fn test_parse_upgrade_consensus_state_fn() {
         let path = "upgradedIBCState/0/upgradedConsState";
         let components: Vec<&str> = path.split('/').collect();
 
         assert_eq!(
-            parse_upgrades(&components),
-            Some(Path::UpgradeClient(
-                UpgradeClientPath::UpgradedClientConsensusState(0)
-            )),
+            parse_upgrade_consensus_state(&components),
+            Some(Path::UpgradeConsensusState(UpgradeConsensusStatePath {
+                upgrade_path: UPGRADED_IBC_STATE.to_string(),
+                height: 0,
+            })),
         )
     }
 }
