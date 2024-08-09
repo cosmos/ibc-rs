@@ -46,32 +46,32 @@ rstest = { workspace = true }
 [features]
 default = [ "std" ]
 std = [
-    "hex/std",
-    "serde/std",
-    "serde-json/std",
-    "ibc/std",
-    "ibc-proto/std",
-    "tendermint/std",
+  "hex/std",
+  "serde/std",
+  "serde-json/std",
+  "ibc/std",
+  "ibc-proto/std",
+  "tendermint/std",
 ]
 serde = [
-    "dep:serde",
-    "ibc/serde",
-    "ibc-proto/serde",
-    "dep:serde-json",
+  "dep:serde",
+  "ibc/serde",
+  "ibc-proto/serde",
+  "dep:serde-json",
 ]
 schema = [
-    "dep:schemars",
-    "ibc/schema",
-    "ibc-proto/json-schema",
-    "serde",
-    "std",
+  "dep:schemars",
+  "ibc/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
 ]
 borsh = [
-    "dep:borsh",
-    "ibc/borsh",
-    "ibc-proto/borsh",
+  "dep:borsh",
+  "ibc/borsh",
+  "ibc-proto/borsh",
 ]
 parity-scale-codec = [
-    "ibc/parity-scale-codec",
-    "ibc-proto/parity-scale-codec",
+  "ibc/parity-scale-codec",
+  "ibc-proto/parity-scale-codec",
 ]

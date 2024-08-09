@@ -42,10 +42,10 @@ tendermint-rpc = { workspace = true }
 [features]
 default = [ "std" ]
 std = [
-    "serde/std",
-    "serde-json/std",
-    "ibc/std",
-    "ibc/serde",
-    "ibc-testkit/serde",
-    "tendermint/std",
+  "serde/std",
+  "serde-json/std",
+  "ibc/std",
+  "ibc/serde",
+  "ibc-testkit/serde",
+  "tendermint/std",
 ]
