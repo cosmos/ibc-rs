@@ -127,7 +127,7 @@ where
         }
     };
 
-    send_packet_validate(send_packet_ctx_a, &packet)?;
+    send_packet_validate(send_packet_ctx_a, transfer_ctx, &packet)?;
 
     Ok(())
 }
@@ -229,7 +229,7 @@ where
         }
     };
 
-    send_packet_execute(send_packet_ctx_a, packet)?;
+    send_packet_execute(send_packet_ctx_a, transfer_ctx, packet)?;
 
     {
         send_packet_ctx_a.log_message(format!(

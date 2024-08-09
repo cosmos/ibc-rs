@@ -16,6 +16,7 @@ use ibc::core::primitives::*;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_acknowledgement;
 use ibc_testkit::hosts::MockHost;
+use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::LightClientState;
 use rstest::*;
@@ -128,6 +129,7 @@ fn ack_success_no_packet_commitment(fixture: Fixture) {
             LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_channel(
+            &DummyTransferModule,
             PortId::transfer(),
             ChannelId::zero(),
             chan_end_on_a_unordered,
@@ -162,6 +164,7 @@ fn ack_success_happy_path(fixture: Fixture) {
             LightClientState::<MockHost>::with_latest_height(client_height),
         )
         .with_channel(
+            &DummyTransferModule,
             PortId::transfer(),
             ChannelId::zero(),
             chan_end_on_a_unordered,
@@ -197,6 +200,7 @@ fn ack_unordered_chan_execute(fixture: Fixture) {
     } = fixture;
     let mut ctx = ctx
         .with_channel(
+            &DummyTransferModule,
             PortId::transfer(),
             ChannelId::zero(),
             chan_end_on_a_unordered,
@@ -237,7 +241,12 @@ fn ack_ordered_chan_execute(fixture: Fixture) {
         ..
     } = fixture;
     let mut ctx = ctx
-        .with_channel(PortId::transfer(), ChannelId::zero(), chan_end_on_a_ordered)
+        .with_channel(
+            &DummyTransferModule,
+            PortId::transfer(),
+            ChannelId::zero(),
+            chan_end_on_a_ordered,
+        )
         .with_connection(ConnectionId::zero(), conn_end_on_a)
         .with_packet_commitment(
             msg.packet.port_id_on_a.clone(),

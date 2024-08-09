@@ -3,6 +3,7 @@
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
+use ibc_core::router::module::Module;
 
 use crate::types::error::NftTransferError;
 use crate::types::{
@@ -35,7 +36,7 @@ pub trait NftClassContext {
 }
 
 /// Read-only methods required in NFT transfer validation context.
-pub trait NftTransferValidationContext {
+pub trait NftTransferValidationContext: Module {
     type AccountId: TryFrom<Signer> + PartialEq;
     type Nft: NftContext;
     type NftClass: NftClassContext;

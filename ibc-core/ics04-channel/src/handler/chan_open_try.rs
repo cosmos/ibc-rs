@@ -10,7 +10,7 @@ use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ChannelId;
 use ibc_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, Path, SeqAckPath, SeqRecvPath, SeqSendPath,
+    ChannelEndPath, ClientConsensusStatePath, Path, PortPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
@@ -37,6 +37,13 @@ where
         &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
         &msg.version_supported_on_a,
     )?;
+
+    let port_path = PortPath(msg.port_id_on_b);
+
+    // either the capability is available or the module has the capability.
+    ctx_b.available_port_capability(&port_path).or_else(|_| {
+        ctx_b.has_port_capability(&port_path, module.identifier().to_string().into())
+    })?;
 
     Ok(())
 }
@@ -111,6 +118,11 @@ where
             ctx_b.log_message(log_message)?;
         }
     }
+
+    ctx_b.claim_port_capability(
+        &PortPath(msg.port_id_on_b),
+        module.identifier().to_string().into(),
+    )?;
 
     Ok(())
 }
