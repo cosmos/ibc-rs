@@ -2,49 +2,49 @@
 resolver = "2"
 # members sorted by publishing order to `crates.io`
 members = [
-  "ibc-derive",
-  "ibc-primitives",
-  "ibc-core/ics24-host/types",
-  "ibc-core/ics26-routing/types",
-  "ibc-core/ics23-commitment/types",
-  "ibc-core/ics02-client/types",
-  "ibc-core/ics03-connection/types",
-  "ibc-core/ics04-channel/types",
-  "ibc-core/ics25-handler/types",
-  "ibc-core/ics02-client/context",
-  "ibc-core/ics24-host",
-  "ibc-core/ics26-routing",
-  "ibc-core/ics02-client",
-  "ibc-core/ics03-connection",
-  "ibc-core/ics04-channel",
-  "ibc-core/ics25-handler",
-  "ibc-core",
-  "ibc-clients/ics07-tendermint/types",
-  "ibc-clients/ics07-tendermint",
-  "ibc-clients/ics08-wasm/types",
-  "ibc-clients",
-  "ibc-apps/ics20-transfer/types",
-  "ibc-apps/ics20-transfer",
-  "ibc-apps/ics721-nft-transfer/types",
-  "ibc-apps/ics721-nft-transfer",
-  "ibc-apps",
-  "ibc-core/ics24-host/cosmos",
-  "ibc-data-types",
-  "ibc",
-  "ibc-query",
-  "ibc-testkit",
+    "ibc-derive",
+    "ibc-primitives",
+    "ibc-core/ics24-host/types",
+    "ibc-core/ics26-routing/types",
+    "ibc-core/ics23-commitment/types",
+    "ibc-core/ics02-client/types",
+    "ibc-core/ics03-connection/types",
+    "ibc-core/ics04-channel/types",
+    "ibc-core/ics25-handler/types",
+    "ibc-core/ics02-client/context",
+    "ibc-core/ics24-host",
+    "ibc-core/ics26-routing",
+    "ibc-core/ics02-client",
+    "ibc-core/ics03-connection",
+    "ibc-core/ics04-channel",
+    "ibc-core/ics25-handler",
+    "ibc-core",
+    "ibc-clients/ics07-tendermint/types",
+    "ibc-clients/ics07-tendermint",
+    "ibc-clients/ics08-wasm/types",
+    "ibc-clients",
+    "ibc-apps/ics20-transfer/types",
+    "ibc-apps/ics20-transfer",
+    "ibc-apps/ics721-nft-transfer/types",
+    "ibc-apps/ics721-nft-transfer",
+    "ibc-apps",
+    "ibc-core/ics24-host/cosmos",
+    "ibc-data-types",
+    "ibc",
+    "ibc-query",
+    "ibc-testkit",
 
-  # internal crates that are not published
-  "tests-integration",
+    # internal crates that are not published
+    "tests-integration",
 ]
 
 exclude = [
-  "ci/cw-check",
-  "ci/no-std-check",
+    "ci/cw-check",
+    "ci/no-std-check",
 ]
 
 [workspace.package]
-version      = "0.53.0"
+version      = "0.54.0"
 license      = "Apache-2.0"
 edition      = "2021"
 rust-version = "1.72.1"
@@ -68,42 +68,42 @@ subtle-encoding = { version = "0.5", default-features = false }
 hex             = { version = "0.4.3", default-features = false }
 
 # ibc dependencies
-ibc            = { version = "0.53.0", path = "./ibc", default-features = false }
-ibc-core       = { version = "0.53.0", path = "./ibc-core", default-features = false }
-ibc-clients    = { version = "0.53.0", path = "./ibc-clients", default-features = false }
-ibc-apps       = { version = "0.53.0", path = "./ibc-apps", default-features = false }
-ibc-primitives = { version = "0.53.0", path = "./ibc-primitives", default-features = false }
-ibc-testkit    = { version = "0.53.0", path = "./ibc-testkit", default-features = false }
+ibc            = { version = "0.54.0", path = "./ibc", default-features = false }
+ibc-core       = { version = "0.54.0", path = "./ibc-core", default-features = false }
+ibc-clients    = { version = "0.54.0", path = "./ibc-clients", default-features = false }
+ibc-apps       = { version = "0.54.0", path = "./ibc-apps", default-features = false }
+ibc-primitives = { version = "0.54.0", path = "./ibc-primitives", default-features = false }
+ibc-testkit    = { version = "0.54.0", path = "./ibc-testkit", default-features = false }
 
-ibc-derive = { version = "0.7.0", path = "./ibc-derive" }
+ibc-derive = { version = "0.8.0", path = "./ibc-derive" }
 
-ibc-core-client     = { version = "0.53.0", path = "./ibc-core/ics02-client", default-features = false }
-ibc-core-connection = { version = "0.53.0", path = "./ibc-core/ics03-connection", default-features = false }
-ibc-core-channel    = { version = "0.53.0", path = "./ibc-core/ics04-channel", default-features = false }
-ibc-core-host       = { version = "0.53.0", path = "./ibc-core/ics24-host", default-features = false }
-ibc-core-handler    = { version = "0.53.0", path = "./ibc-core/ics25-handler", default-features = false }
-ibc-core-router     = { version = "0.53.0", path = "./ibc-core/ics26-routing", default-features = false }
-ibc-query           = { version = "0.53.0", path = "./ibc-query", default-features = false }
+ibc-core-client     = { version = "0.54.0", path = "./ibc-core/ics02-client", default-features = false }
+ibc-core-connection = { version = "0.54.0", path = "./ibc-core/ics03-connection", default-features = false }
+ibc-core-channel    = { version = "0.54.0", path = "./ibc-core/ics04-channel", default-features = false }
+ibc-core-host       = { version = "0.54.0", path = "./ibc-core/ics24-host", default-features = false }
+ibc-core-handler    = { version = "0.54.0", path = "./ibc-core/ics25-handler", default-features = false }
+ibc-core-router     = { version = "0.54.0", path = "./ibc-core/ics26-routing", default-features = false }
+ibc-query           = { version = "0.54.0", path = "./ibc-query", default-features = false }
 
-ibc-client-cw         = { version = "0.53.0", path = "./ibc-clients/cw-context", default-features = false }
-ibc-client-tendermint = { version = "0.53.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
+ibc-client-cw         = { version = "0.54.0", path = "./ibc-clients/cw-context", default-features = false }
+ibc-client-tendermint = { version = "0.54.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
 
-ibc-app-transfer     = { version = "0.53.0", path = "./ibc-apps/ics20-transfer", default-features = false }
-ibc-app-nft-transfer = { version = "0.53.0", path = "./ibc-apps/ics721-nft-transfer", default-features = false }
+ibc-app-transfer     = { version = "0.54.0", path = "./ibc-apps/ics20-transfer", default-features = false }
+ibc-app-nft-transfer = { version = "0.54.0", path = "./ibc-apps/ics721-nft-transfer", default-features = false }
 
-ibc-core-client-context     = { version = "0.53.0", path = "./ibc-core/ics02-client/context", default-features = false }
-ibc-core-client-types       = { version = "0.53.0", path = "./ibc-core/ics02-client/types", default-features = false }
-ibc-core-channel-types      = { version = "0.53.0", path = "./ibc-core/ics04-channel/types", default-features = false }
-ibc-core-connection-types   = { version = "0.53.0", path = "./ibc-core/ics03-connection/types", default-features = false }
-ibc-core-commitment-types   = { version = "0.53.0", path = "./ibc-core/ics23-commitment/types", default-features = false }
-ibc-core-host-cosmos        = { version = "0.53.0", path = "./ibc-core/ics24-host/cosmos", default-features = false }
-ibc-core-host-types         = { version = "0.53.0", path = "./ibc-core/ics24-host/types", default-features = false }
-ibc-core-handler-types      = { version = "0.53.0", path = "./ibc-core/ics25-handler/types", default-features = false }
-ibc-core-router-types       = { version = "0.53.0", path = "./ibc-core/ics26-routing/types", default-features = false }
-ibc-client-tendermint-types = { version = "0.53.0", path = "./ibc-clients/ics07-tendermint/types", default-features = false }
-ibc-client-wasm-types       = { version = "0.53.0", path = "./ibc-clients/ics08-wasm/types", default-features = false }
-ibc-app-transfer-types      = { version = "0.53.0", path = "./ibc-apps/ics20-transfer/types", default-features = false }
-ibc-app-nft-transfer-types  = { version = "0.53.0", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
+ibc-core-client-context     = { version = "0.54.0", path = "./ibc-core/ics02-client/context", default-features = false }
+ibc-core-client-types       = { version = "0.54.0", path = "./ibc-core/ics02-client/types", default-features = false }
+ibc-core-channel-types      = { version = "0.54.0", path = "./ibc-core/ics04-channel/types", default-features = false }
+ibc-core-connection-types   = { version = "0.54.0", path = "./ibc-core/ics03-connection/types", default-features = false }
+ibc-core-commitment-types   = { version = "0.54.0", path = "./ibc-core/ics23-commitment/types", default-features = false }
+ibc-core-host-cosmos        = { version = "0.54.0", path = "./ibc-core/ics24-host/cosmos", default-features = false }
+ibc-core-host-types         = { version = "0.54.0", path = "./ibc-core/ics24-host/types", default-features = false }
+ibc-core-handler-types      = { version = "0.54.0", path = "./ibc-core/ics25-handler/types", default-features = false }
+ibc-core-router-types       = { version = "0.54.0", path = "./ibc-core/ics26-routing/types", default-features = false }
+ibc-client-tendermint-types = { version = "0.54.0", path = "./ibc-clients/ics07-tendermint/types", default-features = false }
+ibc-client-wasm-types       = { version = "0.54.0", path = "./ibc-clients/ics08-wasm/types", default-features = false }
+ibc-app-transfer-types      = { version = "0.54.0", path = "./ibc-apps/ics20-transfer/types", default-features = false }
+ibc-app-nft-transfer-types  = { version = "0.54.0", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
 
 ibc-proto = { version = "0.47.0", default-features = false }
 
