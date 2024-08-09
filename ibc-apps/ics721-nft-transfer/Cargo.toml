@@ -25,6 +25,7 @@ serde-json = { workspace = true, optional = true }
 # ibc dependencies
 ibc-app-nft-transfer-types = { workspace = true }
 ibc-core                   = { workspace = true }
+rstest.workspace = true
 
 [features]
 default = [ "std" ]
