@@ -2,8 +2,8 @@
 resolver = "2"
 
 members = [
-  "ibc-clients/cw-context",
-  "ibc-clients/ics07-tendermint",
+    "ibc-clients/cw-context",
+    "ibc-clients/ics07-tendermint",
 ]
 
 [workspace.package]
@@ -18,7 +18,7 @@ authors      = [ "Informal Systems <hello@informal.systems>" ]
 [workspace.dependencies]
 # external dependencies
 derive_more = { version = "0.99.18", default-features = false }
-prost       = { version = "0.12", default-features = false }
+prost       = { version = "0.13.1", default-features = false }
 serde-json  = { package = "serde-json-wasm", version = "1.0.1", default-features = false }
 
 # cosmwasm dependencies
@@ -34,5 +34,5 @@ ibc-client-wasm-types = { version = "0.53.0", path = "./../ibc-clients/ics08-was
 ibc-testkit           = { version = "0.53.0", path = "./../ibc-testkit", default-features = false }
 
 # cosmos dependencies
-tendermint         = { version = "0.37.0", default-features = false }
-tendermint-testgen = { version = "0.37.0", default-features = false }
+tendermint         = { version = "0.38.0", default-features = false }
+tendermint-testgen = { version = "0.38.0", default-features = false }
