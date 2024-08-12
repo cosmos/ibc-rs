@@ -9,7 +9,7 @@ workspaces should be released:
 
 ### ibc-derive
 
-As `ibc-derive` is an independant dependency of ibc-rs, if any changes were introduced to
+As `ibc-derive` is an independent dependency of ibc-rs, if any changes were introduced to
 this crate, then a new version needs to be released prior to releasing a new version of ibc-rs.
 This is done by:
 1. Bumping the version of `ibc-derive` in `crates/ibc-derive/Cargo.toml`
