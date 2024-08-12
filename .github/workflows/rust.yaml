@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/rust.yaml
+      - Makefile
       - '*.toml'
       - ci/**
       - cosmwasm/**
