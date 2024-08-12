@@ -33,7 +33,7 @@ ibc-proto = { workspace = true }
 ibc-query = { workspace = true }
 
 # basecoin dependencies
-basecoin-store = { version = "0.1.0" }
+basecoin-store = { version = "0.2.0" }
 
 # cosmos dependencies
 tendermint         = { workspace = true }
