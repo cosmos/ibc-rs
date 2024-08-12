@@ -59,6 +59,7 @@ release: ## Perform an actual release and publishes to crates.io.
 	cargo release --workspace --no-push --no-tag --allow-branch HEAD --execute \
 		--exclude ibc-derive \
 		--exclude ibc-primitives
+	$(MAKE) -C ./cosmwasm release $@
 
 build-tendermint-cw: ## Build the WASM file for the ICS-07 Tendermint light client.
 	$(MAKE) -C ./cosmwasm build-tendermint-cw $@
