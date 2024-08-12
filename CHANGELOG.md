@@ -25,8 +25,9 @@ verification methods to accept custom paths, thus allowing light client
 developers to introduce custom path serialization logic into their applications.
 CosmWasm response types have been refactored to match the `08-wasm` client API.
 
-This release bumps the MSRV of ibc-rs to 1.72.1. The `cosmwasm` dependency has
-also been bumped to 2.1.0.
+This release bumps the MSRV of ibc-rs to 1.72.1. `prost` has been bumped to 0.13.1.
+`ibc-proto` has been bumped to 0.47.0. `tendermint` dependencies have been bumped
+to 0.38.0. The `cosmwasm` dependency has also been bumped to 2.1.0.
 
 ### BREAKING CHANGES
 
@@ -41,6 +42,9 @@ also been bumped to 2.1.0.
 - [ibc-core] Separate the packet timeout timestamp from the host `Timestamp` by
   defining a new specific `TimeoutTimestamp`.
   ([\#1296](https://github.com/cosmos/ibc-rs/issues/1296))
+- [ibc] Bump `prost` to 0.13.1
+- [ibc] Bump `ibc-proto` to 0.47.0
+- [ibc] Bump `tendermint` dependencies to 0.38.0
 
 ### BUG FIXES
 
