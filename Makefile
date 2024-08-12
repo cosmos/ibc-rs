@@ -54,7 +54,6 @@ check-release: ## Check that the release build compiles.
 	cargo release --workspace --no-push --no-tag \
 		--exclude ibc-derive \
 		--exclude ibc-primitives
-	$(MAKE) -C ./cosmwasm check-release $@
 
 release: ## Perform an actual release and publishes to crates.io.
 	cargo release --workspace --no-push --no-tag --allow-branch HEAD --execute \
