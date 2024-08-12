@@ -3,21 +3,24 @@
 Currently, the ibc-rs repository contains multiple workspaces that each require
 a separate release via PR. When performing an ibc-rs, each of the following
 workspaces should be released:
+
 - [ ] The `ibc-derive` crate
-- [ ] The "main" ibc-rs workspace, which contains `ibc-core`, `ibc-apps`, `ibc-primitives`,
-      `ibc-query`, `ibc-clients`, `ibc-data-types`, and `ibc-testkit`
+- [ ] The "main" ibc-rs workspace, which contains `ibc-core`, `ibc-apps`,
+      `ibc-primitives`, `ibc-query`, `ibc-clients`, `ibc-data-types`, and
+      `ibc-testkit`
 
 ### ibc-derive
 
-As `ibc-derive` is an independent dependency of ibc-rs, if any changes were introduced to
-this crate, then a new version needs to be released prior to releasing a new version of ibc-rs.
-This is done by:
+As `ibc-derive` is an independent dependency of ibc-rs, if any changes were
+introduced to this crate, then a new version needs to be released prior to
+releasing a new version of ibc-rs. This is done by:
+
 1. Bumping the version of `ibc-derive` in `crates/ibc-derive/Cargo.toml`
 2. Running `cargo publish -p ibc-derive` to publish the crate to crates.io
 3. Update the version of `ibc-derive` in the `Cargo.toml` of each crate that depends on it
 
-If no changes were introduced since the last release of ibc-rs, then there is no need to
-publish a new version of this crate.
+If no changes were introduced since the last release of ibc-rs, then there is no
+need to publish a new version of this crate.
 
 ### ibc-rs
 
