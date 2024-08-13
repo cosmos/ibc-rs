@@ -4,7 +4,6 @@ on:
     paths:
       - .github/workflows/upload-cw-clients.yaml
       - Cargo.toml
-      - cosmwasm/**
       - ibc/**
       - ibc-core/**
       - ibc-apps/**
@@ -17,7 +16,6 @@ on:
     paths:
       - .github/workflows/upload-cw-clients.yaml
       - Cargo.toml
-      - cosmwasm/**
       - ibc/**
       - ibc-core/**
       - ibc-apps/**
