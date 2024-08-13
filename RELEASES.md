@@ -69,19 +69,16 @@ The release process for the main ibc-rs workspace is as follows:
       than 5 new crates or 30 existing crates by default. If we need to publish
       more than these limits, we need to update `release.toml` at workspace
       root.
-5. Run `cargo doc -p ibc --all-features --open` locally to double-check that all
-   the documentation compiles and seems up-to-date and coherent. Fix any
-   potential issues here and push them to the release PR.
-6. Mark the PR as **Ready for Review** and incorporate feedback on the release.
+5. Mark the PR as **Ready for Review** and incorporate feedback on the release.
    Once approved, merge the PR.
-7. Checkout the `main` and pull it with
+6. Checkout the `main` and pull it with
    `git checkout main && git pull origin main`.
-8. Create a signed tag `git tag -s -a vX.Y.Z`. In the tag message, write the
+7. Create a signed tag `git tag -s -a vX.Y.Z`. In the tag message, write the
    version and the link to the corresponding section of the changelog. Then push
    the tag to GitHub with `git push origin vX.Y.Z`.
    - The [release workflow][release.yaml] will run the `cargo release --execute`
      command in a CI worker.
-9. If some crates have not been released, check the cause of the failure and
+8. If some crates have not been released, check the cause of the failure and
     act accordingly:
     1. In case of intermittent problems with the registry, try `cargo release`
        locally to publish any missing crates from this release. This step
@@ -91,7 +88,7 @@ The release process for the main ibc-rs workspace is as follows:
     3. In case problems arise from the source files, fix them, bump a new patch
        version (e.g. `v0.48.1`) and repeat the process with its corresponding
        new tag.
-10. Once the tag is pushed, wait for the CI bot to create a GitHub release, then
+9. Once the tag is pushed, wait for the CI bot to create a GitHub release, then
     update the release description and append:
     `[📖CHANGELOG](https://github.com/cosmos/ibc-rs/blob/main/CHANGELOG.md#vXYZ)`
 
