@@ -3,7 +3,8 @@ on:
   pull_request:
     paths:
       - .github/workflows/rust.yaml
-      - "*.toml"
+      - Makefile
+      - '*.toml'
       - ci/**
       - ibc/**
       - ibc-core/**

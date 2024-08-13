@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/cw-check.yaml
+      - Makefile
       - '*.toml'
       - Cargo.lock
       - ci/cw-check/**
