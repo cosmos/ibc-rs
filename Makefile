@@ -36,7 +36,6 @@ check-features: ## Check that project compiles with all combinations of features
 check-docs: ## Build documentation with all features and without default features.
 	cargo doc --all --all-features --release
 	cargo doc --all --no-default-features --release
-	$(MAKE) -C ./cosmwasm check-docs $@
 
 check-no-std: ## Check that libraries compile with `no_std` feature.
 	$(MAKE) -C ./ci/no-std-check $@
@@ -48,7 +47,6 @@ check-cw: ## Check that the CosmWasm smart contract compiles.
 test: ## Run tests with all features and without default features.
 	cargo test --all-targets --all-features --no-fail-fast --release
 	cargo test --all-targets --no-default-features  --no-fail-fast --release
-	$(MAKE) -C ./cosmwasm test $@
 
 check-release: ## Check that the release build compiles.
 	cargo release --workspace --no-push --no-tag \
@@ -59,7 +57,3 @@ release: ## Perform an actual release and publishes to crates.io.
 	cargo release --workspace --no-push --no-tag --allow-branch HEAD --execute \
 		--exclude ibc-derive \
 		--exclude ibc-primitives
-	$(MAKE) -C ./cosmwasm release $@
-
-build-tendermint-cw: ## Build the WASM file for the ICS-07 Tendermint light client.
-	$(MAKE) -C ./cosmwasm build-tendermint-cw $@
