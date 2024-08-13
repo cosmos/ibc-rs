@@ -14,7 +14,6 @@ lint: ## Lint the code using rustfmt, clippy and whitespace lints.
 	$(MAKE) fmt
 	$(MAKE) clippy
 	$(MAKE) lint-toml
-	$(MAKE) -C ./cosmwasm lint
 	bash ./ci/code-quality/whitespace-lints.sh
 
 fmt: ## Format the code using nightly rustfmt.
