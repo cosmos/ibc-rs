@@ -79,7 +79,7 @@ use cases.
 |  2 | Ethereum IBC relayer             |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
 |  3 | Polkadot SDK IBC implementation  |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
 |  4 | Nomic                            |     Nomic     |    :100:     |                   [Nomic network][nomic]                    |    :white_check_mark:    |
-|  5 | CosmWasm Tendermint Light Client |   Informal    |   `ics07`    |              [`cosmwasm-ibc`][cosmwasm-ibc]                 |    :white_check_mark:    |
+|  5 | CosmWasm Tendermint Light Client |   Informal    |   `ics07`    |              [cosmwasm-ibc][cosmwasm-ibc]                 |    :white_check_mark:    |
 |  6 | Namada                           |     Anoma     |    :100:     |                      [Namada][namada]                       | :hourglass_flowing_sand: |
 |  7 | Sovereign                        |   Informal    |    :100:     |                 [`sovereign-ibc`][sov-ibc]                  | :hourglass_flowing_sand: |
 |  8 | Hermes IBC relayer               |   Informal    |    :100:     |                [`basecoin-rs`][basecoin-rs]                 |    :hammer_and_pick:     |
@@ -139,6 +139,7 @@ specific language governing permissions and limitations under the License.
 [ibc]: https://github.com/cosmos/ibc
 [ibc-go]: https://github.com/cosmos/ibc-go
 [ibc-proto-rs]: https://github.com/cosmos/ibc-proto-rs
+[cosmwasm-ibc]: https://github.com/informalsystems/cosmwasm-ibc
 [ibc-homepage]: https://cosmos.network/ibc
 [ibc-protocol]: https://ibcprotocol.dev
 [cosmos-link]: https://cosmos.network
