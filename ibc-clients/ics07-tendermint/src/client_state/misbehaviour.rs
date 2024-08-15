@@ -102,8 +102,7 @@ where
         let duration_since_consensus_state =
             current_timestamp.duration_since(&trusted_timestamp).ok_or(
                 ClientError::InvalidConsensusStateTimestamp {
-                    time1: trusted_timestamp,
-                    time2: current_timestamp,
+                    actual: trusted_timestamp,
                 },
             )?;
 

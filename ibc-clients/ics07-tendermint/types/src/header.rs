@@ -115,7 +115,7 @@ impl Header {
             Ok(())
         } else {
             Err(ClientError::HeaderVerificationFailure {
-                reason:
+                description:
                     "header trusted next validator set hash does not match hash stored on chain"
                         .to_string(),
             })
@@ -203,8 +203,8 @@ impl TryFrom<Any> for Header {
         }
         match raw.type_url.as_str() {
             TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value),
-            _ => Err(ClientError::UnknownHeaderType {
-                header_type: raw.type_url,
+            _ => Err(ClientError::InvalidHeaderType {
+                actual: raw.type_url,
             }),
         }
     }

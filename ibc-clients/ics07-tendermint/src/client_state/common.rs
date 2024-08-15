@@ -168,8 +168,8 @@ pub fn verify_consensus_state(
     };
 
     if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
-        return Err(ClientError::ClientNotActive {
-            status: Status::Expired,
+        return Err(ClientError::InvalidStatus {
+            actual: Status::Expired,
         });
     }
 
@@ -214,8 +214,8 @@ pub fn validate_proof_height(
 
     if latest_height < proof_height {
         return Err(ClientError::InvalidProofHeight {
-            latest_height,
-            proof_height,
+            actual: latest_height,
+            expected: proof_height,
         });
     }
 
@@ -301,17 +301,18 @@ pub fn verify_membership<H: HostFunctionsProvider>(
     value: Vec<u8>,
 ) -> Result<(), ClientError> {
     if prefix.is_empty() {
-        return Err(ClientError::Ics23Verification(
+        return Err(ClientError::FailedIcs23Verification(
             CommitmentError::EmptyCommitmentPrefix,
         ));
     }
 
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
-    let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
+    let merkle_proof =
+        MerkleProof::try_from(proof).map_err(ClientError::FailedIcs23Verification)?;
 
     merkle_proof
         .verify_membership::<H>(proof_specs, root.clone().into(), merkle_path, value, 0)
-        .map_err(ClientError::Ics23Verification)
+        .map_err(ClientError::FailedIcs23Verification)
 }
 
 /// Verify that the given value does not belong in the client's merkle proof.
@@ -327,9 +328,10 @@ pub fn verify_non_membership<H: HostFunctionsProvider>(
     path: PathBytes,
 ) -> Result<(), ClientError> {
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
-    let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
+    let merkle_proof =
+        MerkleProof::try_from(proof).map_err(ClientError::FailedIcs23Verification)?;
 
     merkle_proof
         .verify_non_membership::<H>(proof_specs, root.clone().into(), merkle_path)
-        .map_err(ClientError::Ics23Verification)
+        .map_err(ClientError::FailedIcs23Verification)
 }

@@ -181,8 +181,8 @@ fn test_create_expired_mock_client() {
     create_client_validate(
         &fxt,
         Expect::Failure(Some(ContextError::ClientError(
-            ClientError::ClientNotActive {
-                status: Status::Expired,
+            ClientError::InvalidStatus {
+                actual: Status::Expired,
             },
         ))),
     );
@@ -209,8 +209,8 @@ fn test_create_expired_tm_client() {
     create_client_validate(
         &fxt,
         Expect::Failure(Some(ContextError::ClientError(
-            ClientError::ClientNotActive {
-                status: Status::Expired,
+            ClientError::InvalidStatus {
+                actual: Status::Expired,
             },
         ))),
     );
@@ -222,9 +222,11 @@ fn test_create_frozen_tm_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::FrozenTendermintHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(ClientError::ClientFrozen {
-            description: "the client is frozen".to_string(),
-        }))),
+        Expect::Failure(Some(ContextError::ClientError(
+            ClientError::InvalidStatus {
+                actual: Status::Frozen,
+            },
+        ))),
     );
 }
 
@@ -306,6 +308,6 @@ fn test_tm_create_client_proof_verification_ok() {
                 serde_json::to_vec(&(next_client_seq_value + 1)).expect("valid json serialization"),
             )
             .expect_err("proof verification fails"),
-        ClientError::Ics23Verification(CommitmentError::VerificationFailure)
+        ClientError::FailedIcs23Verification(CommitmentError::VerificationFailure)
     ));
 }

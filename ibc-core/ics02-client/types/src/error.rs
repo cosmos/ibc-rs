@@ -5,7 +5,7 @@ use core::convert::Infallible;
 use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::IdentifierError;
-use ibc_core_host_types::identifiers::{ClientId, ClientType};
+use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 
@@ -17,96 +17,74 @@ use crate::height::Height;
 pub enum ClientError {
     /// upgrade client error: `{0}`
     Upgrade(UpgradeClientError),
-    /// client is frozen with description: `{description}`
-    ClientFrozen { description: String },
-    /// client is not active. Status=`{status}`
-    ClientNotActive { status: Status },
-    /// client is not frozen or expired. Status=`{status}`
-    ClientNotInactive { status: Status },
-    /// client state not found: `{client_id}`
-    ClientStateNotFound { client_id: ClientId },
+    /// invalid client status: `{actual}`
+    InvalidStatus { actual: Status },
+    /// missing client state : `{client_id}`
+    MissingClientState { client_id: ClientId },
     /// client state already exists: `{client_id}`
-    ClientStateAlreadyExists { client_id: ClientId },
-    /// Substitute client height `{substitute_height}` is not greater than subject client height `{subject_height}` during client recovery
-    ClientRecoveryHeightMismatch {
+    AlreadyExistingClientState { client_id: ClientId },
+    /// client recovery heights not allowed: expected substitute client height `{substitute_height}` > subject client height `{subject_height}`
+    NotAllowedClientRecoveryHeights {
         subject_height: Height,
         substitute_height: Height,
     },
-    /// Subject and substitute client state mismatch during client recovery
-    ClientRecoveryStateMismatch,
-    /// consensus state not found at: `{client_id}` at height `{height}`
-    ConsensusStateNotFound { client_id: ClientId, height: Height },
-    /// Processed time or height for the client `{client_id}` at height `{height}` not found
-    UpdateMetaDataNotFound { client_id: ClientId, height: Height },
-    /// header verification failed with reason: `{reason}`
-    HeaderVerificationFailure { reason: String },
-    /// failed to build trust threshold from fraction: `{numerator}`/`{denominator}`
+    /// mismatched client recovery states
+    MismatchedClientRecoveryStates,
+    /// missing consensus state at `{client_id}`/`{height}`
+    MissingConsensusState { client_id: ClientId, height: Height },
+    /// missing update client metadata at `{client_id}`/`{height}`
+    MissingUpdateMetaData { client_id: ClientId, height: Height },
+    /// header verification failed: `{description}`
+    HeaderVerificationFailure { description: String },
+    /// invalid trust threshold: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
-    /// failed to build Tendermint domain type trust threshold from fraction: `{numerator}`/`{denominator}`
-    FailedTrustThresholdConversion { numerator: u64, denominator: u64 },
-    /// unknown client state type: `{client_state_type}`
-    UnknownClientStateType { client_state_type: String },
-    /// unknown client consensus state type: `{consensus_state_type}`
-    UnknownConsensusStateType { consensus_state_type: String },
-    /// unknown header type: `{header_type}`
-    UnknownHeaderType { header_type: String },
-    /// unknown misbehaviour type: `{misbehaviour_type}`
-    UnknownMisbehaviourType { misbehaviour_type: String },
+    /// invalid client state type: `{actual}`
+    InvalidClientStateType { actual: String },
+    /// invalid client consensus state type: `{actual}`
+    InvalidConsensusStateType { actual: String },
+    /// invalid header type: `{actual}`
+    InvalidHeaderType { actual: String },
+    /// invalid misbehaviour type: `{actual}`
+    InvalidMisbehaviourType { actual: String },
     /// missing raw client state
     MissingRawClientState,
     /// missing raw client consensus state
     MissingRawConsensusState,
-    /// invalid client id in the update client message: `{0}`
-    InvalidMsgUpdateClientId(IdentifierError),
-    /// invalid client id in recover client message: `{0}`
-    InvalidMsgRecoverClientId(IdentifierError),
-    /// invalid client identifier error: `{0}`
+    /// invalid update client message
+    InvalidUpdateClientMessage,
+    /// invalid client identifier: `{0}`
     InvalidClientIdentifier(IdentifierError),
-    /// invalid raw header error: `{reason}`
-    InvalidRawHeader { reason: String },
+    /// invalid raw header: `{description}`
+    InvalidRawHeader { description: String },
     /// missing raw client message
-    MissingClientMessage,
-    /// invalid raw misbehaviour error: `{0}`
-    InvalidRawMisbehaviour(IdentifierError),
+    MissingRawClientMessage,
     /// missing raw misbehaviour
     MissingRawMisbehaviour,
-    /// revision height cannot be zero
+    /// invalid height; cannot be zero or negative
     InvalidHeight,
-    /// height cannot end up zero or negative
-    InvalidHeightResult,
-    /// the proof height is insufficient: latest_height=`{latest_height}` proof_height=`{proof_height}`
-    InvalidProofHeight {
-        latest_height: Height,
-        proof_height: Height,
-    },
-    /// invalid commitment proof bytes error: `{0}`
-    InvalidCommitmentProof(CommitmentError),
-    /// mismatch between client and arguments types
-    ClientArgsTypeMismatch { client_type: ClientType },
-    /// timestamp is invalid or missing, timestamp=`{time1}`,  now=`{time2}`
-    InvalidConsensusStateTimestamp { time1: Timestamp, time2: Timestamp },
-    /// the local consensus state could not be retrieved for height `{height}`
+    /// invalid proof height; expected `{actual}` >= `{expected}`
+    InvalidProofHeight { actual: Height, expected: Height },
+    /// invalid consensus state timestamp: `{actual}`
+    InvalidConsensusStateTimestamp { actual: Timestamp },
+    /// missing local consensus state at `{height}`
     MissingLocalConsensusState { height: Height },
-    /// invalid signer error: `{reason}`
-    InvalidSigner { reason: String },
-    /// ics23 verification failure error: `{0}`
-    Ics23Verification(CommitmentError),
-    /// misbehaviour handling failed with reason: `{reason}`
-    MisbehaviourHandlingFailure { reason: String },
-    /// client-specific error: `{description}`
-    ClientSpecific { description: String },
-    /// client counter overflow error
-    CounterOverflow,
-    /// update client message did not contain valid header or misbehaviour
-    InvalidUpdateClientMessage,
+    /// failed ics23 verification: `{0}`
+    FailedIcs23Verification(CommitmentError),
+    /// failed misbehaviour handling: `{description}`
+    FailedMisbehaviourHandling { description: String },
+    /// invalid attribute key: `{actual}`
+    InvalidAttributeKey { actual: String },
+    /// invalid attribute value: `{actual}`
+    InvalidAttributeValue { actual: String },
+    /// missing attribute key
+    MissingAttributeKey,
+    /// missing attribute value
+    MissingAttributeValue,
+
     /// other error: `{description}`
     Other { description: String },
-    /// invalid attribute key: `{attribute_key}`
-    InvalidAttributeKey { attribute_key: String },
-    /// invalid attribute value: `{attribute_value}`
-    InvalidAttributeValue { attribute_value: String },
-    /// Missing attribute key: `{attribute_key}`
-    MissingAttributeKey { attribute_key: String },
+    /// client-specific error: `{description}`
+    ClientSpecific { description: String },
 }
 
 impl From<&'static str> for ClientError {
@@ -127,10 +105,8 @@ impl From<Infallible> for ClientError {
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::InvalidMsgUpdateClientId(e)
-            | Self::InvalidClientIdentifier(e)
-            | Self::InvalidRawMisbehaviour(e) => Some(e),
-            Self::InvalidCommitmentProof(e) | Self::Ics23Verification(e) => Some(e),
+            Self::InvalidClientIdentifier(e) => Some(e),
+            Self::FailedIcs23Verification(e) => Some(e),
             _ => None,
         }
     }

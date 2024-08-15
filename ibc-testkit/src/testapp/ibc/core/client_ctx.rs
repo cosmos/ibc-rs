@@ -108,7 +108,7 @@ where
             .map(|path| {
                 self.consensus_state_store
                     .get(StoreHeight::Pending, &path)
-                    .ok_or_else(|| ClientError::ConsensusStateNotFound {
+                    .ok_or_else(|| ClientError::MissingConsensusState {
                         client_id: client_id.clone(),
                         height: *height,
                     })
@@ -141,7 +141,7 @@ where
             .map(|path| {
                 self.consensus_state_store
                     .get(StoreHeight::Pending, &path)
-                    .ok_or_else(|| ClientError::ConsensusStateNotFound {
+                    .ok_or_else(|| ClientError::MissingConsensusState {
                         client_id: client_id.clone(),
                         height: *height,
                     })
@@ -163,7 +163,7 @@ where
         Ok(self
             .client_state_store
             .get(StoreHeight::Pending, &ClientStatePath(client_id.clone()))
-            .ok_or(ClientError::ClientStateNotFound {
+            .ok_or(ClientError::MissingClientState {
                 client_id: client_id.clone(),
             })?)
     }
@@ -180,7 +180,7 @@ where
         let consensus_state = self
             .consensus_state_store
             .get(StoreHeight::Pending, client_cons_state_path)
-            .ok_or(ClientError::ConsensusStateNotFound {
+            .ok_or(ClientError::MissingConsensusState {
                 client_id: client_cons_state_path.client_id.clone(),
                 height,
             })?;
@@ -203,7 +203,7 @@ where
         let processed_timestamp = self
             .client_processed_times
             .get(StoreHeight::Pending, &client_update_time_path)
-            .ok_or(ClientError::UpdateMetaDataNotFound {
+            .ok_or(ClientError::MissingUpdateMetaData {
                 client_id: client_id.clone(),
                 height: *height,
             })?;
@@ -215,7 +215,7 @@ where
         let processed_height = self
             .client_processed_heights
             .get(StoreHeight::Pending, &client_update_height_path)
-            .ok_or(ClientError::UpdateMetaDataNotFound {
+            .ok_or(ClientError::MissingUpdateMetaData {
                 client_id: client_id.clone(),
                 height: *height,
             })?;

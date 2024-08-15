@@ -48,7 +48,7 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
             client_id: raw
                 .client_id
                 .parse()
-                .map_err(ClientError::InvalidRawMisbehaviour)?,
+                .map_err(ClientError::InvalidClientIdentifier)?,
             misbehaviour: raw_misbehaviour,
             signer: raw.signer.into(),
         })

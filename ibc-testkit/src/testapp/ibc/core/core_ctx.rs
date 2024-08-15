@@ -11,7 +11,7 @@ use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::channel::types::packet::{PacketState, Receipt};
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
-use ibc::core::client::types::Height;
+use ibc::core::client::types::{Height, Status};
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::commitment_types::merkle::MerkleProof;
 use ibc::core::connection::types::error::ConnectionError;
@@ -80,8 +80,8 @@ where
         client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(ClientError::ClientFrozen {
-                description: String::new(),
+            return Err(ClientError::InvalidStatus {
+                actual: Status::Frozen,
             }
             .into());
         }
@@ -316,7 +316,7 @@ where
                 let client_state = self
                     .client_state_store
                     .get(StoreHeight::Pending, &client_state_path)
-                    .ok_or_else(|| ClientError::ClientStateNotFound {
+                    .ok_or_else(|| ClientError::MissingClientState {
                         client_id: client_state_path.0.clone(),
                     })?;
                 Ok((client_state_path.0, client_state))
@@ -354,7 +354,7 @@ where
                     .consensus_state_store
                     .get(StoreHeight::Pending, &consensus_path)
                     .ok_or({
-                        ClientError::ConsensusStateNotFound {
+                        ClientError::MissingConsensusState {
                             client_id: consensus_path.client_id,
                             height,
                         }

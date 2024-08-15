@@ -106,11 +106,9 @@ impl TryFrom<TrustThreshold> for TrustThresholdFraction {
     type Error = ClientError;
 
     fn try_from(t: TrustThreshold) -> Result<TrustThresholdFraction, Self::Error> {
-        Self::new(t.numerator, t.denominator).map_err(|_| {
-            ClientError::FailedTrustThresholdConversion {
-                numerator: t.numerator,
-                denominator: t.denominator,
-            }
+        Self::new(t.numerator, t.denominator).map_err(|_| ClientError::InvalidTrustThreshold {
+            numerator: t.numerator,
+            denominator: t.denominator,
         })
     }
 }

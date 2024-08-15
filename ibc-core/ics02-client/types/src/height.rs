@@ -77,7 +77,7 @@ impl Height {
 
     pub fn sub(&self, delta: u64) -> Result<Height, ClientError> {
         if self.revision_height <= delta {
-            return Err(ClientError::InvalidHeightResult);
+            return Err(ClientError::InvalidHeight);
         }
 
         Ok(Height {

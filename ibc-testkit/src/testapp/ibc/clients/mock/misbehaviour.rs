@@ -61,8 +61,8 @@ impl TryFrom<Any> for Misbehaviour {
         }
         match raw.type_url.as_str() {
             MOCK_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
-            _ => Err(ClientError::UnknownMisbehaviourType {
-                misbehaviour_type: raw.type_url,
+            _ => Err(ClientError::InvalidMisbehaviourType {
+                actual: raw.type_url,
             }),
         }
     }

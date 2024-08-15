@@ -346,8 +346,8 @@ impl TryFrom<Any> for ClientState {
 
         match raw.type_url.as_str() {
             TENDERMINT_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
-            _ => Err(ClientError::UnknownClientStateType {
-                client_state_type: raw.type_url,
+            _ => Err(ClientError::InvalidClientStateType {
+                actual: raw.type_url,
             }),
         }
     }
