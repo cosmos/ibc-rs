@@ -114,7 +114,7 @@ impl Header {
         if &self.trusted_next_validator_set.hash_with::<H>() == trusted_next_validator_hash {
             Ok(())
         } else {
-            Err(ClientError::HeaderVerificationFailure {
+            Err(ClientError::FailedHeaderVerification {
                 description:
                     "header trusted next validator set hash does not match hash stored on chain"
                         .to_string(),

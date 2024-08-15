@@ -34,8 +34,8 @@ pub enum ClientError {
     MissingConsensusState { client_id: ClientId, height: Height },
     /// missing update client metadata at `{client_id}`/`{height}`
     MissingUpdateMetaData { client_id: ClientId, height: Height },
-    /// header verification failed: `{description}`
-    HeaderVerificationFailure { description: String },
+    /// failed header verification: `{description}`
+    FailedHeaderVerification { description: String },
     /// invalid trust threshold: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// invalid client state type: `{actual}`
@@ -80,11 +80,10 @@ pub enum ClientError {
     MissingAttributeKey,
     /// missing attribute value
     MissingAttributeValue,
-
-    /// other error: `{description}`
-    Other { description: String },
     /// client-specific error: `{description}`
     ClientSpecific { description: String },
+    /// other error: `{description}`
+    Other { description: String },
 }
 
 impl From<&'static str> for ClientError {

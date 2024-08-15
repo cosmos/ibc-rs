@@ -63,7 +63,7 @@ where
                     .trusted_height
                     .revision_height()
                     .try_into()
-                    .map_err(|_| ClientError::ClientSpecific {
+                    .map_err(|_| ClientError::FailedHeaderVerification {
                         description: Error::InvalidHeaderHeight {
                             height: header.trusted_height.revision_height(),
                         }
