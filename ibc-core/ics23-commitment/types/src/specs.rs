@@ -43,10 +43,10 @@ impl ProofSpecs {
                     && 0 < proof_spec.0.max_depth
                     && proof_spec.0.max_depth < proof_spec.0.min_depth)
             {
-                return Err(CommitmentError::InvalidDepthRange(
-                    proof_spec.0.min_depth,
-                    proof_spec.0.max_depth,
-                ));
+                return Err(CommitmentError::InvalidRange {
+                    min: proof_spec.0.min_depth,
+                    max: proof_spec.0.max_depth,
+                });
             }
         }
         Ok(())
@@ -90,10 +90,10 @@ impl TryFrom<RawProofSpec> for ProofSpec {
             || spec.min_depth < 0
             || (0 < spec.min_depth && 0 < spec.max_depth && spec.max_depth < spec.min_depth)
         {
-            return Err(CommitmentError::InvalidDepthRange(
-                spec.min_depth,
-                spec.max_depth,
-            ));
+            return Err(CommitmentError::InvalidRange {
+                min: spec.min_depth,
+                max: spec.max_depth,
+            });
         }
 
         let leaf_spec = spec
@@ -166,10 +166,10 @@ impl TryFrom<RawInnerSpec> for InnerSpec {
             || inner_spec.max_prefix_length < 0
             || inner_spec.max_prefix_length < inner_spec.min_prefix_length
         {
-            return Err(CommitmentError::InvalidPrefixLengthRange(
-                inner_spec.min_prefix_length,
-                inner_spec.max_prefix_length,
-            ));
+            return Err(CommitmentError::InvalidRange {
+                min: inner_spec.min_prefix_length,
+                max: inner_spec.max_prefix_length,
+            });
         }
 
         Ok(Self(RawInnerSpec {

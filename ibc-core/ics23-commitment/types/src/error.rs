@@ -15,28 +15,22 @@ pub enum CommitmentError {
     EmptyVerifiedValue,
     /// empty proof specs
     EmptyProofSpecs,
-    /// invalid depth range: [{0}, {1}]
-    InvalidDepthRange(i32, i32),
-    /// mismatch between the number of proofs with that of specs
-    NumberOfSpecsMismatch,
-    /// mismatch between the number of proofs with that of keys
-    NumberOfKeysMismatch,
+    /// invalid range: [`{min}`, `{max}`]
+    InvalidRange { min: i32, max: i32 },
+    /// mismatched number of proofs: expected `{expected}`, got `{actual}`
+    MismatchedNumberOfProofs { expected: usize, actual: usize },
     /// invalid merkle proof
     InvalidMerkleProof,
-    /// proof verification failed
-    VerificationFailure,
-    /// encoded commitment prefix is not a valid hex string: `{0}`
-    EncodingFailure(String),
-    /// decoding commitment proof bytes failed: `{0}`
-    DecodingFailure(String),
-    /// invalid prefix length range: `[{0}, {1}]`
-    InvalidPrefixLengthRange(i32, i32),
+    /// failed decoding commitment proof: `{0}`
+    FailedDecoding(String),
     /// invalid child size: `{0}`
     InvalidChildSize(i32),
     /// invalid hash operation: `{0}`
     InvalidHashOp(i32),
     /// invalid length operation: `{0}`
     InvalidLengthOp(i32),
+    /// failed verification
+    VerificationFailure,
 }
 
 #[cfg(feature = "std")]

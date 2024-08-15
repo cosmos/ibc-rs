@@ -106,10 +106,16 @@ impl MerkleProof {
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());
         if ics23_specs.len() != num {
-            return Err(CommitmentError::NumberOfSpecsMismatch);
+            return Err(CommitmentError::MismatchedNumberOfProofs {
+                expected: ics23_specs.len(),
+                actual: num,
+            });
         }
         if keys.key_path.len() != num {
-            return Err(CommitmentError::NumberOfKeysMismatch);
+            return Err(CommitmentError::MismatchedNumberOfProofs {
+                expected: keys.key_path.len(),
+                actual: num,
+            });
         }
         if value.is_empty() {
             return Err(CommitmentError::EmptyVerifiedValue);
@@ -166,10 +172,16 @@ impl MerkleProof {
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());
         if ics23_specs.len() != num {
-            return Err(CommitmentError::NumberOfSpecsMismatch);
+            return Err(CommitmentError::MismatchedNumberOfProofs {
+                actual: num,
+                expected: ics23_specs.len(),
+            });
         }
         if keys.key_path.len() != num {
-            return Err(CommitmentError::NumberOfKeysMismatch);
+            return Err(CommitmentError::MismatchedNumberOfProofs {
+                actual: num,
+                expected: keys.key_path.len(),
+            });
         }
 
         // verify the absence of key in lowest subtree
