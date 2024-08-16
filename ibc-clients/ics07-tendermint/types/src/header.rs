@@ -87,7 +87,7 @@ impl Header {
                 .revision_height()
                 .try_into()
                 .map_err(|_| Error::InvalidHeaderHeight {
-                    height: self.trusted_height.revision_height(),
+                    actual: self.trusted_height.revision_height(),
                 })?,
             next_validators: &self.trusted_next_validator_set,
             next_validators_hash,
@@ -96,8 +96,8 @@ impl Header {
 
     pub fn verify_chain_id_version_matches_height(&self, chain_id: &ChainId) -> Result<(), Error> {
         if self.height().revision_number() != chain_id.revision_number() {
-            return Err(Error::MismatchHeaderChainId {
-                given: self.signed_header.header.chain_id.to_string(),
+            return Err(Error::MismatchedHeaderChainIds {
+                actual: self.signed_header.header.chain_id.to_string(),
                 expected: chain_id.to_string(),
             });
         }
@@ -125,9 +125,9 @@ impl Header {
     /// Checks if the fields of a given header are consistent with the trusted fields of this header.
     pub fn validate_basic<H: MerkleHash + Sha256 + Default>(&self) -> Result<(), Error> {
         if self.height().revision_number() != self.trusted_height.revision_number() {
-            return Err(Error::MismatchHeightRevisions {
-                trusted_revision: self.trusted_height.revision_number(),
-                header_revision: self.height().revision_number(),
+            return Err(Error::MismatchedRevisionHeights {
+                expected: self.trusted_height.revision_number(),
+                actual: self.height().revision_number(),
             });
         }
 
@@ -137,16 +137,16 @@ impl Header {
         // installing.
         if self.trusted_height >= self.height() {
             return Err(Error::InvalidHeaderHeight {
-                height: self.height().revision_height(),
+                actual: self.height().revision_height(),
             });
         }
 
         let validators_hash = self.validator_set.hash_with::<H>();
 
         if validators_hash != self.signed_header.header.validators_hash {
-            return Err(Error::MismatchValidatorsHashes {
-                signed_header_validators_hash: self.signed_header.header.validators_hash,
-                validators_hash,
+            return Err(Error::MismatchedValidatorHashes {
+                expected: self.signed_header.header.validators_hash,
+                actual: validators_hash,
             });
         }
 
@@ -165,10 +165,7 @@ impl TryFrom<RawHeader> for Header {
                 .signed_header
                 .ok_or(Error::MissingSignedHeader)?
                 .try_into()
-                .map_err(|e| Error::InvalidHeader {
-                    reason: "signed header conversion".to_string(),
-                    error: e,
-                })?,
+                .map_err(Error::InvalidRawHeader)?,
             validator_set: raw
                 .validator_set
                 .ok_or(Error::MissingValidatorSet)?

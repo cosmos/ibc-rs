@@ -126,7 +126,7 @@ impl ClientState {
         // value is invalid in this context
         if self.trust_level == TrustThreshold::ZERO {
             return Err(Error::InvalidTrustThreshold {
-                reason: "ClientState trust-level cannot be zero".to_string(),
+                description: "ClientState trust-level cannot be zero".to_string(),
             });
         }
 
@@ -134,12 +134,18 @@ impl ClientState {
             self.trust_level.numerator(),
             self.trust_level.denominator(),
         )
-        .map_err(Error::InvalidTendermintTrustThreshold)?;
+        .map_err(|_| Error::InvalidTrustThreshold {
+            description: format!(
+                "invalid Tendermint trust threshold: {:?}/{:?}",
+                self.trust_level.numerator(),
+                self.trust_level.denominator()
+            ),
+        })?;
 
         // Basic validation of trusting period and unbonding period: each should be non-zero.
         if self.trusting_period <= Duration::new(0, 0) {
             return Err(Error::InvalidTrustThreshold {
-                reason: format!(
+                description: format!(
                     "ClientState trusting period ({:?}) must be greater than zero",
                     self.trusting_period
                 ),
@@ -148,7 +154,7 @@ impl ClientState {
 
         if self.unbonding_period <= Duration::new(0, 0) {
             return Err(Error::InvalidTrustThreshold {
-                reason: format!(
+                description: format!(
                     "ClientState unbonding period ({:?}) must be greater than zero",
                     self.unbonding_period
                 ),
@@ -157,22 +163,20 @@ impl ClientState {
 
         if self.trusting_period >= self.unbonding_period {
             return Err(Error::InvalidTrustThreshold {
-                reason: format!(
+                description: format!(
                 "ClientState trusting period ({:?}) must be smaller than unbonding period ({:?})", self.trusting_period, self.unbonding_period
             ),
             });
         }
 
         if self.max_clock_drift <= Duration::new(0, 0) {
-            return Err(Error::InvalidMaxClockDrift {
-                reason: "ClientState max-clock-drift must be greater than zero".to_string(),
-            });
+            return Err(Error::InvalidMaxClockDrift);
         }
 
         if self.latest_height.revision_number() != self.chain_id.revision_number() {
-            return Err(Error::InvalidLatestHeight {
-                reason: "ClientState latest-height revision number must match chain-id version"
-                    .to_string(),
+            return Err(Error::MismatchedRevisionHeights {
+                expected: self.chain_id.revision_number(),
+                actual: self.latest_height.revision_number(),
             });
         }
 
@@ -182,8 +186,8 @@ impl ClientState {
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty
         for (idx, key) in self.upgrade_path.iter().enumerate() {
             if key.trim().is_empty() {
-                return Err(Error::Validation {
-                    reason: format!(
+                return Err(Error::InvalidHeader {
+                    description: format!(
                         "ClientState upgrade-path key at index {idx:?} cannot be empty"
                     ),
                 });
@@ -204,7 +208,7 @@ impl ClientState {
         Ok(Options {
             trust_threshold: self.trust_level.try_into().map_err(|e: ClientError| {
                 Error::InvalidTrustThreshold {
-                    reason: e.to_string(),
+                    description: e.to_string(),
                 }
             })?,
             trusting_period: self.trusting_period,
@@ -244,7 +248,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             trust_level
                 .try_into()
                 .map_err(|e| Error::InvalidTrustThreshold {
-                    reason: format!("{e}"),
+                    description: format!("{e}"),
                 })?
         };
 
@@ -262,9 +266,9 @@ impl TryFrom<RawTmClientState> for ClientState {
 
         let max_clock_drift = raw
             .max_clock_drift
-            .ok_or(Error::NegativeMaxClockDrift)?
+            .ok_or(Error::InvalidMaxClockDrift)?
             .try_into()
-            .map_err(|_| Error::NegativeMaxClockDrift)?;
+            .map_err(|_| Error::InvalidMaxClockDrift)?;
 
         let latest_height = raw
             .latest_height

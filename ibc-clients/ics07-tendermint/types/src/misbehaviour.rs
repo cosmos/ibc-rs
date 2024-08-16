@@ -51,13 +51,13 @@ impl Misbehaviour {
         if self.header1.signed_header.header.chain_id != self.header2.signed_header.header.chain_id
         {
             return Err(Error::InvalidRawMisbehaviour {
-                reason: "headers must have identical chain_ids".to_owned(),
+                description: "headers must have identical chain_ids".to_owned(),
             });
         }
 
         if self.header1.height() < self.header2.height() {
             return Err(Error::InvalidRawMisbehaviour {
-                reason: format!(
+                description: format!(
                     "header1 height is less than header2 height ({} < {})",
                     self.header1.height(),
                     self.header2.height()
@@ -80,14 +80,14 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
         let header1: Header = raw
             .header_1
             .ok_or_else(|| Error::InvalidRawMisbehaviour {
-                reason: "missing header1".into(),
+                description: "missing header1".into(),
             })?
             .try_into()?;
 
         let header2: Header = raw
             .header_2
             .ok_or_else(|| Error::InvalidRawMisbehaviour {
-                reason: "missing header2".into(),
+                description: "missing header2".into(),
             })?
             .try_into()?;
 

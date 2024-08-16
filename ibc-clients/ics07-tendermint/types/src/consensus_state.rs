@@ -53,13 +53,13 @@ impl TryFrom<RawConsensusState> for ConsensusState {
         let proto_root = raw
             .root
             .ok_or(Error::InvalidRawClientState {
-                reason: "missing commitment root".into(),
+                description: "missing commitment root".into(),
             })?
             .hash;
 
         let ibc_proto::google::protobuf::Timestamp { seconds, nanos } =
             raw.timestamp.ok_or(Error::InvalidRawClientState {
-                reason: "missing timestamp".into(),
+                description: "missing timestamp".into(),
             })?;
         // FIXME: shunts like this are necessary due to
         // https://github.com/informalsystems/tendermint-rs/issues/1053
@@ -67,12 +67,12 @@ impl TryFrom<RawConsensusState> for ConsensusState {
         let timestamp = proto_timestamp
             .try_into()
             .map_err(|e| Error::InvalidRawClientState {
-                reason: format!("invalid timestamp: {e}"),
+                description: format!("invalid timestamp: {e}"),
             })?;
 
         let next_validators_hash = Hash::from_bytes(Algorithm::Sha256, &raw.next_validators_hash)
             .map_err(|e| Error::InvalidRawClientState {
-            reason: e.to_string(),
+            description: e.to_string(),
         })?;
 
         Ok(Self {

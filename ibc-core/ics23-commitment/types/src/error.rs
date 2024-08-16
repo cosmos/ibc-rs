@@ -29,6 +29,8 @@ pub enum CommitmentError {
     InvalidHashOp(i32),
     /// invalid length operation: `{0}`
     InvalidLengthOp(i32),
+
+    // TODO(seanchen1991): Can this variant be removed?
     /// failed verification
     VerificationFailure,
 }

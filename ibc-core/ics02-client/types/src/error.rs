@@ -80,6 +80,8 @@ pub enum ClientError {
     MissingAttributeKey,
     /// missing attribute value
     MissingAttributeValue,
+
+    // TODO(seanchen1991): Can we remove these two variants?
     /// client-specific error: `{description}`
     ClientSpecific { description: String },
     /// other error: `{description}`
