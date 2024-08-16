@@ -6,6 +6,7 @@ use ibc_core_channel_types::events::CloseConfirm;
 use ibc_core_channel_types::msgs::MsgChannelCloseConfirm;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
+use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
@@ -128,11 +129,10 @@ where
             .counterparty()
             .channel_id()
             .ok_or(ChannelError::MissingCounterparty)?;
-        let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
-            ChannelError::UndefinedConnectionCounterparty {
-                connection_id: chan_end_on_b.connection_hops()[0].clone(),
-            },
-        )?;
+        let conn_id_on_a = conn_end_on_b
+            .counterparty()
+            .connection_id()
+            .ok_or(ConnectionError::MissingCounterparty)?;
 
         let expected_chan_end_on_a = ChannelEnd::new(
             ChannelState::Closed,

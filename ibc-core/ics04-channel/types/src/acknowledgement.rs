@@ -45,7 +45,7 @@ impl TryFrom<Vec<u8>> for Acknowledgement {
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         if bytes.is_empty() {
-            Err(PacketError::InvalidAcknowledgement)
+            Err(PacketError::EmptyAcknowledgment)
         } else {
             Ok(Self(bytes))
         }
@@ -81,7 +81,7 @@ impl StatusValue {
         let value = value.to_string();
 
         if value.is_empty() {
-            return Err(PacketError::EmptyAcknowledgementStatus);
+            return Err(PacketError::EmptyAcknowledgmentStatus);
         }
 
         Ok(Self(value))

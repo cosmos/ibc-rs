@@ -139,15 +139,17 @@ where
         return Ok(());
     };
 
-    if commitment_on_a
-        != compute_packet_commitment(
-            &packet.data,
-            &packet.timeout_height_on_b,
-            &packet.timeout_timestamp_on_b,
-        )
-    {
-        return Err(PacketError::IncorrectPacketCommitment {
+    let expected_commitment_on_a = compute_packet_commitment(
+        &packet.data,
+        &packet.timeout_height_on_b,
+        &packet.timeout_timestamp_on_b,
+    );
+
+    if commitment_on_a != expected_commitment_on_a {
+        return Err(PacketError::MismatchedPacketCommitments {
             sequence: packet.seq_on_a,
+            actual: commitment_on_a,
+            expected: expected_commitment_on_a,
         }
         .into());
     }
@@ -156,9 +158,9 @@ where
         let seq_ack_path_on_a = SeqAckPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
         let next_seq_ack = ctx_a.get_next_sequence_ack(&seq_ack_path_on_a)?;
         if packet.seq_on_a != next_seq_ack {
-            return Err(PacketError::InvalidPacketSequence {
-                given_sequence: packet.seq_on_a,
-                next_sequence: next_seq_ack,
+            return Err(PacketError::MismatchedPacketSequences {
+                actual: packet.seq_on_a,
+                expected: next_seq_ack,
             }
             .into());
         }

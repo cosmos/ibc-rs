@@ -222,7 +222,7 @@ where
                 ),
             )
             .then_some(Receipt::Ok)
-            .ok_or(PacketError::PacketReceiptNotFound {
+            .ok_or(PacketError::MissingPacketReceipt {
                 sequence: receipt_path.sequence,
             })?)
     }
@@ -237,7 +237,7 @@ where
                 StoreHeight::Pending,
                 &AckPath::new(&ack_path.port_id, &ack_path.channel_id, ack_path.sequence),
             )
-            .ok_or(PacketError::PacketAcknowledgementNotFound {
+            .ok_or(PacketError::MissingPacketAcknowledgment {
                 sequence: ack_path.sequence,
             })?)
     }
@@ -471,10 +471,7 @@ where
             "commitments/ports/{}/channels/{}/sequences",
             channel_end_path.0, channel_end_path.1
         )
-        .try_into()
-        .map_err(|_| PacketError::Other {
-            description: "Invalid commitment path".into(),
-        })?;
+        .into();
 
         self.packet_commitment_store
             .get_keys(&path)
@@ -518,10 +515,7 @@ where
                 "acks/ports/{}/channels/{}/sequences",
                 channel_end_path.0, channel_end_path.1
             )
-            .try_into()
-            .map_err(|_| PacketError::Other {
-                description: "Invalid ack path".into(),
-            })?;
+            .into();
 
             self.packet_ack_store
                 .get_keys(&ack_path_prefix)
@@ -599,10 +593,7 @@ where
                 "commitments/ports/{}/channels/{}/sequences",
                 channel_end_path.0, channel_end_path.1
             )
-            .try_into()
-            .map_err(|_| PacketError::Other {
-                description: "Invalid commitment path".into(),
-            })?;
+            .into();
 
             self.packet_commitment_store
                 .get_keys(&commitment_path_prefix)

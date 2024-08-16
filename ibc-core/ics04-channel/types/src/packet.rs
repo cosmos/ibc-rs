@@ -172,7 +172,7 @@ impl TryFrom<RawPacket> for Packet {
         }
 
         if raw_pkt.data.is_empty() {
-            return Err(PacketError::ZeroPacketData);
+            return Err(PacketError::EmptyPacketData);
         }
 
         // Note: ibc-go currently (July 2022) incorrectly treats the timeout
@@ -282,7 +282,7 @@ impl TryFrom<RawPacketState> for PacketState {
         }
 
         if raw_pkt.data.is_empty() {
-            return Err(PacketError::ZeroPacketData);
+            return Err(PacketError::EmptyPacketData);
         }
 
         Ok(PacketState {
