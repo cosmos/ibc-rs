@@ -15,24 +15,24 @@ pub enum CommitmentError {
     EmptyVerifiedValue,
     /// empty proof specs
     EmptyProofSpecs,
-    /// invalid range: [`{min}`, `{max}`]
-    InvalidRange { min: i32, max: i32 },
     /// mismatched number of proofs: expected `{expected}`, actual `{actual}`
     MismatchedNumberOfProofs { expected: usize, actual: usize },
+    /// mismatched proofs: expected `{expected}`, actual `{actual}`
+    MismatchedProofs { expected: String, actual: String },
+    /// invalid range: [`{min}`, `{max}`]
+    InvalidRange { min: i32, max: i32 },
     /// invalid merkle proof
     InvalidMerkleProof,
-    /// failed decoding commitment proof: `{0}`
-    FailedDecoding(String),
     /// invalid child size: `{0}`
     InvalidChildSize(i32),
     /// invalid hash operation: `{0}`
     InvalidHashOp(i32),
     /// invalid length operation: `{0}`
     InvalidLengthOp(i32),
-
-    // TODO(seanchen1991): Can this variant be removed?
-    /// failed verification
-    VerificationFailure,
+    /// failed decoding commitment proof: `{0}`
+    FailedDecoding(String),
+    /// failed to verify membership
+    FailedToVerifyMembership,
 }
 
 #[cfg(feature = "std")]

@@ -112,6 +112,16 @@ pub enum PacketError {
     InvalidTimeoutTimestamp(TimestampError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
+    /// emtpy acknowledgment not allowed
+    EmptyAcknowledgment,
+    /// empty acknowledgment status not allowed
+    EmptyAcknowledgmentStatus,
+    /// packet data bytes cannot be empty
+    EmptyPacketData,
+    /// packet acknowledgment for sequence `{sequence}` already exists
+    DuplicateAcknowledgment { sequence: Sequence },
+    /// packet sequence cannot be 0
+    ZeroPacketSequence,
     /// packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
     PacketTimeoutNotReached {
         timeout_height: TimeoutHeight,
@@ -119,17 +129,6 @@ pub enum PacketError {
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
-    /// packet acknowledgment for sequence `{sequence}` already exists
-    DuplicateAcknowledgment { sequence: Sequence },
-    /// emtpy acknowledgment not allowed
-    EmptyAcknowledgment,
-    /// empty acknowledgment status not allowed
-    EmptyAcknowledgmentStatus,
-    /// packet data bytes cannot be empty
-    EmptyPacketData,
-    /// packet sequence cannot be 0
-    ZeroPacketSequence,
-
     /// implementation-specific error
     ImplementationSpecific,
 }

@@ -13,10 +13,10 @@ pub enum IdentifierError {
     InvalidPrefix { actual: String },
     /// invalid revision number for chain ID: `{chain_id}`
     InvalidRevisionNumber { chain_id: String },
-    /// revision number overflowed
-    OverflowedRevisionNumber,
     /// invalid packet sequence `{actual}`: `{description}`
     InvalidPacketSequence { actual: String, description: String },
+    /// overflowed revision number
+    OverflowedRevisionNumber,
 }
 
 #[cfg(feature = "std")]

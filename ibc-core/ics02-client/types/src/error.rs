@@ -19,23 +19,6 @@ pub enum ClientError {
     Upgrade(UpgradeClientError),
     /// invalid client status: `{actual}`
     InvalidStatus { actual: Status },
-    /// missing client state : `{client_id}`
-    MissingClientState { client_id: ClientId },
-    /// client state already exists: `{client_id}`
-    AlreadyExistingClientState { client_id: ClientId },
-    /// client recovery heights not allowed: expected substitute client height `{substitute_height}` > subject client height `{subject_height}`
-    NotAllowedClientRecoveryHeights {
-        subject_height: Height,
-        substitute_height: Height,
-    },
-    /// mismatched client recovery states
-    MismatchedClientRecoveryStates,
-    /// missing consensus state at `{client_id}`/`{height}`
-    MissingConsensusState { client_id: ClientId, height: Height },
-    /// missing update client metadata at `{client_id}`/`{height}`
-    MissingUpdateMetaData { client_id: ClientId, height: Height },
-    /// failed header verification: `{description}`
-    FailedHeaderVerification { description: String },
     /// invalid trust threshold: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// invalid client state type: `{actual}`
@@ -44,46 +27,63 @@ pub enum ClientError {
     InvalidConsensusStateType { actual: String },
     /// invalid header type: `{actual}`
     InvalidHeaderType { actual: String },
-    /// invalid misbehaviour type: `{actual}`
-    InvalidMisbehaviourType { actual: String },
-    /// missing raw client state
-    MissingRawClientState,
-    /// missing raw client consensus state
-    MissingRawConsensusState,
     /// invalid update client message
     InvalidUpdateClientMessage,
     /// invalid client identifier: `{0}`
     InvalidClientIdentifier(IdentifierError),
     /// invalid raw header: `{description}`
     InvalidRawHeader { description: String },
-    /// missing raw client message
-    MissingRawClientMessage,
-    /// missing raw misbehaviour
-    MissingRawMisbehaviour,
+    /// invalid misbehaviour type: `{actual}`
+    InvalidMisbehaviourType { actual: String },
     /// invalid height; cannot be zero or negative
     InvalidHeight,
     /// invalid proof height; expected `{actual}` >= `{expected}`
     InvalidProofHeight { actual: Height, expected: Height },
     /// invalid consensus state timestamp: `{actual}`
     InvalidConsensusStateTimestamp { actual: Timestamp },
-    /// missing local consensus state at `{height}`
-    MissingLocalConsensusState { height: Height },
-    /// failed ics23 verification: `{0}`
-    FailedIcs23Verification(CommitmentError),
-    /// failed misbehaviour handling: `{description}`
-    FailedMisbehaviourHandling { description: String },
     /// invalid attribute key: `{actual}`
     InvalidAttributeKey { actual: String },
     /// invalid attribute value: `{actual}`
     InvalidAttributeValue { actual: String },
+    /// missing client state : `{client_id}`
+    MissingClientState { client_id: ClientId },
+    /// missing consensus state at `{client_id}`/`{height}`
+    MissingConsensusState { client_id: ClientId, height: Height },
+    /// missing update client metadata at `{client_id}`/`{height}`
+    MissingUpdateMetaData { client_id: ClientId, height: Height },
+    /// missing raw client state
+    MissingRawClientState,
+    /// missing raw client consensus state
+    MissingRawConsensusState,
+    /// missing raw client message
+    MissingRawClientMessage,
+    /// missing raw misbehaviour
+    MissingRawMisbehaviour,
+    /// missing local consensus state at `{height}`
+    MissingLocalConsensusState { height: Height },
     /// missing attribute key
     MissingAttributeKey,
     /// missing attribute value
     MissingAttributeValue,
-
-    // TODO(seanchen1991): Can we remove these two variants?
+    /// client state already exists: `{client_id}`
+    AlreadyExistingClientState { client_id: ClientId },
+    /// mismatched client recovery states
+    MismatchedClientRecoveryStates,
+    /// client recovery heights not allowed: expected substitute client height `{substitute_height}` > subject client height `{subject_height}`
+    NotAllowedClientRecoveryHeights {
+        subject_height: Height,
+        substitute_height: Height,
+    },
+    /// failed ics23 verification: `{0}`
+    FailedIcs23Verification(CommitmentError),
+    /// failed header verification: `{description}`
+    FailedHeaderVerification { description: String },
+    /// failed misbehaviour handling: `{description}`
+    FailedMisbehaviourHandling { description: String },
     /// client-specific error: `{description}`
     ClientSpecific { description: String },
+
+    // TODO(seanchen1991): Incorporate these errors into their own variants
     /// other error: `{description}`
     Other { description: String },
 }
