@@ -1,6 +1,7 @@
 //! Defines the main channel, port, and packet error types
 
 use displaydoc::Display;
+
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_core_connection_types::error as connection_error;
@@ -11,70 +12,69 @@ use ibc_primitives::{Timestamp, TimestampError};
 
 use super::channel::Counterparty;
 use super::timeout::TimeoutHeight;
+
 use crate::channel::State;
 use crate::timeout::TimeoutTimestamp;
 use crate::Version;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
-    /// invalid channel end: `{channel_end}`
-    InvalidChannelEnd { channel_end: String },
     /// invalid channel id: expected `{expected}`, actual `{actual}`
     InvalidChannelId { expected: String, actual: String },
     /// invalid channel state: expected `{expected}`, actual `{actual}`
     InvalidState { expected: String, actual: String },
     /// invalid channel order type: expected `{expected}`, actual `{actual}`
     InvalidOrderType { expected: String, actual: String },
-    /// invalid connection hops length: expected `{expected}`; actual `{actual}`
+    /// invalid connection hops length: expected `{expected}`, actual `{actual}`
     InvalidConnectionHopsLength { expected: u64, actual: u64 },
-    /// invalid signer error: `{reason}`
-    InvalidSigner { reason: String },
-    /// invalid proof: missing height
-    MissingHeight,
-    /// packet data bytes must be valid UTF-8 (this restriction will be lifted in the future)
+    /// missing proof
+    MissingProof,
+    /// missing proof height
+    MissingProofHeight,
+    /// packet data bytes must be valid UTF-8
     NonUtf8PacketData,
     /// missing counterparty
     MissingCounterparty,
     /// unsupported channel upgrade sequence
     UnsupportedChannelUpgradeSequence,
-    /// version not supported: expected `{expected}`, actual `{actual}`
-    VersionNotSupported { expected: Version, actual: Version },
+    /// unsupported version: expected `{expected}`, actual `{actual}`
+    UnsupportedVersion { expected: Version, actual: Version },
     /// missing channel end
-    MissingChannel,
-    /// the channel end (`{port_id}`, `{channel_id}`) does not exist
-    ChannelNotFound {
+    MissingChannelEnd,
+    /// non-existent channel end: (`{port_id}`, `{channel_id}`)
+    NonexistentChannel {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// Verification fails for the packet with the sequence number `{sequence}`, error: `{client_error}`
-    PacketVerificationFailed {
+    /// failed packet verification for packet with sequence `{sequence}`: `{client_error}`
+    FailedPacketVerification {
         sequence: Sequence,
         client_error: ClientError,
     },
-    /// Error verifying channel state error: `{0}`
-    VerifyChannelFailed(ClientError),
-    /// String `{value}` cannot be converted to packet sequence, error: `{error}`
-    InvalidStringAsSequence {
-        value: String,
+    /// failed channel verification: `{0}`
+    FailedChannelVerification(ClientError),
+    /// failed to parse `{actual}` as packet sequence: `{error}`
+    FailedToParseSequence {
+        actual: String,
         error: core::num::ParseIntError,
     },
-    /// invalid channel counterparty: expected `{expected}`, actual `{actual}`
+    /// invalid counterparty: expected `{expected}`, actual `{actual}`
     InvalidCounterparty {
         expected: Counterparty,
         actual: Counterparty,
     },
     /// application module error: `{description}`
     AppModule { description: String },
-    /// Undefined counterparty connection for `{connection_id}`
+    /// undefined counterparty for connection: `{connection_id}`
     UndefinedConnectionCounterparty { connection_id: ConnectionId },
-    /// invalid proof: empty proof
-    InvalidProof,
     /// identifier error: `{0}`
     InvalidIdentifier(IdentifierError),
-    /// channel counter overflow error
-    CounterOverflow,
-    /// other error: `{description}`
-    Other { description: String },
+    /// missing channel counter
+    MissingCounter,
+    /// failed to update counter: `{description}`
+    FailedToUpdateCounter { description: String },
+    /// failed to store channel: `{description}`
+    FailedToStoreChannel { description: String },
 }
 
 #[derive(Debug, Display)]
@@ -207,10 +207,10 @@ impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::InvalidIdentifier(e) => Some(e),
-            Self::PacketVerificationFailed {
+            Self::FailedPacketVerification {
                 client_error: e, ..
             } => Some(e),
-            Self::InvalidStringAsSequence { error: e, .. } => Some(e),
+            Self::FailedToParseSequence { error: e, .. } => Some(e),
             _ => None,
         }
     }

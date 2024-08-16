@@ -152,7 +152,7 @@ where
                 Path::ChannelEnd(chan_end_path_on_b),
                 expected_chan_end_on_b.encode_vec(),
             )
-            .map_err(ChannelError::VerifyChannelFailed)?;
+            .map_err(ChannelError::FailedChannelVerification)?;
     }
 
     Ok(())

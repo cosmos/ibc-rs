@@ -154,7 +154,7 @@ where
                 StoreHeight::Pending,
                 &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
             )
-            .ok_or(ChannelError::MissingChannel)?)
+            .ok_or(ChannelError::MissingChannelEnd)?)
     }
 
     fn get_next_sequence_send(
@@ -249,9 +249,7 @@ where
         Ok(self
             .channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
-            .ok_or(ChannelError::Other {
-                description: "channel counter not found".into(),
-            })?)
+            .ok_or(ChannelError::MissingCounter)?)
     }
 
     /// Returns the maximum expected time per block
@@ -451,7 +449,7 @@ where
                 let channel_end = self
                     .channel_end_store
                     .get(StoreHeight::Pending, &channel_path)
-                    .ok_or_else(|| ChannelError::ChannelNotFound {
+                    .ok_or_else(|| ChannelError::NonexistentChannel {
                         port_id: channel_path.0.clone(),
                         channel_id: channel_path.1.clone(),
                     })?;
@@ -770,8 +768,8 @@ where
     ) -> Result<(), ContextError> {
         self.channel_end_store
             .set(channel_end_path.clone(), channel_end)
-            .map_err(|_| ChannelError::Other {
-                description: "Channel end store error".to_string(),
+            .map_err(|e| ChannelError::FailedToStoreChannel {
+                description: format!("{e:?}"),
             })?;
         Ok(())
     }
@@ -813,14 +811,12 @@ where
         let current_sequence = self
             .channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
-            .ok_or(ChannelError::Other {
-                description: "channel counter not found".into(),
-            })?;
+            .ok_or(ChannelError::MissingCounter)?;
 
         self.channel_counter
             .set(NextChannelSequencePath, current_sequence + 1)
-            .map_err(|e| ChannelError::Other {
-                description: format!("channel counter update failed: {e:?}"),
+            .map_err(|e| ChannelError::FailedToUpdateCounter {
+                description: format!("{e:?}"),
             })?;
 
         Ok(())

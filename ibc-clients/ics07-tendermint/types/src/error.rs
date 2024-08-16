@@ -53,15 +53,15 @@ pub enum Error {
     InvalidHeaderHeight { actual: u64 },
     /// missing frozen height
     MissingFrozenHeight,
-    /// mismatched revision heights: expected `{expected}`, got `{actual}`
+    /// mismatched revision heights: expected `{expected}`, actual `{actual}`
     MismatchedRevisionHeights { expected: u64, actual: u64 },
-    /// mismatched header chain ids: expected `{expected}`, got `{actual}`
+    /// mismatched header chain ids: expected `{expected}`, actual `{actual}`
     MismatchedHeaderChainIds { expected: String, actual: String },
     /// insufficient validator overlap: `{actual}`
     InsufficientValidatorOverlap { actual: VotingPowerTally },
     /// light client verifier returned an error: `{detail}`
     LightClientVerifierError { detail: Box<LightClientErrorDetail> },
-    /// mismatched validator hashes: expected `{expected}`, got `{actual}`
+    /// mismatched validator hashes: expected `{expected}`, actual `{actual}`
     MismatchedValidatorHashes { expected: Hash, actual: Hash },
     /// consensus state timestamp `{duration_since_consensus_state:?}` should be < `{trusting_period:?}`
     ConsensusStateTimestampGteTrustingPeriod {

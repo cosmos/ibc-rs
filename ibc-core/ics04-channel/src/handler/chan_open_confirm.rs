@@ -58,15 +58,14 @@ where
 
         let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
         let port_id_on_a = chan_end_on_b.counterparty().port_id.clone();
-        let chan_id_on_a = chan_end_on_b
-            .counterparty()
-            .channel_id
-            .clone()
-            .ok_or(ContextError::ChannelError(ChannelError::Other {
-            description:
-                "internal error: ChannelEnd doesn't have a counterparty channel id in OpenConfirm"
-                    .to_string(),
-        }))?;
+        let chan_id_on_a =
+            chan_end_on_b
+                .counterparty()
+                .channel_id
+                .clone()
+                .ok_or(ContextError::ChannelError(
+                    ChannelError::MissingCounterparty,
+                ))?;
 
         let core_event = IbcEvent::OpenConfirmChannel(OpenConfirm::new(
             msg.port_id_on_b.clone(),
@@ -159,7 +158,7 @@ where
                 Path::ChannelEnd(chan_end_path_on_a),
                 expected_chan_end_on_a.encode_vec(),
             )
-            .map_err(ChannelError::VerifyChannelFailed)?;
+            .map_err(ChannelError::FailedChannelVerification)?;
     }
 
     Ok(())

@@ -17,7 +17,7 @@ pub enum CommitmentError {
     EmptyProofSpecs,
     /// invalid range: [`{min}`, `{max}`]
     InvalidRange { min: i32, max: i32 },
-    /// mismatched number of proofs: expected `{expected}`, got `{actual}`
+    /// mismatched number of proofs: expected `{expected}`, actual `{actual}`
     MismatchedNumberOfProofs { expected: usize, actual: usize },
     /// invalid merkle proof
     InvalidMerkleProof,
