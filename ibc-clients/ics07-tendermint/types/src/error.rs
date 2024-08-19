@@ -1,14 +1,13 @@
 //! Defines the Tendermint light client's error type
 
 use core::time::Duration;
-use displaydoc::Display;
 
+use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::TimestampError;
-
 use tendermint::{Error as TendermintError, Hash};
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 use tendermint_light_client_verifier::operations::VotingPowerTally;
