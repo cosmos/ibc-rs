@@ -100,9 +100,7 @@ impl TryFrom<Any> for MockHeader {
                     description: e.to_string(),
                 },
             )?),
-            _ => Err(ClientError::InvalidHeaderType {
-                actual: raw.type_url,
-            }),
+            _ => Err(ClientError::InvalidHeaderType(raw.type_url)),
         }
     }
 }

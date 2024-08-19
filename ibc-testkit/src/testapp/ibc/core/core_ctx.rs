@@ -72,7 +72,7 @@ where
         Ok(consensus_states_binding
             .get(&height.revision_height())
             .cloned()
-            .ok_or(ClientError::MissingLocalConsensusState { height: *height })?)
+            .ok_or(ClientError::MissingLocalConsensusState(*height))?)
     }
 
     fn validate_self_client(
@@ -80,10 +80,7 @@ where
         client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(ClientError::InvalidStatus {
-                actual: Status::Frozen,
-            }
-            .into());
+            return Err(ClientError::InvalidStatus(Status::Frozen).into());
         }
 
         let latest_height = self.host_height()?;
@@ -314,9 +311,7 @@ where
                 let client_state = self
                     .client_state_store
                     .get(StoreHeight::Pending, &client_state_path)
-                    .ok_or_else(|| ClientError::MissingClientState {
-                        client_id: client_state_path.0.clone(),
-                    })?;
+                    .ok_or_else(|| ClientError::MissingClientState(client_state_path.0.clone()))?;
                 Ok((client_state_path.0, client_state))
             })
             .collect()

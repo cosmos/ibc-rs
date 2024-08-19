@@ -50,7 +50,7 @@ impl Status {
     pub fn verify_is_active(&self) -> Result<(), ClientError> {
         match self {
             Self::Active => Ok(()),
-            &status => Err(ClientError::InvalidStatus { actual: status }),
+            &status => Err(ClientError::InvalidStatus(status)),
         }
     }
 
@@ -58,7 +58,7 @@ impl Status {
     pub fn verify_is_inactive(&self) -> Result<(), ClientError> {
         match self {
             Self::Frozen | Self::Expired => Ok(()),
-            &status => Err(ClientError::InvalidStatus { actual: status }),
+            &status => Err(ClientError::InvalidStatus(status)),
         }
     }
 }

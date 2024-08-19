@@ -163,9 +163,7 @@ where
         Ok(self
             .client_state_store
             .get(StoreHeight::Pending, &ClientStatePath(client_id.clone()))
-            .ok_or(ClientError::MissingClientState {
-                client_id: client_id.clone(),
-            })?)
+            .ok_or(ClientError::MissingClientState(client_id.clone()))?)
     }
 
     fn consensus_state(

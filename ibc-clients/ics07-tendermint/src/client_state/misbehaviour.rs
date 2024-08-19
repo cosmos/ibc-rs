@@ -101,9 +101,7 @@ where
 
         let duration_since_consensus_state =
             current_timestamp.duration_since(&trusted_timestamp).ok_or(
-                ClientError::InvalidConsensusStateTimestamp {
-                    actual: trusted_timestamp,
-                },
+                ClientError::InvalidConsensusStateTimestamp(trusted_timestamp),
             )?;
 
         if duration_since_consensus_state >= options.trusting_period {

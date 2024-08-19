@@ -17,39 +17,39 @@ use crate::height::Height;
 pub enum ClientError {
     /// upgrade client error: `{0}`
     Upgrade(UpgradeClientError),
-    /// invalid client status: `{actual}`
-    InvalidStatus { actual: Status },
+    /// invalid client status: `{0}`
+    InvalidStatus(Status),
     /// invalid trust threshold: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
-    /// invalid client state type: `{actual}`
-    InvalidClientStateType { actual: String },
-    /// invalid client consensus state type: `{actual}`
-    InvalidConsensusStateType { actual: String },
-    /// invalid header type: `{actual}`
-    InvalidHeaderType { actual: String },
+    /// invalid client state type: `{0}`
+    InvalidClientStateType(String),
+    /// invalid client consensus state type: `{0}`
+    InvalidConsensusStateType(String),
+    /// invalid header type: `{0}`
+    InvalidHeaderType(String),
     /// invalid update client message
     InvalidUpdateClientMessage,
     /// invalid client identifier: `{0}`
     InvalidClientIdentifier(IdentifierError),
     /// invalid raw header: `{description}`
     InvalidRawHeader { description: String },
-    /// invalid misbehaviour type: `{actual}`
-    InvalidMisbehaviourType { actual: String },
+    /// invalid misbehaviour type: `{0}`
+    InvalidMisbehaviourType(String),
     /// invalid height; cannot be zero or negative
     InvalidHeight,
     /// invalid proof height; expected `{actual}` >= `{expected}`
     InvalidProofHeight { actual: Height, expected: Height },
-    /// invalid consensus state timestamp: `{actual}`
-    InvalidConsensusStateTimestamp { actual: Timestamp },
-    /// invalid attribute key: `{actual}`
-    InvalidAttributeKey { actual: String },
-    /// invalid attribute value: `{actual}`
-    InvalidAttributeValue { actual: String },
-    /// missing client state : `{client_id}`
-    MissingClientState { client_id: ClientId },
-    /// missing consensus state at `{client_id}`/`{height}`
+    /// invalid consensus state timestamp: `{0}`
+    InvalidConsensusStateTimestamp(Timestamp),
+    /// invalid attribute key: `{0}`
+    InvalidAttributeKey(String),
+    /// invalid attribute value: `{0}`
+    InvalidAttributeValue(String),
+    /// missing client state for client: `{0}`
+    MissingClientState(ClientId),
+    /// missing consensus state for client `{client_id}` at height `{height}`
     MissingConsensusState { client_id: ClientId, height: Height },
-    /// missing update client metadata at `{client_id}`/`{height}`
+    /// missing update client metadata for client `{client_id}` at height `{height}`
     MissingUpdateMetaData { client_id: ClientId, height: Height },
     /// missing raw client state
     MissingRawClientState,
@@ -59,14 +59,14 @@ pub enum ClientError {
     MissingRawClientMessage,
     /// missing raw misbehaviour
     MissingRawMisbehaviour,
-    /// missing local consensus state at `{height}`
-    MissingLocalConsensusState { height: Height },
+    /// missing local consensus state at `{0}`
+    MissingLocalConsensusState(Height),
     /// missing attribute key
     MissingAttributeKey,
     /// missing attribute value
     MissingAttributeValue,
-    /// client state already exists: `{client_id}`
-    AlreadyExistingClientState { client_id: ClientId },
+    /// client state already exists: `{0}`
+    AlreadyExistingClientState(ClientId),
     /// mismatched client recovery states
     MismatchedClientRecoveryStates,
     /// client recovery heights not allowed: expected substitute client height `{substitute_height}` > subject client height `{subject_height}`

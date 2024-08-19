@@ -180,11 +180,9 @@ fn test_create_expired_mock_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::ExpiredMockHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(
-            ClientError::InvalidStatus {
-                actual: Status::Expired,
-            },
-        ))),
+        Expect::Failure(Some(ContextError::ClientError(ClientError::InvalidStatus(
+            Status::Expired,
+        )))),
     );
 }
 
@@ -208,11 +206,9 @@ fn test_create_expired_tm_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::ExpiredTendermintHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(
-            ClientError::InvalidStatus {
-                actual: Status::Expired,
-            },
-        ))),
+        Expect::Failure(Some(ContextError::ClientError(ClientError::InvalidStatus(
+            Status::Expired,
+        )))),
     );
 }
 
@@ -222,11 +218,9 @@ fn test_create_frozen_tm_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::FrozenTendermintHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(
-            ClientError::InvalidStatus {
-                actual: Status::Frozen,
-            },
-        ))),
+        Expect::Failure(Some(ContextError::ClientError(ClientError::InvalidStatus(
+            Status::Frozen,
+        )))),
     );
 }
 

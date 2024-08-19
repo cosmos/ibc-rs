@@ -168,9 +168,7 @@ pub fn verify_consensus_state(
     };
 
     if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
-        return Err(ClientError::InvalidStatus {
-            actual: Status::Expired,
-        });
+        return Err(ClientError::InvalidStatus(Status::Expired));
     }
 
     Ok(())
