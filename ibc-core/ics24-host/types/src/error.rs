@@ -7,14 +7,17 @@ use ibc_primitives::prelude::*;
 pub enum IdentifierError {
     /// id `{actual}` has invalid length; must be between [`{min}`,`{max}`)
     InvalidLength { actual: String, min: u64, max: u64 },
-    /// id `{actual}` can only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
-    InvalidCharacter { actual: String },
-    /// invalid prefix: `{actual}`
-    InvalidPrefix { actual: String },
-    /// invalid revision number for chain ID: `{chain_id}`
-    InvalidRevisionNumber { chain_id: String },
-    /// invalid packet sequence `{actual}`: `{description}`
-    InvalidPacketSequence { actual: String, description: String },
+    /// id `{0}` can only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
+    InvalidCharacter(String),
+    /// invalid prefix: `{0}`
+    InvalidPrefix(String),
+    /// invalid revision number for chain ID: `{0}`
+    InvalidRevisionNumber(String),
+    /// invalid packet sequence `{sequence}`: `{description}`
+    InvalidPacketSequence {
+        sequence: String,
+        description: String,
+    },
     /// overflowed revision number
     OverflowedRevisionNumber,
 }

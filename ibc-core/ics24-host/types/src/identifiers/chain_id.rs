@@ -312,9 +312,9 @@ fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierEr
                 .ok()
                 .map(|revision_number| (chain_name, revision_number))
         })
-        .ok_or(IdentifierError::InvalidRevisionNumber {
-            chain_id: chain_id_str.to_string(),
-        })
+        .ok_or(IdentifierError::InvalidRevisionNumber(
+            chain_id_str.to_string(),
+        ))
 }
 
 #[cfg(test)]

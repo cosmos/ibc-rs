@@ -17,7 +17,7 @@ pub fn validate_identifier_chars(id: &str) -> Result<(), Error> {
         .chars()
         .all(|c| c.is_alphanumeric() || VALID_SPECIAL_CHARS.contains(c))
     {
-        return Err(Error::InvalidCharacter { actual: id.into() });
+        return Err(Error::InvalidCharacter(id.into()));
     }
 
     // All good!
@@ -67,17 +67,17 @@ pub fn validate_prefix_length(
 pub fn validate_named_u64_index(id: &str, name: &str) -> Result<(), Error> {
     let number_s = id
         .strip_prefix(name)
-        .ok_or_else(|| Error::InvalidPrefix { actual: id.into() })?
+        .ok_or_else(|| Error::InvalidPrefix(id.into()))?
         .strip_prefix('-')
-        .ok_or_else(|| Error::InvalidPrefix { actual: id.into() })?;
+        .ok_or_else(|| Error::InvalidPrefix(id.into()))?;
 
     if number_s.starts_with('0') && number_s.len() > 1 {
-        return Err(Error::InvalidPrefix { actual: id.into() });
+        return Err(Error::InvalidPrefix(id.into()));
     }
 
     _ = number_s
         .parse::<u64>()
-        .map_err(|_| Error::InvalidPrefix { actual: id.into() })?;
+        .map_err(|_| Error::InvalidPrefix(id.into()))?;
 
     Ok(())
 }
