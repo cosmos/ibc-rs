@@ -151,7 +151,7 @@ fn upgrade_client_fail_nonexisting_client() {
 fn upgrade_client_fail_low_upgrade_height() {
     let fxt: Fixture<MsgUpgradeClient> =
         msg_upgrade_client_fixture(Ctx::WithClient, Msg::LowUpgradeHeight);
-    let expected_err: ClientError = UpgradeClientError::LowUpgradeHeight {
+    let expected_err: ClientError = UpgradeClientError::InsufficientUpgradeHeight {
         upgraded_height: Height::new(0, 26).unwrap(),
         client_height: fxt.ctx.host_height().unwrap(),
     }

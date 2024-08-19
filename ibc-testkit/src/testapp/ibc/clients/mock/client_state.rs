@@ -208,7 +208,7 @@ impl ClientStateCommon for MockClientState {
         let upgraded_mock_client_state = Self::try_from(upgraded_client_state)?;
         MockConsensusState::try_from(upgraded_consensus_state)?;
         if self.latest_height() >= upgraded_mock_client_state.latest_height() {
-            return Err(UpgradeClientError::LowUpgradeHeight {
+            return Err(UpgradeClientError::InsufficientUpgradeHeight {
                 upgraded_height: self.latest_height(),
                 client_height: upgraded_mock_client_state.latest_height(),
             })?;

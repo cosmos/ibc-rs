@@ -116,21 +116,25 @@ impl std::error::Error for ClientError {
 /// Encodes all the possible upgrade client errors
 #[derive(Debug, Display)]
 pub enum UpgradeClientError {
-    /// invalid proof for the upgraded client state error: `{0}`
+    /// invalid proof for the upgraded client state: `{0}`
     InvalidUpgradeClientProof(CommitmentError),
-    /// invalid proof for the upgraded consensus state error: `{0}`
+    /// invalid proof for the upgraded consensus state: `{0}`
     InvalidUpgradeConsensusStateProof(CommitmentError),
-    /// upgraded client height `{upgraded_height}` must be at greater than current client height `{client_height}`
-    LowUpgradeHeight {
+    /// invalid upgrade path: `{description}`
+    InvalidUpgradePath { description: String },
+    /// invalid upgrade proposal: `{description}`
+    InvalidUpgradeProposal { description: String },
+    /// invalid upgrade plan: `{description}`
+    InvalidUpgradePlan { description: String },
+    /// mismatched type URLs: expected `{expected}`, actual `{actual}`
+    MismatchedTypeUrls { expected: String, actual: String },
+    /// failed to decode raw upgrade plan: `{description}`
+    FailedToDecodeRawUpgradePlan { description: String },
+    /// insufficient upgrade client height `{upgraded_height}`; must be greater than current client height `{client_height}`
+    InsufficientUpgradeHeight {
         upgraded_height: Height,
         client_height: Height,
     },
-    /// Invalid upgrade path: `{reason}`
-    InvalidUpgradePath { reason: String },
-    /// invalid upgrade proposal: `{reason}`
-    InvalidUpgradeProposal { reason: String },
-    /// invalid upgrade plan: `{reason}`
-    InvalidUpgradePlan { reason: String },
     /// other upgrade client error: `{reason}`
     Other { reason: String },
 }

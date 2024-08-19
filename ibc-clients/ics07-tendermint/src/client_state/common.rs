@@ -67,7 +67,7 @@ impl ClientStateCommon for ClientState {
         let (upgrade_path_prefix, upgrade_path) = match upgrade_path.len() {
             0 => {
                 return Err(UpgradeClientError::InvalidUpgradePath {
-                    reason: "no upgrade path has been set".to_string(),
+                    description: "no upgrade path has been set".to_string(),
                 }
                 .into());
             }
@@ -78,7 +78,7 @@ impl ClientStateCommon for ClientState {
             ),
             _ => {
                 return Err(UpgradeClientError::InvalidUpgradePath {
-                    reason: "upgrade path is too long".to_string(),
+                    description: "upgrade path is too long".to_string(),
                 }
                 .into());
             }
@@ -256,7 +256,7 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
     // the upgrade height This condition checks both the revision number and
     // the height
     if latest_height >= upgraded_tm_client_state_height {
-        Err(UpgradeClientError::LowUpgradeHeight {
+        Err(UpgradeClientError::InsufficientUpgradeHeight {
             upgraded_height: upgraded_tm_client_state_height,
             client_height: latest_height,
         })?
