@@ -43,13 +43,9 @@ impl TryFrom<RawClientState> for ClientState {
     fn try_from(raw: RawClientState) -> Result<Self, Self::Error> {
         let latest_height = raw
             .latest_height
-            .ok_or(Error::InvalidLatestHeight {
-                reason: "missing latest height".to_string(),
-            })?
+            .ok_or(Error::MissingLatestHeight)?
             .try_into()
-            .map_err(|_| Error::InvalidLatestHeight {
-                reason: "invalid protobuf latest height".to_string(),
-            })?;
+            .map_err(|_| Error::InvalidLatestHeight)?;
         Ok(Self {
             data: raw.data,
             checksum: raw.checksum,
@@ -75,8 +71,8 @@ impl TryFrom<Any> for ClientState {
     fn try_from(any: Any) -> Result<Self, Self::Error> {
         fn decode_client_state(value: &[u8]) -> Result<ClientState, Error> {
             let client_state =
-                Protobuf::<RawClientState>::decode(value).map_err(|e| Error::DecodeError {
-                    reason: e.to_string(),
+                Protobuf::<RawClientState>::decode(value).map_err(|e| Error::DecodingError {
+                    description: e.to_string(),
                 })?;
 
             Ok(client_state)
@@ -84,8 +80,9 @@ impl TryFrom<Any> for ClientState {
 
         match any.type_url.as_str() {
             WASM_CLIENT_STATE_TYPE_URL => decode_client_state(&any.value),
-            _ => Err(Error::DecodeError {
-                reason: "type_url does not match".into(),
+            other_type_url => Err(Error::MismatchedTypeUrls {
+                expected: WASM_CLIENT_STATE_TYPE_URL.to_string(),
+                actual: other_type_url.to_string(),
             }),
         }
     }

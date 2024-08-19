@@ -1,6 +1,7 @@
 //! Defines the error type for the ICS-08 Wasm light client.
 
 use displaydoc::Display;
+
 use ibc_core_host_types::error::IdentifierError;
 use ibc_primitives::prelude::*;
 
@@ -9,10 +10,14 @@ use ibc_primitives::prelude::*;
 pub enum Error {
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
-    /// decoding error: `{reason}`
-    DecodeError { reason: String },
-    /// invalid client state latest height: `{reason}`
-    InvalidLatestHeight { reason: String },
+    /// invalid client state latest height
+    InvalidLatestHeight,
+    /// missing latest height
+    MissingLatestHeight,
+    /// mismatched type URLs: expected `{expected}`, actual `{actual}`
+    MismatchedTypeUrls { expected: String, actual: String },
+    /// decoding error: `{description}`
+    DecodingError { description: String },
 }
 
 #[cfg(feature = "std")]
