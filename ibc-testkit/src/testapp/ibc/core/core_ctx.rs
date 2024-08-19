@@ -219,9 +219,7 @@ where
                 ),
             )
             .then_some(Receipt::Ok)
-            .ok_or(PacketError::MissingPacketReceipt {
-                sequence: receipt_path.sequence,
-            })?)
+            .ok_or(PacketError::MissingPacketReceipt(receipt_path.sequence))?)
     }
 
     fn get_packet_acknowledgement(
@@ -234,9 +232,7 @@ where
                 StoreHeight::Pending,
                 &AckPath::new(&ack_path.port_id, &ack_path.channel_id, ack_path.sequence),
             )
-            .ok_or(PacketError::MissingPacketAcknowledgment {
-                sequence: ack_path.sequence,
-            })?)
+            .ok_or(PacketError::MissingPacketAcknowledgment(ack_path.sequence))?)
     }
 
     /// Returns a counter of the number of channel ids that have been created thus far.

@@ -16,6 +16,10 @@ use crate::Version;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
+    /// application module error: `{description}`
+    AppModule { description: String },
+    /// identifier error: `{0}`
+    InvalidIdentifier(IdentifierError),
     /// invalid channel id: expected `{expected}`, actual `{actual}`
     InvalidChannelId { expected: String, actual: String },
     /// invalid channel state: expected `{expected}`, actual `{actual}`
@@ -24,25 +28,32 @@ pub enum ChannelError {
     InvalidOrderType { expected: String, actual: String },
     /// invalid connection hops length: expected `{expected}`, actual `{actual}`
     InvalidConnectionHopsLength { expected: u64, actual: u64 },
+    /// invalid counterparty: expected `{expected}`, actual `{actual}`
+    InvalidCounterparty {
+        expected: Counterparty,
+        actual: Counterparty,
+    },
     /// missing proof
     MissingProof,
     /// missing proof height
     MissingProofHeight,
-    /// packet data bytes must be valid UTF-8
-    NonUtf8PacketData,
     /// missing counterparty
     MissingCounterparty,
+    /// missing channel end
+    MissingChannelEnd,
+    /// missing channel counter
+    MissingCounter,
     /// unsupported channel upgrade sequence
     UnsupportedChannelUpgradeSequence,
     /// unsupported version: expected `{expected}`, actual `{actual}`
     UnsupportedVersion { expected: Version, actual: Version },
-    /// missing channel end
-    MissingChannelEnd,
     /// non-existent channel end: (`{port_id}`, `{channel_id}`)
     NonexistentChannel {
         port_id: PortId,
         channel_id: ChannelId,
     },
+    /// packet data bytes must be valid UTF-8
+    NonUtf8PacketData,
     /// failed packet verification for packet with sequence `{sequence}`: `{client_error}`
     FailedPacketVerification {
         sequence: Sequence,
@@ -55,17 +66,6 @@ pub enum ChannelError {
         actual: String,
         error: core::num::ParseIntError,
     },
-    /// invalid counterparty: expected `{expected}`, actual `{actual}`
-    InvalidCounterparty {
-        expected: Counterparty,
-        actual: Counterparty,
-    },
-    /// application module error: `{description}`
-    AppModule { description: String },
-    /// identifier error: `{0}`
-    InvalidIdentifier(IdentifierError),
-    /// missing channel counter
-    MissingCounter,
     /// failed to update counter: `{description}`
     FailedToUpdateCounter { description: String },
     /// failed to store channel: `{description}`
@@ -94,12 +94,12 @@ pub enum PacketError {
         expected: PacketCommitment,
         actual: PacketCommitment,
     },
-    /// missing packet receipt for packet `{sequence}`
-    MissingPacketReceipt { sequence: Sequence },
+    /// missing packet receipt for packet `{0}`
+    MissingPacketReceipt(Sequence),
     /// missing proof
     MissingProof,
-    /// missing acknowledgment for packet `{sequence}`
-    MissingPacketAcknowledgment { sequence: Sequence },
+    /// missing acknowledgment for packet `{0}`
+    MissingPacketAcknowledgment(Sequence),
     /// missing proof height
     MissingProofHeight,
     /// missing timeout
@@ -116,8 +116,8 @@ pub enum PacketError {
     EmptyAcknowledgmentStatus,
     /// packet data bytes cannot be empty
     EmptyPacketData,
-    /// packet acknowledgment for sequence `{sequence}` already exists
-    DuplicateAcknowledgment { sequence: Sequence },
+    /// packet acknowledgment for sequence `{0}` already exists
+    DuplicateAcknowledgment(Sequence),
     /// packet sequence cannot be 0
     ZeroPacketSequence,
     /// packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`

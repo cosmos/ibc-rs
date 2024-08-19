@@ -256,7 +256,7 @@ where
             let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
             match packet_rec {
                 Ok(_receipt) => {}
-                Err(ContextError::PacketError(PacketError::MissingPacketReceipt { sequence }))
+                Err(ContextError::PacketError(PacketError::MissingPacketReceipt(sequence)))
                     if sequence == msg.packet.seq_on_a => {}
                 Err(e) => return Err(e),
             }
@@ -282,10 +282,7 @@ where
     let packet = msg.packet.clone();
     let ack_path_on_b = AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
     if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {
-        return Err(PacketError::DuplicateAcknowledgment {
-            sequence: msg.packet.seq_on_a,
-        }
-        .into());
+        return Err(PacketError::DuplicateAcknowledgment(msg.packet.seq_on_a).into());
     }
 
     Ok(())
