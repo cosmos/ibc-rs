@@ -64,9 +64,9 @@ where
                     .revision_height()
                     .try_into()
                     .map_err(|_| ClientError::FailedHeaderVerification {
-                        description: Error::InvalidHeaderHeight {
-                            actual: header.trusted_height.revision_height(),
-                        }
+                        description: Error::InvalidHeaderHeight(
+                            header.trusted_height.revision_height(),
+                        )
                         .to_string(),
                     })?,
                 next_validators: &header.trusted_next_validator_set,

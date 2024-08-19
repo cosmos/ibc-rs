@@ -34,8 +34,8 @@ pub enum Error {
     InvalidRawMisbehaviour { description: String },
     /// invalid header timestamp: `{0}`
     InvalidHeaderTimestamp(TimestampError),
-    /// invalid header height: `{actual}`
-    InvalidHeaderHeight { actual: u64 },
+    /// invalid header height: `{0}`
+    InvalidHeaderHeight(u64),
     /// missing signed header
     MissingSignedHeader,
     /// missing validator set
@@ -58,10 +58,10 @@ pub enum Error {
     MismatchedHeaderChainIds { expected: String, actual: String },
     /// mismatched validator hashes: expected `{expected}`, actual `{actual}`
     MismatchedValidatorHashes { expected: Hash, actual: Hash },
-    /// insufficient validator overlap: `{actual}`
-    InsufficientValidatorOverlap { actual: VotingPowerTally },
-    /// light client verifier returned an error: `{detail}`
-    LightClientVerifierError { detail: Box<LightClientErrorDetail> },
+    /// insufficient validator overlap: `{0}`
+    InsufficientValidatorOverlap(VotingPowerTally),
+    /// light client verifier returned an error: `{0}`
+    LightClientVerifierError(Box<LightClientErrorDetail>),
     /// consensus state timestamp `{duration_since_consensus_state:?}` should be < `{trusting_period:?}`
     ConsensusStateTimestampGteTrustingPeriod {
         duration_since_consensus_state: Duration,
@@ -108,12 +108,8 @@ impl IntoResult<(), Error> for Verdict {
     fn into_result(self) -> Result<(), Error> {
         match self {
             Verdict::Success => Ok(()),
-            Verdict::NotEnoughTrust(tally) => {
-                Err(Error::InsufficientValidatorOverlap { actual: tally })
-            }
-            Verdict::Invalid(detail) => Err(Error::LightClientVerifierError {
-                detail: Box::new(detail),
-            }),
+            Verdict::NotEnoughTrust(tally) => Err(Error::InsufficientValidatorOverlap(tally)),
+            Verdict::Invalid(detail) => Err(Error::LightClientVerifierError(Box::new(detail))),
         }
     }
 }

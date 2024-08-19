@@ -86,9 +86,7 @@ impl Header {
                 .trusted_height
                 .revision_height()
                 .try_into()
-                .map_err(|_| Error::InvalidHeaderHeight {
-                    actual: self.trusted_height.revision_height(),
-                })?,
+                .map_err(|_| Error::InvalidHeaderHeight(self.trusted_height.revision_height()))?,
             next_validators: &self.trusted_next_validator_set,
             next_validators_hash,
         })
@@ -136,9 +134,7 @@ impl Header {
         // based on) must be smaller than height of the new header that we're
         // installing.
         if self.trusted_height >= self.height() {
-            return Err(Error::InvalidHeaderHeight {
-                actual: self.height().revision_height(),
-            });
+            return Err(Error::InvalidHeaderHeight(self.height().revision_height()));
         }
 
         let validators_hash = self.validator_set.hash_with::<H>();
