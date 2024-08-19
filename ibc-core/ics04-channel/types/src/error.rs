@@ -110,7 +110,7 @@ pub enum PacketError {
     InvalidTimeoutTimestamp(TimestampError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
-    /// emtpy acknowledgment not allowed
+    /// empty acknowledgment not allowed
     EmptyAcknowledgment,
     /// empty acknowledgment status not allowed
     EmptyAcknowledgmentStatus,
