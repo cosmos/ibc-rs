@@ -1,7 +1,6 @@
 //! Defines the main channel, port, and packet error types
 
 use displaydoc::Display;
-
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_core_host_types::error::IdentifierError;
