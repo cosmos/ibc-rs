@@ -15,6 +15,7 @@ use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::channel::dummy_raw_msg_chan_open_confirm;
 use ibc_testkit::fixtures::core::connection::dummy_raw_counterparty_conn;
 use ibc_testkit::hosts::MockHost;
+use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::LightClientState;
@@ -94,7 +95,12 @@ fn chan_open_confirm_validate_happy_path(fixture: Fixture) {
             LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
-        .with_channel(msg.port_id_on_b.clone(), ChannelId::zero(), chan_end_on_b);
+        .with_channel(
+            &DummyTransferModule,
+            msg.port_id_on_b.clone(),
+            ChannelId::zero(),
+            chan_end_on_b,
+        );
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
@@ -123,7 +129,12 @@ fn chan_open_confirm_execute_happy_path(fixture: Fixture) {
             LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
-        .with_channel(msg.port_id_on_b.clone(), ChannelId::zero(), chan_end_on_b);
+        .with_channel(
+            &DummyTransferModule,
+            msg.port_id_on_b.clone(),
+            ChannelId::zero(),
+            chan_end_on_b,
+        );
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 
@@ -199,7 +210,12 @@ fn chan_open_confirm_fail_channel_wrong_state(fixture: Fixture) {
             LightClientState::<MockHost>::with_latest_height(Height::new(0, proof_height).unwrap()),
         )
         .with_connection(conn_id_on_b, conn_end_on_b)
-        .with_channel(msg.port_id_on_b.clone(), ChannelId::zero(), wrong_chan_end);
+        .with_channel(
+            &DummyTransferModule,
+            msg.port_id_on_b.clone(),
+            ChannelId::zero(),
+            wrong_chan_end,
+        );
 
     let msg_envelope = MsgEnvelope::from(ChannelMsg::from(msg));
 

@@ -7,11 +7,13 @@ use ibc_core_channel_types::error::{ChannelError, PacketError};
 use ibc_core_channel_types::packet::Packet;
 use ibc_core_channel_types::Version;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
-use ibc_core_router_types::module::ModuleExtras;
+use ibc_core_router_types::module::{ModuleExtras, ModuleId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 
-pub trait Module: Debug {
+pub trait Module: 'static + Debug {
+    fn identifier(&self) -> ModuleId;
+
     fn on_chan_open_init_validate(
         &self,
         order: Order,

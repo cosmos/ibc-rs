@@ -12,12 +12,12 @@ use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::handler::types::events::IbcEvent;
-use ibc::core::host::types::identifiers::{ConnectionId, Sequence};
+use ibc::core::host::types::identifiers::{CapabilityKey, ConnectionId, Sequence};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, ClientConsensusStatePath, ClientStatePath,
     ClientUpdateHeightPath, ClientUpdateTimePath, CommitmentPath, ConnectionPath,
-    NextChannelSequencePath, NextClientSequencePath, NextConnectionSequencePath, ReceiptPath,
-    SeqAckPath, SeqRecvPath, SeqSendPath,
+    NextChannelSequencePath, NextClientSequencePath, NextConnectionSequencePath, PortPath,
+    ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
@@ -89,6 +89,8 @@ where
     pub host_consensus_states: Arc<Mutex<BTreeMap<u64, AnyConsensusState>>>,
     /// Map of older ibc commitment proofs
     pub ibc_commiment_proofs: Arc<Mutex<BTreeMap<u64, CommitmentProof>>>,
+    /// Map of port capabilities
+    pub port_capabilities: JsonStore<SharedStore<S>, PortPath, CapabilityKey>,
     /// IBC Events
     pub events: Arc<Mutex<Vec<IbcEvent>>>,
     /// message logs
@@ -138,6 +140,7 @@ where
             packet_commitment_store: TypedStore::new(shared_store.clone()),
             packet_receipt_store: TypedStore::new(shared_store.clone()),
             packet_ack_store: TypedStore::new(shared_store.clone()),
+            port_capabilities: TypedStore::new(shared_store.clone()),
             events: Arc::new(Mutex::new(Vec::new())),
             logs: Arc::new(Mutex::new(Vec::new())),
             store: shared_store,
@@ -227,6 +230,10 @@ mod tests {
         }
 
         impl Module for FooModule {
+            fn identifier(&self) -> ModuleId {
+                ModuleId::new("foomodule".to_string())
+            }
+
             fn on_chan_open_init_validate(
                 &self,
                 _order: Order,
@@ -327,6 +334,10 @@ mod tests {
         struct BarModule;
 
         impl Module for BarModule {
+            fn identifier(&self) -> ModuleId {
+                ModuleId::new("barmodule".to_string())
+            }
+
             fn on_chan_open_init_validate(
                 &self,
                 _order: Order,

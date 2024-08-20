@@ -5,9 +5,10 @@ use ibc_app_transfer_types::{Memo, PrefixedCoin, PrefixedDenom};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
+use ibc_core::router::module::Module;
 
 /// Methods required in token transfer validation, to be implemented by the host
-pub trait TokenTransferValidationContext {
+pub trait TokenTransferValidationContext: Module {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
