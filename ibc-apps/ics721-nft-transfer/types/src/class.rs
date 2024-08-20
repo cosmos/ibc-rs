@@ -142,9 +142,9 @@ impl TryFrom<RawClassTrace> for PrefixedClassId {
 
     fn try_from(value: RawClassTrace) -> Result<Self, Self::Error> {
         let base_class_id = ClassId::from_str(&value.base_class_id)?;
-        // FIXME: separate `TracePath` error.
         let trace_path = TracePath::from_str(&value.path)
             .map_err(|_| NftTransferError::InvalidTrace(value.path))?;
+
         Ok(Self {
             trace_path,
             base_class_id,
