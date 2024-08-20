@@ -248,10 +248,7 @@ impl FromStr for ClassUri {
     fn from_str(class_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(class_uri) {
             Ok(uri) => Ok(Self(uri)),
-            Err(err) => Err(NftTransferError::InvalidUri {
-                uri: class_uri.to_string(),
-                validation_error: err,
-            }),
+            Err(err) => Err(NftTransferError::InvalidUri(err)),
         }
     }
 }

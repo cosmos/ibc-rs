@@ -15,11 +15,8 @@ pub enum NftTransferError {
     ContextError(ContextError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
-    /// invalid URI: `{uri}`, validation error: `{validation_error}`
-    InvalidUri {
-        uri: String,
-        validation_error: http::uri::InvalidUri,
-    },
+    /// invalid URI: `{0}`
+    InvalidUri(http::uri::InvalidUri),
     /// invalid json data: `{description}`
     InvalidJsonData { description: String },
     /// invalid trace `{0}`
@@ -58,10 +55,7 @@ impl std::error::Error for NftTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::InvalidUri {
-                validation_error: e,
-                ..
-            } => Some(e),
+            Self::InvalidUri(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
             _ => None,
         }

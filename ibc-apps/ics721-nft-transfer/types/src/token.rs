@@ -182,10 +182,7 @@ impl FromStr for TokenUri {
     fn from_str(token_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(token_uri) {
             Ok(uri) => Ok(Self(uri)),
-            Err(err) => Err(NftTransferError::InvalidUri {
-                uri: token_uri.to_string(),
-                validation_error: err,
-            }),
+            Err(err) => Err(NftTransferError::InvalidUri(err)),
         }
     }
 }
