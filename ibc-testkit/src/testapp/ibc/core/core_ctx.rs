@@ -93,7 +93,7 @@ where
         {
             return Err(ContextError::ConnectionError(
                 ConnectionError::InvalidClientState {
-                    reason: format!(
+                    description: format!(
                         "client is not in the same revision as the chain. expected: {}, got: {}",
                         self_revision_number,
                         client_state_of_host_on_counterparty
@@ -108,7 +108,7 @@ where
         if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
             return Err(ContextError::ConnectionError(
                 ConnectionError::InvalidClientState {
-                    reason: format!(
+                    description: format!(
                         "client has latest height {} greater than or equal to chain height {}",
                         client_state_of_host_on_counterparty.latest_height(),
                         host_current_height
@@ -124,9 +124,7 @@ where
         Ok(self
             .connection_end_store
             .get(StoreHeight::Pending, &ConnectionPath::new(conn_id))
-            .ok_or(ConnectionError::ConnectionNotFound {
-                connection_id: conn_id.clone(),
-            })?)
+            .ok_or(ConnectionError::MissingConnection(conn_id.clone()))?)
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
@@ -139,9 +137,7 @@ where
         Ok(self
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
-            .ok_or(ConnectionError::Other {
-                description: "connection counter not found".into(),
-            })?)
+            .ok_or(ConnectionError::MissingHostHeight)?)
     }
 
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
@@ -398,9 +394,7 @@ where
                 let connection_end = self
                     .connection_end_store
                     .get(StoreHeight::Pending, &connection_path)
-                    .ok_or_else(|| ConnectionError::ConnectionNotFound {
-                        connection_id: connection_path.0.clone(),
-                    })?;
+                    .ok_or_else(|| ConnectionError::MissingConnection(connection_path.0.clone()))?;
                 Ok(IdentifiedConnectionEnd {
                     connection_id: connection_path.0,
                     connection_end,
@@ -653,9 +647,7 @@ where
     ) -> Result<(), ContextError> {
         self.connection_end_store
             .set(connection_path.clone(), connection_end)
-            .map_err(|_| ConnectionError::Other {
-                description: "Connection end store error".to_string(),
-            })?;
+            .map_err(|_| ConnectionError::FailedToStoreConnectionEnd)?;
         Ok(())
     }
 
@@ -672,9 +664,7 @@ where
         conn_ids.push(conn_id);
         self.connection_ids_store
             .set(client_connection_path.clone(), conn_ids)
-            .map_err(|_| ConnectionError::Other {
-                description: "Connection ids store error".to_string(),
-            })?;
+            .map_err(|_| ConnectionError::FailedToStoreConnectionIds)?;
         Ok(())
     }
 
@@ -684,15 +674,11 @@ where
         let current_sequence = self
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
-            .ok_or(ConnectionError::Other {
-                description: "connection counter not found".into(),
-            })?;
+            .ok_or(ConnectionError::MissingConnectionCounter)?;
 
         self.conn_counter
             .set(NextConnectionSequencePath, current_sequence + 1)
-            .map_err(|e| ConnectionError::Other {
-                description: format!("connection counter update failed: {e:?}"),
-            })?;
+            .map_err(|_| ConnectionError::FailedToUpdateConnectionCounter)?;
 
         Ok(())
     }

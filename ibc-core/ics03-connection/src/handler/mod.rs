@@ -30,14 +30,14 @@ where
 
         let wasm_client_state = WasmClientState::try_from(value).map_err(|e| {
             ContextError::ConnectionError(ConnectionError::InvalidClientState {
-                reason: e.to_string(),
+                description: e.to_string(),
             })
         })?;
 
         let any_client_state = <Any as Message>::decode(wasm_client_state.data.as_slice())
             .map_err(|e| {
                 ContextError::ConnectionError(ConnectionError::InvalidClientState {
-                    reason: e.to_string(),
+                    description: e.to_string(),
                 })
             })?;
 

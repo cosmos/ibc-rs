@@ -257,7 +257,7 @@ impl ConnectionEnd {
         // + Init: contains the set of compatible versions,
         // + TryOpen/Open: contains the single version chosen by the handshake protocol.
         if state != State::Init && versions.len() != 1 {
-            return Err(ConnectionError::InvalidVersionLength);
+            return Err(ConnectionError::InvalidStateForConnectionEndInit);
         }
 
         Ok(Self {
@@ -312,7 +312,7 @@ impl ConnectionEnd {
     /// Checks if the state of this connection end matches with an expected state.
     pub fn verify_state_matches(&self, expected: &State) -> Result<(), ConnectionError> {
         if !self.state.eq(expected) {
-            return Err(ConnectionError::InvalidState {
+            return Err(ConnectionError::MismatchedConnectionStates {
                 expected: expected.to_string(),
                 actual: self.state.to_string(),
             });
@@ -488,8 +488,8 @@ impl State {
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(ConnectionError::InvalidState {
-                expected: "Must be one of: 0, 1, 2, 3".to_string(),
+            _ => Err(ConnectionError::MismatchedConnectionStates {
+                expected: "0, 1, 2, or 3".to_string(),
                 actual: s.to_string(),
             }),
         }
@@ -528,8 +528,8 @@ impl TryFrom<i32> for State {
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(ConnectionError::InvalidState {
-                expected: "Must be one of: 0, 1, 2, 3".to_string(),
+            _ => Err(ConnectionError::MismatchedConnectionStates {
+                expected: "0, 1, 2, or 3".to_string(),
                 actual: value.to_string(),
             }),
         }

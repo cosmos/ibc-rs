@@ -37,11 +37,11 @@ where
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
-    let host_height = ctx_a.host_height().map_err(|_| ConnectionError::Other {
-        description: "failed to get host height".to_string(),
-    })?;
+    let host_height = ctx_a
+        .host_height()
+        .map_err(|_| ConnectionError::MissingHostHeight)?;
     if msg.consensus_height_of_a_on_b > host_height {
-        return Err(ConnectionError::InvalidConsensusHeight {
+        return Err(ConnectionError::InsufficientConsensusHeight {
             target_height: msg.consensus_height_of_a_on_b,
             current_height: host_height,
         }
@@ -104,7 +104,7 @@ where
                     Path::Connection(ConnectionPath::new(&msg.conn_id_on_b)),
                     expected_conn_end_on_b.encode_vec(),
                 )
-                .map_err(ConnectionError::VerifyConnectionState)?;
+                .map_err(ConnectionError::FailedToVerifyConnectionState)?;
         }
 
         client_state_of_b_on_a
@@ -115,10 +115,7 @@ where
                 Path::ClientState(ClientStatePath::new(vars.client_id_on_b().clone())),
                 msg.client_state_of_a_on_b.to_vec(),
             )
-            .map_err(|e| ConnectionError::ClientStateVerificationFailure {
-                client_id: vars.client_id_on_b().clone(),
-                client_error: e,
-            })?;
+            .map_err(ConnectionError::FailedToVerifyClientState)?;
 
         let expected_consensus_state_of_a_on_b =
             ctx_a.host_consensus_state(&msg.consensus_height_of_a_on_b)?;
@@ -140,10 +137,7 @@ where
                 Path::ClientConsensusState(client_cons_state_path_on_b),
                 stored_consensus_state_of_a_on_b.to_vec(),
             )
-            .map_err(|e| ConnectionError::ConsensusStateVerificationFailure {
-                height: msg.proofs_height_on_b,
-                client_error: e,
-            })?;
+            .map_err(ConnectionError::FailedToVerifyConsensusState)?;
     }
 
     Ok(())
