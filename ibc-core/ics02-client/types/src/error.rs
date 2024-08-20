@@ -107,7 +107,7 @@ impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::InvalidClientIdentifier(e) => Some(e),
-            Self::FailedIcs23Verification(e) => Some(e),
+            Self::FailedICS23Verification(e) => Some(e),
             _ => None,
         }
     }
