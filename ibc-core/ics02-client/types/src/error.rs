@@ -74,8 +74,8 @@ pub enum ClientError {
         subject_height: Height,
         substitute_height: Height,
     },
-    /// failed ics23 verification: `{0}`
-    FailedIcs23Verification(CommitmentError),
+    /// failed ICS23 verification: `{0}`
+    FailedICS23Verification(CommitmentError),
     /// failed header verification: `{description}`
     FailedHeaderVerification { description: String },
     /// failed misbehaviour handling: `{description}`
