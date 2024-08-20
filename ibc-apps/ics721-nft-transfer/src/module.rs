@@ -140,7 +140,7 @@ pub fn on_chan_close_init_validate(
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), NftTransferError> {
-    Err(NftTransferError::ClosedChannel)
+    Err(NftTransferError::UnsupportedClosedChannel)
 }
 
 pub fn on_chan_close_init_execute(
@@ -148,7 +148,7 @@ pub fn on_chan_close_init_execute(
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, NftTransferError> {
-    Err(NftTransferError::ClosedChannel)
+    Err(NftTransferError::UnsupportedClosedChannel)
 }
 
 pub fn on_chan_close_confirm_validate(
@@ -172,7 +172,8 @@ pub fn on_recv_packet_execute(
     packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
-        let ack = AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacket.into());
+        let ack =
+            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into());
         return (ModuleExtras::empty(), ack.into());
     };
 
@@ -204,7 +205,7 @@ pub fn on_acknowledgement_packet_validate(
     _relayer: &Signer,
 ) -> Result<(), NftTransferError> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| NftTransferError::FailedToDeserializePacket)?;
+        .map_err(|_| NftTransferError::FailedToDeserializePacketData)?;
 
     let acknowledgement = serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref())
         .map_err(|_| NftTransferError::FailedToDeserializeAck)?;
@@ -225,7 +226,7 @@ pub fn on_acknowledgement_packet_execute(
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         return (
             ModuleExtras::empty(),
-            Err(NftTransferError::FailedToDeserializePacket),
+            Err(NftTransferError::FailedToDeserializePacketData),
         );
     };
 
@@ -267,7 +268,7 @@ pub fn on_timeout_packet_validate(
     _relayer: &Signer,
 ) -> Result<(), NftTransferError> {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| NftTransferError::FailedToDeserializePacket)?;
+        .map_err(|_| NftTransferError::FailedToDeserializePacketData)?;
 
     refund_packet_nft_validate(ctx, packet, &data)?;
 
@@ -282,7 +283,7 @@ pub fn on_timeout_packet_execute(
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         return (
             ModuleExtras::empty(),
-            Err(NftTransferError::FailedToDeserializePacket),
+            Err(NftTransferError::FailedToDeserializePacketData),
         );
     };
 
@@ -321,7 +322,7 @@ mod test {
             r#"{"result":"AQ=="}"#,
         );
         ser_json_assert_eq(
-            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacket.into()),
+            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into()),
             r#"{"error":"failed to deserialize packet data"}"#,
         );
     }
@@ -339,7 +340,8 @@ mod test {
     #[test]
     fn test_ack_error_to_vec() {
         let ack_error: Vec<u8> =
-            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacket.into()).into();
+            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into())
+                .into();
 
         // Check that it's the same output as ibc-go
         // Note: this also implicitly checks that the ack bytes are non-empty,
@@ -363,7 +365,7 @@ mod test {
         );
         de_json_assert_eq(
             r#"{"error":"failed to deserialize packet data"}"#,
-            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacket.into()),
+            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into()),
         );
 
         assert!(serde_json::from_str::<AcknowledgementStatus>(r#"{"success":"AQ=="}"#).is_err());

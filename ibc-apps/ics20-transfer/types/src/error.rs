@@ -20,10 +20,10 @@ pub enum TokenTransferError {
     InvalidTrace(String),
     /// invalid amount: `{0}`
     InvalidAmount(FromDecStrErr),
-    /// invalid token
-    InvalidToken,
-    /// invalid coin: `{actual}`
-    InvalidCoin { actual: String },
+    /// invalid coin: `{0}`
+    InvalidCoin(String),
+    /// missing token
+    MissingToken,
     /// missing destination channel `{channel_id}` on port `{port_id}`
     MissingDestinationChannel {
         port_id: PortId,
@@ -34,7 +34,7 @@ pub enum TokenTransferError {
     /// mismatched port IDs: expected `{expected}`, actual `{actual}`
     MismatchedPortIds { expected: PortId, actual: PortId },
     /// failed to deserialize packet data
-    FailedToDeserializePacket,
+    FailedToDeserializePacketData,
     /// failed to deserialize acknowledgement
     FailedToDeserializeAck,
     /// failed to parse account ID
@@ -42,7 +42,7 @@ pub enum TokenTransferError {
     /// failed to decode raw msg: `{description}`
     FailedToDecodeRawMsg { description: String },
     /// channel cannot be closed
-    ClosedChannel,
+    UnsupportedClosedChannel,
     /// empty base denomination
     EmptyBaseDenom,
     /// unknown msg type: `{0}`

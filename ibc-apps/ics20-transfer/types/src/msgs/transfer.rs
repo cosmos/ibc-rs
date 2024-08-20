@@ -69,9 +69,9 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
             packet_data: PacketData {
                 token: raw_msg
                     .token
-                    .ok_or(TokenTransferError::InvalidToken)?
+                    .ok_or(TokenTransferError::MissingToken)?
                     .try_into()
-                    .map_err(|_| TokenTransferError::InvalidToken)?,
+                    .map_err(|_| TokenTransferError::MissingToken)?,
                 sender: raw_msg.sender.into(),
                 receiver: raw_msg.receiver.into(),
                 memo: raw_msg.memo.into(),

@@ -22,11 +22,8 @@ pub enum NftTransferError {
     },
     /// invalid json data: `{description}`
     InvalidJsonData { description: String },
-    /// invalid trace `{trace_path}`: `{description}`
-    InvalidTrace {
-        trace_path: String,
-        description: String,
-    },
+    /// invalid trace `{0}`
+    InvalidTrace(String),
     /// missing destination channel `{channel_id}` on port `{port_id}`
     MissingDestinationChannel {
         port_id: PortId,
@@ -41,17 +38,17 @@ pub enum NftTransferError {
     /// mismatched channel orders: expected `{expected}`, actual `{actual}`
     MismatchedChannelOrders { expected: Order, actual: Order },
     /// mismatched port IDs: expected `{expected}`, actual `{actual}`
-    MismatchedPortIds { actual: PortId, expected: PortId },
-    /// channel cannot be closed
-    ClosedChannel,
+    MismatchedPortIds { expected: PortId, actual: PortId },
     /// failed to deserialize packet data
-    FailedToDeserializePacket,
+    FailedToDeserializePacketData,
     /// failed to deserialize acknowledgement
     FailedToDeserializeAck,
     /// failed to parse account ID
     FailedToParseAccount,
     /// failed to decode raw msg: `{description}`
     FailedToDecodeRawMsg { description: String },
+    /// channel cannot be closed
+    UnsupportedClosedChannel,
     /// unknown msg type: `{0}`
     UnknownMsgType(String),
 }
