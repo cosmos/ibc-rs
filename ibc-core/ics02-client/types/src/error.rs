@@ -135,8 +135,6 @@ pub enum UpgradeClientError {
         upgraded_height: Height,
         client_height: Height,
     },
-    /// other upgrade client error: `{reason}`
-    Other { reason: String },
 }
 
 impl From<UpgradeClientError> for ClientError {
