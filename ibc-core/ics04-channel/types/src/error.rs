@@ -61,6 +61,9 @@ pub enum ChannelError {
     },
     /// failed proof verification: `{0}`
     FailedProofVerification(ClientError),
+
+    // TODO(seanchen1991): These two variants should be encoded by host-relevant error types
+    // once those have been defined.
     /// failed to update counter: `{description}`
     FailedToUpdateCounter { description: String },
     /// failed to store channel: `{description}`

@@ -102,6 +102,12 @@ impl From<Infallible> for ClientError {
     }
 }
 
+impl From<CommitmentError> for ClientError {
+    fn from(e: CommitmentError) -> Self {
+        Self::FailedICS23Verification(e)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {

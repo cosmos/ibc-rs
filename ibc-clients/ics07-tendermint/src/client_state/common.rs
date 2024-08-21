@@ -305,8 +305,7 @@ pub fn verify_membership<H: HostFunctionsProvider>(
     }
 
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
-    let merkle_proof =
-        MerkleProof::try_from(proof).map_err(ClientError::FailedICS23Verification)?;
+    let merkle_proof = MerkleProof::try_from(proof)?;
 
     merkle_proof
         .verify_membership::<H>(proof_specs, root.clone().into(), merkle_path, value, 0)
@@ -326,8 +325,7 @@ pub fn verify_non_membership<H: HostFunctionsProvider>(
     path: PathBytes,
 ) -> Result<(), ClientError> {
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
-    let merkle_proof =
-        MerkleProof::try_from(proof).map_err(ClientError::FailedICS23Verification)?;
+    let merkle_proof = MerkleProof::try_from(proof)?;
 
     merkle_proof
         .verify_non_membership::<H>(proof_specs, root.clone().into(), merkle_path)
