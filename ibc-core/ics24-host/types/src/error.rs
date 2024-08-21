@@ -11,13 +11,8 @@ pub enum IdentifierError {
     InvalidCharacter(String),
     /// invalid prefix: `{0}`
     InvalidPrefix(String),
-    /// invalid revision number for chain ID: `{0}`
-    InvalidRevisionNumber(String),
-    /// invalid packet sequence `{sequence}`: `{description}`
-    InvalidPacketSequence {
-        sequence: String,
-        description: String,
-    },
+    /// failed to parse `{value}`: `{description}`
+    FailedToParse { value: String, description: String },
     /// overflowed revision number
     OverflowedRevisionNumber,
 }
