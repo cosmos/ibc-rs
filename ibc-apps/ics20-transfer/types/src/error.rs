@@ -37,6 +37,8 @@ pub enum TokenTransferError {
     FailedToDeserializePacketData,
     /// failed to deserialize acknowledgement
     FailedToDeserializeAck,
+    // TODO(seanchen1991): Used in basecoin; this variant should be moved
+    // to a host-relevant error
     /// failed to parse account ID
     FailedToParseAccount,
     /// failed to decode raw msg: `{description}`
