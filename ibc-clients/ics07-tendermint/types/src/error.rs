@@ -18,8 +18,6 @@ use tendermint_light_client_verifier::Verdict;
 pub enum TendermintClientError {
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
-    /// invalid header, failed basic validation: `{description}`
-    InvalidHeader { description: String },
     /// invalid client state trust threshold: `{description}`
     InvalidTrustThreshold { description: String },
     /// invalid clock drift; must be greater than 0
@@ -58,6 +56,8 @@ pub enum TendermintClientError {
     MismatchedHeaderChainIds { expected: String, actual: String },
     /// mismatched validator hashes: expected `{expected}`, actual `{actual}`
     MismatchedValidatorHashes { expected: Hash, actual: Hash },
+    /// empty client state upgrade-path key
+    EmptyUpgradePathKey,
     /// insufficient validator overlap: `{0}`
     InsufficientValidatorOverlap(VotingPowerTally),
     /// light client verifier returned an error: `{0}`

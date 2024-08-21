@@ -184,13 +184,9 @@ impl ClientState {
         self.proof_specs.validate()?;
 
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty
-        for (idx, key) in self.upgrade_path.iter().enumerate() {
+        for key in self.upgrade_path.iter() {
             if key.trim().is_empty() {
-                return Err(TendermintClientError::InvalidHeader {
-                    description: format!(
-                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
-                    ),
-                });
+                return Err(TendermintClientError::EmptyUpgradePathKey);
             }
         }
 
