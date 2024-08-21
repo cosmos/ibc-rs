@@ -1,4 +1,4 @@
-use ibc_client_tendermint_types::error::{Error, IntoResult};
+use ibc_client_tendermint_types::error::{IntoResult, TendermintClientError};
 use ibc_client_tendermint_types::{ConsensusState as ConsensusStateType, Header as TmHeader};
 use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
@@ -64,7 +64,7 @@ where
                     .revision_height()
                     .try_into()
                     .map_err(|_| ClientError::FailedHeaderVerification {
-                        description: Error::InvalidHeaderHeight(
+                        description: TendermintClientError::InvalidHeaderHeight(
                             header.trusted_height.revision_height(),
                         )
                         .to_string(),

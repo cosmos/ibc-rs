@@ -20,7 +20,7 @@ use tendermint::validator::Set as ValidatorSet;
 use tendermint::{Hash, Time};
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
-use crate::error::Error;
+use crate::error::TendermintClientError;
 
 pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
@@ -47,12 +47,12 @@ impl Display for Header {
 }
 
 impl Header {
-    pub fn timestamp(&self) -> Result<Timestamp, Error> {
+    pub fn timestamp(&self) -> Result<Timestamp, TendermintClientError> {
         self.signed_header
             .header
             .time
             .try_into()
-            .map_err(Error::InvalidHeaderTimestamp)
+            .map_err(TendermintClientError::InvalidHeaderTimestamp)
     }
 
     pub fn height(&self) -> Height {
@@ -78,7 +78,7 @@ impl Header {
         chain_id: &'a TmChainId,
         header_time: Time,
         next_validators_hash: Hash,
-    ) -> Result<TrustedBlockState<'a>, Error> {
+    ) -> Result<TrustedBlockState<'a>, TendermintClientError> {
         Ok(TrustedBlockState {
             chain_id,
             header_time,
@@ -86,15 +86,22 @@ impl Header {
                 .trusted_height
                 .revision_height()
                 .try_into()
-                .map_err(|_| Error::InvalidHeaderHeight(self.trusted_height.revision_height()))?,
+                .map_err(|_| {
+                    TendermintClientError::InvalidHeaderHeight(
+                        self.trusted_height.revision_height(),
+                    )
+                })?,
             next_validators: &self.trusted_next_validator_set,
             next_validators_hash,
         })
     }
 
-    pub fn verify_chain_id_version_matches_height(&self, chain_id: &ChainId) -> Result<(), Error> {
+    pub fn verify_chain_id_version_matches_height(
+        &self,
+        chain_id: &ChainId,
+    ) -> Result<(), TendermintClientError> {
         if self.height().revision_number() != chain_id.revision_number() {
-            return Err(Error::MismatchedHeaderChainIds {
+            return Err(TendermintClientError::MismatchedHeaderChainIds {
                 actual: self.signed_header.header.chain_id.to_string(),
                 expected: chain_id.to_string(),
             });
@@ -121,9 +128,11 @@ impl Header {
     }
 
     /// Checks if the fields of a given header are consistent with the trusted fields of this header.
-    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(&self) -> Result<(), Error> {
+    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(
+        &self,
+    ) -> Result<(), TendermintClientError> {
         if self.height().revision_number() != self.trusted_height.revision_number() {
-            return Err(Error::MismatchedRevisionHeights {
+            return Err(TendermintClientError::MismatchedRevisionHeights {
                 expected: self.trusted_height.revision_number(),
                 actual: self.height().revision_number(),
             });
@@ -134,13 +143,15 @@ impl Header {
         // based on) must be smaller than height of the new header that we're
         // installing.
         if self.trusted_height >= self.height() {
-            return Err(Error::InvalidHeaderHeight(self.height().revision_height()));
+            return Err(TendermintClientError::InvalidHeaderHeight(
+                self.height().revision_height(),
+            ));
         }
 
         let validators_hash = self.validator_set.hash_with::<H>();
 
         if validators_hash != self.signed_header.header.validators_hash {
-            return Err(Error::MismatchedValidatorHashes {
+            return Err(TendermintClientError::MismatchedValidatorHashes {
                 expected: self.signed_header.header.validators_hash,
                 actual: validators_hash,
             });
@@ -153,29 +164,29 @@ impl Header {
 impl Protobuf<RawHeader> for Header {}
 
 impl TryFrom<RawHeader> for Header {
-    type Error = Error;
+    type Error = TendermintClientError;
 
     fn try_from(raw: RawHeader) -> Result<Self, Self::Error> {
         let header = Self {
             signed_header: raw
                 .signed_header
-                .ok_or(Error::MissingSignedHeader)?
+                .ok_or(TendermintClientError::MissingSignedHeader)?
                 .try_into()
-                .map_err(Error::InvalidRawHeader)?,
+                .map_err(TendermintClientError::InvalidRawHeader)?,
             validator_set: raw
                 .validator_set
-                .ok_or(Error::MissingValidatorSet)?
+                .ok_or(TendermintClientError::MissingValidatorSet)?
                 .try_into()
-                .map_err(Error::InvalidRawHeader)?,
+                .map_err(TendermintClientError::InvalidRawHeader)?,
             trusted_height: raw
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(Error::MissingTrustedHeight)?,
+                .ok_or(TendermintClientError::MissingTrustedHeight)?,
             trusted_next_validator_set: raw
                 .trusted_validators
-                .ok_or(Error::MissingTrustedNextValidatorSet)?
+                .ok_or(TendermintClientError::MissingTrustedNextValidatorSet)?
                 .try_into()
-                .map_err(Error::InvalidRawHeader)?,
+                .map_err(TendermintClientError::InvalidRawHeader)?,
         };
 
         Ok(header)

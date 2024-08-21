@@ -15,7 +15,7 @@ use tendermint_light_client_verifier::Verdict;
 
 /// The main error type for the Tendermint light client
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum TendermintClientError {
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
     /// invalid header, failed basic validation: `{description}`
@@ -70,7 +70,7 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
+impl std::error::Error for TendermintClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::InvalidIdentifier(e) => Some(e),
@@ -80,21 +80,21 @@ impl std::error::Error for Error {
     }
 }
 
-impl From<Error> for ClientError {
-    fn from(e: Error) -> Self {
+impl From<TendermintClientError> for ClientError {
+    fn from(e: TendermintClientError) -> Self {
         Self::ClientSpecific {
             description: e.to_string(),
         }
     }
 }
 
-impl From<IdentifierError> for Error {
+impl From<IdentifierError> for TendermintClientError {
     fn from(e: IdentifierError) -> Self {
         Self::InvalidIdentifier(e)
     }
 }
 
-impl From<CommitmentError> for Error {
+impl From<CommitmentError> for TendermintClientError {
     fn from(e: CommitmentError) -> Self {
         Self::InvalidProofSpec(e)
     }
@@ -104,12 +104,16 @@ pub trait IntoResult<T, E> {
     fn into_result(self) -> Result<T, E>;
 }
 
-impl IntoResult<(), Error> for Verdict {
-    fn into_result(self) -> Result<(), Error> {
+impl IntoResult<(), TendermintClientError> for Verdict {
+    fn into_result(self) -> Result<(), TendermintClientError> {
         match self {
             Verdict::Success => Ok(()),
-            Verdict::NotEnoughTrust(tally) => Err(Error::InsufficientValidatorOverlap(tally)),
-            Verdict::Invalid(detail) => Err(Error::LightClientVerifierError(Box::new(detail))),
+            Verdict::NotEnoughTrust(tally) => {
+                Err(TendermintClientError::InsufficientValidatorOverlap(tally))
+            }
+            Verdict::Invalid(detail) => Err(TendermintClientError::LightClientVerifierError(
+                Box::new(detail),
+            )),
         }
     }
 }

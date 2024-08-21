@@ -8,7 +8,7 @@
 //! Rust). As such, this module also includes some trait implementations that
 //! serve to pass through traits implemented on the wrapped `ClientState` type.
 
-use ibc_client_tendermint_types::error::Error;
+use ibc_client_tendermint_types::error::TendermintClientError;
 use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
 use ibc_client_tendermint_types::ClientState as ClientStateType;
 use ibc_core_client::types::error::ClientError;
@@ -44,7 +44,7 @@ impl ClientState {
 impl Protobuf<RawTmClientState> for ClientState {}
 
 impl TryFrom<RawTmClientState> for ClientState {
-    type Error = Error;
+    type Error = TendermintClientError;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
         Ok(Self(ClientStateType::try_from(raw)?))

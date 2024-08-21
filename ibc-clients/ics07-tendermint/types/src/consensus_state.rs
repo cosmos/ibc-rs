@@ -11,7 +11,7 @@ use tendermint::time::Time;
 use tendermint::Hash;
 use tendermint_proto::google::protobuf as tpb;
 
-use crate::error::Error;
+use crate::error::TendermintClientError;
 use crate::header::Header;
 
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
@@ -47,31 +47,32 @@ impl ConsensusState {
 impl Protobuf<RawConsensusState> for ConsensusState {}
 
 impl TryFrom<RawConsensusState> for ConsensusState {
-    type Error = Error;
+    type Error = TendermintClientError;
 
     fn try_from(raw: RawConsensusState) -> Result<Self, Self::Error> {
         let proto_root = raw
             .root
-            .ok_or(Error::InvalidRawClientState {
+            .ok_or(TendermintClientError::InvalidRawClientState {
                 description: "missing commitment root".into(),
             })?
             .hash;
 
         let ibc_proto::google::protobuf::Timestamp { seconds, nanos } =
-            raw.timestamp.ok_or(Error::InvalidRawClientState {
-                description: "missing timestamp".into(),
-            })?;
+            raw.timestamp
+                .ok_or(TendermintClientError::InvalidRawClientState {
+                    description: "missing timestamp".into(),
+                })?;
         // FIXME: shunts like this are necessary due to
         // https://github.com/informalsystems/tendermint-rs/issues/1053
         let proto_timestamp = tpb::Timestamp { seconds, nanos };
-        let timestamp = proto_timestamp
-            .try_into()
-            .map_err(|e| Error::InvalidRawClientState {
+        let timestamp = proto_timestamp.try_into().map_err(|e| {
+            TendermintClientError::InvalidRawClientState {
                 description: format!("invalid timestamp: {e}"),
-            })?;
+            }
+        })?;
 
         let next_validators_hash = Hash::from_bytes(Algorithm::Sha256, &raw.next_validators_hash)
-            .map_err(|e| Error::InvalidRawClientState {
+            .map_err(|e| TendermintClientError::InvalidRawClientState {
             description: e.to_string(),
         })?;
 

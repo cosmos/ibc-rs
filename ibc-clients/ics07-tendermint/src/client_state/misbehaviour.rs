@@ -1,4 +1,4 @@
-use ibc_client_tendermint_types::error::{Error, IntoResult};
+use ibc_client_tendermint_types::error::{IntoResult, TendermintClientError};
 use ibc_client_tendermint_types::{
     ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
 };
@@ -105,11 +105,13 @@ where
             )?;
 
         if duration_since_consensus_state >= options.trusting_period {
-            return Err(Error::ConsensusStateTimestampGteTrustingPeriod {
-                duration_since_consensus_state,
-                trusting_period: options.trusting_period,
-            }
-            .into());
+            return Err(
+                TendermintClientError::ConsensusStateTimestampGteTrustingPeriod {
+                    duration_since_consensus_state,
+                    trusting_period: options.trusting_period,
+                }
+                .into(),
+            );
         }
     }
 
