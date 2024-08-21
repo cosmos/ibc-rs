@@ -1,51 +1,12 @@
 //! Defines events emitted during handling of IBC messages
 
-use ibc_core_channel_types::{error as channel_error, events as ChannelEvents};
-use ibc_core_client_types::error as client_error;
+use ibc_core_channel_types::error::ChannelError;
+use ibc_core_channel_types::events as ChannelEvents;
 use ibc_core_client_types::events::{self as ClientEvents};
-use ibc_core_connection_types::{error as connection_error, events as ConnectionEvents};
-use ibc_core_host_types::error::IdentifierError;
+use ibc_core_connection_types::events as ConnectionEvents;
 use ibc_core_router_types::event::ModuleEvent;
 use ibc_primitives::prelude::*;
-use ibc_primitives::TimestampError;
-
-use displaydoc::Display;
 use tendermint::abci;
-
-/// All error variants related to IBC events
-#[derive(Debug, Display)]
-pub enum HandlerError {
-    /// error parsing height
-    Height,
-    /// parse error: `{0}`
-    Parse(IdentifierError),
-    /// client error: `{0}`
-    Client(client_error::ClientError),
-    /// connection error: `{0}`
-    Connection(connection_error::ConnectionError),
-    /// channel error: `{0}`
-    Channel(channel_error::ChannelError),
-    /// parsing timestamp error: `{0}`
-    Timestamp(TimestampError),
-    /// incorrect event type: `{event}`
-    IncorrectEventType { event: String },
-    /// module event cannot use core event types: `{event:?}`
-    MalformedModuleEvent { event: ModuleEvent },
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for HandlerError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self {
-            Self::Parse(e) => Some(e),
-            Self::Client(e) => Some(e),
-            Self::Connection(e) => Some(e),
-            Self::Channel(e) => Some(e),
-            Self::Timestamp(e) => Some(e),
-            _ => None,
-        }
-    }
-}
 
 const MESSAGE_EVENT: &str = "message";
 
@@ -94,7 +55,7 @@ pub enum IbcEvent {
 }
 
 impl TryFrom<IbcEvent> for abci::Event {
-    type Error = HandlerError;
+    type Error = ChannelError;
 
     fn try_from(event: IbcEvent) -> Result<Self, Self::Error> {
         Ok(match event {
@@ -112,15 +73,11 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::OpenConfirmChannel(event) => event.into(),
             IbcEvent::CloseInitChannel(event) => event.into(),
             IbcEvent::CloseConfirmChannel(event) => event.into(),
-            IbcEvent::SendPacket(event) => event.try_into().map_err(HandlerError::Channel)?,
-            IbcEvent::ReceivePacket(event) => event.try_into().map_err(HandlerError::Channel)?,
-            IbcEvent::WriteAcknowledgement(event) => {
-                event.try_into().map_err(HandlerError::Channel)?
-            }
-            IbcEvent::AcknowledgePacket(event) => {
-                event.try_into().map_err(HandlerError::Channel)?
-            }
-            IbcEvent::TimeoutPacket(event) => event.try_into().map_err(HandlerError::Channel)?,
+            IbcEvent::SendPacket(event) => event.try_into()?,
+            IbcEvent::ReceivePacket(event) => event.try_into()?,
+            IbcEvent::WriteAcknowledgement(event) => event.try_into()?,
+            IbcEvent::AcknowledgePacket(event) => event.try_into()?,
+            IbcEvent::TimeoutPacket(event) => event.try_into()?,
             IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::Module(event) => event.into(),
             IbcEvent::Message(event) => abci::Event {
