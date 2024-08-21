@@ -58,7 +58,7 @@ pub enum TendermintClientError {
     MismatchedValidatorHashes { expected: Hash, actual: Hash },
     /// empty client state upgrade-path key
     EmptyUpgradePathKey,
-    /// failed to verify heaer: `{0}`
+    /// failed to verify header: `{0}`
     FailedToVerifyHeader(Box<LightClientErrorDetail>),
     /// insufficient validator overlap: `{0}`
     InsufficientValidatorOverlap(VotingPowerTally),
