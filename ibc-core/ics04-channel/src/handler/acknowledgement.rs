@@ -201,10 +201,7 @@ where
                 Path::Ack(ack_path_on_b),
                 ack_commitment.into_vec(),
             )
-            .map_err(|e| ChannelError::FailedPacketVerification {
-                sequence: packet.seq_on_a,
-                client_error: e,
-            })
+            .map_err(ChannelError::FailedProofVerification)
             .map_err(PacketError::Channel)?;
     }
 
