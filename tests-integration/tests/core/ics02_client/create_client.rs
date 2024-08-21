@@ -302,6 +302,6 @@ fn test_tm_create_client_proof_verification_ok() {
                 serde_json::to_vec(&(next_client_seq_value + 1)).expect("valid json serialization"),
             )
             .expect_err("proof verification fails"),
-        ClientError::FailedIcs23Verification(CommitmentError::FailedToVerifyMembership)
+        ClientError::FailedICS23Verification(CommitmentError::FailedToVerifyMembership)
     ));
 }
