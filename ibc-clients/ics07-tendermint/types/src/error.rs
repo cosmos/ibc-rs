@@ -60,8 +60,8 @@ pub enum TendermintClientError {
     EmptyUpgradePathKey,
     /// insufficient validator overlap: `{0}`
     InsufficientValidatorOverlap(VotingPowerTally),
-    /// light client verifier returned an error: `{0}`
-    LightClientVerifierError(Box<LightClientErrorDetail>),
+    /// failed to verify heaer: `{0}`
+    FailedToVerifyHeader(Box<LightClientErrorDetail>),
     /// consensus state timestamp `{duration_since_consensus_state:?}` should be < `{trusting_period:?}`
     ConsensusStateTimestampGteTrustingPeriod {
         duration_since_consensus_state: Duration,
@@ -111,9 +111,9 @@ impl IntoResult<(), TendermintClientError> for Verdict {
             Verdict::NotEnoughTrust(tally) => {
                 Err(TendermintClientError::InsufficientValidatorOverlap(tally))
             }
-            Verdict::Invalid(detail) => Err(TendermintClientError::LightClientVerifierError(
-                Box::new(detail),
-            )),
+            Verdict::Invalid(detail) => Err(TendermintClientError::FailedToVerifyHeader(Box::new(
+                detail,
+            ))),
         }
     }
 }
