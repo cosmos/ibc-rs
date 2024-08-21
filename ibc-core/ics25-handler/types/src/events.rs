@@ -1,6 +1,5 @@
 //! Defines events emitted during handling of IBC messages
 
-use displaydoc::Display;
 use ibc_core_channel_types::{error as channel_error, events as ChannelEvents};
 use ibc_core_client_types::error as client_error;
 use ibc_core_client_types::events::{self as ClientEvents};
@@ -9,11 +8,13 @@ use ibc_core_host_types::error::IdentifierError;
 use ibc_core_router_types::event::ModuleEvent;
 use ibc_primitives::prelude::*;
 use ibc_primitives::TimestampError;
+
+use displaydoc::Display;
 use tendermint::abci;
 
 /// All error variants related to IBC events
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum HandlerError {
     /// error parsing height
     Height,
     /// parse error: `{0}`
@@ -33,7 +34,7 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
+impl std::error::Error for HandlerError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Parse(e) => Some(e),
@@ -93,7 +94,7 @@ pub enum IbcEvent {
 }
 
 impl TryFrom<IbcEvent> for abci::Event {
-    type Error = Error;
+    type Error = HandlerError;
 
     fn try_from(event: IbcEvent) -> Result<Self, Self::Error> {
         Ok(match event {
@@ -111,11 +112,15 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::OpenConfirmChannel(event) => event.into(),
             IbcEvent::CloseInitChannel(event) => event.into(),
             IbcEvent::CloseConfirmChannel(event) => event.into(),
-            IbcEvent::SendPacket(event) => event.try_into().map_err(Error::Channel)?,
-            IbcEvent::ReceivePacket(event) => event.try_into().map_err(Error::Channel)?,
-            IbcEvent::WriteAcknowledgement(event) => event.try_into().map_err(Error::Channel)?,
-            IbcEvent::AcknowledgePacket(event) => event.try_into().map_err(Error::Channel)?,
-            IbcEvent::TimeoutPacket(event) => event.try_into().map_err(Error::Channel)?,
+            IbcEvent::SendPacket(event) => event.try_into().map_err(HandlerError::Channel)?,
+            IbcEvent::ReceivePacket(event) => event.try_into().map_err(HandlerError::Channel)?,
+            IbcEvent::WriteAcknowledgement(event) => {
+                event.try_into().map_err(HandlerError::Channel)?
+            }
+            IbcEvent::AcknowledgePacket(event) => {
+                event.try_into().map_err(HandlerError::Channel)?
+            }
+            IbcEvent::TimeoutPacket(event) => event.try_into().map_err(HandlerError::Channel)?,
             IbcEvent::ChannelClosed(event) => event.into(),
             IbcEvent::Module(event) => event.into(),
             IbcEvent::Message(event) => abci::Event {
