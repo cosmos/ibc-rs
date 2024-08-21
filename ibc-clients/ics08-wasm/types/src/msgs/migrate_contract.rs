@@ -6,7 +6,7 @@ use ibc_primitives::Signer;
 use ibc_proto::ibc::lightclients::wasm::v1::MsgMigrateContract as RawMsgMigrateContract;
 use ibc_proto::Protobuf;
 
-use crate::error::Error;
+use crate::error::WasmClientError;
 use crate::Bytes;
 
 pub const MIGRATE_CONTRACT_TYPE_URL: &str = "/ibc.lightclients.wasm.v1.MsgMigrateContract";
@@ -34,7 +34,7 @@ impl From<MsgMigrateContract> for RawMsgMigrateContract {
 }
 
 impl TryFrom<RawMsgMigrateContract> for MsgMigrateContract {
-    type Error = Error;
+    type Error = WasmClientError;
 
     fn try_from(value: RawMsgMigrateContract) -> Result<Self, Self::Error> {
         Ok(Self {

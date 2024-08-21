@@ -6,7 +6,7 @@ use ibc_primitives::prelude::*;
 
 /// The main error type
 #[derive(Debug, Display)]
-pub enum Error {
+pub enum WasmClientError {
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
     /// invalid client state latest height
@@ -20,16 +20,16 @@ pub enum Error {
 }
 
 #[cfg(feature = "std")]
-impl std::error::Error for Error {
+impl std::error::Error for WasmClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Error::InvalidIdentifier(err) => Some(err),
+            Self::InvalidIdentifier(err) => Some(err),
             _ => None,
         }
     }
 }
 
-impl From<IdentifierError> for Error {
+impl From<IdentifierError> for WasmClientError {
     fn from(e: IdentifierError) -> Self {
         Self::InvalidIdentifier(e)
     }
