@@ -59,8 +59,8 @@ pub enum ChannelError {
         sequence: Sequence,
         client_error: ClientError,
     },
-    /// failed channel verification: `{0}`
-    FailedChannelVerification(ClientError),
+    /// failed proof verification: `{0}`
+    FailedProofVerification(ClientError),
     /// failed to update counter: `{description}`
     FailedToUpdateCounter { description: String },
     /// failed to store channel: `{description}`

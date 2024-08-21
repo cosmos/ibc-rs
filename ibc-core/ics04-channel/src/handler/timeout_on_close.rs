@@ -116,7 +116,7 @@ where
                 Path::ChannelEnd(chan_end_path_on_b),
                 expected_chan_end_on_b.encode_vec(),
             )
-            .map_err(ChannelError::FailedChannelVerification)
+            .map_err(ChannelError::FailedProofVerification)
             .map_err(PacketError::Channel)?;
 
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
