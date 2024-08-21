@@ -61,11 +61,6 @@ pub enum ChannelError {
     },
     /// failed channel verification: `{0}`
     FailedChannelVerification(ClientError),
-    /// failed to parse `{actual}` as packet sequence: `{error}`
-    FailedToParseSequence {
-        actual: String,
-        error: core::num::ParseIntError,
-    },
     /// failed to update counter: `{description}`
     FailedToUpdateCounter { description: String },
     /// failed to store channel: `{description}`
@@ -168,7 +163,6 @@ impl std::error::Error for ChannelError {
             Self::FailedPacketVerification {
                 client_error: e, ..
             } => Some(e),
-            Self::FailedToParseSequence { error: e, .. } => Some(e),
             _ => None,
         }
     }
