@@ -105,13 +105,11 @@ where
             )?;
 
         if duration_since_consensus_state >= options.trusting_period {
-            return Err(
-                TendermintClientError::ConsensusStateTimestampGteTrustingPeriod {
-                    duration_since_consensus_state,
-                    trusting_period: options.trusting_period,
-                }
-                .into(),
-            );
+            return Err(TendermintClientError::InsufficientTrustingPeriod {
+                duration_since_consensus_state,
+                trusting_period: options.trusting_period,
+            }
+            .into());
         }
     }
 

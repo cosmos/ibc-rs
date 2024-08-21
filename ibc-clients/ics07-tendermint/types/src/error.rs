@@ -58,12 +58,12 @@ pub enum TendermintClientError {
     MismatchedValidatorHashes { expected: Hash, actual: Hash },
     /// empty client state upgrade-path key
     EmptyUpgradePathKey,
-    /// insufficient validator overlap: `{0}`
-    InsufficientValidatorOverlap(VotingPowerTally),
     /// failed to verify heaer: `{0}`
     FailedToVerifyHeader(Box<LightClientErrorDetail>),
-    /// consensus state timestamp `{duration_since_consensus_state:?}` should be < `{trusting_period:?}`
-    ConsensusStateTimestampGteTrustingPeriod {
+    /// insufficient validator overlap: `{0}`
+    InsufficientValidatorOverlap(VotingPowerTally),
+    /// insufficient trusting period `{trusting_period:?}`; should be > consensus state timestamp `{duration_since_consensus_state:?}`
+    InsufficientTrustingPeriod {
         duration_since_consensus_state: Duration,
         trusting_period: Duration,
     },
