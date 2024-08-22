@@ -137,7 +137,7 @@ where
         Ok(self
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
-            .ok_or(ConnectionError::MissingHostHeight)?)
+            .ok_or(ConnectionError::MissingConnectionCounter)?)
     }
 
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
