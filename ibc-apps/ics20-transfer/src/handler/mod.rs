@@ -20,7 +20,7 @@ pub fn refund_packet_token_execute(
         .sender
         .clone()
         .try_into()
-        .map_err(|_| TokenTransferError::ParseAccountFailure)?;
+        .map_err(|_| TokenTransferError::FailedToParseAccount)?;
 
     if is_sender_chain_source(
         packet.port_id_on_a.clone(),
@@ -49,7 +49,7 @@ pub fn refund_packet_token_validate(
         .sender
         .clone()
         .try_into()
-        .map_err(|_| TokenTransferError::ParseAccountFailure)?;
+        .map_err(|_| TokenTransferError::FailedToParseAccount)?;
 
     if is_sender_chain_source(
         packet.port_id_on_a.clone(),
