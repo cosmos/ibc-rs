@@ -1536,17 +1536,12 @@ where
     let dest_client_latest_height = dest.light_client_latest_height(client_id);
 
     if src_header.height() == dest_client_latest_height {
-        return Err(RelayerError::ClientAlreadyUpToDate {
-            client_id: client_id.clone(),
-            source_height: src_header.height(),
-            destination_height: dest_client_latest_height,
-        });
+        return Err(RelayerError::UnnecessaryClientUpdate(client_id.clone()));
     };
 
     if dest_client_latest_height > src_header.height() {
-        return Err(RelayerError::ClientAtHigherHeight {
+        return Err(RelayerError::InsufficientUpdateHeight {
             client_id: client_id.clone(),
-            source_height: src_header.height(),
             destination_height: dest_client_latest_height,
         });
     };
