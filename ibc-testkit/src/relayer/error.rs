@@ -6,7 +6,7 @@ use ibc::core::host::types::identifiers::ClientId;
 
 #[derive(Debug, Display)]
 pub enum RelayerError {
-    /// attempted an unnecessary update for client `{0}`: source and destination heights already match
+    /// unnecessary update attempted for client `{0}`: source and destination heights already match
     UnnecessaryClientUpdate(ClientId),
     /// insufficient update height for client `{client_id}` on the source chain; needs to exceed `{destination_height}`
     InsufficientUpdateHeight {
