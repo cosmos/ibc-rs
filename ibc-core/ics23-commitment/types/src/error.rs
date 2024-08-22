@@ -7,6 +7,8 @@ use ibc_primitives::prelude::*;
 pub enum CommitmentError {
     /// empty commitment prefix
     EmptyCommitmentPrefix,
+    /// empty commitment root
+    EmptyCommitmentRoot,
     /// empty merkle proof
     EmptyMerkleProof,
     /// empty merkle root

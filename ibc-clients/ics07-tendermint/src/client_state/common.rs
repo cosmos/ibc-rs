@@ -162,9 +162,7 @@ pub fn verify_consensus_state(
     let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
     if tm_consensus_state.root().is_empty() {
-        return Err(ClientError::Other {
-            description: "empty commitment root".into(),
-        });
+        return Err(CommitmentError::EmptyCommitmentRoot)?;
     };
 
     if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
