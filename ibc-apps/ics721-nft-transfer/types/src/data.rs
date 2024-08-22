@@ -97,7 +97,9 @@ impl FromStr for Ics721Data {
     type Err = NftTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        serde_json::from_str(s).map_err(|_| NftTransferError::InvalidIcs721Data)
+        serde_json::from_str(s).map_err(|e| NftTransferError::InvalidJsonData {
+            description: e.to_string(),
+        })
     }
 }
 

@@ -47,7 +47,7 @@ where
     let chan_id_on_b = chan_end_on_a
         .counterparty()
         .channel_id()
-        .ok_or_else(|| NftTransferError::DestinationChannelNotFound {
+        .ok_or_else(|| NftTransferError::MissingDestinationChannel {
             port_id: msg.port_id_on_a.clone(),
             channel_id: msg.chan_id_on_a.clone(),
         })?
@@ -61,7 +61,7 @@ where
         .sender
         .clone()
         .try_into()
-        .map_err(|_| NftTransferError::ParseAccountFailure)?;
+        .map_err(|_| NftTransferError::FailedToParseAccount)?;
 
     let mut packet_data = msg.packet_data;
     let class_id = &packet_data.class_id;
@@ -149,7 +149,7 @@ where
     let chan_on_b = chan_end_on_a
         .counterparty()
         .channel_id()
-        .ok_or_else(|| NftTransferError::DestinationChannelNotFound {
+        .ok_or_else(|| NftTransferError::MissingDestinationChannel {
             port_id: msg.port_id_on_a.clone(),
             channel_id: msg.chan_id_on_a.clone(),
         })?
@@ -164,7 +164,7 @@ where
         .sender
         .clone()
         .try_into()
-        .map_err(|_| NftTransferError::ParseAccountFailure)?;
+        .map_err(|_| NftTransferError::FailedToParseAccount)?;
 
     let mut packet_data = msg.packet_data;
     let class_id = &packet_data.class_id;

@@ -1,6 +1,5 @@
 //! Defines the token transfer error type
 use core::convert::Infallible;
-use core::str::Utf8Error;
 
 use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
@@ -17,68 +16,39 @@ pub enum TokenTransferError {
     ContextError(ContextError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
-    /// insufficient funds: tried to send `{send_attempt}`, sender only has `{available_funds}`
-    InsufficientFunds {
-        send_attempt: String,
-        available_funds: String,
-    },
-    /// destination channel not found in the counterparty of port_id `{port_id}` and channel_id `{channel_id}`
-    DestinationChannelNotFound {
+    /// invalid trace: `{0}`
+    InvalidTrace(String),
+    /// invalid amount: `{0}`
+    InvalidAmount(FromDecStrErr),
+    /// invalid coin: `{0}`
+    InvalidCoin(String),
+    /// missing token
+    MissingToken,
+    /// missing destination channel `{channel_id}` on port `{port_id}`
+    MissingDestinationChannel {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// base denomination is empty
-    EmptyBaseDenom,
-    /// invalid prot id n trace at position: `{pos}`, validation error: `{validation_error}`
-    InvalidTracePortId {
-        pos: u64,
-        validation_error: IdentifierError,
-    },
-    /// invalid channel id in trace at position: `{pos}`, validation error: `{validation_error}`
-    InvalidTraceChannelId {
-        pos: u64,
-        validation_error: IdentifierError,
-    },
-    /// malformed trace: `{0}`
-    MalformedTrace(String),
-    /// trace length must be even but got: `{len}`
-    InvalidTraceLength { len: u64 },
-    /// invalid amount: `{0}`
-    InvalidAmount(FromDecStrErr),
-    /// invalid token
-    InvalidToken,
-    /// expected `{expect_order}` channel, got `{got_order}`
-    ChannelNotUnordered {
-        expect_order: Order,
-        got_order: Order,
-    },
-    /// channel cannot be closed
-    CantCloseChannel,
+    /// mismatched channel orders: expected `{expected}`, actual `{actual}`
+    MismatchedChannelOrders { expected: Order, actual: Order },
+    /// mismatched port IDs: expected `{expected}`, actual `{actual}`
+    MismatchedPortIds { expected: PortId, actual: PortId },
     /// failed to deserialize packet data
-    PacketDataDeserialization,
+    FailedToDeserializePacketData,
     /// failed to deserialize acknowledgement
-    AckDeserialization,
-    /// receive is not enabled
-    ReceiveDisabled { reason: String },
-    /// send is not enabled
-    SendDisabled { reason: String },
-    /// failed to parse as AccountId
-    ParseAccountFailure,
-    /// invalid port: `{port_id}`, expected `{exp_port_id}`
-    InvalidPort {
-        port_id: PortId,
-        exp_port_id: PortId,
-    },
-    /// decoding raw msg error: `{reason}`
-    DecodeRawMsg { reason: String },
-    /// unknown msg type: `{msg_type}`
-    UnknownMsgType { msg_type: String },
-    /// invalid coin string: `{coin}`
-    InvalidCoin { coin: String },
-    /// decoding raw bytes as UTF-8 string error: `{0}`
-    Utf8Decode(Utf8Error),
-    /// other error: `{0}`
-    Other(String),
+    FailedToDeserializeAck,
+    // TODO(seanchen1991): Used in basecoin; this variant should be moved
+    // to a host-relevant error
+    /// failed to parse account ID
+    FailedToParseAccount,
+    /// failed to decode raw msg: `{description}`
+    FailedToDecodeRawMsg { description: String },
+    /// channel cannot be closed
+    UnsupportedClosedChannel,
+    /// empty base denomination
+    EmptyBaseDenom,
+    /// unknown msg type: `{0}`
+    UnknownMsgType(String),
 }
 
 #[cfg(feature = "std")]
@@ -86,17 +56,8 @@ impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::InvalidIdentifier(e)
-            | Self::InvalidTracePortId {
-                validation_error: e,
-                ..
-            }
-            | Self::InvalidTraceChannelId {
-                validation_error: e,
-                ..
-            } => Some(e),
+            Self::InvalidIdentifier(e) => Some(e),
             Self::InvalidAmount(e) => Some(e),
-            Self::Utf8Decode(e) => Some(e),
             _ => None,
         }
     }

@@ -91,7 +91,7 @@ impl PacketData {
     /// Performs the basic validation of the packet data fields.
     pub fn validate_basic(&self) -> Result<(), NftTransferError> {
         if self.token_ids.0.is_empty() {
-            return Err(NftTransferError::NoTokenId);
+            return Err(NftTransferError::EmptyTokenId);
         }
         let num = self.token_ids.0.len();
         let num_uri = self
@@ -105,7 +105,10 @@ impl PacketData {
             .map(|t| t.len())
             .unwrap_or_default();
         if (num_uri != 0 && num_uri != num) || (num_data != 0 && num_data != num) {
-            return Err(NftTransferError::TokenMismatched);
+            return Err(NftTransferError::MismatchedNumberOfTokenIds {
+                actual: num,
+                expected: num_uri,
+            });
         }
         Ok(())
     }
@@ -125,9 +128,13 @@ impl TryFrom<RawPacketData> for PacketData {
         } else {
             let decoded = BASE64_STANDARD
                 .decode(raw_pkt_data.class_data)
-                .map_err(|_| NftTransferError::InvalidJsonData)?;
+                .map_err(|e| NftTransferError::InvalidJsonData {
+                    description: e.to_string(),
+                })?;
             let data_str =
-                String::from_utf8(decoded).map_err(|_| NftTransferError::InvalidJsonData)?;
+                String::from_utf8(decoded).map_err(|e| NftTransferError::InvalidJsonData {
+                    description: e.to_string(),
+                })?;
             Some(data_str.parse()?)
         };
 
@@ -138,11 +145,15 @@ impl TryFrom<RawPacketData> for PacketData {
             .token_data
             .iter()
             .map(|data| {
-                let decoded = BASE64_STANDARD
-                    .decode(data)
-                    .map_err(|_| NftTransferError::InvalidJsonData)?;
+                let decoded = BASE64_STANDARD.decode(data).map_err(|e| {
+                    NftTransferError::InvalidJsonData {
+                        description: e.to_string(),
+                    }
+                })?;
                 let data_str =
-                    String::from_utf8(decoded).map_err(|_| NftTransferError::InvalidJsonData)?;
+                    String::from_utf8(decoded).map_err(|e| NftTransferError::InvalidJsonData {
+                        description: e.to_string(),
+                    })?;
                 data_str.parse()
             })
             .collect();

@@ -45,7 +45,7 @@ impl FromStr for TokenId {
 
     fn from_str(token_id: &str) -> Result<Self, Self::Err> {
         if token_id.trim().is_empty() {
-            Err(NftTransferError::InvalidTokenId)
+            Err(NftTransferError::EmptyTokenId)
         } else {
             Ok(Self(token_id.to_string()))
         }
@@ -94,15 +94,22 @@ impl TryFrom<Vec<String>> for TokenIds {
 
     fn try_from(token_ids: Vec<String>) -> Result<Self, Self::Error> {
         if token_ids.is_empty() {
-            return Err(NftTransferError::NoTokenId);
+            return Err(NftTransferError::EmptyTokenId);
         }
+
         let ids: Result<Vec<TokenId>, _> = token_ids.iter().map(|t| t.parse()).collect();
         let mut ids = ids?;
+
         ids.sort();
         ids.dedup();
+
         if ids.len() != token_ids.len() {
-            return Err(NftTransferError::DuplicatedTokenIds);
+            return Err(NftTransferError::MismatchedNumberOfTokenIds {
+                expected: token_ids.len(),
+                actual: ids.len(),
+            });
         }
+
         Ok(Self(ids))
     }
 }
@@ -175,10 +182,7 @@ impl FromStr for TokenUri {
     fn from_str(token_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(token_uri) {
             Ok(uri) => Ok(Self(uri)),
-            Err(err) => Err(NftTransferError::InvalidUri {
-                uri: token_uri.to_string(),
-                validation_error: err,
-            }),
+            Err(err) => Err(NftTransferError::InvalidUri(err)),
         }
     }
 }

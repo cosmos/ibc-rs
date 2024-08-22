@@ -69,9 +69,9 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
             packet_data: PacketData {
                 token: raw_msg
                     .token
-                    .ok_or(TokenTransferError::InvalidToken)?
+                    .ok_or(TokenTransferError::MissingToken)?
                     .try_into()
-                    .map_err(|_| TokenTransferError::InvalidToken)?,
+                    .map_err(|_| TokenTransferError::MissingToken)?,
                 sender: raw_msg.sender.into(),
                 receiver: raw_msg.receiver.into(),
                 memo: raw_msg.memo.into(),
@@ -104,14 +104,12 @@ impl TryFrom<Any> for MsgTransfer {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
-            TYPE_URL => {
-                MsgTransfer::decode_vec(&raw.value).map_err(|e| TokenTransferError::DecodeRawMsg {
-                    reason: e.to_string(),
-                })
-            }
-            _ => Err(TokenTransferError::UnknownMsgType {
-                msg_type: raw.type_url,
+            TYPE_URL => MsgTransfer::decode_vec(&raw.value).map_err(|e| {
+                TokenTransferError::FailedToDecodeRawMsg {
+                    description: e.to_string(),
+                }
             }),
+            _ => Err(TokenTransferError::UnknownMsgType(raw.type_url)),
         }
     }
 }
