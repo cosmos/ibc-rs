@@ -72,6 +72,8 @@ pub enum ChannelError {
 
 #[derive(Debug, Display)]
 pub enum PacketError {
+    /// application module error: `{description}`
+    AppModule { description: String },
     /// channel error: `{0}`
     Channel(ChannelError),
     /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`

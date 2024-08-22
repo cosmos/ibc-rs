@@ -134,8 +134,18 @@ pub enum UpgradeClientError {
     InvalidUpgradePlan { description: String },
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
+    /// missing upgraded client state
+    MissingUpgradedClientState,
+    /// missing upgraded consensus state
+    MissingUpgradedConsensusState,
     /// failed to decode raw upgrade plan: `{description}`
     FailedToDecodeRawUpgradePlan { description: String },
+    /// failed to store upgrade plan: `{description}`
+    FailedToStoreUpgradePlan { description: String },
+    /// failed to store upgraded client state: `{description}`
+    FailedToStoreUpgradedClientState { description: String },
+    /// failed to store upgraded consensus state: `{description}`
+    FailedToStoreUpgradedConsensusState { description: String },
     /// insufficient upgrade client height `{upgraded_height}`; must be greater than current client height `{client_height}`
     InsufficientUpgradeHeight {
         upgraded_height: Height,
