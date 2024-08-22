@@ -482,7 +482,7 @@ where
     /// Used in testing the Ics18 algorithms, hence this may return an Ics18Error.
     pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
         self.dispatch(msg)
-            .map_err(RelayerError::TransactionFailed)?;
+            .map_err(RelayerError::FailedToProcessTransaction)?;
         // Create a new block.
         self.advance_block_height();
         Ok(())
