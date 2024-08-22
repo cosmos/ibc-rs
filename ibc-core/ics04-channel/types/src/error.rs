@@ -108,6 +108,8 @@ pub enum PacketError {
     InvalidTimeoutTimestamp(TimestampError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
+    /// invalid path prefix: `{0}`
+    InvalidPathPrefix(String),
     /// empty acknowledgment not allowed
     EmptyAcknowledgment,
     /// empty acknowledgment status not allowed
