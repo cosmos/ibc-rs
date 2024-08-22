@@ -47,7 +47,7 @@ where
     let proof = ibc_ctx
         .get_proof(proof_height, &Path::ChannelEnd(channel_end_path.clone()))
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for channel end path {channel_end_path:?}"
             ))
         })?;
@@ -119,7 +119,7 @@ where
         .first()
         .map(|connection_id| ibc_ctx.connection_end(connection_id))
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Channel {} does not have a connection",
                 request.channel_id
             ))
@@ -140,7 +140,7 @@ where
             &Path::ClientState(ClientStatePath::new(connection_end.client_id().clone())),
         )
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for client state path: {:?}",
                 connection_end.client_id()
             ))
@@ -172,7 +172,7 @@ where
         .first()
         .map(|connection_id| ibc_ctx.connection_end(connection_id))
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Channel {} does not have a connection",
                 request.channel_id
             ))
@@ -198,7 +198,7 @@ where
             &Path::ClientConsensusState(consensus_path.clone()),
         )
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for client consensus state path: {consensus_path:?}"
             ))
         })?;
@@ -233,7 +233,7 @@ where
     let proof = ibc_ctx
         .get_proof(proof_height, &Path::Commitment(commitment_path.clone()))
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for packet commitment path: {commitment_path:?}"
             ))
         })?;
@@ -291,7 +291,7 @@ where
     let proof = ibc_ctx
         .get_proof(proof_height, &Path::Receipt(receipt_path.clone()))
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for packet receipt path: {receipt_path:?}"
             ))
         })?;
@@ -325,7 +325,7 @@ where
     let proof = ibc_ctx
         .get_proof(proof_height, &Path::Ack(acknowledgement_path.clone()))
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for packet acknowledgement path: {acknowledgement_path:?}"
             ))
         })?;
@@ -431,7 +431,7 @@ where
     let proof = ibc_ctx
         .get_proof(proof_height, &Path::SeqSend(next_seq_send_path))
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Next sequence send proof not found for channel {}",
                 request.channel_id
             ))
@@ -464,7 +464,7 @@ where
     let proof = ibc_ctx
         .get_proof(proof_height, &Path::SeqRecv(next_seq_recv_path))
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Next sequence receive proof not found for channel {}",
                 request.channel_id
             ))
