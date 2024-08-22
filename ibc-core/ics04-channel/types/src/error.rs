@@ -39,8 +39,8 @@ pub enum ChannelError {
     MissingProofHeight,
     /// missing counterparty
     MissingCounterparty,
-    /// missing channel end
-    MissingChannelEnd,
+    /// missing channel end in raw message
+    MissingRawChannelEnd,
     /// missing channel counter
     MissingCounter,
     /// unsupported channel upgrade sequence

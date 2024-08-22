@@ -55,7 +55,7 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
     fn try_from(raw_msg: RawMsgChannelOpenTry) -> Result<Self, Self::Error> {
         let chan_end_on_b: ChannelEnd = raw_msg
             .channel
-            .ok_or(ChannelError::MissingChannelEnd)?
+            .ok_or(ChannelError::MissingRawChannelEnd)?
             .try_into()?;
 
         chan_end_on_b.verify_state_matches(&State::TryOpen)?;

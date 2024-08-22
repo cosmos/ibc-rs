@@ -147,7 +147,10 @@ where
                 StoreHeight::Pending,
                 &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
             )
-            .ok_or(ChannelError::MissingChannelEnd)?)
+            .ok_or(ChannelError::NonexistentChannel {
+                port_id: channel_end_path.0.clone(),
+                channel_id: channel_end_path.1.clone(),
+            })?)
     }
 
     fn get_next_sequence_send(
