@@ -47,9 +47,8 @@ where
 
     ctx_b.validate_self_client(client_state_of_b_on_a)?;
 
-    let host_height = ctx_b
-        .host_height()
-        .map_err(|_| ConnectionError::MissingHostHeight)?;
+    let host_height = ctx_b.host_height()?;
+
     if msg.consensus_height_of_b_on_a > host_height {
         // Fail if the consensus height is too advanced.
         return Err(ConnectionError::InsufficientConsensusHeight {
