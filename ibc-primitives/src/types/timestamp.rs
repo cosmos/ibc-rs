@@ -311,6 +311,18 @@ impl std::error::Error for TimestampError {
     }
 }
 
+#[cfg(feature = "arbitrary")]
+fn arb_tendermint_time(
+    u: &mut arbitrary::Unstructured<'_>,
+) -> arbitrary::Result<PrimitiveDateTime> {
+    let secs: u64 = u.int_in_range(0..=u64::MAX)?;
+    let nanos: u32 = u.int_in_range(0..=999_999_999)?;
+    let total_nanos = secs as i128 * 1_000_000_000 + nanos as i128;
+    let odt = OffsetDateTime::from_unix_timestamp_nanos(total_nanos)
+        .map_err(|_| arbitrary::Error::IncorrectFormat)?;
+    Ok(PrimitiveDateTime::new(odt.date(), odt.time()))
+}
+
 #[cfg(test)]
 mod tests {
     use core::time::Duration;
@@ -436,18 +448,4 @@ mod tests {
         let encode_timestamp = timestamp.encode();
         let _ = Timestamp::decode(&mut encode_timestamp.as_slice()).unwrap();
     }
-}
-
-#[cfg(feature = "arbitrary")]
-fn arb_tendermint_time(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<Option<Time>> {
-    Ok(if <bool as arbitrary::Arbitrary>::arbitrary(u)? {
-        let secs: i64 = u.int_in_range(0..=i64::MAX)?;
-        let nanos: u32 = u.int_in_range(0..=999_999_999)?;
-        Some(
-            Time::from_unix_timestamp(secs, nanos)
-                .map_err(|_| arbitrary::Error::IncorrectFormat)?,
-        )
-    } else {
-        None
-    })
 }
