@@ -9,7 +9,7 @@ use ibc_proto::Protobuf;
 use tendermint::crypto::Sha256;
 use tendermint::merkle::MerkleHash;
 
-use crate::error::Error;
+use crate::error::TendermintClientError;
 use crate::header::Header;
 
 pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
@@ -44,20 +44,22 @@ impl Misbehaviour {
         &self.header2
     }
 
-    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(&self) -> Result<(), Error> {
+    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(
+        &self,
+    ) -> Result<(), TendermintClientError> {
         self.header1.validate_basic::<H>()?;
         self.header2.validate_basic::<H>()?;
 
         if self.header1.signed_header.header.chain_id != self.header2.signed_header.header.chain_id
         {
-            return Err(Error::InvalidRawMisbehaviour {
-                reason: "headers must have identical chain_ids".to_owned(),
+            return Err(TendermintClientError::InvalidRawMisbehaviour {
+                description: "headers must have identical chain_ids".to_owned(),
             });
         }
 
         if self.header1.height() < self.header2.height() {
-            return Err(Error::InvalidRawMisbehaviour {
-                reason: format!(
+            return Err(TendermintClientError::InvalidRawMisbehaviour {
+                description: format!(
                     "header1 height is less than header2 height ({} < {})",
                     self.header1.height(),
                     self.header2.height()
@@ -72,22 +74,22 @@ impl Misbehaviour {
 impl Protobuf<RawMisbehaviour> for Misbehaviour {}
 
 impl TryFrom<RawMisbehaviour> for Misbehaviour {
-    type Error = Error;
+    type Error = TendermintClientError;
     #[allow(deprecated)]
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
         let client_id = raw.client_id.parse()?;
 
         let header1: Header = raw
             .header_1
-            .ok_or_else(|| Error::InvalidRawMisbehaviour {
-                reason: "missing header1".into(),
+            .ok_or_else(|| TendermintClientError::InvalidRawMisbehaviour {
+                description: "missing header1".into(),
             })?
             .try_into()?;
 
         let header2: Header = raw
             .header_2
-            .ok_or_else(|| Error::InvalidRawMisbehaviour {
-                reason: "missing header2".into(),
+            .ok_or_else(|| TendermintClientError::InvalidRawMisbehaviour {
+                description: "missing header2".into(),
             })?
             .try_into()?;
 
@@ -121,9 +123,7 @@ impl TryFrom<Any> for Misbehaviour {
         }
         match raw.type_url.as_str() {
             TENDERMINT_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
-            _ => Err(ClientError::UnknownMisbehaviourType {
-                misbehaviour_type: raw.type_url,
-            }),
+            _ => Err(ClientError::InvalidMisbehaviourType(raw.type_url)),
         }
     }
 }

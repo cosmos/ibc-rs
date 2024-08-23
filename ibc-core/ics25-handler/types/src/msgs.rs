@@ -47,7 +47,7 @@ impl TryFrom<Any> for MsgEnvelope {
                 // Pop out the message and then wrap it in the corresponding type.
                 let domain_msg = MsgCreateClient::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Client(ClientMsg::CreateClient(domain_msg)))
@@ -55,7 +55,7 @@ impl TryFrom<Any> for MsgEnvelope {
             UPDATE_CLIENT_TYPE_URL => {
                 let domain_msg = MsgUpdateClient::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Client(ClientMsg::UpdateClient(domain_msg)))
@@ -63,7 +63,7 @@ impl TryFrom<Any> for MsgEnvelope {
             UPGRADE_CLIENT_TYPE_URL => {
                 let domain_msg = MsgUpgradeClient::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Client(ClientMsg::UpgradeClient(domain_msg)))
@@ -72,7 +72,7 @@ impl TryFrom<Any> for MsgEnvelope {
                 let domain_msg =
                     MsgSubmitMisbehaviour::decode_vec(&any_msg.value).map_err(|e| {
                         RouterError::MalformedMessageBytes {
-                            reason: e.to_string(),
+                            description: e.to_string(),
                         }
                     })?;
                 Ok(MsgEnvelope::Client(ClientMsg::Misbehaviour(domain_msg)))
@@ -83,7 +83,7 @@ impl TryFrom<Any> for MsgEnvelope {
                 let domain_msg =
                     MsgConnectionOpenInit::decode_vec(&any_msg.value).map_err(|e| {
                         RouterError::MalformedMessageBytes {
-                            reason: e.to_string(),
+                            description: e.to_string(),
                         }
                     })?;
                 Ok(MsgEnvelope::Connection(ConnectionMsg::OpenInit(domain_msg)))
@@ -91,7 +91,7 @@ impl TryFrom<Any> for MsgEnvelope {
             CONN_OPEN_TRY_TYPE_URL => {
                 let domain_msg = MsgConnectionOpenTry::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Connection(ConnectionMsg::OpenTry(domain_msg)))
@@ -99,7 +99,7 @@ impl TryFrom<Any> for MsgEnvelope {
             CONN_OPEN_ACK_TYPE_URL => {
                 let domain_msg = MsgConnectionOpenAck::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Connection(ConnectionMsg::OpenAck(domain_msg)))
@@ -108,7 +108,7 @@ impl TryFrom<Any> for MsgEnvelope {
                 let domain_msg =
                     MsgConnectionOpenConfirm::decode_vec(&any_msg.value).map_err(|e| {
                         RouterError::MalformedMessageBytes {
-                            reason: e.to_string(),
+                            description: e.to_string(),
                         }
                     })?;
                 Ok(MsgEnvelope::Connection(ConnectionMsg::OpenConfirm(
@@ -120,7 +120,7 @@ impl TryFrom<Any> for MsgEnvelope {
             CHAN_OPEN_INIT_TYPE_URL => {
                 let domain_msg = MsgChannelOpenInit::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Channel(ChannelMsg::OpenInit(domain_msg)))
@@ -128,7 +128,7 @@ impl TryFrom<Any> for MsgEnvelope {
             CHAN_OPEN_TRY_TYPE_URL => {
                 let domain_msg = MsgChannelOpenTry::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Channel(ChannelMsg::OpenTry(domain_msg)))
@@ -136,7 +136,7 @@ impl TryFrom<Any> for MsgEnvelope {
             CHAN_OPEN_ACK_TYPE_URL => {
                 let domain_msg = MsgChannelOpenAck::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Channel(ChannelMsg::OpenAck(domain_msg)))
@@ -145,7 +145,7 @@ impl TryFrom<Any> for MsgEnvelope {
                 let domain_msg =
                     MsgChannelOpenConfirm::decode_vec(&any_msg.value).map_err(|e| {
                         RouterError::MalformedMessageBytes {
-                            reason: e.to_string(),
+                            description: e.to_string(),
                         }
                     })?;
                 Ok(MsgEnvelope::Channel(ChannelMsg::OpenConfirm(domain_msg)))
@@ -153,7 +153,7 @@ impl TryFrom<Any> for MsgEnvelope {
             CHAN_CLOSE_INIT_TYPE_URL => {
                 let domain_msg = MsgChannelCloseInit::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Channel(ChannelMsg::CloseInit(domain_msg)))
@@ -162,7 +162,7 @@ impl TryFrom<Any> for MsgEnvelope {
                 let domain_msg =
                     MsgChannelCloseConfirm::decode_vec(&any_msg.value).map_err(|e| {
                         RouterError::MalformedMessageBytes {
-                            reason: e.to_string(),
+                            description: e.to_string(),
                         }
                     })?;
                 Ok(MsgEnvelope::Channel(ChannelMsg::CloseConfirm(domain_msg)))
@@ -171,7 +171,7 @@ impl TryFrom<Any> for MsgEnvelope {
             RECV_PACKET_TYPE_URL => {
                 let domain_msg = MsgRecvPacket::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Packet(PacketMsg::Recv(domain_msg)))
@@ -179,7 +179,7 @@ impl TryFrom<Any> for MsgEnvelope {
             ACKNOWLEDGEMENT_TYPE_URL => {
                 let domain_msg = MsgAcknowledgement::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Packet(PacketMsg::Ack(domain_msg)))
@@ -187,7 +187,7 @@ impl TryFrom<Any> for MsgEnvelope {
             TIMEOUT_TYPE_URL => {
                 let domain_msg = MsgTimeout::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Packet(PacketMsg::Timeout(domain_msg)))
@@ -195,14 +195,12 @@ impl TryFrom<Any> for MsgEnvelope {
             TIMEOUT_ON_CLOSE_TYPE_URL => {
                 let domain_msg = MsgTimeoutOnClose::decode_vec(&any_msg.value).map_err(|e| {
                     RouterError::MalformedMessageBytes {
-                        reason: e.to_string(),
+                        description: e.to_string(),
                     }
                 })?;
                 Ok(MsgEnvelope::Packet(PacketMsg::TimeoutOnClose(domain_msg)))
             }
-            _ => Err(RouterError::UnknownMessageTypeUrl {
-                url: any_msg.type_url,
-            }),
+            _ => Err(RouterError::UnknownMessageTypeUrl(any_msg.type_url)),
         }
     }
 }

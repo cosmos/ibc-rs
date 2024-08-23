@@ -168,9 +168,12 @@ where
         &msg.packet.timeout_height_on_b,
         &msg.packet.timeout_timestamp_on_b,
     );
+
     if commitment_on_a != expected_commitment_on_a {
-        return Err(PacketError::IncorrectPacketCommitment {
+        return Err(PacketError::MismatchedPacketCommitments {
             sequence: msg.packet.seq_on_a,
+            expected: expected_commitment_on_a,
+            actual: commitment_on_a,
         }
         .into());
     }
@@ -212,9 +215,9 @@ where
         let next_seq_recv_verification_result = match chan_end_on_a.ordering {
             Order::Ordered => {
                 if msg.packet.seq_on_a < msg.next_seq_recv_on_b {
-                    return Err(PacketError::InvalidPacketSequence {
-                        given_sequence: msg.packet.seq_on_a,
-                        next_sequence: msg.next_seq_recv_on_b,
+                    return Err(PacketError::MismatchedPacketSequences {
+                        actual: msg.packet.seq_on_a,
+                        expected: msg.next_seq_recv_on_b,
                     }
                     .into());
                 }
@@ -251,12 +254,10 @@ where
             }
         };
 
-        next_seq_recv_verification_result
-            .map_err(|e| ChannelError::PacketVerificationFailed {
-                sequence: msg.next_seq_recv_on_b,
-                client_error: e,
-            })
-            .map_err(PacketError::Channel)?;
+        next_seq_recv_verification_result.map_err(|e| ChannelError::FailedPacketVerification {
+            sequence: msg.next_seq_recv_on_b,
+            client_error: e,
+        })?;
     }
 
     Ok(())

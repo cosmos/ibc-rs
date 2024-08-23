@@ -97,12 +97,10 @@ impl TryFrom<Any> for MockHeader {
         match raw.type_url.as_str() {
             MOCK_HEADER_TYPE_URL => Ok(Protobuf::<RawMockHeader>::decode_vec(&raw.value).map_err(
                 |e| ClientError::InvalidRawHeader {
-                    reason: e.to_string(),
+                    description: e.to_string(),
                 },
             )?),
-            _ => Err(ClientError::UnknownHeaderType {
-                header_type: raw.type_url,
-            }),
+            _ => Err(ClientError::InvalidHeaderType(raw.type_url)),
         }
     }
 }

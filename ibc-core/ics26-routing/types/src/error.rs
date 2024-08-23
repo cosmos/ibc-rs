@@ -5,14 +5,14 @@ use ibc_primitives::prelude::*;
 /// Error type for the router module.
 #[derive(Debug, Display)]
 pub enum RouterError {
-    /// unknown type URL `{url}`
-    UnknownMessageTypeUrl { url: String },
-    /// the message is malformed and cannot be decoded error: `{reason}`
-    MalformedMessageBytes { reason: String },
-    /// port `{port_id}` is unknown
-    UnknownPort { port_id: PortId },
-    /// module not found
-    ModuleNotFound,
+    /// malformed message that could not be decoded: `{description}`
+    MalformedMessageBytes { description: String },
+    /// missing module
+    MissingModule,
+    /// unknown message type URL `{0}`
+    UnknownMessageTypeUrl(String),
+    /// unknown port `{0}`
+    UnknownPort(PortId),
 }
 
 #[cfg(feature = "std")]

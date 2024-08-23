@@ -64,8 +64,8 @@ where
         ctx.emit_ibc_event(event)?;
     } else {
         if !matches!(update_kind, UpdateKind::UpdateClient) {
-            return Err(ClientError::MisbehaviourHandlingFailure {
-                reason: "misbehaviour submitted, but none found".to_string(),
+            return Err(ClientError::FailedMisbehaviourHandling {
+                description: "misbehaviour submitted, but none found".to_string(),
             }
             .into());
         }

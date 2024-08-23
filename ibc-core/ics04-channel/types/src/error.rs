@@ -3,173 +3,132 @@
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
-use ibc_core_connection_types::error as connection_error;
 use ibc_core_host_types::error::IdentifierError;
-use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
+use ibc_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
 
 use super::channel::Counterparty;
 use super::timeout::TimeoutHeight;
-use crate::channel::State;
+use crate::commitment::PacketCommitment;
 use crate::timeout::TimeoutTimestamp;
 use crate::Version;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
-    /// invalid channel end: `{channel_end}`
-    InvalidChannelEnd { channel_end: String },
+    /// application module error: `{description}`
+    AppModule { description: String },
+    /// identifier error: `{0}`
+    InvalidIdentifier(IdentifierError),
     /// invalid channel id: expected `{expected}`, actual `{actual}`
     InvalidChannelId { expected: String, actual: String },
     /// invalid channel state: expected `{expected}`, actual `{actual}`
     InvalidState { expected: String, actual: String },
     /// invalid channel order type: expected `{expected}`, actual `{actual}`
     InvalidOrderType { expected: String, actual: String },
-    /// invalid connection hops length: expected `{expected}`; actual `{actual}`
+    /// invalid connection hops length: expected `{expected}`, actual `{actual}`
     InvalidConnectionHopsLength { expected: u64, actual: u64 },
-    /// invalid signer error: `{reason}`
-    InvalidSigner { reason: String },
-    /// invalid proof: missing height
-    MissingHeight,
-    /// packet data bytes must be valid UTF-8 (this restriction will be lifted in the future)
-    NonUtf8PacketData,
-    /// missing counterparty
-    MissingCounterparty,
-    /// unsupported channel upgrade sequence
-    UnsupportedChannelUpgradeSequence,
-    /// version not supported: expected `{expected}`, actual `{actual}`
-    VersionNotSupported { expected: Version, actual: Version },
-    /// missing channel end
-    MissingChannel,
-    /// the channel end (`{port_id}`, `{channel_id}`) does not exist
-    ChannelNotFound {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
-    /// Verification fails for the packet with the sequence number `{sequence}`, error: `{client_error}`
-    PacketVerificationFailed {
-        sequence: Sequence,
-        client_error: ClientError,
-    },
-    /// Error verifying channel state error: `{0}`
-    VerifyChannelFailed(ClientError),
-    /// String `{value}` cannot be converted to packet sequence, error: `{error}`
-    InvalidStringAsSequence {
-        value: String,
-        error: core::num::ParseIntError,
-    },
-    /// invalid channel counterparty: expected `{expected}`, actual `{actual}`
+    /// invalid counterparty: expected `{expected}`, actual `{actual}`
     InvalidCounterparty {
         expected: Counterparty,
         actual: Counterparty,
     },
-    /// application module error: `{description}`
-    AppModule { description: String },
-    /// Undefined counterparty connection for `{connection_id}`
-    UndefinedConnectionCounterparty { connection_id: ConnectionId },
-    /// invalid proof: empty proof
-    InvalidProof,
-    /// identifier error: `{0}`
-    InvalidIdentifier(IdentifierError),
-    /// channel counter overflow error
-    CounterOverflow,
-    /// other error: `{description}`
-    Other { description: String },
+    /// missing proof
+    MissingProof,
+    /// missing proof height
+    MissingProofHeight,
+    /// missing counterparty
+    MissingCounterparty,
+    /// missing channel end in raw message
+    MissingRawChannelEnd,
+    /// missing channel counter
+    MissingCounter,
+    /// unsupported channel upgrade sequence
+    UnsupportedChannelUpgradeSequence,
+    /// unsupported version: expected `{expected}`, actual `{actual}`
+    UnsupportedVersion { expected: Version, actual: Version },
+    /// non-existent channel end: (`{port_id}`, `{channel_id}`)
+    NonexistentChannel {
+        port_id: PortId,
+        channel_id: ChannelId,
+    },
+    /// packet data bytes must be valid UTF-8
+    NonUtf8PacketData,
+    /// failed packet verification for packet with sequence `{sequence}`: `{client_error}`
+    FailedPacketVerification {
+        sequence: Sequence,
+        client_error: ClientError,
+    },
+    /// failed proof verification: `{0}`
+    FailedProofVerification(ClientError),
+
+    // TODO(seanchen1991): These two variants should be encoded by host-relevant error types
+    // once those have been defined.
+    /// failed to update counter: `{description}`
+    FailedToUpdateCounter { description: String },
+    /// failed to store channel: `{description}`
+    FailedToStoreChannel { description: String },
 }
 
 #[derive(Debug, Display)]
 pub enum PacketError {
-    /// connection error: `{0}`
-    Connection(connection_error::ConnectionError),
+    /// application module error: `{description}`
+    AppModule { description: String },
     /// channel error: `{0}`
     Channel(ChannelError),
-    /// Receiving chain block height `{chain_height}` >= packet timeout height `{timeout_height}`
-    LowPacketHeight {
+    /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
+    InsufficientPacketHeight {
         chain_height: Height,
         timeout_height: TimeoutHeight,
     },
-    /// Receiving chain block timestamp >= packet timeout timestamp
-    LowPacketTimestamp,
-    /// Invalid packet sequence `{given_sequence}` ≠ next send sequence `{next_sequence}`
-    InvalidPacketSequence {
-        given_sequence: Sequence,
-        next_sequence: Sequence,
+    /// insufficient packet timestamp: should be greater than chain block timestamp
+    InsufficientPacketTimestamp,
+    /// mismatched packet sequences: expected `{expected}`, actual `{actual}`
+    MismatchedPacketSequences {
+        expected: Sequence,
+        actual: Sequence,
     },
-    /// Channel `{channel_id}` should not be state `{state}`
-    InvalidChannelState { channel_id: ChannelId, state: State },
-    /// the associated connection `{connection_id}` is not OPEN
-    ConnectionNotOpen { connection_id: ConnectionId },
-    /// Receipt for the packet `{sequence}` not found
-    PacketReceiptNotFound { sequence: Sequence },
-    /// The stored commitment of the packet `{sequence}` is incorrect
-    IncorrectPacketCommitment { sequence: Sequence },
-    /// implementation-specific error
-    ImplementationSpecific,
-    /// Undefined counterparty connection for `{connection_id}`
-    UndefinedConnectionCounterparty { connection_id: ConnectionId },
-    /// invalid proof: empty proof
-    InvalidProof,
-    /// Packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
+    /// mismatched commitments for packet `{sequence}`: expected `{expected:?}`, actual `{actual:?}`
+    MismatchedPacketCommitments {
+        sequence: Sequence,
+        expected: PacketCommitment,
+        actual: PacketCommitment,
+    },
+    /// missing packet receipt for packet `{0}`
+    MissingPacketReceipt(Sequence),
+    /// missing proof
+    MissingProof,
+    /// missing acknowledgment for packet `{0}`
+    MissingPacketAcknowledgment(Sequence),
+    /// missing proof height
+    MissingProofHeight,
+    /// missing timeout
+    MissingTimeout,
+    /// invalid timeout height: `{0}`
+    InvalidTimeoutHeight(ClientError),
+    /// invalid timeout timestamp: `{0}`
+    InvalidTimeoutTimestamp(TimestampError),
+    /// invalid identifier: `{0}`
+    InvalidIdentifier(IdentifierError),
+    /// empty acknowledgment not allowed
+    EmptyAcknowledgment,
+    /// empty acknowledgment status not allowed
+    EmptyAcknowledgmentStatus,
+    /// packet data bytes cannot be empty
+    EmptyPacketData,
+    /// packet acknowledgment for sequence `{0}` already exists
+    DuplicateAcknowledgment(Sequence),
+    /// packet sequence cannot be 0
+    ZeroPacketSequence,
+    /// packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
     PacketTimeoutNotReached {
         timeout_height: TimeoutHeight,
         chain_height: Height,
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
-    /// Packet acknowledgement exists for the packet with the sequence `{sequence}`
-    AcknowledgementExists { sequence: Sequence },
-    /// Acknowledgment cannot be empty
-    InvalidAcknowledgement,
-    /// Acknowledgment status cannot be empty
-    EmptyAcknowledgementStatus,
-    /// Acknowledgment for the packet `{sequence}` not found
-    PacketAcknowledgementNotFound { sequence: Sequence },
-    /// invalid proof: missing height
-    MissingHeight,
-    /// there is no packet in this message
-    MissingPacket,
-    /// invalid signer error: `{reason}`
-    InvalidSigner { reason: String },
-    /// application module error: `{description}`
-    AppModule { description: String },
-    /// route not found
-    RouteNotFound,
-    /// packet sequence cannot be 0
-    ZeroPacketSequence,
-    /// packet data bytes cannot be empty
-    ZeroPacketData,
-    /// invalid timeout height with error: `{0}`
-    InvalidTimeoutHeight(ClientError),
-    /// Invalid timeout timestamp with error: `{0}`
-    InvalidTimeoutTimestamp(TimestampError),
-    /// missing timeout
-    MissingTimeout,
-    /// invalid identifier error: `{0}`
-    InvalidIdentifier(IdentifierError),
-    /// Missing sequence number for sending packets on port `{port_id}` and channel `{channel_id}`
-    MissingNextSendSeq {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
-    /// the channel end (`{port_id}`, `{channel_id}`) does not exist
-    ChannelNotFound {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
-    /// Commitment for the packet `{sequence}` not found
-    PacketCommitmentNotFound { sequence: Sequence },
-    /// Missing sequence number for receiving packets on port `{port_id}` and channel `{channel_id}`
-    MissingNextRecvSeq {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
-    /// Missing sequence number for ack packets on port `{port_id}` and channel `{channel_id}`
-    MissingNextAckSeq {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
-    /// other error: `{description}`
-    Other { description: String },
+    /// implementation-specific error
+    ImplementationSpecific,
 }
 
 impl From<IdentifierError> for ChannelError {
@@ -194,7 +153,6 @@ impl From<TimestampError> for PacketError {
 impl std::error::Error for PacketError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::Connection(e) => Some(e),
             Self::Channel(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
             _ => None,
@@ -207,10 +165,9 @@ impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::InvalidIdentifier(e) => Some(e),
-            Self::PacketVerificationFailed {
+            Self::FailedPacketVerification {
                 client_error: e, ..
             } => Some(e),
-            Self::InvalidStringAsSequence { error: e, .. } => Some(e),
             _ => None,
         }
     }

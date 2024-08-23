@@ -33,21 +33,21 @@ impl TryFrom<RawPlan> for Plan {
     fn try_from(raw: RawPlan) -> Result<Self, Self::Error> {
         if raw.name.is_empty() {
             return Err(UpgradeClientError::InvalidUpgradePlan {
-                reason: "name field cannot be empty".to_string(),
+                description: "name field cannot be empty".to_string(),
             });
         }
 
         #[allow(deprecated)]
         if raw.time.is_some() {
             return Err(UpgradeClientError::InvalidUpgradePlan {
-                reason: "time field must be empty".to_string(),
+                description: "time field must be empty".to_string(),
             });
         }
 
         #[allow(deprecated)]
         if raw.upgraded_client_state.is_some() {
             return Err(UpgradeClientError::InvalidUpgradePlan {
-                reason: "upgraded_client_state field must be empty".to_string(),
+                description: "upgraded_client_state field must be empty".to_string(),
             });
         }
 
@@ -55,7 +55,7 @@ impl TryFrom<RawPlan> for Plan {
             name: raw.name,
             height: u64::try_from(raw.height).map_err(|_| {
                 UpgradeClientError::InvalidUpgradePlan {
-                    reason: "height plan overflow".to_string(),
+                    description: "height plan overflow".to_string(),
                 }
             })?,
             info: raw.info,
@@ -83,17 +83,15 @@ impl TryFrom<Any> for Plan {
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
         if any.type_url != TYPE_URL {
-            return Err(UpgradeClientError::InvalidUpgradePlan {
-                reason: format!(
-                    "type_url do not match: expected {}, got {}",
-                    TYPE_URL, any.type_url
-                ),
+            return Err(UpgradeClientError::MismatchedTypeUrls {
+                expected: TYPE_URL.to_string(),
+                actual: any.type_url,
             });
         }
 
         let plan = Protobuf::<RawPlan>::decode_vec(&any.value).map_err(|e| {
-            UpgradeClientError::InvalidUpgradePlan {
-                reason: format!("raw plan decode error: {}", e),
+            UpgradeClientError::FailedToDecodeRawUpgradePlan {
+                description: e.to_string(),
             }
         })?;
 

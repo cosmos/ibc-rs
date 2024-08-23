@@ -48,21 +48,21 @@ impl TryFrom<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {
         Ok(MsgTimeoutOnClose {
             packet: raw_msg
                 .packet
-                .ok_or(PacketError::MissingPacket)?
+                .ok_or(PacketError::EmptyPacketData)?
                 .try_into()?,
             next_seq_recv_on_b: Sequence::from(raw_msg.next_sequence_recv),
             proof_unreceived_on_b: raw_msg
                 .proof_unreceived
                 .try_into()
-                .map_err(|_| PacketError::InvalidProof)?,
+                .map_err(|_| PacketError::MissingProof)?,
             proof_close_on_b: raw_msg
                 .proof_close
                 .try_into()
-                .map_err(|_| PacketError::InvalidProof)?,
+                .map_err(|_| PacketError::MissingProof)?,
             proof_height_on_b: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(PacketError::MissingHeight)?,
+                .ok_or(PacketError::MissingProofHeight)?,
             signer: raw_msg.signer.into(),
         })
     }

@@ -6,7 +6,7 @@
 //! implementations that serve to pass through traits implemented on the wrapped
 //! `ConsensusState` type.
 
-use ibc_client_tendermint_types::error::Error;
+use ibc_client_tendermint_types::error::TendermintClientError;
 use ibc_client_tendermint_types::proto::v1::ConsensusState as RawTmConsensusState;
 use ibc_client_tendermint_types::ConsensusState as ConsensusStateType;
 use ibc_core_client::context::consensus_state::ConsensusState as ConsensusStateTrait;
@@ -52,7 +52,7 @@ impl From<ConsensusState> for ConsensusStateType {
 impl Protobuf<RawTmConsensusState> for ConsensusState {}
 
 impl TryFrom<RawTmConsensusState> for ConsensusState {
-    type Error = Error;
+    type Error = TendermintClientError;
 
     fn try_from(raw: RawTmConsensusState) -> Result<Self, Self::Error> {
         Ok(Self(ConsensusStateType::try_from(raw)?))

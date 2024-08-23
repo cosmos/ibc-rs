@@ -142,9 +142,8 @@ fn msg_upgrade_client_healthy() {
 #[test]
 fn upgrade_client_fail_nonexisting_client() {
     let fxt = msg_upgrade_client_fixture(Ctx::Default, Msg::Default);
-    let expected_err = ContextError::ClientError(ClientError::ClientStateNotFound {
-        client_id: fxt.msg.client_id.clone(),
-    });
+    let expected_err =
+        ContextError::ClientError(ClientError::MissingClientState(fxt.msg.client_id.clone()));
     upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
 }
 
@@ -152,7 +151,7 @@ fn upgrade_client_fail_nonexisting_client() {
 fn upgrade_client_fail_low_upgrade_height() {
     let fxt: Fixture<MsgUpgradeClient> =
         msg_upgrade_client_fixture(Ctx::WithClient, Msg::LowUpgradeHeight);
-    let expected_err: ClientError = UpgradeClientError::LowUpgradeHeight {
+    let expected_err: ClientError = UpgradeClientError::InsufficientUpgradeHeight {
         upgraded_height: Height::new(0, 26).unwrap(),
         client_height: fxt.ctx.host_height().unwrap(),
     }
@@ -166,8 +165,8 @@ fn upgrade_client_fail_low_upgrade_height() {
 #[test]
 fn upgrade_client_fail_unknown_upgraded_client_state() {
     let fxt = msg_upgrade_client_fixture(Ctx::WithClient, Msg::UnknownUpgradedClientStateType);
-    let expected_err = ContextError::ClientError(ClientError::UnknownClientStateType {
-        client_state_type: client_type().to_string(),
-    });
+    let expected_err = ContextError::ClientError(ClientError::InvalidClientStateType(
+        client_type().to_string(),
+    ));
     upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
 }

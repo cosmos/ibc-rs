@@ -1,21 +1,20 @@
 use displaydoc::Display;
 use ibc_primitives::prelude::*;
 
+/// Errors that arise when parsing identifiers.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
 pub enum IdentifierError {
-    /// identifier `{id}` has invalid length; must be between `{min}` and `{max}` characters
-    InvalidLength { id: String, min: u64, max: u64 },
-    /// identifier `{id}` must only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
-    InvalidCharacter { id: String },
-    /// identifier prefix `{prefix}` is invalid
-    InvalidPrefix { prefix: String },
-    /// chain identifier is not formatted with revision number
-    UnformattedRevisionNumber { chain_id: String },
-    /// revision number overflowed
-    RevisionNumberOverflow,
-    /// String `{value}` cannot be converted to packet sequence, error: `{reason}`
-    InvalidStringAsSequence { value: String, reason: String },
+    /// id `{actual}` has invalid length; must be between [`{min}`,`{max}`)
+    InvalidLength { actual: String, min: u64, max: u64 },
+    /// id `{0}` can only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
+    InvalidCharacter(String),
+    /// invalid prefix: `{0}`
+    InvalidPrefix(String),
+    /// failed to parse `{value}`: `{description}`
+    FailedToParse { value: String, description: String },
+    /// overflowed revision number
+    OverflowedRevisionNumber,
 }
 
 #[cfg(feature = "std")]

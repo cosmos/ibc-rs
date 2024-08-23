@@ -136,9 +136,7 @@ impl TryFrom<Any> for MockClientState {
         }
         match raw.type_url.as_str() {
             MOCK_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
-            _ => Err(ClientError::UnknownClientStateType {
-                client_state_type: raw.type_url,
-            }),
+            _ => Err(ClientError::InvalidClientStateType(raw.type_url)),
         }
     }
 }
@@ -171,9 +169,7 @@ impl ClientStateCommon for MockClientState {
         if consensus_state_status(&mock_consensus_state, host_timestamp, self.trusting_period)?
             .is_expired()
         {
-            return Err(ClientError::ClientNotActive {
-                status: Status::Expired,
-            });
+            return Err(ClientError::InvalidStatus(Status::Expired));
         }
 
         Ok(())
@@ -190,8 +186,8 @@ impl ClientStateCommon for MockClientState {
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
         if self.latest_height() < proof_height {
             return Err(ClientError::InvalidProofHeight {
-                latest_height: self.latest_height(),
-                proof_height,
+                actual: self.latest_height(),
+                expected: proof_height,
             });
         }
         Ok(())
@@ -212,7 +208,7 @@ impl ClientStateCommon for MockClientState {
         let upgraded_mock_client_state = Self::try_from(upgraded_client_state)?;
         MockConsensusState::try_from(upgraded_consensus_state)?;
         if self.latest_height() >= upgraded_mock_client_state.latest_height() {
-            return Err(UpgradeClientError::LowUpgradeHeight {
+            return Err(UpgradeClientError::InsufficientUpgradeHeight {
                 upgraded_height: self.latest_height(),
                 client_height: upgraded_mock_client_state.latest_height(),
             })?;
@@ -285,9 +281,7 @@ where
 
                 Ok(header_heights_equal && headers_are_in_future)
             }
-            header_type => Err(ClientError::UnknownHeaderType {
-                header_type: header_type.to_owned(),
-            }),
+            header_type => Err(ClientError::InvalidHeaderType(header_type.to_owned())),
         }
     }
 
