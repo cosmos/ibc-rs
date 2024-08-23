@@ -71,7 +71,6 @@ pub enum ConnectionError {
     FailedToVerifyConnectionState(ClientError),
     /// failed to verify consensus state: `{0}`
     FailedToVerifyConsensusState(ClientError),
-    // TODO: use a more specific error source
     /// failed to verify client state: `{0}`
     FailedToVerifyClientState(ClientError),
     /// failed to store connection IDs
