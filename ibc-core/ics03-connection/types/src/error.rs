@@ -24,7 +24,7 @@ pub enum ConnectionError {
     InvalidClientState { description: String },
     /// mismatched connection states: expected `{expected}`, actual `{actual}`
     MismatchedConnectionStates { expected: String, actual: String },
-    /// empty proto connection end; failedd to construct ConnectionEnd domain object
+    /// empty proto connection end; failed to construct ConnectionEnd domain object
     EmptyProtoConnectionEnd,
     /// empty supported versions
     EmptyVersions,
@@ -42,8 +42,6 @@ pub enum ConnectionError {
     MissingProofHeight,
     /// missing consensus height
     MissingConsensusHeight,
-    /// missing host height
-    MissingHostHeight,
     /// missing connection `{0}`
     MissingConnection(ConnectionId),
     /// missing connection counter

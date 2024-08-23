@@ -162,9 +162,7 @@ pub fn verify_consensus_state(
     let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
     if tm_consensus_state.root().is_empty() {
-        return Err(ClientError::Other {
-            description: "empty commitment root".into(),
-        });
+        Err(CommitmentError::EmptyCommitmentRoot)?;
     };
 
     if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
@@ -299,17 +297,16 @@ pub fn verify_membership<H: HostFunctionsProvider>(
     value: Vec<u8>,
 ) -> Result<(), ClientError> {
     if prefix.is_empty() {
-        return Err(ClientError::FailedICS23Verification(
-            CommitmentError::EmptyCommitmentPrefix,
-        ));
+        Err(CommitmentError::EmptyCommitmentPrefix)?;
     }
 
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
+
     let merkle_proof = MerkleProof::try_from(proof)?;
 
-    merkle_proof
-        .verify_membership::<H>(proof_specs, root.clone().into(), merkle_path, value, 0)
-        .map_err(ClientError::FailedICS23Verification)
+    merkle_proof.verify_membership::<H>(proof_specs, root.clone().into(), merkle_path, value, 0)?;
+
+    Ok(())
 }
 
 /// Verify that the given value does not belong in the client's merkle proof.
@@ -325,9 +322,10 @@ pub fn verify_non_membership<H: HostFunctionsProvider>(
     path: PathBytes,
 ) -> Result<(), ClientError> {
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
+
     let merkle_proof = MerkleProof::try_from(proof)?;
 
-    merkle_proof
-        .verify_non_membership::<H>(proof_specs, root.clone().into(), merkle_path)
-        .map_err(ClientError::FailedICS23Verification)
+    merkle_proof.verify_non_membership::<H>(proof_specs, root.clone().into(), merkle_path)?;
+
+    Ok(())
 }

@@ -116,8 +116,7 @@ where
                 Path::ChannelEnd(chan_end_path_on_b),
                 expected_chan_end_on_b.encode_vec(),
             )
-            .map_err(ChannelError::FailedProofVerification)
-            .map_err(PacketError::Channel)?;
+            .map_err(ChannelError::FailedProofVerification)?;
 
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 
@@ -163,12 +162,10 @@ where
             }
         };
 
-        next_seq_recv_verification_result
-            .map_err(|e| ChannelError::FailedPacketVerification {
-                sequence: msg.next_seq_recv_on_b,
-                client_error: e,
-            })
-            .map_err(PacketError::Channel)?;
+        next_seq_recv_verification_result.map_err(|e| ChannelError::FailedPacketVerification {
+            sequence: msg.next_seq_recv_on_b,
+            client_error: e,
+        })?;
     };
 
     Ok(())

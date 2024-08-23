@@ -37,9 +37,8 @@ where
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
-    let host_height = ctx_a
-        .host_height()
-        .map_err(|_| ConnectionError::MissingHostHeight)?;
+    let host_height = ctx_a.host_height()?;
+
     if msg.consensus_height_of_a_on_b > host_height {
         return Err(ConnectionError::InsufficientConsensusHeight {
             target_height: msg.consensus_height_of_a_on_b,
