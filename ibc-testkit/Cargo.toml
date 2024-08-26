@@ -25,7 +25,7 @@ schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
 serde-json      = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
-typed-builder   = { version = "0.19.1" }
+typed-builder   = { version = "0.20.0" }
 
 # ibc dependencies
 ibc       = { workspace = true, features = [ "std" ] }
