@@ -5,9 +5,9 @@ use core::str::FromStr;
 use http::Uri;
 pub use ibc_app_transfer_types::{TracePath, TracePrefix};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
-use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
+use ibc_core::primitives::{prelude::*, DecodingError};
 use ibc_proto::ibc::applications::nft_transfer::v1::ClassTrace as RawClassTrace;
 
 use crate::data::Data;
@@ -248,7 +248,9 @@ impl FromStr for ClassUri {
     fn from_str(class_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(class_uri) {
             Ok(uri) => Ok(Self(uri)),
-            Err(err) => Err(NftTransferError::InvalidUri(err)),
+            Err(err) => Err(NftTransferError::DecodingError(DecodingError::InvalidUri(
+                err,
+            ))),
         }
     }
 }

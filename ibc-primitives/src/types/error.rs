@@ -3,12 +3,12 @@
 use alloc::string::String;
 
 use displaydoc::Display;
+use http::uri::InvalidUri;
 
 /// Causes of decoding failures
-#[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
 pub enum DecodingError {
-    /// invalid identifier: `{0}`
+    /// invalid identifier error: `{0}`
     InvalidIdentifier(String),
     /// invalid field: `{0}`
     InvalidField(String),
@@ -16,12 +16,14 @@ pub enum DecodingError {
     InvalidJson { description: String },
     /// invalid UTF-8 data: `{description}`
     InvalidUtf8 { description: String },
+    /// invalid URI: `{0}`
+    InvalidUri(InvalidUri),
     /// missing field: `{0}`
     MissingField(String),
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
-    /// failed to decode: `{description}`
-    FailedToDecode { description: String },
+    /// failed to decode raw msg: `{description}`
+    FailedToDecodeRawMsg { description: String },
 }
 
 #[cfg(feature = "std")]
