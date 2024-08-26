@@ -6,8 +6,8 @@ use core::str::FromStr;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_core_host_types::identifiers::ChainId;
-use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
+use ibc_primitives::{prelude::*, DecodingError};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::Protobuf;
@@ -199,15 +199,20 @@ impl TryFrom<Any> for Header {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_header(value: &[u8]) -> Result<Header, ClientError> {
-            let header = Protobuf::<RawHeader>::decode(value).map_err(|e| ClientError::Other {
-                description: e.to_string(),
+        fn decode_header(value: &[u8]) -> Result<Header, DecodingError> {
+            let header = Protobuf::<RawHeader>::decode(value).map_err(|e| {
+                DecodingError::FailedToDecodeRawValue {
+                    description: e.to_string(),
+                }
             })?;
             Ok(header)
         }
         match raw.type_url.as_str() {
-            TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value),
-            _ => Err(ClientError::InvalidHeaderType(raw.type_url)),
+            TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value).map_err(ClientError::Decoding),
+            _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
+                expected: TENDERMINT_HEADER_TYPE_URL.to_string(),
+                actual: raw.type_url.to_string(),
+            })),
         }
     }
 }

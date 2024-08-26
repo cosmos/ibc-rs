@@ -7,7 +7,7 @@ use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::Timestamp;
+use ibc_primitives::{DecodingError, Timestamp};
 
 use super::status::Status;
 use crate::height::Height;
@@ -17,6 +17,8 @@ use crate::height::Height;
 pub enum ClientError {
     /// upgrade client error: `{0}`
     Upgrade(UpgradeClientError),
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// invalid client status: `{0}`
     InvalidStatus(Status),
     /// invalid trust threshold: `{numerator}`/`{denominator}`
@@ -29,6 +31,7 @@ pub enum ClientError {
     InvalidHeaderType(String),
     /// invalid update client message
     InvalidUpdateClientMessage,
+    // TODO(seanchen1991): Should this be removed in favor of DecodingError::InvalidIdentifier?
     /// invalid client identifier: `{0}`
     InvalidClientIdentifier(IdentifierError),
     /// invalid raw header: `{description}`
@@ -114,6 +117,7 @@ impl std::error::Error for ClientError {
         match &self {
             Self::InvalidClientIdentifier(e) => Some(e),
             Self::FailedICS23Verification(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
     }

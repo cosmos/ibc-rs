@@ -22,8 +22,8 @@ pub enum DecodingError {
     MissingField(String),
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
-    /// failed to decode raw msg: `{description}`
-    FailedToDecodeRawMsg { description: String },
+    /// failed to decode a raw value: `{description}`
+    FailedToDecodeRawValue { description: String },
 }
 
 #[cfg(feature = "std")]
