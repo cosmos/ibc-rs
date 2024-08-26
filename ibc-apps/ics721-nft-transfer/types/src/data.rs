@@ -6,7 +6,7 @@ use core::str::FromStr;
 use base64::prelude::BASE64_STANDARD;
 #[cfg(feature = "serde")]
 use base64::Engine;
-use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::{prelude::*, DecodingError};
 use mime::Mime;
 
 use crate::error::NftTransferError;
@@ -97,8 +97,10 @@ impl FromStr for Ics721Data {
     type Err = NftTransferError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        serde_json::from_str(s).map_err(|e| NftTransferError::InvalidJsonData {
-            description: e.to_string(),
+        serde_json::from_str(s).map_err(|e| {
+            NftTransferError::DecodingError(DecodingError::InvalidJson {
+                description: e.to_string(),
+            })
         })
     }
 }
