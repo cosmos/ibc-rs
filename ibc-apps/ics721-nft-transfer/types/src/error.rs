@@ -17,10 +17,6 @@ pub enum NftTransferError {
     ContextError(ContextError),
     /// decoding error: `{0}`
     DecodingError(DecodingError),
-    /// invalid identifier: `{0}`
-    InvalidIdentifier(IdentifierError),
-    /// invalid URI: `{0}`
-    InvalidUri(http::uri::InvalidUri),
     /// invalid trace `{0}`
     InvalidTrace(String),
     /// missing destination channel `{channel_id}` on port `{port_id}`
@@ -44,8 +40,6 @@ pub enum NftTransferError {
     FailedToDeserializeAck,
     /// failed to parse account ID
     FailedToParseAccount,
-    /// failed to decode raw msg: `{description}`
-    FailedToDecodeRawMsg { description: String },
     /// channel cannot be closed
     UnsupportedClosedChannel,
     /// unknown msg type: `{0}`
@@ -57,8 +51,6 @@ impl std::error::Error for NftTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::InvalidUri(e) => Some(e),
-            Self::InvalidIdentifier(e) => Some(e),
             Self::DecodingError(e) => Some(e),
             _ => None,
         }
@@ -79,7 +71,7 @@ impl From<ContextError> for NftTransferError {
 
 impl From<IdentifierError> for NftTransferError {
     fn from(err: IdentifierError) -> Self {
-        Self::InvalidIdentifier(err)
+        Self::DecodingError(DecodingError::InvalidIdentifier(err.to_string()))
     }
 }
 
