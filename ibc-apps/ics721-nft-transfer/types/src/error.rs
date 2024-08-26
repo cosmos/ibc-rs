@@ -16,7 +16,7 @@ pub enum NftTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
     /// decoding error: `{0}`
-    DecodingError(DecodingError),
+    Decoding(DecodingError),
     /// invalid trace `{0}`
     InvalidTrace(String),
     /// missing destination channel `{channel_id}` on port `{port_id}`
@@ -51,7 +51,7 @@ impl std::error::Error for NftTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::DecodingError(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
     }
@@ -71,13 +71,13 @@ impl From<ContextError> for NftTransferError {
 
 impl From<IdentifierError> for NftTransferError {
     fn from(err: IdentifierError) -> Self {
-        Self::DecodingError(DecodingError::InvalidIdentifier(err.to_string()))
+        Self::Decoding(DecodingError::InvalidIdentifier(err.to_string()))
     }
 }
 
 impl From<DecodingError> for NftTransferError {
     fn from(err: DecodingError) -> Self {
-        Self::DecodingError(err)
+        Self::Decoding(err)
     }
 }
 

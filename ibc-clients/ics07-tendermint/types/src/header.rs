@@ -200,11 +200,7 @@ impl TryFrom<Any> for Header {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_header(value: &[u8]) -> Result<Header, DecodingError> {
-            let header = Protobuf::<RawHeader>::decode(value).map_err(|e| {
-                DecodingError::FailedToDecodeRawValue {
-                    description: e.to_string(),
-                }
-            })?;
+            let header = Protobuf::<RawHeader>::decode(value)?;
             Ok(header)
         }
         match raw.type_url.as_str() {

@@ -1,9 +1,11 @@
 //! Foundational error types that are applicable across multiple ibc-rs workspaces.
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 
 use displaydoc::Display;
 use http::uri::InvalidUri;
+
+use tendermint_proto::Error as ProtoError;
 
 /// Causes of decoding failures
 #[derive(Debug, Display)]
@@ -22,8 +24,16 @@ pub enum DecodingError {
     MissingField(String),
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
-    /// failed to decode a raw value: `{description}`
-    FailedToDecodeRawValue { description: String },
+    /// failed to decode proto value: `{description}`
+    FailedToDecodeProto { description: String },
+}
+
+impl From<ProtoError> for DecodingError {
+    fn from(e: ProtoError) -> Self {
+        Self::FailedToDecodeProto {
+            description: e.to_string(),
+        }
+    }
 }
 
 #[cfg(feature = "std")]

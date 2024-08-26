@@ -2,7 +2,7 @@
 
 use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentRoot;
-use ibc_primitives::prelude::*;
+use ibc_primitives::{prelude::*, DecodingError};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
 use ibc_proto::Protobuf;
@@ -107,17 +107,19 @@ impl TryFrom<Any> for ConsensusState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, ClientError> {
-            let client_state =
-                Protobuf::<RawConsensusState>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
+        fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, DecodingError> {
+            let client_state = Protobuf::<RawConsensusState>::decode(value)?;
             Ok(client_state)
         }
 
         match raw.type_url.as_str() {
-            TENDERMINT_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
-            _ => Err(ClientError::InvalidConsensusStateType(raw.type_url)),
+            TENDERMINT_CONSENSUS_STATE_TYPE_URL => {
+                decode_consensus_state(&raw.value).map_err(ClientError::Decoding)
+            }
+            _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
+                expected: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
+                actual: raw.type_url.to_string(),
+            })),
         }
     }
 }
