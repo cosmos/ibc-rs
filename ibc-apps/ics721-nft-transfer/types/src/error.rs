@@ -1,24 +1,26 @@
 //! Defines the Non-Fungible Token Transfer (ICS-721) error types.
 use core::convert::Infallible;
 
-use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::error::IdentifierError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::DecodingError;
+
+use displaydoc::Display;
 
 #[derive(Display, Debug)]
 pub enum NftTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
+    /// decoding error: `{0}`
+    DecodingError(DecodingError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
     /// invalid URI: `{0}`
     InvalidUri(http::uri::InvalidUri),
-    /// invalid json data: `{description}`
-    InvalidJsonData { description: String },
     /// invalid trace `{0}`
     InvalidTrace(String),
     /// missing destination channel `{channel_id}` on port `{port_id}`
@@ -57,6 +59,7 @@ impl std::error::Error for NftTransferError {
             Self::ContextError(e) => Some(e),
             Self::InvalidUri(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
+            Self::DecodingError(e) => Some(e),
             _ => None,
         }
     }
@@ -69,14 +72,20 @@ impl From<Infallible> for NftTransferError {
 }
 
 impl From<ContextError> for NftTransferError {
-    fn from(err: ContextError) -> NftTransferError {
+    fn from(err: ContextError) -> Self {
         Self::ContextError(err)
     }
 }
 
 impl From<IdentifierError> for NftTransferError {
-    fn from(err: IdentifierError) -> NftTransferError {
+    fn from(err: IdentifierError) -> Self {
         Self::InvalidIdentifier(err)
+    }
+}
+
+impl From<DecodingError> for NftTransferError {
+    fn from(err: DecodingError) -> Self {
+        Self::DecodingError(err)
     }
 }
 

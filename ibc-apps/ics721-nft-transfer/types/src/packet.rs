@@ -2,10 +2,10 @@
 
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
-use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
 use ibc_core::primitives::Signer;
+use ibc_core::primitives::{prelude::*, DecodingError};
 use ibc_proto::ibc::applications::nft_transfer::v1::NonFungibleTokenPacketData as RawPacketData;
 
 use crate::class::{ClassData, ClassUri, PrefixedClassId};
@@ -128,13 +128,12 @@ impl TryFrom<RawPacketData> for PacketData {
         } else {
             let decoded = BASE64_STANDARD
                 .decode(raw_pkt_data.class_data)
-                .map_err(|e| NftTransferError::InvalidJsonData {
+                .map_err(|e| DecodingError::InvalidJson {
                     description: e.to_string(),
                 })?;
-            let data_str =
-                String::from_utf8(decoded).map_err(|e| NftTransferError::InvalidJsonData {
-                    description: e.to_string(),
-                })?;
+            let data_str = String::from_utf8(decoded).map_err(|e| DecodingError::InvalidUtf8 {
+                description: e.to_string(),
+            })?;
             Some(data_str.parse()?)
         };
 
@@ -145,13 +144,14 @@ impl TryFrom<RawPacketData> for PacketData {
             .token_data
             .iter()
             .map(|data| {
-                let decoded = BASE64_STANDARD.decode(data).map_err(|e| {
-                    NftTransferError::InvalidJsonData {
-                        description: e.to_string(),
-                    }
-                })?;
+                let decoded =
+                    BASE64_STANDARD
+                        .decode(data)
+                        .map_err(|e| DecodingError::InvalidJson {
+                            description: e.to_string(),
+                        })?;
                 let data_str =
-                    String::from_utf8(decoded).map_err(|e| NftTransferError::InvalidJsonData {
+                    String::from_utf8(decoded).map_err(|e| DecodingError::InvalidUtf8 {
                         description: e.to_string(),
                     })?;
                 data_str.parse()
