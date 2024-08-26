@@ -138,7 +138,7 @@ impl TryFrom<Any> for MockClientState {
             }
             _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
                 expected: MOCK_CLIENT_STATE_TYPE_URL.to_string(),
-                actual: raw.type_url.to_string(),
+                actual: raw.type_url,
             })),
         }
     }

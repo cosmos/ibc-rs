@@ -37,8 +37,8 @@ pub enum Status {
 pub enum StatusError {
     /// invalid client status: `{0}`
     InvalidStatus(String),
-    /// mismatched client status: expected `{expected}`, actual `{actual}`
-    MismatchedStatus { expected: Status, actual: Status },
+    /// unexpected status `{0}` found
+    UnexpectedStatus(Status),
 }
 
 impl Status {
@@ -58,10 +58,7 @@ impl Status {
     pub fn verify_is_active(&self) -> Result<(), StatusError> {
         match self {
             Self::Active => Ok(()),
-            &status => Err(StatusError::MismatchedStatus {
-                expected: Status::Active,
-                actual: status,
-            }),
+            &status => Err(StatusError::UnexpectedStatus(status)),
         }
     }
 
@@ -69,11 +66,7 @@ impl Status {
     pub fn verify_is_inactive(&self) -> Result<(), StatusError> {
         match self {
             Self::Frozen | Self::Expired => Ok(()),
-            &status => Err(StatusError::MismatchedStatus {
-                // `Status::Expired` is also allowed in this context
-                expected: Status::Frozen,
-                actual: status,
-            }),
+            &status => Err(StatusError::UnexpectedStatus(status)),
         }
     }
 }
@@ -97,3 +90,6 @@ impl FromStr for Status {
         }
     }
 }
+
+#[cfg(feature = "std")]
+impl std::error::Error for StatusError {}

@@ -5,6 +5,7 @@ use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::OpenConfirm;
 use ibc_core_channel_types::msgs::MsgChannelOpenConfirm;
 use ibc_core_client::context::prelude::*;
+use ibc_core_client::types::error::ClientError;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_handler_types::error::ContextError;
@@ -118,7 +119,9 @@ where
 
         client_state_of_a_on_b
             .status(ctx_b.get_client_validation_context(), client_id_on_b)?
-            .verify_is_active()?;
+            .verify_is_active()
+            .map_err(ClientError::Status)?;
+
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b = ClientConsensusStatePath::new(

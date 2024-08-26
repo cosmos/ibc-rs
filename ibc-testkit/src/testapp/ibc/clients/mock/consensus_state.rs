@@ -4,6 +4,7 @@ use ibc::core::commitment_types::commitment::CommitmentRoot;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
+use ibc::primitives::DecodingError;
 
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::mock::proto::ConsensusState as RawMockConsensusState;
@@ -64,18 +65,18 @@ impl TryFrom<Any> for MockConsensusState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_consensus_state(value: &[u8]) -> Result<MockConsensusState, ClientError> {
-            let mock_consensus_state =
-                Protobuf::<RawMockConsensusState>::decode(value).map_err(|e| {
-                    ClientError::Other {
-                        description: e.to_string(),
-                    }
-                })?;
+        fn decode_consensus_state(value: &[u8]) -> Result<MockConsensusState, DecodingErrorError> {
+            let mock_consensus_state = Protobuf::<RawMockConsensusState>::decode(value)?;
             Ok(mock_consensus_state)
         }
         match raw.type_url.as_str() {
-            MOCK_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
-            _ => Err(ClientError::InvalidConsensusStateType(raw.type_url)),
+            MOCK_CONSENSUS_STATE_TYPE_URL => {
+                decode_consensus_state(&raw.value).map_err(ClientError::Decoding)
+            }
+            _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
+                expected: MOCK_CONSENSUS_STATE_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })),
         }
     }
 }

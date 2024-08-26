@@ -80,7 +80,7 @@ where
         client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(ClientError::InvalidStatus(Status::Frozen).into());
+            return Err(ClientError::Status(StatusError::UnexpectedStatus(Status::Frozen)).into());
         }
 
         let latest_height = self.host_height()?;

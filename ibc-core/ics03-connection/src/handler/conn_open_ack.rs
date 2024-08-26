@@ -67,7 +67,9 @@ where
 
         client_state_of_b_on_a
             .status(client_val_ctx_a, vars.client_id_on_a())?
-            .verify_is_active()?;
+            .verify_is_active()
+            .map_err(ClientError::Status)?;
+
         client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(

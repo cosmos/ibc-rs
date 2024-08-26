@@ -118,7 +118,7 @@ impl TryFrom<Any> for ConsensusState {
             }
             _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
                 expected: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
-                actual: raw.type_url.to_string(),
+                actual: raw.type_url,
             })),
         }
     }

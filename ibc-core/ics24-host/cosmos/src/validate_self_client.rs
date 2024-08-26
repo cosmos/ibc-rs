@@ -2,7 +2,7 @@ use core::time::Duration;
 
 use ibc_client_tendermint::types::ClientState as TmClientState;
 use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::{Height, Status};
+use ibc_core_client_types::{Height, Status, StatusError};
 use ibc_core_commitment_types::specs::ProofSpecs;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_handler_types::error::ContextError;
@@ -25,7 +25,7 @@ pub trait ValidateSelfClientContext {
             .map_err(ClientError::from)?;
 
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(ClientError::InvalidStatus(Status::Frozen).into());
+            return Err(ClientError::Status(StatusError::UnexpectedStatus(Status::Frozen)).into());
         }
 
         let self_chain_id = self.chain_id();
