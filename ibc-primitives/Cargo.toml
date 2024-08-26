@@ -33,7 +33,8 @@ time        = { version = ">=0.3.0, <0.3.37", default-features = false }
 ibc-proto = { workspace = true }
 
 # cosmos dependencies
-tendermint = { workspace = true }
+tendermint       = { workspace = true }
+tendermint-proto = { workspace = true }
 
 # parity dependencies
 parity-scale-codec = { workspace = true, optional = true }

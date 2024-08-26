@@ -123,7 +123,7 @@ impl TryFrom<Any> for MsgTransfer {
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
             TYPE_URL => MsgTransfer::decode_vec(&raw.value).map_err(|e| {
-                NftTransferError::DecodingError(DecodingError::FailedToDecodeRawMsg {
+                NftTransferError::Decoding(DecodingError::FailedToDecodeProto {
                     description: e.to_string(),
                 })
             }),

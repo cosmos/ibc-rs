@@ -23,6 +23,7 @@ pub enum ContextError {
     RouterError(RouterError),
 }
 
+// TODO(seanchen1991): Figure out how to remove this
 impl From<ContextError> for ClientError {
     fn from(context_error: ContextError) -> Self {
         match context_error {

@@ -27,8 +27,6 @@ pub enum ClientError {
     InvalidClientStateType(String),
     /// invalid client consensus state type: `{0}`
     InvalidConsensusStateType(String),
-    /// invalid header type: `{0}`
-    InvalidHeaderType(String),
     /// invalid update client message
     InvalidUpdateClientMessage,
     // TODO(seanchen1991): Should this be removed in favor of DecodingError::InvalidIdentifier?
@@ -108,6 +106,12 @@ impl From<Infallible> for ClientError {
 impl From<CommitmentError> for ClientError {
     fn from(e: CommitmentError) -> Self {
         Self::FailedICS23Verification(e)
+    }
+}
+
+impl From<DecodingError> for ClientError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 

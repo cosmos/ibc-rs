@@ -1,9 +1,8 @@
 use core::fmt::{Debug, Display, Formatter};
 use core::str::FromStr;
 
+use displaydoc::Display;
 use ibc_primitives::prelude::*;
-
-use crate::error::ClientError;
 
 /// `UpdateKind` represents the 2 ways that a client can be updated
 /// in IBC: either through a `MsgUpdateClient`, or a `MsgSubmitMisbehaviour`.
@@ -33,6 +32,15 @@ pub enum Status {
     Unauthorized,
 }
 
+/// Encapsulates Status-related errors
+#[derive(Debug, Display)]
+pub enum StatusError {
+    /// invalid client status: `{0}`
+    InvalidStatus(String),
+    /// mismatched client status: expected `{expected}`, actual `{actual}`
+    MismatchedStatus { expected: Status, actual: Status },
+}
+
 impl Status {
     pub fn is_active(&self) -> bool {
         *self == Status::Active
@@ -47,18 +55,25 @@ impl Status {
     }
 
     /// Checks whether the status is active; returns `Err` if not.
-    pub fn verify_is_active(&self) -> Result<(), ClientError> {
+    pub fn verify_is_active(&self) -> Result<(), StatusError> {
         match self {
             Self::Active => Ok(()),
-            &status => Err(ClientError::InvalidStatus(status)),
+            &status => Err(StatusError::MismatchedStatus {
+                expected: Status::Active,
+                actual: status,
+            }),
         }
     }
 
     /// Checks whether the client is either frozen or expired; returns `Err` if not.
-    pub fn verify_is_inactive(&self) -> Result<(), ClientError> {
+    pub fn verify_is_inactive(&self) -> Result<(), StatusError> {
         match self {
             Self::Frozen | Self::Expired => Ok(()),
-            &status => Err(ClientError::InvalidStatus(status)),
+            &status => Err(StatusError::MismatchedStatus {
+                // `Status::Expired` is also allowed in this context
+                expected: Status::Frozen,
+                actual: status,
+            }),
         }
     }
 }
@@ -70,7 +85,7 @@ impl Display for Status {
 }
 
 impl FromStr for Status {
-    type Err = ClientError;
+    type Err = StatusError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -78,9 +93,7 @@ impl FromStr for Status {
             "FROZEN" => Ok(Status::Frozen),
             "EXPIRED" => Ok(Status::Expired),
             "UNAUTHORIZED" => Ok(Status::Unauthorized),
-            _ => Err(ClientError::Other {
-                description: format!("invalid status string: {s}"),
-            }),
+            _ => Err(StatusError::InvalidStatus(s.to_string())),
         }
     }
 }
