@@ -63,7 +63,7 @@ impl TryFrom<Any> for Misbehaviour {
             }
             _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
                 expected: MOCK_MISBEHAVIOUR_TYPE_URL.to_string(),
-                actual: raw.type_url.to_string(),
+                actual: raw.type_url,
             })),
         }
     }

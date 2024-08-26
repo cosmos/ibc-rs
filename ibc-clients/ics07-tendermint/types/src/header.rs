@@ -207,7 +207,7 @@ impl TryFrom<Any> for Header {
             TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value).map_err(ClientError::Decoding),
             _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
                 expected: TENDERMINT_HEADER_TYPE_URL.to_string(),
-                actual: raw.type_url.to_string(),
+                actual: raw.type_url,
             })),
         }
     }

@@ -98,7 +98,7 @@ impl TryFrom<Any> for MockHeader {
             MOCK_HEADER_TYPE_URL => Ok(Protobuf::<RawMockHeader>::decode_vec(&raw.value)?),
             _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
                 expected: MOCK_HEADER_TYPE_URL.to_string(),
-                actual: raw.type_url.to_string(),
+                actual: raw.type_url,
             })),
         }
     }

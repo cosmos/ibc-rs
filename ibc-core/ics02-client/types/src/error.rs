@@ -9,8 +9,8 @@ use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{DecodingError, Timestamp};
 
-use super::status::Status;
 use crate::height::Height;
+use crate::StatusError;
 
 /// Encodes all the possible client errors
 #[derive(Debug, Display)]
@@ -19,8 +19,8 @@ pub enum ClientError {
     Upgrade(UpgradeClientError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// invalid client status: `{0}`
-    InvalidStatus(Status),
+    /// client status error: `{0}`
+    Status(StatusError),
     /// invalid trust threshold: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// invalid client state type: `{0}`
@@ -115,12 +115,19 @@ impl From<DecodingError> for ClientError {
     }
 }
 
+impl From<StatusError> for ClientError {
+    fn from(e: StatusError) -> Self {
+        Self::Status(e)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::InvalidClientIdentifier(e) => Some(e),
             Self::FailedICS23Verification(e) => Some(e),
+            Self::Status(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }
