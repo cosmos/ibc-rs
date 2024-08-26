@@ -3,9 +3,9 @@ on:
   pull_request:
     paths:
       - .github/workflows/rust.yaml
+      - Makefile
       - '*.toml'
       - ci/**
-      - cosmwasm/**
       - ibc/**
       - ibc-core/**
       - ibc-apps/**
@@ -48,25 +48,25 @@ jobs:
       - name: Install Rust nightly toolchain with rustfmt
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-            toolchain: nightly
-            components: rustfmt
+          toolchain: nightly
+          components: rustfmt
       - name: Install Rust stable toolchain with clippy
         uses: actions-rust-lang/setup-rust-toolchain@v1
         with:
-            components: clippy
+          components: clippy
       - uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
       - name: Install Taplo
         uses: baptiste0928/cargo-install@v3
         with:
-            crate: taplo-cli
+          crate: taplo-cli
       - name: Run Lint Checks (fmt, clippy, taplo)
         run: make lint
       - name: Spell Check with Typos
         uses: crate-ci/typos@master
         with:
-            config: ./.github/typos.toml
+          config: ./.github/typos.toml
 
   check-docs:
     name: Check Documentations

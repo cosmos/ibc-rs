@@ -38,7 +38,6 @@ sub-crates that can be used independently or together.
 | [ibc-testkit](ibc-testkit)           | Provides testing toolkit to aid `ibc-rs` and host chains in writing integration tests.               |
 | [ibc-query](ibc-query)               | Contains utility traits and implementations for querying states of an integrated IBC module.         |
 | [ibc-derive](ibc-derive)             | Derive macros for `ClientState` and `ConsensusState` traits, reducing boilerplate.                   |
-| [cosmwasm](cosmwasm)                 | Contains libraries that implement `ibc-rs` modules as CosmWasm contracts.                            |
 
 ## Contributing
 
@@ -74,20 +73,21 @@ projects. The `ibc-rs` implementation, in particular, is used for IBC
 integration, testing, or development for some of the most technically compelling
 use cases.
 
-|  # | Integration use-case            |     Team      | Used-Modules |                            Links                            |          Phase           |
-| -: | ------------------------------- | :-----------: | :----------: | :---------------------------------------------------------: | :----------------------: |
-|  1 | Solana IBC implementation       |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
-|  2 | Ethereum IBC relayer            |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
-|  3 | Polkadot SDK IBC implementation |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
-|  4 | Nomic                           |     Nomic     |    :100:     |                   [Nomic network][nomic]                    |    :white_check_mark:    |
-|  5 | Namada                          |     Anoma     |    :100:     |                      [Namada][namada]                       | :hourglass_flowing_sand: |
-|  6 | Sovereign                       |   Informal    |    :100:     |                 [`sovereign-ibc`][sov-ibc]                  | :hourglass_flowing_sand: |
-|  7 | Hermes IBC relayer              |   Informal    |    :100:     |                [`basecoin-rs`][basecoin-rs]                 |    :hammer_and_pick:     |
-|  8 | Substrate pallet                |    Octopus    |    :100:     |            [Substrate IBC Pallet][substrate-ibc]            |    :hammer_and_pick:     |
-|  9 | Near Protocol                   |    Octopus    |    :100:     |                   [`near-ibc`][near-ibc]                    | :hourglass_flowing_sand: |
-| 10 | Tendermint Light Client         | Electron Labs |   `ics07`    | [`Electron-Labs/tendermint-rs`][electronlabs-tendermint-rs] | :hourglass_flowing_sand: |
-| 11 | Starknet                        |   Informal    |    :eyes:    |                           :eyes:                            |          :eyes:          |
-| 12 | SP1 Tendermint Light Client     |  Interchain   |   `ics07`    |        [`cosmos/sp1-ics07-tendermint`][sp1-tendermint]      | :hourglass_flowing_sand: |
+|  # | Integration use-case             |     Team      | Used-Modules |                            Links                            |          Phase           |
+| -: | -------------------------------  | :-----------: | :----------: | :---------------------------------------------------------: | :----------------------: |
+|  1 | Solana IBC implementation        |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
+|  2 | Ethereum IBC relayer             |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
+|  3 | Polkadot SDK IBC implementation  |  Composable   |    :100:     |               [Picasso Network][pica-network]               |    :white_check_mark:    |
+|  4 | Nomic                            |     Nomic     |    :100:     |                   [Nomic network][nomic]                    |    :white_check_mark:    |
+|  5 | CosmWasm Tendermint Light Client |   Informal    |   `ics07`    |              [cosmwasm-ibc][cosmwasm-ibc]                 |    :white_check_mark:    |
+|  6 | Namada                           |     Anoma     |    :100:     |                      [Namada][namada]                       | :hourglass_flowing_sand: |
+|  7 | Sovereign                        |   Informal    |    :100:     |                 [`sovereign-ibc`][sov-ibc]                  | :hourglass_flowing_sand: |
+|  8 | Hermes IBC relayer               |   Informal    |    :100:     |                [`basecoin-rs`][basecoin-rs]                 |    :hammer_and_pick:     |
+|  9 | Substrate pallet                 |    Octopus    |    :100:     |            [Substrate IBC Pallet][substrate-ibc]            |    :hammer_and_pick:     |
+| 10 | Near Protocol                    |    Octopus    |    :100:     |                   [`near-ibc`][near-ibc]                    | :hourglass_flowing_sand: |
+| 11 | Tendermint Light Client          | Electron Labs |   `ics07`    | [`Electron-Labs/tendermint-rs`][electronlabs-tendermint-rs] | :hourglass_flowing_sand: |
+| 12 | Starknet                         |   Informal    |    :eyes:    |                           :eyes:                            |          :eyes:          |
+| 13 | SP1 Tendermint Light Client      |  Interchain   |   `ics07`    |        [`cosmos/sp1-ics07-tendermint`][sp1-tendermint]      | :hourglass_flowing_sand: |
 
 Legend:
 
@@ -139,6 +139,7 @@ specific language governing permissions and limitations under the License.
 [ibc]: https://github.com/cosmos/ibc
 [ibc-go]: https://github.com/cosmos/ibc-go
 [ibc-proto-rs]: https://github.com/cosmos/ibc-proto-rs
+[cosmwasm-ibc]: https://github.com/informalsystems/cosmwasm-ibc
 [ibc-homepage]: https://cosmos.network/ibc
 [ibc-protocol]: https://ibcprotocol.dev
 [cosmos-link]: https://cosmos.network
