@@ -162,7 +162,7 @@ where
 
     let latest_height = ctx_b.host_height()?;
     if msg.packet.timeout_height_on_b.has_expired(latest_height) {
-        return Err(PacketError::LowPacketHeight {
+        return Err(PacketError::InsufficientPacketHeight {
             chain_height: latest_height,
             timeout_height: msg.packet.timeout_height_on_b,
         }
@@ -175,7 +175,7 @@ where
         .timeout_timestamp_on_b
         .has_expired(&latest_timestamp)
     {
-        return Err(PacketError::LowPacketTimestamp.into());
+        return Err(PacketError::InsufficientPacketTimestamp.into());
     }
 
     // Verify proofs
@@ -221,11 +221,7 @@ where
                 Path::Commitment(commitment_path_on_a),
                 expected_commitment_on_a.into_vec(),
             )
-            .map_err(|e| ChannelError::PacketVerificationFailed {
-                sequence: msg.packet.seq_on_a,
-                client_error: e,
-            })
-            .map_err(PacketError::Channel)?;
+            .map_err(ChannelError::FailedProofVerification)?;
     }
 
     match chan_end_on_b.ordering {
@@ -234,9 +230,9 @@ where
                 SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
             let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
             if msg.packet.seq_on_a > next_seq_recv {
-                return Err(PacketError::InvalidPacketSequence {
-                    given_sequence: msg.packet.seq_on_a,
-                    next_sequence: next_seq_recv,
+                return Err(PacketError::MismatchedPacketSequences {
+                    actual: msg.packet.seq_on_a,
+                    expected: next_seq_recv,
                 }
                 .into());
             }
@@ -256,7 +252,7 @@ where
             let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
             match packet_rec {
                 Ok(_receipt) => {}
-                Err(ContextError::PacketError(PacketError::PacketReceiptNotFound { sequence }))
+                Err(ContextError::PacketError(PacketError::MissingPacketReceipt(sequence)))
                     if sequence == msg.packet.seq_on_a => {}
                 Err(e) => return Err(e),
             }
@@ -282,10 +278,7 @@ where
     let packet = msg.packet.clone();
     let ack_path_on_b = AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
     if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {
-        return Err(PacketError::AcknowledgementExists {
-            sequence: msg.packet.seq_on_a,
-        }
-        .into());
+        return Err(PacketError::DuplicateAcknowledgment(msg.packet.seq_on_a).into());
     }
 
     Ok(())

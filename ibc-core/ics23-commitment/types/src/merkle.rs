@@ -106,10 +106,16 @@ impl MerkleProof {
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());
         if ics23_specs.len() != num {
-            return Err(CommitmentError::NumberOfSpecsMismatch);
+            return Err(CommitmentError::MismatchedNumberOfProofs {
+                expected: ics23_specs.len(),
+                actual: num,
+            });
         }
         if keys.key_path.len() != num {
-            return Err(CommitmentError::NumberOfKeysMismatch);
+            return Err(CommitmentError::MismatchedNumberOfProofs {
+                expected: keys.key_path.len(),
+                actual: num,
+            });
         }
         if value.is_empty() {
             return Err(CommitmentError::EmptyVerifiedValue);
@@ -135,7 +141,7 @@ impl MerkleProof {
                         .map_err(|_| CommitmentError::InvalidMerkleProof)?;
 
                     if !verify_membership::<H>(proof, spec, &subroot, key.as_ref(), &value) {
-                        return Err(CommitmentError::VerificationFailure);
+                        return Err(CommitmentError::FailedToVerifyMembership);
                     }
                     value.clone_from(&subroot);
                 }
@@ -144,7 +150,7 @@ impl MerkleProof {
         }
 
         if root.hash != subroot {
-            return Err(CommitmentError::VerificationFailure);
+            return Err(CommitmentError::FailedToVerifyMembership);
         }
 
         Ok(())
@@ -166,10 +172,16 @@ impl MerkleProof {
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());
         if ics23_specs.len() != num {
-            return Err(CommitmentError::NumberOfSpecsMismatch);
+            return Err(CommitmentError::MismatchedNumberOfProofs {
+                actual: num,
+                expected: ics23_specs.len(),
+            });
         }
         if keys.key_path.len() != num {
-            return Err(CommitmentError::NumberOfKeysMismatch);
+            return Err(CommitmentError::MismatchedNumberOfProofs {
+                actual: num,
+                expected: keys.key_path.len(),
+            });
         }
 
         // verify the absence of key in lowest subtree
@@ -190,7 +202,7 @@ impl MerkleProof {
                 let subroot = calculate_non_existence_root::<H>(non_existence_proof)?;
 
                 if !verify_non_membership::<H>(proof, spec, &subroot, key.as_ref()) {
-                    return Err(CommitmentError::VerificationFailure);
+                    return Err(CommitmentError::FailedToVerifyMembership);
                 }
 
                 // verify membership proofs starting from index 1 with value = subroot

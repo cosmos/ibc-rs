@@ -122,7 +122,7 @@ impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
 
     fn try_from(value: &'a CommitmentProofBytes) -> Result<Self, Self::Error> {
         Protobuf::<RawMerkleProof>::decode(value.as_ref())
-            .map_err(|e| CommitmentError::DecodingFailure(e.to_string()))
+            .map_err(|e| CommitmentError::FailedDecoding(e.to_string()))
     }
 }
 

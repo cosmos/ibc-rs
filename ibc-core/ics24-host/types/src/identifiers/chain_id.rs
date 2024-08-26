@@ -98,7 +98,7 @@ impl ChainId {
         let inc_revision_number = self
             .revision_number
             .checked_add(1)
-            .ok_or(IdentifierError::RevisionNumberOverflow)?;
+            .ok_or(IdentifierError::OverflowedRevisionNumber)?;
         self.id = format!("{}-{}", chain_name, inc_revision_number);
         self.revision_number = inc_revision_number;
         Ok(())
@@ -312,8 +312,9 @@ fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierEr
                 .ok()
                 .map(|revision_number| (chain_name, revision_number))
         })
-        .ok_or(IdentifierError::UnformattedRevisionNumber {
-            chain_id: chain_id_str.to_string(),
+        .ok_or(IdentifierError::FailedToParse {
+            value: chain_id_str.to_string(),
+            description: "invalid revision number".to_string(),
         })
 }
 

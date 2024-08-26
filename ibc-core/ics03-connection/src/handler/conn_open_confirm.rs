@@ -81,7 +81,7 @@ where
                 Path::Connection(ConnectionPath::new(conn_id_on_a)),
                 expected_conn_end_on_a.encode_vec(),
             )
-            .map_err(ConnectionError::VerifyConnectionState)?;
+            .map_err(ConnectionError::FailedToVerifyConnectionState)?;
     }
 
     Ok(())

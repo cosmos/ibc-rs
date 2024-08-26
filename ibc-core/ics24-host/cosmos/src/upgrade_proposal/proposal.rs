@@ -33,13 +33,13 @@ impl TryFrom<RawUpgradeProposal> for UpgradeProposal {
     fn try_from(raw: RawUpgradeProposal) -> Result<Self, Self::Error> {
         if raw.title.is_empty() {
             return Err(UpgradeClientError::InvalidUpgradeProposal {
-                reason: "title field cannot be empty".to_string(),
+                description: "title field cannot be empty".to_string(),
             });
         }
 
         if raw.description.is_empty() {
             return Err(UpgradeClientError::InvalidUpgradeProposal {
-                reason: "description field cannot be empty".to_string(),
+                description: "description field cannot be empty".to_string(),
             });
         }
 
@@ -47,13 +47,13 @@ impl TryFrom<RawUpgradeProposal> for UpgradeProposal {
             plan.try_into()?
         } else {
             return Err(UpgradeClientError::InvalidUpgradeProposal {
-                reason: "plan field cannot be empty".to_string(),
+                description: "plan field cannot be empty".to_string(),
             });
         };
 
         let upgraded_client_state = raw.upgraded_client_state.ok_or_else(|| {
             UpgradeClientError::InvalidUpgradeProposal {
-                reason: "upgraded client state cannot be empty".to_string(),
+                description: "upgraded client state cannot be empty".to_string(),
             }
         })?;
 

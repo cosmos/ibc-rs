@@ -38,7 +38,7 @@ where
     );
     let old_consensus_state = client_val_ctx
         .consensus_state(&old_client_cons_state_path)
-        .map_err(|_| ClientError::ConsensusStateNotFound {
+        .map_err(|_| ClientError::MissingConsensusState {
             client_id,
             height: old_client_state.latest_height(),
         })?;

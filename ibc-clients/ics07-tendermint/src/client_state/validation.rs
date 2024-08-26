@@ -278,5 +278,5 @@ where
         && subject_proof_specs == &substitute_proof_specs
         && subject_upgrade_path == &substitute_upgrade_path)
         .then_some(())
-        .ok_or(ClientError::ClientRecoveryStateMismatch)
+        .ok_or(ClientError::MismatchedClientRecoveryStates)
 }

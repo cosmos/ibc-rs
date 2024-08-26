@@ -1,4 +1,4 @@
-use ibc_client_tendermint_types::error::{Error, IntoResult};
+use ibc_client_tendermint_types::error::{IntoResult, TendermintClientError};
 use ibc_client_tendermint_types::{
     ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
 };
@@ -101,14 +101,11 @@ where
 
         let duration_since_consensus_state =
             current_timestamp.duration_since(&trusted_timestamp).ok_or(
-                ClientError::InvalidConsensusStateTimestamp {
-                    time1: trusted_timestamp,
-                    time2: current_timestamp,
-                },
+                ClientError::InvalidConsensusStateTimestamp(trusted_timestamp),
             )?;
 
         if duration_since_consensus_state >= options.trusting_period {
-            return Err(Error::ConsensusStateTimestampGteTrustingPeriod {
+            return Err(TendermintClientError::InsufficientTrustingPeriod {
                 duration_since_consensus_state,
                 trusting_period: options.trusting_period,
             }

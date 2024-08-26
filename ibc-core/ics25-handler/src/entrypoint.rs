@@ -80,12 +80,10 @@ where
             let port_id = channel_msg_to_port_id(&msg);
             let module_id = router
                 .lookup_module(port_id)
-                .ok_or(RouterError::UnknownPort {
-                    port_id: port_id.clone(),
-                })?;
+                .ok_or(RouterError::UnknownPort(port_id.clone()))?;
             let module = router
                 .get_route(&module_id)
-                .ok_or(RouterError::ModuleNotFound)?;
+                .ok_or(RouterError::MissingModule)?;
 
             match msg {
                 ChannelMsg::OpenInit(msg) => chan_open_init_validate(ctx, module, msg),
@@ -100,12 +98,10 @@ where
             let port_id = packet_msg_to_port_id(&msg);
             let module_id = router
                 .lookup_module(port_id)
-                .ok_or(RouterError::UnknownPort {
-                    port_id: port_id.clone(),
-                })?;
+                .ok_or(RouterError::UnknownPort(port_id.clone()))?;
             let module = router
                 .get_route(&module_id)
-                .ok_or(RouterError::ModuleNotFound)?;
+                .ok_or(RouterError::MissingModule)?;
 
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_validate(ctx, msg),
@@ -157,12 +153,10 @@ where
             let port_id = channel_msg_to_port_id(&msg);
             let module_id = router
                 .lookup_module(port_id)
-                .ok_or(RouterError::UnknownPort {
-                    port_id: port_id.clone(),
-                })?;
+                .ok_or(RouterError::UnknownPort(port_id.clone()))?;
             let module = router
                 .get_route_mut(&module_id)
-                .ok_or(RouterError::ModuleNotFound)?;
+                .ok_or(RouterError::MissingModule)?;
 
             match msg {
                 ChannelMsg::OpenInit(msg) => chan_open_init_execute(ctx, module, msg),
@@ -177,12 +171,10 @@ where
             let port_id = packet_msg_to_port_id(&msg);
             let module_id = router
                 .lookup_module(port_id)
-                .ok_or(RouterError::UnknownPort {
-                    port_id: port_id.clone(),
-                })?;
+                .ok_or(RouterError::UnknownPort(port_id.clone()))?;
             let module = router
                 .get_route_mut(&module_id)
-                .ok_or(RouterError::ModuleNotFound)?;
+                .ok_or(RouterError::MissingModule)?;
 
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_execute(ctx, module, msg),

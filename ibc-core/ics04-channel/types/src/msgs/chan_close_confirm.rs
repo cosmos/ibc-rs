@@ -45,11 +45,11 @@ impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
             proof_chan_end_on_a: raw_msg
                 .proof_init
                 .try_into()
-                .map_err(|_| ChannelError::InvalidProof)?,
+                .map_err(|_| ChannelError::MissingProof)?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(ChannelError::MissingHeight)?,
+                .ok_or(ChannelError::MissingProofHeight)?,
             signer: raw_msg.signer.into(),
         })
     }

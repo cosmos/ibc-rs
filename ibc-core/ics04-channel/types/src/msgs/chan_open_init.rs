@@ -47,7 +47,7 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
     fn try_from(raw_msg: RawMsgChannelOpenInit) -> Result<Self, Self::Error> {
         let chan_end_on_a: ChannelEnd = raw_msg
             .channel
-            .ok_or(ChannelError::MissingChannel)?
+            .ok_or(ChannelError::MissingRawChannelEnd)?
             .try_into()?;
         chan_end_on_a.verify_state_matches(&State::Init)?;
         chan_end_on_a.counterparty().verify_empty_channel_id()?;

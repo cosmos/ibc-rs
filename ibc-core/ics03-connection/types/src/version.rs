@@ -54,7 +54,7 @@ impl Version {
     /// Checks whether the given feature is supported in this version
     pub fn verify_feature_supported(&self, feature: String) -> Result<(), ConnectionError> {
         if !self.features.contains(&feature) {
-            return Err(ConnectionError::FeatureNotSupported { feature });
+            return Err(ConnectionError::UnsupportedFeature(feature));
         }
         Ok(())
     }
@@ -134,7 +134,7 @@ pub fn pick_version(
     }
 
     if intersection.is_empty() {
-        return Err(ConnectionError::NoCommonVersion);
+        return Err(ConnectionError::MissingCommonVersion);
     }
 
     intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
@@ -150,9 +150,7 @@ fn find_supported_version(
     supported_versions
         .iter()
         .find(|sv| sv.identifier == version.identifier)
-        .ok_or(ConnectionError::VersionNotSupported {
-            version: version.clone(),
-        })
+        .ok_or(ConnectionError::UnsupportedVersion(version.clone()))
         .cloned()
 }
 
@@ -171,7 +169,7 @@ fn get_feature_set_intersection(
         .collect();
 
     if feature_set_intersection.is_empty() {
-        return Err(ConnectionError::NoCommonFeatures);
+        return Err(ConnectionError::MissingCommonFeatures);
     }
 
     Ok(feature_set_intersection)
@@ -368,7 +366,7 @@ mod tests {
                 name: "Disjoint versions".to_string(),
                 supported: disjoint().0,
                 counterparty: disjoint().1,
-                picked: Err(ConnectionError::NoCommonVersion),
+                picked: Err(ConnectionError::MissingCommonVersion),
                 want_pass: false,
             },
         ];

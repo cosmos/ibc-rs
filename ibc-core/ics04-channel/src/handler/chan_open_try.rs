@@ -6,6 +6,7 @@ use ibc_core_channel_types::events::OpenTry;
 use ibc_core_channel_types::msgs::MsgChannelOpenTry;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
+use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ChannelId;
@@ -153,11 +154,10 @@ where
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let port_id_on_a = msg.port_id_on_a.clone();
         let chan_id_on_a = msg.chan_id_on_a.clone();
-        let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
-            ChannelError::UndefinedConnectionCounterparty {
-                connection_id: msg.connection_hops_on_b[0].clone(),
-            },
-        )?;
+        let conn_id_on_a = conn_end_on_b
+            .counterparty()
+            .connection_id()
+            .ok_or(ConnectionError::MissingCounterparty)?;
 
         let expected_chan_end_on_a = ChannelEnd::new(
             ChannelState::Init,
@@ -178,7 +178,7 @@ where
                 Path::ChannelEnd(chan_end_path_on_a),
                 expected_chan_end_on_a.encode_vec(),
             )
-            .map_err(ChannelError::VerifyChannelFailed)?;
+            .map_err(ChannelError::FailedProofVerification)?;
     }
 
     Ok(())

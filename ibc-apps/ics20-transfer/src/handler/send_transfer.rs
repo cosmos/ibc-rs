@@ -45,7 +45,7 @@ where
     let chan_id_on_b = chan_end_on_a
         .counterparty()
         .channel_id()
-        .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
+        .ok_or_else(|| TokenTransferError::MissingDestinationChannel {
             port_id: msg.port_id_on_a.clone(),
             channel_id: msg.chan_id_on_a.clone(),
         })?
@@ -61,7 +61,7 @@ where
         .sender
         .clone()
         .try_into()
-        .map_err(|_| TokenTransferError::ParseAccountFailure)?;
+        .map_err(|_| TokenTransferError::FailedToParseAccount)?;
 
     if is_sender_chain_source(
         msg.port_id_on_a.clone(),
@@ -117,7 +117,7 @@ where
     let chan_on_b = chan_end_on_a
         .counterparty()
         .channel_id()
-        .ok_or_else(|| TokenTransferError::DestinationChannelNotFound {
+        .ok_or_else(|| TokenTransferError::MissingDestinationChannel {
             port_id: msg.port_id_on_a.clone(),
             channel_id: msg.chan_id_on_a.clone(),
         })?
@@ -134,7 +134,7 @@ where
         .sender
         .clone()
         .try_into()
-        .map_err(|_| TokenTransferError::ParseAccountFailure)?;
+        .map_err(|_| TokenTransferError::FailedToParseAccount)?;
 
     if is_sender_chain_source(
         msg.port_id_on_a.clone(),

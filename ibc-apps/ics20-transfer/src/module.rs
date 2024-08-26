@@ -27,16 +27,16 @@ pub fn on_chan_open_init_validate(
     version: &Version,
 ) -> Result<(), TokenTransferError> {
     if order != Order::Unordered {
-        return Err(TokenTransferError::ChannelNotUnordered {
-            expect_order: Order::Unordered,
-            got_order: order,
+        return Err(TokenTransferError::MismatchedChannelOrders {
+            expected: Order::Unordered,
+            actual: order,
         });
     }
     let bound_port = ctx.get_port()?;
     if port_id != &bound_port {
-        return Err(TokenTransferError::InvalidPort {
-            port_id: port_id.clone(),
-            exp_port_id: bound_port,
+        return Err(TokenTransferError::MismatchedPortIds {
+            actual: port_id.clone(),
+            expected: bound_port,
         });
     }
 
@@ -71,9 +71,9 @@ pub fn on_chan_open_try_validate(
     counterparty_version: &Version,
 ) -> Result<(), TokenTransferError> {
     if order != Order::Unordered {
-        return Err(TokenTransferError::ChannelNotUnordered {
-            expect_order: Order::Unordered,
-            got_order: order,
+        return Err(TokenTransferError::MismatchedChannelOrders {
+            expected: Order::Unordered,
+            actual: order,
         });
     }
 
@@ -139,7 +139,7 @@ pub fn on_chan_close_init_validate(
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), TokenTransferError> {
-    Err(TokenTransferError::CantCloseChannel)
+    Err(TokenTransferError::UnsupportedClosedChannel)
 }
 
 pub fn on_chan_close_init_execute(
@@ -147,7 +147,7 @@ pub fn on_chan_close_init_execute(
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, TokenTransferError> {
-    Err(TokenTransferError::CantCloseChannel)
+    Err(TokenTransferError::UnsupportedClosedChannel)
 }
 
 pub fn on_chan_close_confirm_validate(
@@ -172,7 +172,7 @@ pub fn on_recv_packet_execute(
 ) -> (ModuleExtras, Acknowledgement) {
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         let ack =
-            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into());
+            AcknowledgementStatus::error(TokenTransferError::FailedToDeserializePacketData.into());
         return (ModuleExtras::empty(), ack.into());
     };
 
@@ -204,10 +204,10 @@ where
     Ctx: TokenTransferValidationContext,
 {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
+        .map_err(|_| TokenTransferError::FailedToDeserializePacketData)?;
 
     let acknowledgement = serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref())
-        .map_err(|_| TokenTransferError::AckDeserialization)?;
+        .map_err(|_| TokenTransferError::FailedToDeserializeAck)?;
 
     if !acknowledgement.is_successful() {
         refund_packet_token_validate(ctx, packet, &data)?;
@@ -225,7 +225,7 @@ pub fn on_acknowledgement_packet_execute(
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         return (
             ModuleExtras::empty(),
-            Err(TokenTransferError::PacketDataDeserialization),
+            Err(TokenTransferError::FailedToDeserializePacketData),
         );
     };
 
@@ -234,7 +234,7 @@ pub fn on_acknowledgement_packet_execute(
     else {
         return (
             ModuleExtras::empty(),
-            Err(TokenTransferError::AckDeserialization),
+            Err(TokenTransferError::FailedToDeserializeAck),
         );
     };
 
@@ -270,7 +270,7 @@ where
     Ctx: TokenTransferValidationContext,
 {
     let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| TokenTransferError::PacketDataDeserialization)?;
+        .map_err(|_| TokenTransferError::FailedToDeserializePacketData)?;
 
     refund_packet_token_validate(ctx, packet, &data)?;
 
@@ -285,7 +285,7 @@ pub fn on_timeout_packet_execute(
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         return (
             ModuleExtras::empty(),
-            Err(TokenTransferError::PacketDataDeserialization),
+            Err(TokenTransferError::FailedToDeserializePacketData),
         );
     };
 
@@ -324,7 +324,7 @@ mod test {
             r#"{"result":"AQ=="}"#,
         );
         ser_json_assert_eq(
-            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into()),
+            AcknowledgementStatus::error(TokenTransferError::FailedToDeserializePacketData.into()),
             r#"{"error":"failed to deserialize packet data"}"#,
         );
     }
@@ -342,7 +342,7 @@ mod test {
     #[test]
     fn test_ack_error_to_vec() {
         let ack_error: Vec<u8> =
-            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into())
+            AcknowledgementStatus::error(TokenTransferError::FailedToDeserializePacketData.into())
                 .into();
 
         // Check that it's the same output as ibc-go
@@ -367,7 +367,7 @@ mod test {
         );
         de_json_assert_eq(
             r#"{"error":"failed to deserialize packet data"}"#,
-            AcknowledgementStatus::error(TokenTransferError::PacketDataDeserialization.into()),
+            AcknowledgementStatus::error(TokenTransferError::FailedToDeserializePacketData.into()),
         );
 
         assert!(serde_json::from_str::<AcknowledgementStatus>(r#"{"success":"AQ=="}"#).is_err());

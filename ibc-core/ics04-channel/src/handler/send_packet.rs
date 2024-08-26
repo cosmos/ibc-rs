@@ -64,7 +64,7 @@ pub fn send_packet_validate(
     let latest_height_on_a = client_state_of_b_on_a.latest_height();
 
     if packet.timeout_height_on_b.has_expired(latest_height_on_a) {
-        return Err(PacketError::LowPacketHeight {
+        return Err(PacketError::InsufficientPacketHeight {
             chain_height: latest_height_on_a,
             timeout_height: packet.timeout_height_on_b,
         }
@@ -81,16 +81,16 @@ pub fn send_packet_validate(
     let latest_timestamp = consensus_state_of_b_on_a.timestamp();
     let packet_timestamp = packet.timeout_timestamp_on_b;
     if packet_timestamp.has_expired(&latest_timestamp) {
-        return Err(PacketError::LowPacketTimestamp.into());
+        return Err(PacketError::InsufficientPacketTimestamp.into());
     }
 
     let seq_send_path_on_a = SeqSendPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
     if packet.seq_on_a != next_seq_send_on_a {
-        return Err(PacketError::InvalidPacketSequence {
-            given_sequence: packet.seq_on_a,
-            next_sequence: next_seq_send_on_a,
+        return Err(PacketError::MismatchedPacketSequences {
+            actual: packet.seq_on_a,
+            expected: next_seq_send_on_a,
         }
         .into());
     }

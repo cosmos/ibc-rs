@@ -7,6 +7,8 @@ use ibc_primitives::prelude::*;
 pub enum CommitmentError {
     /// empty commitment prefix
     EmptyCommitmentPrefix,
+    /// empty commitment root
+    EmptyCommitmentRoot,
     /// empty merkle proof
     EmptyMerkleProof,
     /// empty merkle root
@@ -15,28 +17,24 @@ pub enum CommitmentError {
     EmptyVerifiedValue,
     /// empty proof specs
     EmptyProofSpecs,
-    /// invalid depth range: [{0}, {1}]
-    InvalidDepthRange(i32, i32),
-    /// mismatch between the number of proofs with that of specs
-    NumberOfSpecsMismatch,
-    /// mismatch between the number of proofs with that of keys
-    NumberOfKeysMismatch,
+    /// mismatched number of proofs: expected `{expected}`, actual `{actual}`
+    MismatchedNumberOfProofs { expected: usize, actual: usize },
+    /// mismatched proofs: expected `{expected}`, actual `{actual}`
+    MismatchedProofs { expected: String, actual: String },
+    /// invalid range: [`{min}`, `{max}`]
+    InvalidRange { min: i32, max: i32 },
     /// invalid merkle proof
     InvalidMerkleProof,
-    /// proof verification failed
-    VerificationFailure,
-    /// encoded commitment prefix is not a valid hex string: `{0}`
-    EncodingFailure(String),
-    /// decoding commitment proof bytes failed: `{0}`
-    DecodingFailure(String),
-    /// invalid prefix length range: `[{0}, {1}]`
-    InvalidPrefixLengthRange(i32, i32),
     /// invalid child size: `{0}`
     InvalidChildSize(i32),
     /// invalid hash operation: `{0}`
     InvalidHashOp(i32),
     /// invalid length operation: `{0}`
     InvalidLengthOp(i32),
+    /// failed decoding commitment proof: `{0}`
+    FailedDecoding(String),
+    /// failed to verify membership
+    FailedToVerifyMembership,
 }
 
 #[cfg(feature = "std")]
