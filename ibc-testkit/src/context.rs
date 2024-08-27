@@ -25,7 +25,6 @@ use ibc::primitives::Timestamp;
 use super::testapp::ibc::core::types::{LightClientState, MockIbcStore};
 use crate::fixtures::core::context::TestContextConfig;
 use crate::hosts::{HostClientState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
-use crate::relayer::error::RelayerError;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::router::MockRouter;
 use crate::testapp::ibc::core::types::DEFAULT_BLOCK_TIME_SECS;
@@ -480,9 +479,9 @@ where
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return an Ics18Error.
-    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), RelayerError> {
-        self.dispatch(msg)
-            .map_err(RelayerError::FailedToProcessTransaction)?;
+    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+        self.dispatch(msg)?;
+
         // Create a new block.
         self.advance_block_height();
         Ok(())

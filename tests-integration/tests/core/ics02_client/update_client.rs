@@ -32,7 +32,6 @@ use ibc_testkit::hosts::tendermint::BlockParams;
 use ibc_testkit::hosts::{
     HostClientState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost,
 };
-use ibc_testkit::relayer::error::RelayerError;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
     client_type as mock_client_type, MockClientState,
 };
@@ -1527,7 +1526,7 @@ pub(crate) fn build_client_update_datagram<H: TestHeader, Dst: TestHost>(
     dest: &TestContext<Dst>,
     client_id: &ClientId,
     src_header: &H,
-) -> Result<ClientMsg, RelayerError>
+) -> Option<ClientMsg>
 where
     HostClientState<Dst>: ClientStateValidation<DefaultIbcStore>,
 {
@@ -1536,18 +1535,15 @@ where
     let dest_client_latest_height = dest.light_client_latest_height(client_id);
 
     if src_header.height() == dest_client_latest_height {
-        return Err(RelayerError::UnnecessaryClientUpdate(client_id.clone()));
+        return None;
     };
 
     if dest_client_latest_height > src_header.height() {
-        return Err(RelayerError::InsufficientUpdateHeight {
-            client_id: client_id.clone(),
-            destination_height: dest_client_latest_height,
-        });
+        return None;
     };
 
     // Client on destination chain can be updated.
-    Ok(ClientMsg::UpdateClient(MsgUpdateClient {
+    Some(ClientMsg::UpdateClient(MsgUpdateClient {
         client_id: client_id.clone(),
         client_message: src_header.clone().into(),
         signer: dummy_account_id(),
@@ -1610,9 +1606,9 @@ fn client_update_ping_pong() {
         );
 
         assert!(
-                client_msg_b_res.is_ok(),
-                "create_client_update failed for context destination {ctx_b:?}, error: {client_msg_b_res:?}",
-            );
+            client_msg_b_res.is_some(),
+            "create_client_update failed for context destination {ctx_b:?}",
+        );
 
         let client_msg_b = client_msg_b_res.unwrap();
 
@@ -1648,9 +1644,9 @@ fn client_update_ping_pong() {
             build_client_update_datagram(&ctx_a, &client_on_a_for_b, &b_latest_header);
 
         assert!(
-                client_msg_a_res.is_ok(),
-                "create_client_update failed for context destination {ctx_a:?}, error: {client_msg_a_res:?}",
-            );
+            client_msg_a_res.is_some(),
+            "create_client_update failed for context destination {ctx_a:?}",
+        );
 
         let client_msg_a = client_msg_a_res.unwrap();
 
