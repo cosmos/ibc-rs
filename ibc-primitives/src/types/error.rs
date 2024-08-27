@@ -20,6 +20,8 @@ pub enum DecodingError {
     InvalidUtf8 { description: String },
     /// invalid URI: `{0}`
     InvalidUri(InvalidUri),
+    /// malformed bytes that could not be decoded: `{description}`
+    MalformedBytes { description: String },
     /// missing field: `{0}`
     MissingField(String),
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
