@@ -40,13 +40,13 @@ where
     substitute_client_state
         .status(ctx.get_client_validation_context(), &substitute_client_id)?
         .verify_is_active()
-        .map_err(ClientError::Status)?; // TODO(seanchen1991): Why is this `map_err` necessary?
+        .map_err(ClientError::ClientStatus)?; // TODO(seanchen1991): Why is this `map_err` necessary?
 
     // Verify that the subject client is inactive, i.e., that it is either frozen or expired
     subject_client_state
         .status(ctx.get_client_validation_context(), &subject_client_id)?
         .verify_is_inactive()
-        .map_err(ClientError::Status)?;
+        .map_err(ClientError::ClientStatus)?;
 
     // Check that the subject client state and substitute client states match, i.e., that
     // all their respective client state parameters match except for frozen height, latest

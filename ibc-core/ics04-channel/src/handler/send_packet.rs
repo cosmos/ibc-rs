@@ -61,7 +61,7 @@ pub fn send_packet_validate(
     client_state_of_b_on_a
         .status(ctx_a.get_client_validation_context(), client_id_on_a)?
         .verify_is_active()
-        .map_err(ClientError::Status)?;
+        .map_err(ClientError::ClientStatus)?;
 
     let latest_height_on_a = client_state_of_b_on_a.latest_height();
 

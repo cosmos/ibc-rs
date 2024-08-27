@@ -25,7 +25,9 @@ pub trait ValidateSelfClientContext {
             .map_err(ClientError::from)?;
 
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(ClientError::Status(StatusError::UnexpectedStatus(Status::Frozen)).into());
+            return Err(
+                ClientError::ClientStatus(StatusError::UnexpectedStatus(Status::Frozen)).into(),
+            );
         }
 
         let self_chain_id = self.chain_id();

@@ -68,7 +68,7 @@ where
         client_state_of_b_on_a
             .status(client_val_ctx_a, vars.client_id_on_a())?
             .verify_is_active()
-            .map_err(ClientError::Status)?;
+            .map_err(ClientError::ClientStatus)?;
 
         client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
 

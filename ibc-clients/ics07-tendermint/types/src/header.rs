@@ -5,9 +5,9 @@ use core::str::FromStr;
 
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::DecodingError;
 use ibc_primitives::Timestamp;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;

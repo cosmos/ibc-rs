@@ -25,7 +25,7 @@ where
     client_state_of_b_on_a
         .status(client_val_ctx_a, &msg.client_id_on_a)?
         .verify_is_active()
-        .map_err(ClientError::Status)?;
+        .map_err(ClientError::ClientStatus)?;
 
     if let Some(version) = msg.version {
         version.verify_is_supported(&ctx_a.get_compatible_versions())?;

@@ -4,17 +4,17 @@ use core::time::Duration;
 use ibc::clients::tendermint::client_state::consensus_state_status;
 use ibc::core::client::context::prelude::*;
 use ibc::core::client::types::error::{ClientError, UpgradeClientError};
-use ibc::core::client::types::{Height, Status};
+use ibc::core::client::types::{Height, Status, StatusError};
 use ibc::core::commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::host::types::identifiers::{ClientId, ClientType};
 use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path, PathBytes};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
-use ibc::primitives::DecodingError;
 
 use crate::testapp::ibc::clients::mock::client_state::client_type as mock_client_type;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
@@ -172,7 +172,9 @@ impl ClientStateCommon for MockClientState {
         if consensus_state_status(&mock_consensus_state, host_timestamp, self.trusting_period)?
             .is_expired()
         {
-            return Err(ClientError::InvalidStatus(Status::Expired));
+            return Err(ClientError::ClientStatus(StatusError::UnexpectedStatus(
+                Status::Expired,
+            )));
         }
 
         Ok(())

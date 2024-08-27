@@ -1,9 +1,9 @@
 //! Defines the client state type for the ICS-08 Wasm light client.
 
 use ibc_core_client::types::Height;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
-use ibc_primitives::DecodingError;
 use ibc_proto::ibc::lightclients::wasm::v1::ClientState as RawClientState;
 
 use crate::error::WasmClientError;

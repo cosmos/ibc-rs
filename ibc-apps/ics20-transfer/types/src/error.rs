@@ -5,10 +5,10 @@ use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::error::IdentifierError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::DecodingError;
 use uint::FromDecStrErr;
 
 #[derive(Display, Debug)]

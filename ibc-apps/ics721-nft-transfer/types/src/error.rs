@@ -4,10 +4,10 @@ use core::convert::Infallible;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::error::IdentifierError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::DecodingError;
 
 use displaydoc::Display;
 
@@ -62,25 +62,25 @@ impl From<Infallible> for NftTransferError {
 }
 
 impl From<ContextError> for NftTransferError {
-    fn from(err: ContextError) -> Self {
-        Self::ContextError(err)
+    fn from(e: ContextError) -> Self {
+        Self::ContextError(e)
     }
 }
 
 impl From<IdentifierError> for NftTransferError {
-    fn from(err: IdentifierError) -> Self {
-        Self::Decoding(DecodingError::InvalidIdentifier(err.to_string()))
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::InvalidIdentifier(e))
     }
 }
 
 impl From<DecodingError> for NftTransferError {
-    fn from(err: DecodingError) -> Self {
-        Self::Decoding(err)
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 
 impl From<NftTransferError> for StatusValue {
-    fn from(err: NftTransferError) -> Self {
-        StatusValue::new(err.to_string()).expect("error message must not be empty")
+    fn from(e: NftTransferError) -> Self {
+        StatusValue::new(e.to_string()).expect("error message must not be empty")
     }
 }

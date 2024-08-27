@@ -4,11 +4,11 @@ use core::str::FromStr;
 
 use http::Uri;
 pub use ibc_app_transfer_types::{TracePath, TracePrefix};
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
-use ibc_core::primitives::DecodingError;
 use ibc_proto::ibc::applications::nft_transfer::v1::ClassTrace as RawClassTrace;
 
 use crate::data::Data;

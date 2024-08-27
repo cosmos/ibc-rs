@@ -13,7 +13,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::{ClientConsensusStatePath, NextClientSequencePath};
 use ibc::core::host::{ClientStateRef, ValidationContext};
-use ibc_core_client_types::Status;
+use ibc_core_client_types::{Status, StatusError};
 use ibc_query::core::context::ProvableContext;
 use ibc_testkit::context::{MockContext, TendermintContext};
 use ibc_testkit::fixtures::clients::tendermint::dummy_tm_client_state_from_header;
@@ -180,8 +180,8 @@ fn test_create_expired_mock_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::ExpiredMockHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(ClientError::InvalidStatus(
-            Status::Expired,
+        Expect::Failure(Some(ContextError::ClientError(ClientError::ClientStatus(
+            StatusError::UnexpectedStatus(Status::Expired),
         )))),
     );
 }
@@ -206,8 +206,8 @@ fn test_create_expired_tm_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::ExpiredTendermintHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(ClientError::InvalidStatus(
-            Status::Expired,
+        Expect::Failure(Some(ContextError::ClientError(ClientError::ClientStatus(
+            StatusError::UnexpectedStatus(Status::Expired),
         )))),
     );
 }
@@ -218,8 +218,8 @@ fn test_create_frozen_tm_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::FrozenTendermintHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(ClientError::InvalidStatus(
-            Status::Frozen,
+        Expect::Failure(Some(ContextError::ClientError(ClientError::ClientStatus(
+            StatusError::UnexpectedStatus(Status::Frozen),
         )))),
     );
 }
