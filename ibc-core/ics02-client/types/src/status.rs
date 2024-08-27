@@ -37,7 +37,7 @@ pub enum Status {
 pub enum StatusError {
     /// invalid client status: `{0}`
     InvalidStatus(String),
-    /// unexpected status `{0}` found
+    /// unexpected status found: `{0}`
     UnexpectedStatus(Status),
 }
 

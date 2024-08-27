@@ -1,7 +1,8 @@
 //! Definition of domain `Plan` type.
 
 use ibc_core_client_types::error::UpgradeClientError;
-use ibc_primitives::{prelude::*, DecodingError};
+use ibc_primitives::prelude::*;
+use ibc_primitives::DecodingError;
 use ibc_proto::cosmos::upgrade::v1beta1::Plan as RawPlan;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::Protobuf;

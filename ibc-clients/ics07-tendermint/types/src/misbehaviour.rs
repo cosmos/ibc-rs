@@ -2,7 +2,8 @@
 
 use ibc_core_client_types::error::ClientError;
 use ibc_core_host_types::identifiers::ClientId;
-use ibc_primitives::{prelude::*, DecodingError};
+use ibc_primitives::prelude::*;
+use ibc_primitives::DecodingError;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Misbehaviour as RawMisbehaviour;
 use ibc_proto::Protobuf;

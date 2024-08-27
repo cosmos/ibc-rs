@@ -1,8 +1,9 @@
 //! Defines the consensus state type for the ICS-08 Wasm light client.
 
 use ibc_core_client::types::error::ClientError;
+use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
-use ibc_primitives::{prelude::*, DecodingError};
+use ibc_primitives::DecodingError;
 use ibc_proto::ibc::lightclients::wasm::v1::ConsensusState as RawConsensusState;
 
 #[cfg(feature = "serde")]

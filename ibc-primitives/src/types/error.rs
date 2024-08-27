@@ -12,8 +12,6 @@ use tendermint_proto::Error as ProtoError;
 pub enum DecodingError {
     /// invalid identifier error: `{0}`
     InvalidIdentifier(String),
-    /// invalid field: `{0}`
-    InvalidField(String),
     /// invalid JSON data: `{description}`
     InvalidJson { description: String },
     /// invalid UTF-8 data: `{description}`
@@ -22,8 +20,6 @@ pub enum DecodingError {
     InvalidUri(InvalidUri),
     /// malformed bytes that could not be decoded: `{description}`
     MalformedBytes { description: String },
-    /// missing field: `{0}`
-    MissingField(String),
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
     /// failed to decode proto; error: `{0}`
