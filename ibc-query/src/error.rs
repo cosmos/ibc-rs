@@ -8,21 +8,24 @@ use ibc::core::handler::types::error::ContextError;
 use ibc::core::host::types::error::IdentifierError;
 use tonic::Status;
 
+/// The main error type of the ibc-query crate. This type mainly
+/// serves to surface lower-level errors that occur when executing
+/// ibc-query's codepaths.
 #[derive(Debug, Display)]
 pub enum QueryError {
-    /// Context error: {0}
+    /// context error: `{0}`
     ContextError(ContextError),
-    /// Identifier error: {0}
+    /// identifier error: `{0}`
     IdentifierError(IdentifierError),
-    /// Proof not found: {0}
-    ProofNotFound(String),
-    /// Missing field: {0}
+    /// missing proof: `{0}`
+    MissingProof(String),
+    /// missing field: `{0}`
     MissingField(String),
 }
 
 impl QueryError {
-    pub fn proof_not_found<T: ToString>(description: T) -> Self {
-        Self::ProofNotFound(description.to_string())
+    pub fn missing_proof<T: ToString>(description: T) -> Self {
+        Self::MissingProof(description.to_string())
     }
 
     pub fn missing_field<T: ToString>(description: T) -> Self {
@@ -35,7 +38,7 @@ impl From<QueryError> for Status {
         match e {
             QueryError::ContextError(ctx_err) => Self::internal(ctx_err.to_string()),
             QueryError::IdentifierError(id_err) => Self::internal(id_err.to_string()),
-            QueryError::ProofNotFound(description) => Self::not_found(description),
+            QueryError::MissingProof(description) => Self::not_found(description),
             QueryError::MissingField(description) => Self::invalid_argument(description),
         }
     }
