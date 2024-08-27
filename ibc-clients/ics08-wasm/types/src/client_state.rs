@@ -3,6 +3,7 @@
 use ibc_core_client::types::Height;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
+use ibc_primitives::DecodingError;
 use ibc_proto::ibc::lightclients::wasm::v1::ClientState as RawClientState;
 
 use crate::error::WasmClientError;
@@ -69,22 +70,21 @@ impl TryFrom<Any> for ClientState {
     type Error = WasmClientError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
-        fn decode_client_state(value: &[u8]) -> Result<ClientState, WasmClientError> {
-            let client_state = Protobuf::<RawClientState>::decode(value).map_err(|e| {
-                WasmClientError::DecodingError {
-                    description: e.to_string(),
-                }
-            })?;
-
+        fn decode_client_state(value: &[u8]) -> Result<ClientState, DecodingError> {
+            let client_state = Protobuf::<RawClientState>::decode(value)?;
             Ok(client_state)
         }
 
         match any.type_url.as_str() {
-            WASM_CLIENT_STATE_TYPE_URL => decode_client_state(&any.value),
-            other_type_url => Err(WasmClientError::MismatchedTypeUrls {
-                expected: WASM_CLIENT_STATE_TYPE_URL.to_string(),
-                actual: other_type_url.to_string(),
-            }),
+            WASM_CLIENT_STATE_TYPE_URL => {
+                decode_client_state(&any.value).map_err(WasmClientError::Decoding)
+            }
+            _ => Err(WasmClientError::Decoding(
+                DecodingError::MismatchedTypeUrls {
+                    expected: WASM_CLIENT_STATE_TYPE_URL.to_string(),
+                    actual: any.type_url,
+                },
+            )),
         }
     }
 }

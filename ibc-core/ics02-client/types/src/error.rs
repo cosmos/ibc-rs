@@ -109,12 +109,6 @@ impl From<CommitmentError> for ClientError {
     }
 }
 
-impl From<DecodingError> for ClientError {
-    fn from(e: DecodingError) -> Self {
-        Self::Decoding(e)
-    }
-}
-
 impl From<StatusError> for ClientError {
     fn from(e: StatusError) -> Self {
         Self::Status(e)
@@ -137,6 +131,8 @@ impl std::error::Error for ClientError {
 /// Encodes all the possible upgrade client errors
 #[derive(Debug, Display)]
 pub enum UpgradeClientError {
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// invalid proof for the upgraded client state: `{0}`
     InvalidUpgradeClientProof(CommitmentError),
     /// invalid proof for the upgraded consensus state: `{0}`
@@ -147,14 +143,10 @@ pub enum UpgradeClientError {
     InvalidUpgradeProposal { description: String },
     /// invalid upgrade plan: `{description}`
     InvalidUpgradePlan { description: String },
-    /// mismatched type URLs: expected `{expected}`, actual `{actual}`
-    MismatchedTypeUrls { expected: String, actual: String },
     /// missing upgraded client state
     MissingUpgradedClientState,
     /// missing upgraded consensus state
     MissingUpgradedConsensusState,
-    /// failed to decode raw upgrade plan: `{description}`
-    FailedToDecodeRawUpgradePlan { description: String },
     /// failed to store upgrade plan: `{description}`
     FailedToStoreUpgradePlan { description: String },
     /// failed to store upgraded client state: `{description}`

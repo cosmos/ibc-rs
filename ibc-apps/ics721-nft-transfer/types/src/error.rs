@@ -42,8 +42,6 @@ pub enum NftTransferError {
     FailedToParseAccount,
     /// channel cannot be closed
     UnsupportedClosedChannel,
-    /// unknown msg type: `{0}`
-    UnknownMsgType(String),
 }
 
 #[cfg(feature = "std")]

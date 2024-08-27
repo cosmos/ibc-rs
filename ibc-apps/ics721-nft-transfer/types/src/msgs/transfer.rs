@@ -122,12 +122,14 @@ impl TryFrom<Any> for MsgTransfer {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
-            TYPE_URL => MsgTransfer::decode_vec(&raw.value).map_err(|e| {
-                NftTransferError::Decoding(DecodingError::FailedToDecodeProto {
-                    description: e.to_string(),
-                })
-            }),
-            _ => Err(NftTransferError::UnknownMsgType(raw.type_url)),
+            TYPE_URL => MsgTransfer::decode_vec(&raw.value)
+                .map_err(|e| NftTransferError::Decoding(DecodingError::FailedToDecodeProto(e))),
+            _ => Err(NftTransferError::Decoding(
+                DecodingError::MismatchedTypeUrls {
+                    expected: TYPE_URL.to_string(),
+                    actual: raw.type_url,
+                },
+            )),
         }
     }
 }

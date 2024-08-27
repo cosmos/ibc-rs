@@ -3,20 +3,19 @@
 use displaydoc::Display;
 use ibc_core_host_types::error::IdentifierError;
 use ibc_primitives::prelude::*;
+use ibc_primitives::DecodingError;
 
 /// The main error type
 #[derive(Debug, Display)]
 pub enum WasmClientError {
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
     /// invalid client state latest height
     InvalidLatestHeight,
     /// missing latest height
     MissingLatestHeight,
-    /// mismatched type URLs: expected `{expected}`, actual `{actual}`
-    MismatchedTypeUrls { expected: String, actual: String },
-    /// decoding error: `{description}`
-    DecodingError { description: String },
 }
 
 #[cfg(feature = "std")]
