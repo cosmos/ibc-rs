@@ -3,9 +3,10 @@ use core::fmt::{self, Display};
 use core::str::FromStr;
 
 use http::Uri;
+use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
-use ibc_core::primitives::{prelude::*, DecodingError};
+use ibc_core::primitives::DecodingError;
 
 use crate::data::Data;
 use crate::error::NftTransferError;
