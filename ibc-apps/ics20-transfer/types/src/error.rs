@@ -8,12 +8,15 @@ use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::error::IdentifierError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
+use ibc_core::primitives::DecodingError;
 use uint::FromDecStrErr;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
     /// invalid trace: `{0}`
@@ -41,14 +44,10 @@ pub enum TokenTransferError {
     // to a host-relevant error
     /// failed to parse account ID
     FailedToParseAccount,
-    /// failed to decode raw msg: `{description}`
-    FailedToDecodeRawMsg { description: String },
     /// channel cannot be closed
     UnsupportedClosedChannel,
     /// empty base denomination
     EmptyBaseDenom,
-    /// unknown msg type: `{0}`
-    UnknownMsgType(String),
 }
 
 #[cfg(feature = "std")]
@@ -58,6 +57,7 @@ impl std::error::Error for TokenTransferError {
             Self::ContextError(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
             Self::InvalidAmount(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
     }
@@ -70,19 +70,19 @@ impl From<Infallible> for TokenTransferError {
 }
 
 impl From<ContextError> for TokenTransferError {
-    fn from(err: ContextError) -> TokenTransferError {
-        Self::ContextError(err)
+    fn from(e: ContextError) -> Self {
+        Self::ContextError(e)
     }
 }
 
 impl From<IdentifierError> for TokenTransferError {
-    fn from(err: IdentifierError) -> TokenTransferError {
-        Self::InvalidIdentifier(err)
+    fn from(e: IdentifierError) -> Self {
+        Self::InvalidIdentifier(e)
     }
 }
 
 impl From<TokenTransferError> for StatusValue {
-    fn from(err: TokenTransferError) -> Self {
-        StatusValue::new(err.to_string()).expect("error message must not be empty")
+    fn from(e: TokenTransferError) -> Self {
+        StatusValue::new(e.to_string()).expect("error message must not be empty")
     }
 }

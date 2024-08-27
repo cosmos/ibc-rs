@@ -1,6 +1,6 @@
 //! Foundational error types that are applicable across multiple ibc-rs workspaces.
 
-use alloc::string::{String, ToString};
+use alloc::string::String;
 
 use displaydoc::Display;
 use http::uri::InvalidUri;
@@ -24,15 +24,13 @@ pub enum DecodingError {
     MissingField(String),
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
-    /// failed to decode proto value: `{description}`
-    FailedToDecodeProto { description: String },
+    /// failed to decode proto; error: `{0}`
+    FailedToDecodeProto(ProtoError),
 }
 
 impl From<ProtoError> for DecodingError {
     fn from(e: ProtoError) -> Self {
-        Self::FailedToDecodeProto {
-            description: e.to_string(),
-        }
+        Self::FailedToDecodeProto(e)
     }
 }
 
