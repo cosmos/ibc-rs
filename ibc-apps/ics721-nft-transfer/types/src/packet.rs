@@ -2,10 +2,11 @@
 
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
-use ibc_core::primitives::{DecodingError, Signer};
+use ibc_core::primitives::Signer;
 use ibc_proto::ibc::applications::nft_transfer::v1::NonFungibleTokenPacketData as RawPacketData;
 
 use crate::class::{ClassData, ClassUri, PrefixedClassId};

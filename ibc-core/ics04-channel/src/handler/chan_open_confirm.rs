@@ -120,7 +120,7 @@ where
         client_state_of_a_on_b
             .status(ctx_b.get_client_validation_context(), client_id_on_b)?
             .verify_is_active()
-            .map_err(ClientError::Status)?;
+            .map_err(ClientError::ClientStatus)?;
 
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 

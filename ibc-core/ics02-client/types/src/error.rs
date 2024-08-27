@@ -4,10 +4,10 @@ use core::convert::Infallible;
 
 use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::{DecodingError, Timestamp};
+use ibc_primitives::Timestamp;
 
 use crate::height::Height;
 use crate::StatusError;
@@ -20,7 +20,9 @@ pub enum ClientError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// client status error: `{0}`
-    Status(StatusError),
+    ClientStatus(StatusError),
+    /// invalid header type: `{0}`
+    InvalidHeaderType(String),
     /// invalid trust threshold: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// invalid client state type: `{0}`
@@ -111,7 +113,7 @@ impl From<CommitmentError> for ClientError {
 
 impl From<StatusError> for ClientError {
     fn from(e: StatusError) -> Self {
-        Self::Status(e)
+        Self::ClientStatus(e)
     }
 }
 
@@ -121,7 +123,7 @@ impl std::error::Error for ClientError {
         match &self {
             Self::InvalidClientIdentifier(e) => Some(e),
             Self::FailedICS23Verification(e) => Some(e),
-            Self::Status(e) => Some(e),
+            Self::ClientStatus(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }

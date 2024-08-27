@@ -17,9 +17,9 @@ use ibc_core_connection_types::msgs::{
     MsgConnectionOpenTry, CONN_OPEN_ACK_TYPE_URL, CONN_OPEN_CONFIRM_TYPE_URL,
     CONN_OPEN_INIT_TYPE_URL, CONN_OPEN_TRY_TYPE_URL,
 };
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_router_types::error::RouterError;
 use ibc_primitives::prelude::*;
-use ibc_primitives::DecodingError;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::Protobuf;
 

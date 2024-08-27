@@ -6,8 +6,8 @@ use core::str::FromStr;
 use base64::prelude::BASE64_STANDARD;
 #[cfg(feature = "serde")]
 use base64::Engine;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
-use ibc_core::primitives::DecodingError;
 use mime::Mime;
 
 use crate::error::NftTransferError;
