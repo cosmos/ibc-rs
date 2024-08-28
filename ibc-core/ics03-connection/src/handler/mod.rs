@@ -1,5 +1,6 @@
 use ibc_core_client::types::error::ClientError;
 use ibc_core_handler_types::error::ContextError;
+use ibc_core_host::types::error::DecodingError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_primitives::proto::Any;
 
@@ -36,9 +37,7 @@ where
 
         let any_client_state = <Any as Message>::decode(wasm_client_state.data.as_slice())
             .map_err(|e| {
-                ContextError::ConnectionError(ConnectionError::InvalidClientState {
-                    description: e.to_string(),
-                })
+                ContextError::ConnectionError(ConnectionError::Decoding(DecodingError::Prost(e)))
             })?;
 
         Ok(CS::try_from(any_client_state).map_err(Into::<ClientError>::into)?)

@@ -3,7 +3,7 @@
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
-use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_core_host_types::identifiers::ConnectionId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
@@ -12,6 +12,8 @@ use crate::version::Version;
 
 #[derive(Debug, Display)]
 pub enum ConnectionError {
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
     /// invalid state for initializing new ConnectionEnd; expected `Init` connection state and a single version

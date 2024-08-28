@@ -25,6 +25,7 @@ borsh       = { workspace = true, optional = true }
 derive_more = { workspace = true }
 displaydoc  = { workspace = true }
 http        = { version = "1.1.0" }
+prost       = { workspace = true }
 schemars    = { workspace = true, optional = true }
 serde       = { workspace = true, optional = true }
 
