@@ -24,7 +24,7 @@ use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::applications::transfer::{
-    extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
+    dummy_msg_transfer, dummy_packet_data, extract_transfer_packet,
 };
 use ibc_testkit::fixtures::core::channel::{
     dummy_raw_msg_ack_with_packet, dummy_raw_msg_chan_close_confirm, dummy_raw_msg_chan_close_init,
@@ -143,7 +143,7 @@ fn routing_module_and_keepers() {
     let msg_chan_close_confirm =
         MsgChannelCloseConfirm::try_from(dummy_raw_msg_chan_close_confirm(client_height)).unwrap();
 
-    let packet_data = PacketDataConfig::builder()
+    let packet_data = dummy_packet_data()
         .token(
             BaseCoin {
                 denom: "uatom".parse().expect("parse denom"),
@@ -153,17 +153,17 @@ fn routing_module_and_keepers() {
         )
         .build();
 
-    let msg_transfer = MsgTransferConfig::builder()
+    let msg_transfer = dummy_msg_transfer()
         .packet_data(packet_data.clone())
         .timeout_height_on_b(TimeoutHeight::At(Height::new(0, 35).unwrap()))
         .build();
 
-    let msg_transfer_two = MsgTransferConfig::builder()
+    let msg_transfer_two = dummy_msg_transfer()
         .packet_data(packet_data.clone())
         .timeout_height_on_b(TimeoutHeight::At(Height::new(0, 36).unwrap()))
         .build();
 
-    let msg_transfer_no_timeout = MsgTransferConfig::builder()
+    let msg_transfer_no_timeout = dummy_msg_transfer()
         .packet_data(packet_data.clone())
         .build();
 

@@ -2,6 +2,7 @@ use core::str::FromStr;
 use core::time::Duration;
 
 use basecoin_store::avl::get_proof_spec as basecoin_proof_spec;
+use bon::{bon, builder};
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::error::{Error as ClientError, Error};
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
@@ -16,7 +17,6 @@ use ibc::core::commitment_types::specs::ProofSpecs;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use tendermint::block::Header as TmHeader;
-use typed_builder::TypedBuilder;
 
 /// Returns a dummy tendermint `ClientState` by given `frozen_height`, for testing purposes only!
 pub fn dummy_tm_client_state_from_raw(frozen_height: RawHeight) -> Result<TmClientState, Error> {
@@ -66,20 +66,27 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
     }
 }
 
-#[derive(TypedBuilder, Debug)]
+#[builder]
+#[derive(Debug)]
 pub struct ClientStateConfig {
     #[builder(default = TrustThreshold::ONE_THIRD)]
     pub trust_level: TrustThreshold,
+
     #[builder(default = Duration::from_secs(64000))]
     pub trusting_period: Duration,
+
     #[builder(default = Duration::from_secs(128_000))]
     pub unbonding_period: Duration,
+
     #[builder(default = Duration::from_millis(3000))]
     pub max_clock_drift: Duration,
+
     #[builder(default = vec![basecoin_proof_spec(); 2].try_into().expect("no error"))]
     pub proof_specs: ProofSpecs,
+
     #[builder(default)]
     pub upgrade_path: Vec<String>,
+
     #[builder(default = AllowUpdate { after_expiry: false, after_misbehaviour: false })]
     allow_update: AllowUpdate,
 }
@@ -90,7 +97,9 @@ impl Default for ClientStateConfig {
     }
 }
 
+#[bon]
 impl ClientStateConfig {
+    #[builder]
     pub fn into_client_state(
         self,
         chain_id: ChainId,

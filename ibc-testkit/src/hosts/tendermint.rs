@@ -1,5 +1,6 @@
 use core::str::FromStr;
 
+use bon::builder;
 use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState;
 use ibc::clients::tendermint::types::proto::v1::Header as RawHeader;
@@ -17,13 +18,13 @@ use tendermint_testgen::{
     Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
     Validator as TestgenValidator,
 };
-use typed_builder::TypedBuilder;
 
 use crate::fixtures::clients::tendermint::ClientStateConfig;
 use crate::hosts::{TestBlock, TestHeader, TestHost};
 
 /// A host that produces Tendermint blocks and interfaces with Tendermint light clients.
-#[derive(TypedBuilder, Debug)]
+#[builder]
+#[derive(Debug)]
 pub struct TendermintHost {
     /// Unique identifier for the chain.
     #[builder(default = ChainId::new("mock-0").expect("Never fails"))]
@@ -85,12 +86,14 @@ impl TestHost for TendermintHost {
             .unbonding_period(params.unbonding_period)
             .proof_specs(params.proof_specs.clone())
             .build()
-            .into_client_state(
-                self.chain_id.clone(),
+            .into_client_state()
+            .chain_id(self.chain_id.clone())
+            .latest_height(
                 self.get_block(latest_height)
                     .expect("block exists")
                     .height(),
             )
+            .call()
             .expect("never fails");
 
         client_state.inner().validate().expect("never fails");
@@ -128,7 +131,8 @@ impl TestBlock for TmLightBlock {
     }
 }
 
-#[derive(Debug, TypedBuilder)]
+#[builder]
+#[derive(Debug)]
 pub struct BlockParams {
     pub validators: Vec<TestgenValidator>,
     pub next_validators: Vec<TestgenValidator>,
