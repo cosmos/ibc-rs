@@ -1,5 +1,6 @@
 use ibc_core_client::types::error::ClientError;
 use ibc_core_handler_types::error::ContextError;
+#[cfg(feature = "wasm-client")]
 use ibc_core_host::types::error::DecodingError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_primitives::proto::Any;
