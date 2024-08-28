@@ -20,6 +20,7 @@ all-features = true
 
 [dependencies]
 # external dependencies
+base64      = { workspace = true }
 borsh       = { workspace = true, optional = true }
 derive_more = { workspace = true }
 displaydoc  = { workspace = true }

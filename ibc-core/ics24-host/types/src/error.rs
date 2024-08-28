@@ -1,9 +1,11 @@
 //! Foundational error types that are applicable across multiple ibc-rs workspaces.
 
-use alloc::string::String;
+use alloc::string::{FromUtf8Error, String};
 
+use base64::DecodeError as Base64Error;
 use displaydoc::Display;
 use http::uri::InvalidUri;
+
 use ibc_primitives::prelude::*;
 use tendermint_proto::Error as ProtoError;
 
@@ -26,25 +28,23 @@ pub enum IdentifierError {
 /// Errors that result in decoding failures
 #[derive(Debug, Display)]
 pub enum DecodingError {
-    /// invalid identifier error: `{0}`
-    InvalidIdentifier(IdentifierError),
+    /// base64 decoding error: `{0}`
+    Base64(Base64Error),
+    /// utf-8 decoding error: `{0}`
+    Utf8(FromUtf8Error),
+    /// protobuf decoding error: `{0}`
+    Protobuf(ProtoError),
     /// invalid JSON data: `{description}`
     InvalidJson { description: String },
-    /// invalid UTF-8 data: `{description}`
-    InvalidUtf8 { description: String },
     /// invalid URI: `{0}`
     InvalidUri(InvalidUri),
-    /// malformed bytes that could not be decoded: `{description}`
-    MalformedBytes { description: String },
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
-    /// failed to decode proto; error: `{0}`
-    FailedToDecodeProto(ProtoError),
 }
 
 impl From<ProtoError> for DecodingError {
     fn from(e: ProtoError) -> Self {
-        Self::FailedToDecodeProto(e)
+        Self::Protobuf(e)
     }
 }
 

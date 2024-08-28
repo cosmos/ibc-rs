@@ -2,6 +2,7 @@
 
 use core::fmt;
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
@@ -122,7 +123,7 @@ impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
 
     fn try_from(value: &'a CommitmentProofBytes) -> Result<Self, Self::Error> {
         Protobuf::<RawMerkleProof>::decode(value.as_ref())
-            .map_err(|e| CommitmentError::FailedDecoding(e.to_string()))
+            .map_err(|e| CommitmentError::Decoding(DecodingError::Protobuf(e)))
     }
 }
 
