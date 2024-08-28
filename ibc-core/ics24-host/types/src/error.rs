@@ -4,7 +4,6 @@ use alloc::string::{FromUtf8Error, String};
 
 use base64::DecodeError as Base64Error;
 use displaydoc::Display;
-use http::uri::InvalidUri;
 use ibc_primitives::prelude::*;
 use prost::DecodeError as ProstError;
 use tendermint_proto::Error as ProtoError;
@@ -38,8 +37,6 @@ pub enum DecodingError {
     Prost(ProstError),
     /// invalid JSON data: `{description}`
     InvalidJson { description: String },
-    /// invalid URI: `{0}`
-    InvalidUri(InvalidUri),
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
 }

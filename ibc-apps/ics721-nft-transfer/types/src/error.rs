@@ -2,6 +2,7 @@
 use core::convert::Infallible;
 
 use displaydoc::Display;
+use http::uri::InvalidUri;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
@@ -17,8 +18,10 @@ pub enum NftTransferError {
     Decoding(DecodingError),
     /// identifier error: `{0}`
     Identifier(IdentifierError),
-    /// invalid trace `{0}`
+    /// invalid trace: `{0}`
     InvalidTrace(String),
+    /// invalid URI error: `{0}`
+    InvalidUri(InvalidUri),
     /// missing destination channel `{channel_id}` on port `{port_id}`
     MissingDestinationChannel {
         port_id: PortId,
