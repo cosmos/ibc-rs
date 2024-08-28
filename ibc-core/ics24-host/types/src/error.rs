@@ -6,6 +6,7 @@ use base64::DecodeError as Base64Error;
 use displaydoc::Display;
 use http::uri::InvalidUri;
 use ibc_primitives::prelude::*;
+use prost::DecodeError as ProstError;
 use tendermint_proto::Error as ProtoError;
 
 /// Errors that arise when parsing identifiers.
@@ -33,6 +34,8 @@ pub enum DecodingError {
     Utf8(FromUtf8Error),
     /// protobuf decoding error: `{0}`
     Protobuf(ProtoError),
+    /// prost decoding error: `{0}`
+    Prost(ProstError),
     /// invalid JSON data: `{description}`
     InvalidJson { description: String },
     /// invalid URI: `{0}`
