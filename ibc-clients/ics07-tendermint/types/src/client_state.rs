@@ -8,6 +8,7 @@ use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::proto::v1::Height as RawHeight;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::specs::ProofSpecs;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::ZERO_DURATION;
@@ -341,17 +342,19 @@ impl TryFrom<Any> for ClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_client_state(value: &[u8]) -> Result<ClientState, ClientError> {
-            let client_state =
-                Protobuf::<RawTmClientState>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
+        fn decode_client_state(value: &[u8]) -> Result<ClientState, DecodingError> {
+            let client_state = Protobuf::<RawTmClientState>::decode(value)?;
             Ok(client_state)
         }
 
         match raw.type_url.as_str() {
-            TENDERMINT_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
-            _ => Err(ClientError::InvalidClientStateType(raw.type_url)),
+            TENDERMINT_CLIENT_STATE_TYPE_URL => {
+                decode_client_state(&raw.value).map_err(ClientError::Decoding)
+            }
+            _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
+                expected: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })),
         }
     }
 }

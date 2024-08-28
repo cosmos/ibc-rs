@@ -106,7 +106,7 @@ impl TryFrom<Any> for MsgTransfer {
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
             TYPE_URL => MsgTransfer::decode_vec(&raw.value)
-                .map_err(|e| TokenTransferError::Decoding(DecodingError::FailedToDecodeProto(e))),
+                .map_err(|e| TokenTransferError::Decoding(DecodingError::Protobuf(e))),
             _ => Err(TokenTransferError::Decoding(
                 DecodingError::MismatchedTypeUrls {
                     expected: TYPE_URL.to_string(),

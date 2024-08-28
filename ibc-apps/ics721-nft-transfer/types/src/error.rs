@@ -15,6 +15,8 @@ pub enum NftTransferError {
     ContextError(ContextError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
+    /// identifier error: `{0}`
+    Identifier(IdentifierError),
     /// invalid trace `{0}`
     InvalidTrace(String),
     /// missing destination channel `{channel_id}` on port `{port_id}`
@@ -67,7 +69,7 @@ impl From<ContextError> for NftTransferError {
 
 impl From<IdentifierError> for NftTransferError {
     fn from(e: IdentifierError) -> Self {
-        Self::Decoding(DecodingError::InvalidIdentifier(e))
+        Self::Identifier(e)
     }
 }
 
