@@ -1,5 +1,5 @@
 //! Defines types to represent "denominations" [as defined in ICS-20](https://github.com/cosmos/ibc/blob/main/spec/app/ics-020-fungible-token-transfer/README.md#data-structures)
-use core::fmt::{Display, Error as FmtError, Formatter};
+use core::fmt::{Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::{Display, From};
