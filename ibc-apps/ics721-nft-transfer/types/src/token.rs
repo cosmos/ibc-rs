@@ -3,7 +3,6 @@ use core::fmt::{self, Display};
 use core::str::FromStr;
 
 use http::Uri;
-use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
@@ -183,7 +182,7 @@ impl FromStr for TokenUri {
     fn from_str(token_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(token_uri) {
             Ok(uri) => Ok(Self(uri)),
-            Err(err) => Err(NftTransferError::Decoding(DecodingError::InvalidUri(err))),
+            Err(err) => Err(NftTransferError::InvalidUri(err)),
         }
     }
 }

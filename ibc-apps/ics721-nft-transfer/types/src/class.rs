@@ -4,7 +4,6 @@ use core::str::FromStr;
 
 use http::Uri;
 pub use ibc_app_transfer_types::{TracePath, TracePrefix};
-use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
@@ -249,7 +248,7 @@ impl FromStr for ClassUri {
     fn from_str(class_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(class_uri) {
             Ok(uri) => Ok(Self(uri)),
-            Err(err) => Err(NftTransferError::Decoding(DecodingError::InvalidUri(err))),
+            Err(err) => Err(NftTransferError::InvalidUri(err)),
         }
     }
 }
