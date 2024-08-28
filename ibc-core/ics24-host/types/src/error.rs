@@ -4,7 +4,6 @@ use alloc::string::String;
 
 use displaydoc::Display;
 use http::uri::InvalidUri;
-
 use ibc_primitives::prelude::*;
 use tendermint_proto::Error as ProtoError;
 

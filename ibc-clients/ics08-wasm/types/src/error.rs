@@ -1,8 +1,7 @@
 //! Defines the error type for the ICS-08 Wasm light client.
 
 use displaydoc::Display;
-use ibc_core_host_types::error::DecodingError;
-use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_primitives::prelude::*;
 
 /// The main error type
