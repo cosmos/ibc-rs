@@ -5,7 +5,6 @@ use alloc::string::{FromUtf8Error, String};
 use base64::DecodeError as Base64Error;
 use displaydoc::Display;
 use http::uri::InvalidUri;
-
 use ibc_primitives::prelude::*;
 use tendermint_proto::Error as ProtoError;
 
