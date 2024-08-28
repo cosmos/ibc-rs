@@ -1,7 +1,6 @@
 //! Defines the commitment error type
 
 use displaydoc::Display;
-
 use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 
