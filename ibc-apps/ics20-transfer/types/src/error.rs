@@ -66,18 +66,6 @@ impl From<Infallible> for TokenTransferError {
     }
 }
 
-// impl From<ContextError> for TokenTransferError {
-//     fn from(e: ContextError) -> Self {
-//         Self::ContextError(e)
-//     }
-// }
-
-// impl From<IdentifierError> for TokenTransferError {
-//     fn from(e: IdentifierError) -> Self {
-//         Self::Identifier(e)
-//     }
-// }
-
 impl From<TokenTransferError> for StatusValue {
     fn from(e: TokenTransferError) -> Self {
         StatusValue::new(e.to_string()).expect("error message must not be empty")
