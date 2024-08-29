@@ -3,7 +3,6 @@ use core::convert::Infallible;
 
 use displaydoc::Display;
 use http::uri::InvalidUri;
-
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
@@ -62,6 +61,24 @@ impl std::error::Error for NftTransferError {
 impl From<Infallible> for NftTransferError {
     fn from(e: Infallible) -> Self {
         match e {}
+    }
+}
+
+impl From<ContextError> for NftTransferError {
+    fn from(e: ContextError) -> Self {
+        Self::ContextError(e)
+    }
+}
+
+impl From<IdentifierError> for NftTransferError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Identifier(e)
+    }
+}
+
+impl From<DecodingError> for NftTransferError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 
