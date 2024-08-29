@@ -1,5 +1,6 @@
 //! Definition of domain type message `MsgSubmitMisbehaviour`.
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -48,7 +49,7 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
             client_id: raw
                 .client_id
                 .parse()
-                .map_err(ClientError::InvalidClientIdentifier)?,
+                .map_err(|e| ClientError::Decoding(DecodingError::InvalidIdentifier(e)))?,
             misbehaviour: raw_misbehaviour,
             signer: raw.signer.into(),
         })

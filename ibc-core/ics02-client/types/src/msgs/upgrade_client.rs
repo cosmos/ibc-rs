@@ -4,6 +4,7 @@ use core::str::FromStr;
 
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_core_commitment_types::error::CommitmentError;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -78,7 +79,7 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
 
         Ok(MsgUpgradeClient {
             client_id: ClientId::from_str(&proto_msg.client_id)
-                .map_err(ClientError::InvalidClientIdentifier)?,
+                .map_err(|e| ClientError::Decoding(DecodingError::InvalidIdentifier(e)))?,
             upgraded_client_state: raw_client_state,
             upgraded_consensus_state: raw_consensus_state,
             proof_upgrade_client: c_bytes,

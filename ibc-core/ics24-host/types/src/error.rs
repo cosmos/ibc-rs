@@ -37,6 +37,8 @@ pub enum DecodingError {
     Prost(ProstError),
     /// invalid JSON data: `{description}`
     InvalidJson { description: String },
+    /// invalid identifier error: `{0}`
+    InvalidIdentifier(IdentifierError),
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
 }
