@@ -41,6 +41,8 @@ pub enum DecodingError {
     InvalidIdentifier(IdentifierError),
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
+    /// unknown type URL: `{0}`
+    UnknownTypeUrl(String),
 }
 
 impl From<ProtoError> for DecodingError {
