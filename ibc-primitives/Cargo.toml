@@ -33,7 +33,6 @@ ibc-proto = { workspace = true }
 
 # cosmos dependencies
 tendermint       = { workspace = true }
-tendermint-proto = { workspace = true }
 
 # parity dependencies
 parity-scale-codec = { workspace = true, optional = true }
