@@ -2,14 +2,13 @@
 use core::convert::Infallible;
 
 use displaydoc::Display;
-use uint::FromDecStrErr;
-
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::error::{DecodingError, IdentifierError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
+use uint::FromDecStrErr;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
