@@ -17,8 +17,8 @@ pub enum TokenTransferError {
     ContextError(ContextError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// invalid identifier: `{0}`
-    InvalidIdentifier(IdentifierError),
+    /// identifier error: `{0}`
+    Identifier(IdentifierError),
     /// invalid trace: `{0}`
     InvalidTrace(String),
     /// invalid amount: `{0}`
@@ -55,7 +55,7 @@ impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::InvalidIdentifier(e) => Some(e),
+            Self::Identifier(e) => Some(e),
             Self::InvalidAmount(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
@@ -77,7 +77,7 @@ impl From<ContextError> for TokenTransferError {
 
 impl From<IdentifierError> for TokenTransferError {
     fn from(e: IdentifierError) -> Self {
-        Self::InvalidIdentifier(e)
+        Self::Identifier(e)
     }
 }
 

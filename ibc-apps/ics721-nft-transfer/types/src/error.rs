@@ -11,7 +11,7 @@ use ibc_core::host::types::error::{DecodingError, IdentifierError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 
-#[derive(Display, Debug, derive_more::From)]
+#[derive(Display, Debug)]
 pub enum NftTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
