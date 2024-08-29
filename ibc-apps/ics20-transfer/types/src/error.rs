@@ -10,7 +10,7 @@ use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use uint::FromDecStrErr;
 
-#[derive(Display, Debug)]
+#[derive(Display, Debug, derive_more::From)]
 pub enum TokenTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
@@ -18,12 +18,8 @@ pub enum TokenTransferError {
     Decoding(DecodingError),
     /// identifier error: `{0}`
     Identifier(IdentifierError),
-    /// invalid trace: `{0}`
-    InvalidTrace(String),
     /// invalid amount: `{0}`
     InvalidAmount(FromDecStrErr),
-    /// invalid coin: `{0}`
-    InvalidCoin(String),
     /// missing token
     MissingToken,
     /// missing destination channel `{channel_id}` on port `{port_id}`
@@ -43,6 +39,8 @@ pub enum TokenTransferError {
     // to a host-relevant error
     /// failed to parse account ID
     FailedToParseAccount,
+    /// failed to parse `{expected}` from `{actual}`
+    FailedToParseType { expected: String, actual: String },
     /// channel cannot be closed
     UnsupportedClosedChannel,
     /// empty base denomination
@@ -68,17 +66,17 @@ impl From<Infallible> for TokenTransferError {
     }
 }
 
-impl From<ContextError> for TokenTransferError {
-    fn from(e: ContextError) -> Self {
-        Self::ContextError(e)
-    }
-}
+// impl From<ContextError> for TokenTransferError {
+//     fn from(e: ContextError) -> Self {
+//         Self::ContextError(e)
+//     }
+// }
 
-impl From<IdentifierError> for TokenTransferError {
-    fn from(e: IdentifierError) -> Self {
-        Self::Identifier(e)
-    }
-}
+// impl From<IdentifierError> for TokenTransferError {
+//     fn from(e: IdentifierError) -> Self {
+//         Self::Identifier(e)
+//     }
+// }
 
 impl From<TokenTransferError> for StatusValue {
     fn from(e: TokenTransferError) -> Self {
