@@ -4,7 +4,7 @@ use core::convert::Infallible;
 
 use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::{DecodingError, IdentifierError};
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
@@ -31,9 +31,6 @@ pub enum ClientError {
     InvalidConsensusStateType(String),
     /// invalid update client message
     InvalidUpdateClientMessage,
-    // TODO(seanchen1991): Should this be removed in favor of DecodingError::InvalidIdentifier?
-    /// invalid client identifier: `{0}`
-    InvalidClientIdentifier(IdentifierError),
     /// invalid raw header: `{description}`
     InvalidRawHeader { description: String },
     /// invalid misbehaviour type: `{0}`
@@ -121,7 +118,6 @@ impl From<StatusError> for ClientError {
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::InvalidClientIdentifier(e) => Some(e),
             Self::FailedICS23Verification(e) => Some(e),
             Self::ClientStatus(e) => Some(e),
             Self::Decoding(e) => Some(e),

@@ -1,5 +1,6 @@
 //! Definition of domain type message `MsgRecoverClient`.
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -45,11 +46,11 @@ impl TryFrom<RawMsgRecoverClient> for MsgRecoverClient {
             subject_client_id: raw
                 .subject_client_id
                 .parse()
-                .map_err(ClientError::InvalidClientIdentifier)?,
+                .map_err(|e| ClientError::Decoding(DecodingError::InvalidIdentifier(e)))?,
             substitute_client_id: raw
                 .substitute_client_id
                 .parse()
-                .map_err(ClientError::InvalidClientIdentifier)?,
+                .map_err(|e| ClientError::Decoding(DecodingError::InvalidIdentifier(e)))?,
             signer: raw.signer.into(),
         })
     }
