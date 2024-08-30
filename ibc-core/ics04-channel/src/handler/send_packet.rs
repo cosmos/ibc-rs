@@ -4,7 +4,6 @@ use ibc_core_channel_types::error::PacketError;
 use ibc_core_channel_types::events::SendPacket;
 use ibc_core_channel_types::packet::Packet;
 use ibc_core_client::context::prelude::*;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
@@ -60,8 +59,7 @@ pub fn send_packet_validate(
 
     client_state_of_b_on_a
         .status(ctx_a.get_client_validation_context(), client_id_on_a)?
-        .verify_is_active()
-        .map_err(ClientError::ClientStatus)?;
+        .verify_is_active()?;
 
     let latest_height_on_a = client_state_of_b_on_a.latest_height();
 

@@ -10,7 +10,7 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 
 use crate::height::Height;
-use crate::StatusError;
+use crate::Status;
 
 /// Encodes all the possible client errors
 #[derive(Debug, Display)]
@@ -19,8 +19,6 @@ pub enum ClientError {
     Upgrade(UpgradeClientError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// client status error: `{0}`
-    ClientStatus(StatusError),
     /// invalid header type: `{0}`
     InvalidHeaderType(String),
     /// invalid trust threshold: `{numerator}`/`{denominator}`
@@ -45,6 +43,8 @@ pub enum ClientError {
     InvalidAttributeKey(String),
     /// invalid attribute value: `{0}`
     InvalidAttributeValue(String),
+    /// invalid status: `{0}`
+    InvalidStatus(String),
     /// missing client state for client: `{0}`
     MissingClientState(ClientId),
     /// missing consensus state for client `{client_id}` at height `{height}`
@@ -65,6 +65,8 @@ pub enum ClientError {
     MissingAttributeKey,
     /// missing attribute value
     MissingAttributeValue,
+    /// unexpected status found: `{0}`
+    UnexpectedStatus(Status),
     /// client state already exists: `{0}`
     AlreadyExistingClientState(ClientId),
     /// mismatched client recovery states
@@ -108,18 +110,11 @@ impl From<CommitmentError> for ClientError {
     }
 }
 
-impl From<StatusError> for ClientError {
-    fn from(e: StatusError) -> Self {
-        Self::ClientStatus(e)
-    }
-}
-
 #[cfg(feature = "std")]
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::FailedICS23Verification(e) => Some(e),
-            Self::ClientStatus(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }

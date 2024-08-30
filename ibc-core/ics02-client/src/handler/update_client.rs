@@ -26,8 +26,7 @@ where
 
     client_state
         .status(client_val_ctx, &client_id)?
-        .verify_is_active()
-        .map_err(ClientError::ClientStatus)?;
+        .verify_is_active()?;
 
     let client_message = msg.client_message();
 

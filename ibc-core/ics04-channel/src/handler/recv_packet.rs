@@ -5,7 +5,6 @@ use ibc_core_channel_types::events::{ReceivePacket, WriteAcknowledgement};
 use ibc_core_channel_types::msgs::MsgRecvPacket;
 use ibc_core_channel_types::packet::Receipt;
 use ibc_core_client::context::prelude::*;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::error::ContextError;
@@ -187,8 +186,7 @@ where
 
         client_state_of_a_on_b
             .status(ctx_b.get_client_validation_context(), client_id_on_b)?
-            .verify_is_active()
-            .map_err(ClientError::ClientStatus)?;
+            .verify_is_active()?;
 
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 

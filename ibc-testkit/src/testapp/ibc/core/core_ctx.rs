@@ -11,7 +11,7 @@ use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::channel::types::packet::{PacketState, Receipt};
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
-use ibc::core::client::types::{Height, Status, StatusError};
+use ibc::core::client::types::{Height, Status};
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::commitment_types::merkle::MerkleProof;
 use ibc::core::connection::types::error::ConnectionError;
@@ -80,9 +80,7 @@ where
         client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), ContextError> {
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(
-                ClientError::ClientStatus(StatusError::UnexpectedStatus(Status::Frozen)).into(),
-            );
+            return Err(ClientError::UnexpectedStatus(Status::Frozen).into());
         }
 
         let latest_height = self.host_height()?;

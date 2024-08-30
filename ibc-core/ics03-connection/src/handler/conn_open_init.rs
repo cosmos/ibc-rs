@@ -1,6 +1,5 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
 use ibc_core_client::context::prelude::*;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_connection_types::events::OpenInit;
 use ibc_core_connection_types::msgs::MsgConnectionOpenInit;
 use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
@@ -24,8 +23,7 @@ where
 
     client_state_of_b_on_a
         .status(client_val_ctx_a, &msg.client_id_on_a)?
-        .verify_is_active()
-        .map_err(ClientError::ClientStatus)?;
+        .verify_is_active()?;
 
     if let Some(version) = msg.version {
         version.verify_is_supported(&ctx_a.get_compatible_versions())?;
