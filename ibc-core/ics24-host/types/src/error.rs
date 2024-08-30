@@ -39,6 +39,10 @@ pub enum DecodingError {
     InvalidJson { description: String },
     /// invalid identifier error: `{0}`
     InvalidIdentifier(IdentifierError),
+    /// invalid raw data: `{description}`
+    InvalidRawData { description: String },
+    /// missing raw data: `{description}`
+    MissingRawData { description: String },
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
     /// unknown type URL: `{0}`

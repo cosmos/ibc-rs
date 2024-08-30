@@ -84,14 +84,13 @@ impl TryFrom<Any> for Plan {
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
         match any.type_url.as_str() {
-            TYPE_URL => Protobuf::<RawPlan>::decode_vec(&any.value)
-                .map_err(|e| UpgradeClientError::Decoding(DecodingError::Protobuf(e))),
-            _ => Err(UpgradeClientError::Decoding(
-                DecodingError::MismatchedTypeUrls {
-                    expected: TYPE_URL.to_string(),
-                    actual: any.type_url,
-                },
-            )),
+            TYPE_URL => {
+                Ok(Protobuf::<RawPlan>::decode_vec(&any.value).map_err(DecodingError::Protobuf)?)
+            }
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: TYPE_URL.to_string(),
+                actual: any.type_url,
+            })?,
         }
     }
 }

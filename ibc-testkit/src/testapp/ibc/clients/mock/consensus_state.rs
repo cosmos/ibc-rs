@@ -73,10 +73,10 @@ impl TryFrom<Any> for MockConsensusState {
             MOCK_CONSENSUS_STATE_TYPE_URL => {
                 decode_consensus_state(&raw.value).map_err(ClientError::Decoding)
             }
-            _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
+            _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: MOCK_CONSENSUS_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })),
+            })?,
         }
     }
 }

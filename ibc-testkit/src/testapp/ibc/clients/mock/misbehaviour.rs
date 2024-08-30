@@ -27,11 +27,15 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
             client_id: ClientId::new("07-tendermint", 0).expect("no error"),
             header1: raw
                 .header1
-                .ok_or(ClientError::MissingRawMisbehaviour)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "missing header1 in raw misbehaviour".to_string(),
+                })?
                 .try_into()?,
             header2: raw
                 .header2
-                .ok_or(ClientError::MissingRawMisbehaviour)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "missing header2 in raw misbehaviour".to_string(),
+                })?
                 .try_into()?,
         })
     }
@@ -61,10 +65,10 @@ impl TryFrom<Any> for Misbehaviour {
             MOCK_MISBEHAVIOUR_TYPE_URL => {
                 decode_misbehaviour(&raw.value).map_err(ClientError::Decoding)
             }
-            _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
+            _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: MOCK_MISBEHAVIOUR_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })),
+            })?,
         }
     }
 }

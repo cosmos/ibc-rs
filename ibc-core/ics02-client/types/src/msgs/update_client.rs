@@ -38,10 +38,10 @@ impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
             client_id: raw
                 .client_id
                 .parse()
-                .map_err(|e| ClientError::Decoding(DecodingError::InvalidIdentifier(e)))?,
-            client_message: raw
-                .client_message
-                .ok_or(ClientError::MissingRawClientMessage)?,
+                .map_err(DecodingError::InvalidIdentifier)?,
+            client_message: raw.client_message.ok_or(DecodingError::MissingRawData {
+                description: "missing raw client message".to_string(),
+            })?,
             signer: raw.signer.into(),
         })
     }

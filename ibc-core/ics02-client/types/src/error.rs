@@ -29,8 +29,6 @@ pub enum ClientError {
     InvalidConsensusStateType(String),
     /// invalid update client message
     InvalidUpdateClientMessage,
-    /// invalid raw header: `{description}`
-    InvalidRawHeader { description: String },
     /// invalid misbehaviour type: `{0}`
     InvalidMisbehaviourType(String),
     /// invalid height; cannot be zero or negative
@@ -57,8 +55,6 @@ pub enum ClientError {
     MissingRawConsensusState,
     /// missing raw client message
     MissingRawClientMessage,
-    /// missing raw misbehaviour
-    MissingRawMisbehaviour,
     /// missing local consensus state at `{0}`
     MissingLocalConsensusState(Height),
     /// missing attribute key
@@ -110,6 +106,12 @@ impl From<CommitmentError> for ClientError {
     }
 }
 
+impl From<DecodingError> for ClientError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -156,6 +158,12 @@ pub enum UpgradeClientError {
 impl From<UpgradeClientError> for ClientError {
     fn from(e: UpgradeClientError) -> Self {
         ClientError::Upgrade(e)
+    }
+}
+
+impl From<DecodingError> for UpgradeClientError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 
