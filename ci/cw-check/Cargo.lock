@@ -1095,7 +1095,6 @@ dependencies = [
  "schemars",
  "serde",
  "tendermint",
- "tendermint-proto",
  "time",
 ]
 
