@@ -79,12 +79,10 @@ impl TryFrom<Any> for ClientState {
             WASM_CLIENT_STATE_TYPE_URL => {
                 decode_client_state(&any.value).map_err(WasmClientError::Decoding)
             }
-            _ => Err(WasmClientError::Decoding(
-                DecodingError::MismatchedTypeUrls {
-                    expected: WASM_CLIENT_STATE_TYPE_URL.to_string(),
-                    actual: any.type_url,
-                },
-            )),
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: WASM_CLIENT_STATE_TYPE_URL.to_string(),
+                actual: any.type_url,
+            })?,
         }
     }
 }

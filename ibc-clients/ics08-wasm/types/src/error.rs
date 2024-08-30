@@ -21,7 +21,8 @@ pub enum WasmClientError {
 impl std::error::Error for WasmClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match self {
-            Self::InvalidIdentifier(err) => Some(err),
+            Self::InvalidIdentifier(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
     }
@@ -30,5 +31,11 @@ impl std::error::Error for WasmClientError {
 impl From<IdentifierError> for WasmClientError {
     fn from(e: IdentifierError) -> Self {
         Self::InvalidIdentifier(e)
+    }
+}
+
+impl From<DecodingError> for WasmClientError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }

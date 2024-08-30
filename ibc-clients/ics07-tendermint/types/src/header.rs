@@ -173,12 +173,16 @@ impl TryFrom<RawHeader> for Header {
                 .signed_header
                 .ok_or(TendermintClientError::MissingSignedHeader)?
                 .try_into()
-                .map_err(TendermintClientError::InvalidRawHeader)?,
+                .map_err(|e| DecodingError::InvalidRawData {
+                    description: format!("{e:?}"),
+                })?,
             validator_set: raw
                 .validator_set
                 .ok_or(TendermintClientError::MissingValidatorSet)?
                 .try_into()
-                .map_err(TendermintClientError::InvalidRawHeader)?,
+                .map_err(|e| DecodingError::InvalidRawData {
+                    description: format!("{e:?}"),
+                })?,
             trusted_height: raw
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
@@ -187,7 +191,9 @@ impl TryFrom<RawHeader> for Header {
                 .trusted_validators
                 .ok_or(TendermintClientError::MissingTrustedNextValidatorSet)?
                 .try_into()
-                .map_err(TendermintClientError::InvalidRawHeader)?,
+                .map_err(|e| DecodingError::InvalidRawData {
+                    description: format!("{e:?}"),
+                })?,
         };
 
         Ok(header)
@@ -206,10 +212,10 @@ impl TryFrom<Any> for Header {
         }
         match raw.type_url.as_str() {
             TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value).map_err(ClientError::Decoding),
-            _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
+            _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: TENDERMINT_HEADER_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })),
+            })?,
         }
     }
 }

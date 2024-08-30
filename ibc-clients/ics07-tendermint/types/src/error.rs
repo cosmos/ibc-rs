@@ -5,7 +5,7 @@ use core::time::Duration;
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_primitives::prelude::*;
 use ibc_primitives::TimestampError;
 use tendermint::{Error as TendermintError, Hash};
@@ -16,6 +16,8 @@ use tendermint_light_client_verifier::Verdict;
 /// The main error type for the Tendermint light client
 #[derive(Debug, Display)]
 pub enum TendermintClientError {
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
     /// invalid client state trust threshold: `{description}`
@@ -75,6 +77,7 @@ impl std::error::Error for TendermintClientError {
         match &self {
             Self::InvalidIdentifier(e) => Some(e),
             Self::InvalidRawHeader(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
     }
@@ -97,6 +100,12 @@ impl From<IdentifierError> for TendermintClientError {
 impl From<CommitmentError> for TendermintClientError {
     fn from(e: CommitmentError) -> Self {
         Self::InvalidProofSpec(e)
+    }
+}
+
+impl From<DecodingError> for TendermintClientError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 

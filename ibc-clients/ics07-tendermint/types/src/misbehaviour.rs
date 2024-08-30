@@ -123,10 +123,10 @@ impl TryFrom<Any> for Misbehaviour {
             TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
                 decode_misbehaviour(&raw.value).map_err(ClientError::Decoding)
             }
-            _ => Err(ClientError::Decoding(DecodingError::MismatchedTypeUrls {
+            _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: TENDERMINT_MISBEHAVIOUR_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })),
+            })?,
         }
     }
 }
