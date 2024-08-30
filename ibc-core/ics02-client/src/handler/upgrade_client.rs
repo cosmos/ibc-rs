@@ -28,8 +28,7 @@ where
     // Check if the client is active.
     old_client_state
         .status(client_val_ctx, &client_id)?
-        .verify_is_active()
-        .map_err(ClientError::ClientStatus)?;
+        .verify_is_active()?;
 
     // Read the latest consensus state from the host chain store.
     let old_client_cons_state_path = ClientConsensusStatePath::new(

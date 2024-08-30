@@ -4,7 +4,7 @@ use ibc_client_tendermint_types::{client_type as tm_client_type, ClientState as 
 use ibc_core_client::context::client_state::ClientStateCommon;
 use ibc_core_client::context::consensus_state::ConsensusState;
 use ibc_core_client::types::error::{ClientError, UpgradeClientError};
-use ibc_core_client::types::{Height, Status, StatusError};
+use ibc_core_client::types::{Height, Status};
 use ibc_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
@@ -166,9 +166,7 @@ pub fn verify_consensus_state(
     };
 
     if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
-        return Err(ClientError::ClientStatus(StatusError::UnexpectedStatus(
-            Status::Expired,
-        )));
+        return Err(ClientError::UnexpectedStatus(Status::Expired));
     }
 
     Ok(())

@@ -1,8 +1,9 @@
 use core::fmt::{Debug, Display, Formatter};
 use core::str::FromStr;
 
-use displaydoc::Display;
 use ibc_primitives::prelude::*;
+
+use crate::error::ClientError;
 
 /// `UpdateKind` represents the 2 ways that a client can be updated
 /// in IBC: either through a `MsgUpdateClient`, or a `MsgSubmitMisbehaviour`.
@@ -32,15 +33,6 @@ pub enum Status {
     Unauthorized,
 }
 
-/// Encapsulates Status-related errors
-#[derive(Debug, Display)]
-pub enum StatusError {
-    /// invalid client status: `{0}`
-    InvalidStatus(String),
-    /// unexpected status found: `{0}`
-    UnexpectedStatus(Status),
-}
-
 impl Status {
     pub fn is_active(&self) -> bool {
         *self == Status::Active
@@ -55,18 +47,18 @@ impl Status {
     }
 
     /// Checks whether the status is active; returns `Err` if not.
-    pub fn verify_is_active(&self) -> Result<(), StatusError> {
+    pub fn verify_is_active(&self) -> Result<(), ClientError> {
         match self {
             Self::Active => Ok(()),
-            &status => Err(StatusError::UnexpectedStatus(status)),
+            &status => Err(ClientError::UnexpectedStatus(status)),
         }
     }
 
     /// Checks whether the client is either frozen or expired; returns `Err` if not.
-    pub fn verify_is_inactive(&self) -> Result<(), StatusError> {
+    pub fn verify_is_inactive(&self) -> Result<(), ClientError> {
         match self {
             Self::Frozen | Self::Expired => Ok(()),
-            &status => Err(StatusError::UnexpectedStatus(status)),
+            &status => Err(ClientError::UnexpectedStatus(status)),
         }
     }
 }
@@ -78,7 +70,7 @@ impl Display for Status {
 }
 
 impl FromStr for Status {
-    type Err = StatusError;
+    type Err = ClientError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -86,10 +78,7 @@ impl FromStr for Status {
             "FROZEN" => Ok(Status::Frozen),
             "EXPIRED" => Ok(Status::Expired),
             "UNAUTHORIZED" => Ok(Status::Unauthorized),
-            _ => Err(StatusError::InvalidStatus(s.to_string())),
+            _ => Err(ClientError::InvalidStatus(s.to_string())),
         }
     }
 }
-
-#[cfg(feature = "std")]
-impl std::error::Error for StatusError {}
