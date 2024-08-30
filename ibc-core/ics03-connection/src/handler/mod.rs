@@ -37,9 +37,7 @@ where
         })?;
 
         let any_client_state = <Any as Message>::decode(wasm_client_state.data.as_slice())
-            .map_err(|e| {
-                ContextError::ConnectionError(ConnectionError::Decoding(DecodingError::Prost(e)))
-            })?;
+            .map_err(|e| ConnectionError::Decoding(DecodingError::Prost(e)))?;
 
         Ok(CS::try_from(any_client_state).map_err(Into::<ClientError>::into)?)
     } else {
