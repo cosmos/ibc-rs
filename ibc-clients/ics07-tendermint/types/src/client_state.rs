@@ -343,7 +343,11 @@ impl TryFrom<Any> for ClientState {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_client_state(value: &[u8]) -> Result<ClientState, DecodingError> {
-            let client_state = Protobuf::<RawTmClientState>::decode(value)?;
+            let client_state = Protobuf::<RawTmClientState>::decode(value).map_err(|e| {
+                DecodingError::Protobuf {
+                    description: e.to_string(),
+                }
+            })?;
             Ok(client_state)
         }
 
