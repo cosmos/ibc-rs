@@ -28,13 +28,13 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
             header1: raw
                 .header1
                 .ok_or(DecodingError::MissingRawData {
-                    description: "missing header1 in raw misbehaviour".to_string(),
+                    description: "missing header1 in raw misbehaviour".into(),
                 })?
                 .try_into()?,
             header2: raw
                 .header2
                 .ok_or(DecodingError::MissingRawData {
-                    description: "missing header2 in raw misbehaviour".to_string(),
+                    description: "missing header2 in raw misbehaviour".into(),
                 })?
                 .try_into()?,
         })

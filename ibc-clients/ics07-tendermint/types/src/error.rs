@@ -8,7 +8,7 @@ use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_primitives::prelude::*;
 use ibc_primitives::TimestampError;
-use tendermint::{Error as TendermintError, Hash};
+use tendermint::Hash;
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 use tendermint_light_client_verifier::operations::VotingPowerTally;
 use tendermint_light_client_verifier::Verdict;
@@ -28,8 +28,6 @@ pub enum TendermintClientError {
     InvalidProofSpec(CommitmentError),
     /// invalid raw client state: `{description}`
     InvalidRawClientState { description: String },
-    /// invalid raw header error: `{0}`
-    InvalidRawHeader(TendermintError),
     /// invalid raw misbehaviour: `{description}`
     InvalidRawMisbehaviour { description: String },
     /// invalid header timestamp: `{0}`
@@ -76,7 +74,6 @@ impl std::error::Error for TendermintClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::InvalidIdentifier(e) => Some(e),
-            Self::InvalidRawHeader(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }

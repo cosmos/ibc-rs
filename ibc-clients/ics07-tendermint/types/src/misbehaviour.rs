@@ -82,15 +82,15 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
 
         let header1: Header = raw
             .header_1
-            .ok_or_else(|| TendermintClientError::InvalidRawMisbehaviour {
-                description: "missing header1".into(),
+            .ok_or_else(|| DecodingError::MissingRawData {
+                description: "missing header1 in raw misbehaviour".into(),
             })?
             .try_into()?;
 
         let header2: Header = raw
             .header_2
-            .ok_or_else(|| TendermintClientError::InvalidRawMisbehaviour {
-                description: "missing header2".into(),
+            .ok_or_else(|| DecodingError::MissingRawData {
+                description: "missing header2 in raw misbehaviour".into(),
             })?
             .try_into()?;
 
