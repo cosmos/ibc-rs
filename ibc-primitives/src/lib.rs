@@ -32,5 +32,6 @@ pub mod serializers;
 
 pub mod proto {
     pub use ibc_proto::google::protobuf::{Any, Duration, Timestamp};
+    pub use ibc_proto::Error;
     pub use ibc_proto::Protobuf;
 }
