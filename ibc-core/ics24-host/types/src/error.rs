@@ -5,8 +5,8 @@ use alloc::string::{FromUtf8Error, String};
 use base64::DecodeError as Base64Error;
 use displaydoc::Display;
 use ibc_primitives::prelude::*;
+use ibc_primitives::proto::Error as ProtoError;
 use prost::DecodeError as ProstError;
-use tendermint_proto::Error as ProtoError;
 
 /// Errors that arise when parsing identifiers.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
