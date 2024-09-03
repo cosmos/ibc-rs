@@ -219,10 +219,7 @@ impl FromStr for TracePath {
         remaining_parts
             .is_none()
             .then_some(trace_path)
-            .ok_or_else(|| TokenTransferError::FailedToParseType {
-                desired_type: "TracePath".to_string(),
-                str_repr: s.to_string(),
-            })
+            .ok_or_else(|| TokenTransferError::InvalidTrace(s.to_owned()))
     }
 }
 

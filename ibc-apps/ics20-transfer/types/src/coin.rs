@@ -76,10 +76,7 @@ where
                     .chars()
                     .all(|x| x.is_alphanumeric() || VALID_DENOM_CHARACTERS.contains(x))
             })
-            .ok_or_else(|| TokenTransferError::FailedToParseType {
-                desired_type: "Coin".to_string(),
-                str_repr: coin_str.to_string(),
-            })?;
+            .ok_or_else(|| TokenTransferError::InvalidCoin(coin_str.to_owned()))?;
 
         Ok(Coin {
             amount: amount.parse()?,
