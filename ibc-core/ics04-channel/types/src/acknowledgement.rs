@@ -3,6 +3,7 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use derive_more::Into;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 
 use super::error::PacketError;
@@ -137,5 +138,11 @@ impl From<AcknowledgementStatus> for Acknowledgement {
 
         v.try_into()
             .expect("token transfer internal error: ack is never supposed to be empty")
+    }
+}
+
+impl From<DecodingError> for StatusValue {
+    fn from(e: DecodingError) -> Self {
+        StatusValue::new(e.to_string()).expect("error message must not be empty")
     }
 }

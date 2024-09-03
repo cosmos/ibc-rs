@@ -10,7 +10,7 @@ use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use uint::FromDecStrErr;
 
-#[derive(Display, Debug, derive_more::From)]
+#[derive(Display, Debug)]
 pub enum TokenTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
@@ -20,6 +20,10 @@ pub enum TokenTransferError {
     Identifier(IdentifierError),
     /// invalid amount: `{0}`
     InvalidAmount(FromDecStrErr),
+    /// invalid coin: `{0}`
+    InvalidCoin(String),
+    /// invalid trace: `{0}`
+    InvalidTrace(String),
     /// missing token
     MissingToken,
     /// missing destination channel `{channel_id}` on port `{port_id}`
@@ -31,19 +35,10 @@ pub enum TokenTransferError {
     MismatchedChannelOrders { expected: Order, actual: Order },
     /// mismatched port IDs: expected `{expected}`, actual `{actual}`
     MismatchedPortIds { expected: PortId, actual: PortId },
-    /// failed to deserialize packet data
-    FailedToDeserializePacketData,
-    /// failed to deserialize acknowledgement
-    FailedToDeserializeAck,
     // TODO(seanchen1991): Used in basecoin; this variant should be moved
     // to a host-relevant error
     /// failed to parse account ID
     FailedToParseAccount,
-    /// failed to parse `{desired_type}` type from string representation `{str_repr}`
-    FailedToParseType {
-        desired_type: String,
-        str_repr: String,
-    },
     /// channel cannot be closed
     UnsupportedClosedChannel,
     /// empty base denomination
@@ -66,6 +61,24 @@ impl std::error::Error for TokenTransferError {
 impl From<Infallible> for TokenTransferError {
     fn from(e: Infallible) -> Self {
         match e {}
+    }
+}
+
+impl From<ContextError> for TokenTransferError {
+    fn from(e: ContextError) -> Self {
+        Self::ContextError(e)
+    }
+}
+
+impl From<IdentifierError> for TokenTransferError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Identifier(e)
+    }
+}
+
+impl From<DecodingError> for TokenTransferError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 
