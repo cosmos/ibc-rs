@@ -66,10 +66,7 @@ impl ClientStateCommon for ClientState {
         let upgrade_path = &self.inner().upgrade_path;
         let (upgrade_path_prefix, upgrade_path) = match upgrade_path.len() {
             0 => {
-                return Err(UpgradeClientError::InvalidUpgradePath {
-                    description: "no upgrade path has been set".to_string(),
-                }
-                .into());
+                return Err(UpgradeClientError::MissingUpgradePath.into());
             }
             1 => (CommitmentPrefix::empty(), upgrade_path[0].clone()),
             2 => (

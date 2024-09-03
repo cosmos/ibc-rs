@@ -138,6 +138,8 @@ pub enum UpgradeClientError {
     InvalidUpgradeProposal { description: String },
     /// invalid upgrade plan: `{description}`
     InvalidUpgradePlan { description: String },
+    /// missing upgrade path
+    MissingUpgradePath,
     /// missing upgraded client state
     MissingUpgradedClientState,
     /// missing upgraded consensus state
