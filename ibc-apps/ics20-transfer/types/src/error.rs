@@ -39,8 +39,11 @@ pub enum TokenTransferError {
     // to a host-relevant error
     /// failed to parse account ID
     FailedToParseAccount,
-    /// failed to parse `{expected}` from `{actual}`
-    FailedToParseType { expected: String, actual: String },
+    /// failed to parse `{desired_type}` type from string representation `{str_repr}`
+    FailedToParseType {
+        desired_type: String,
+        str_repr: String,
+    },
     /// channel cannot be closed
     UnsupportedClosedChannel,
     /// empty base denomination
