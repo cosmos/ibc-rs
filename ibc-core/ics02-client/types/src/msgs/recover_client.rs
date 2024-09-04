@@ -46,11 +46,11 @@ impl TryFrom<RawMsgRecoverClient> for MsgRecoverClient {
             subject_client_id: raw
                 .subject_client_id
                 .parse()
-                .map_err(DecodingError::InvalidIdentifier)?,
+                .map_err(DecodingError::Identifier)?,
             substitute_client_id: raw
                 .substitute_client_id
                 .parse()
-                .map_err(DecodingError::InvalidIdentifier)?,
+                .map_err(DecodingError::Identifier)?,
             signer: raw.signer.into(),
         })
     }

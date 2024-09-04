@@ -19,7 +19,7 @@ pub enum ChannelError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// identifier error: `{0}`
-    InvalidIdentifier(IdentifierError),
+    Identifier(IdentifierError),
     /// invalid channel id: expected `{expected}`, actual `{actual}`
     InvalidChannelId { expected: String, actual: String },
     /// invalid channel state: expected `{expected}`, actual `{actual}`
@@ -98,8 +98,8 @@ pub enum PacketError {
     InvalidTimeoutHeight(ClientError),
     /// invalid timeout timestamp: `{0}`
     InvalidTimeoutTimestamp(TimestampError),
-    /// invalid identifier: `{0}`
-    InvalidIdentifier(IdentifierError),
+    /// identifier error: `{0}`
+    Identifier(IdentifierError),
     /// empty acknowledgment status not allowed
     EmptyAcknowledgmentStatus,
     /// packet acknowledgment for sequence `{0}` already exists
@@ -127,13 +127,13 @@ pub enum PacketError {
 
 impl From<IdentifierError> for ChannelError {
     fn from(e: IdentifierError) -> Self {
-        Self::InvalidIdentifier(e)
+        Self::Identifier(e)
     }
 }
 
 impl From<IdentifierError> for PacketError {
     fn from(e: IdentifierError) -> Self {
-        Self::InvalidIdentifier(e)
+        Self::Identifier(e)
     }
 }
 
@@ -161,7 +161,7 @@ impl std::error::Error for PacketError {
         match &self {
             Self::Channel(e) => Some(e),
             Self::Decoding(e) => Some(e),
-            Self::InvalidIdentifier(e) => Some(e),
+            Self::Identifier(e) => Some(e),
             _ => None,
         }
     }
@@ -171,7 +171,7 @@ impl std::error::Error for PacketError {
 impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::InvalidIdentifier(e) => Some(e),
+            Self::Identifier(e) => Some(e),
             Self::Decoding(e) => Some(e),
             Self::FailedPacketVerification {
                 client_error: e, ..

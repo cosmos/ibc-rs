@@ -42,14 +42,11 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
 
     fn try_from(raw: RawMsgSubmitMisbehaviour) -> Result<Self, Self::Error> {
         let raw_misbehaviour = raw.misbehaviour.ok_or(DecodingError::MissingRawData {
-            description: "missing raw misbehaviour".to_string(),
+            description: "misbehaviour not set".to_string(),
         })?;
 
         Ok(MsgSubmitMisbehaviour {
-            client_id: raw
-                .client_id
-                .parse()
-                .map_err(DecodingError::InvalidIdentifier)?,
+            client_id: raw.client_id.parse().map_err(DecodingError::Identifier)?,
             misbehaviour: raw_misbehaviour,
             signer: raw.signer.into(),
         })

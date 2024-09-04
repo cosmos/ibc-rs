@@ -3,13 +3,12 @@
 use core::convert::Infallible;
 
 use displaydoc::Display;
-use tendermint::Error as TendermintError;
-
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
+use tendermint::Error as TendermintError;
 
 use crate::height::Height;
 use crate::Status;

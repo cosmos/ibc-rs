@@ -87,7 +87,7 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
 
         Ok(MsgUpgradeClient {
             client_id: ClientId::from_str(&proto_msg.client_id)
-                .map_err(DecodingError::InvalidIdentifier)?,
+                .map_err(DecodingError::Identifier)?,
             upgraded_client_state: raw_client_state,
             upgraded_consensus_state: raw_consensus_state,
             proof_upgrade_client: c_bytes,

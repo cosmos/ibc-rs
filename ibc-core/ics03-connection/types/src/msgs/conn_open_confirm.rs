@@ -38,7 +38,7 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
             conn_id_on_b: msg
                 .connection_id
                 .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
+                .map_err(ConnectionError::Identifier)?,
             proof_conn_end_on_a: msg
                 .proof_ack
                 .try_into()
