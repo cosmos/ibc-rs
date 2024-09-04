@@ -171,28 +171,36 @@ impl TryFrom<RawHeader> for Header {
         let header = Self {
             signed_header: raw
                 .signed_header
-                .ok_or(TendermintClientError::MissingSignedHeader)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "signed header not set".to_string(),
+                })?
                 .try_into()
                 .map_err(|e| DecodingError::InvalidRawData {
-                    description: format!("{e:?}"),
+                    description: format!("failed to decode signed header: {e:?}"),
                 })?,
             validator_set: raw
                 .validator_set
-                .ok_or(TendermintClientError::MissingValidatorSet)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "validator set not set".to_string(),
+                })?
                 .try_into()
                 .map_err(|e| DecodingError::InvalidRawData {
-                    description: format!("{e:?}"),
+                    description: format!("failed to decode validator set: {e:?}"),
                 })?,
             trusted_height: raw
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(TendermintClientError::MissingTrustedHeight)?,
+                .ok_or(DecodingError::MissingRawData {
+                    description: "trusted height not set".to_string(),
+                })?,
             trusted_next_validator_set: raw
                 .trusted_validators
-                .ok_or(TendermintClientError::MissingTrustedNextValidatorSet)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "trusted next validator set not set".to_string(),
+                })?
                 .try_into()
                 .map_err(|e| DecodingError::InvalidRawData {
-                    description: format!("{e:?}"),
+                    description: format!("failed to decode trusted next validator set: {e:?}"),
                 })?,
         };
 
