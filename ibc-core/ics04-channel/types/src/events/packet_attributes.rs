@@ -4,6 +4,7 @@
 use core::str;
 
 use derive_more::From;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use subtle_encoding::hex;
@@ -53,7 +54,7 @@ impl TryFrom<PacketDataAttribute> for Vec<abci::EventAttribute> {
         let tags = vec![
             (
                 PKT_DATA_ATTRIBUTE_KEY,
-                str::from_utf8(&attr.packet_data).map_err(|_| ChannelError::NonUtf8PacketData)?,
+                str::from_utf8(&attr.packet_data).map_err(DecodingError::StrUtf8)?,
             )
                 .into(),
             (
@@ -322,8 +323,7 @@ impl TryFrom<AcknowledgementAttribute> for Vec<abci::EventAttribute> {
                 // is valid UTF-8, even though the standard doesn't require
                 // it. It has been deprecated in ibc-go. It will be removed
                 // in the future.
-                str::from_utf8(attr.acknowledgement.as_bytes())
-                    .map_err(|_| ChannelError::NonUtf8PacketData)?,
+                str::from_utf8(attr.acknowledgement.as_bytes()).map_err(DecodingError::StrUtf8)?,
             )
                 .into(),
             (

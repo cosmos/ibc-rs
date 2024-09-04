@@ -48,7 +48,7 @@ pub enum ClientError {
     /// unexpected status found: `{0}`
     UnexpectedStatus(Status),
     /// client state already exists: `{0}`
-    AlreadyExistingClientState(ClientId),
+    DuplicateClientState(ClientId),
     /// mismatched client recovery states
     MismatchedClientRecoveryStates,
     /// client recovery heights not allowed: expected substitute client height `{substitute_height}` > subject client height `{subject_height}`

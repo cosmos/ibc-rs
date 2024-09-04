@@ -44,7 +44,7 @@ where
     client_state.verify_consensus_state(consensus_state, &host_timestamp)?;
 
     if client_val_ctx.client_state(&client_id).is_ok() {
-        return Err(ClientError::AlreadyExistingClientState(client_id).into());
+        return Err(ClientError::DuplicateClientState(client_id).into());
     };
 
     Ok(())

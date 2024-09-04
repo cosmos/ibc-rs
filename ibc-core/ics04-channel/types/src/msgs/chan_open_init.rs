@@ -1,3 +1,4 @@
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ConnectionId, PortId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -47,7 +48,9 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
     fn try_from(raw_msg: RawMsgChannelOpenInit) -> Result<Self, Self::Error> {
         let chan_end_on_a: ChannelEnd = raw_msg
             .channel
-            .ok_or(ChannelError::MissingRawChannelEnd)?
+            .ok_or(DecodingError::MissingRawData {
+                description: "channel end not set".to_string(),
+            })?
             .try_into()?;
         chan_end_on_a.verify_state_matches(&State::Init)?;
         chan_end_on_a.counterparty().verify_empty_channel_id()?;

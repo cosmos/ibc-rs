@@ -1,5 +1,6 @@
 //! Defines the packet type
 use ibc_core_client_types::Height;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
@@ -172,7 +173,9 @@ impl TryFrom<RawPacket> for Packet {
         }
 
         if raw_pkt.data.is_empty() {
-            return Err(PacketError::EmptyPacketData);
+            return Err(DecodingError::MissingRawData {
+                description: "packet data is not set".to_string(),
+            })?;
         }
 
         // Note: ibc-go currently (July 2022) incorrectly treats the timeout
@@ -282,7 +285,9 @@ impl TryFrom<RawPacketState> for PacketState {
         }
 
         if raw_pkt.data.is_empty() {
-            return Err(PacketError::EmptyPacketData);
+            return Err(DecodingError::MissingRawData {
+                description: "packet data not set".to_string(),
+            })?;
         }
 
         Ok(PacketState {
