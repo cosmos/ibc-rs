@@ -54,11 +54,11 @@ impl TryFrom<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {
             conn_id_on_a: msg
                 .connection_id
                 .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
+                .map_err(ConnectionError::Identifier)?,
             conn_id_on_b: msg
                 .counterparty_connection_id
                 .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
+                .map_err(ConnectionError::Identifier)?,
             client_state_of_a_on_b: msg
                 .client_state
                 .ok_or(ConnectionError::MissingClientState)?,

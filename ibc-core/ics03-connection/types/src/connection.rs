@@ -67,10 +67,7 @@ impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
         };
 
         Ok(IdentifiedConnectionEnd {
-            connection_id: value
-                .id
-                .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
+            connection_id: value.id.parse().map_err(ConnectionError::Identifier)?,
             connection_end: raw_connection_end.try_into()?,
         })
     }
@@ -214,7 +211,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
             value
                 .client_id
                 .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
+                .map_err(ConnectionError::Identifier)?,
             value
                 .counterparty
                 .ok_or(ConnectionError::MissingCounterparty)?
@@ -378,14 +375,14 @@ impl TryFrom<RawCounterparty> for Counterparty {
                 raw_counterparty
                     .connection_id
                     .parse()
-                    .map_err(ConnectionError::InvalidIdentifier)?,
+                    .map_err(ConnectionError::Identifier)?,
             )
         };
         Ok(Counterparty::new(
             raw_counterparty
                 .client_id
                 .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
+                .map_err(ConnectionError::Identifier)?,
             connection_id,
             raw_counterparty
                 .prefix

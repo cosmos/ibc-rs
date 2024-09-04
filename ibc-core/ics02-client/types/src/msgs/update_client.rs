@@ -35,12 +35,9 @@ impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
 
     fn try_from(raw: RawMsgUpdateClient) -> Result<Self, Self::Error> {
         Ok(MsgUpdateClient {
-            client_id: raw
-                .client_id
-                .parse()
-                .map_err(DecodingError::InvalidIdentifier)?,
+            client_id: raw.client_id.parse().map_err(DecodingError::Identifier)?,
             client_message: raw.client_message.ok_or(DecodingError::MissingRawData {
-                description: "missing raw client message".to_string(),
+                description: "client message not set".to_string(),
             })?,
             signer: raw.signer.into(),
         })

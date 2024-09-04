@@ -28,6 +28,8 @@ pub enum IdentifierError {
 /// Errors that result in decoding failures
 #[derive(Debug, Display)]
 pub enum DecodingError {
+    /// identifier error: `{0}`
+    Identifier(IdentifierError),
     /// base64 decoding error: `{0}`
     Base64(Base64Error),
     /// utf-8 String decoding error: `{0}`
@@ -42,8 +44,6 @@ pub enum DecodingError {
     InvalidHash { description: String },
     /// invalid JSON data: `{description}`
     InvalidJson { description: String },
-    /// invalid identifier error: `{0}`
-    InvalidIdentifier(IdentifierError),
     /// invalid raw data: `{description}`
     InvalidRawData { description: String },
     /// missing raw data: `{description}`

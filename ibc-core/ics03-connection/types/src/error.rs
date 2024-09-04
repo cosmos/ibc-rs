@@ -14,8 +14,8 @@ use crate::version::Version;
 pub enum ConnectionError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// invalid identifier: `{0}`
-    InvalidIdentifier(IdentifierError),
+    /// identifier error: `{0}`
+    Identifier(IdentifierError),
     /// invalid state for initializing new ConnectionEnd; expected `Init` connection state and a single version
     InvalidStateForConnectionEndInit,
     /// invalid connection proof
