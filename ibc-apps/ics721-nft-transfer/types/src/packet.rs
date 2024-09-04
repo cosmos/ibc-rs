@@ -130,7 +130,7 @@ impl TryFrom<RawPacketData> for PacketData {
             let decoded = BASE64_STANDARD
                 .decode(raw_pkt_data.class_data)
                 .map_err(DecodingError::Base64)?;
-            let data_str = String::from_utf8(decoded).map_err(DecodingError::Utf8)?;
+            let data_str = String::from_utf8(decoded).map_err(DecodingError::StringUtf8)?;
             Some(data_str.parse()?)
         };
 
@@ -144,7 +144,7 @@ impl TryFrom<RawPacketData> for PacketData {
                 let decoded = BASE64_STANDARD
                     .decode(data)
                     .map_err(DecodingError::Base64)?;
-                let data_str = String::from_utf8(decoded).map_err(DecodingError::Utf8)?;
+                let data_str = String::from_utf8(decoded).map_err(DecodingError::StringUtf8)?;
                 data_str.parse()
             })
             .collect();

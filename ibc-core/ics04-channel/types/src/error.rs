@@ -3,7 +3,7 @@
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
-use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
@@ -16,6 +16,8 @@ use crate::Version;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// identifier error: `{0}`
     InvalidIdentifier(IdentifierError),
     /// invalid channel id: expected `{expected}`, actual `{actual}`
@@ -37,8 +39,6 @@ pub enum ChannelError {
     MissingProofHeight,
     /// missing counterparty
     MissingCounterparty,
-    /// missing channel end in raw message
-    MissingRawChannelEnd,
     /// unsupported channel upgrade sequence
     UnsupportedChannelUpgradeSequence,
     /// unsupported version: expected `{expected}`, actual `{actual}`
@@ -48,8 +48,6 @@ pub enum ChannelError {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// packet data bytes must be valid UTF-8
-    NonUtf8PacketData,
     /// failed packet verification for packet with sequence `{sequence}`: `{client_error}`
     FailedPacketVerification {
         sequence: Sequence,
@@ -72,10 +70,10 @@ pub enum ChannelError {
 
 #[derive(Debug, Display)]
 pub enum PacketError {
-    /// [HostError] application module error: `{description}`
-    AppModule { description: String },
     /// channel error: `{0}`
     Channel(ChannelError),
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
     InsufficientPacketHeight {
         chain_height: Height,
@@ -94,14 +92,6 @@ pub enum PacketError {
         expected: PacketCommitment,
         actual: PacketCommitment,
     },
-    /// [HostError] missing packet receipt for packet `{0}`
-    MissingPacketReceipt(Sequence),
-    /// missing proof
-    MissingProof,
-    /// [HostError] missing acknowledgment for packet `{0}`
-    MissingPacketAcknowledgment(Sequence),
-    /// missing proof height
-    MissingProofHeight,
     /// missing timeout
     MissingTimeout,
     /// invalid timeout height: `{0}`
@@ -110,12 +100,8 @@ pub enum PacketError {
     InvalidTimeoutTimestamp(TimestampError),
     /// invalid identifier: `{0}`
     InvalidIdentifier(IdentifierError),
-    /// empty acknowledgment not allowed
-    EmptyAcknowledgment,
     /// empty acknowledgment status not allowed
     EmptyAcknowledgmentStatus,
-    /// packet data bytes cannot be empty
-    EmptyPacketData,
     /// packet acknowledgment for sequence `{0}` already exists
     DuplicateAcknowledgment(Sequence),
     /// packet sequence cannot be 0
@@ -129,23 +115,43 @@ pub enum PacketError {
     },
     /// implementation-specific error
     ImplementationSpecific,
+
+    // TODO(seanchen1991): Move these variants to host-relevant error types
+    /// application module error: `{description}`
+    AppModule { description: String },
+    /// missing acknowledgment for packet `{0}`
+    MissingPacketAcknowledgment(Sequence),
+    /// missing packet receipt for packet `{0}`
+    MissingPacketReceipt(Sequence),
 }
 
 impl From<IdentifierError> for ChannelError {
-    fn from(err: IdentifierError) -> Self {
-        Self::InvalidIdentifier(err)
+    fn from(e: IdentifierError) -> Self {
+        Self::InvalidIdentifier(e)
     }
 }
 
 impl From<IdentifierError> for PacketError {
-    fn from(err: IdentifierError) -> Self {
-        Self::InvalidIdentifier(err)
+    fn from(e: IdentifierError) -> Self {
+        Self::InvalidIdentifier(e)
+    }
+}
+
+impl From<DecodingError> for ChannelError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
+    }
+}
+
+impl From<DecodingError> for PacketError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 
 impl From<TimestampError> for PacketError {
-    fn from(err: TimestampError) -> Self {
-        Self::InvalidTimeoutTimestamp(err)
+    fn from(e: TimestampError) -> Self {
+        Self::InvalidTimeoutTimestamp(e)
     }
 }
 
@@ -154,6 +160,7 @@ impl std::error::Error for PacketError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Channel(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             Self::InvalidIdentifier(e) => Some(e),
             _ => None,
         }
@@ -165,6 +172,7 @@ impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::InvalidIdentifier(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             Self::FailedPacketVerification {
                 client_error: e, ..
             } => Some(e),
