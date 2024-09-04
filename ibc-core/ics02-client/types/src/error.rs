@@ -3,6 +3,8 @@
 use core::convert::Infallible;
 
 use displaydoc::Display;
+use tendermint::Error as TendermintError;
+
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
@@ -19,8 +21,6 @@ pub enum ClientError {
     Upgrade(UpgradeClientError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// invalid header type: `{0}`
-    InvalidHeaderType(String),
     /// invalid trust threshold: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// invalid client state type: `{0}`
@@ -43,12 +43,6 @@ pub enum ClientError {
     InvalidAttributeValue(String),
     /// invalid status: `{0}`
     InvalidStatus(String),
-    /// missing client state for client: `{0}`
-    MissingClientState(ClientId),
-    /// missing consensus state for client `{client_id}` at height `{height}`
-    MissingConsensusState { client_id: ClientId, height: Height },
-    /// missing update client metadata for client `{client_id}` at height `{height}`
-    MissingUpdateMetaData { client_id: ClientId, height: Height },
     /// missing raw client state
     MissingRawClientState,
     /// missing raw client consensus state
@@ -81,7 +75,18 @@ pub enum ClientError {
     /// client-specific error: `{description}`
     ClientSpecific { description: String },
 
-    // TODO(seanchen1991): Incorporate these errors into their own variants
+    // TODO(seanchen1991): Add these to host-relevant errors
+    /// missing client state for client: `{0}`
+    MissingClientState(ClientId),
+    /// missing consensus state for client `{client_id}` at height `{height}`
+    MissingConsensusState { client_id: ClientId, height: Height },
+    /// missing update client metadata for client `{client_id}` at height `{height}`
+    MissingUpdateMetaData { client_id: ClientId, height: Height },
+    /// invalid raw header: `{0}`
+    InvalidRawHeader(TendermintError),
+    /// invalid header type: `{0}`
+    InvalidHeaderType(String),
+    // TODO(seanchen1991): Incorporate this error into its own variants
     /// other error: `{description}`
     Other { description: String },
 }
@@ -134,12 +139,19 @@ pub enum UpgradeClientError {
     InvalidUpgradeConsensusStateProof(CommitmentError),
     /// invalid upgrade path: `{description}`
     InvalidUpgradePath { description: String },
-    /// invalid upgrade proposal: `{description}`
-    InvalidUpgradeProposal { description: String },
-    /// invalid upgrade plan: `{description}`
-    InvalidUpgradePlan { description: String },
     /// missing upgrade path
     MissingUpgradePath,
+    /// insufficient upgrade client height `{upgraded_height}`; must be greater than current client height `{client_height}`
+    InsufficientUpgradeHeight {
+        upgraded_height: Height,
+        client_height: Height,
+    },
+
+    // TODO(seanchen1991): Move these variants to host-relevant errors
+    /// invalid upgrade plan: `{description}`
+    InvalidUpgradePlan { description: String },
+    /// invalid upgrade proposal: `{description}`
+    InvalidUpgradeProposal { description: String },
     /// missing upgraded client state
     MissingUpgradedClientState,
     /// missing upgraded consensus state
@@ -150,11 +162,6 @@ pub enum UpgradeClientError {
     FailedToStoreUpgradedClientState { description: String },
     /// failed to store upgraded consensus state: `{description}`
     FailedToStoreUpgradedConsensusState { description: String },
-    /// insufficient upgrade client height `{upgraded_height}`; must be greater than current client height `{client_height}`
-    InsufficientUpgradeHeight {
-        upgraded_height: Height,
-        client_height: Height,
-    },
 }
 
 impl From<UpgradeClientError> for ClientError {

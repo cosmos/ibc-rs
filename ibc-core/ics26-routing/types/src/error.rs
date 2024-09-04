@@ -10,6 +10,8 @@ pub enum RouterError {
     Decoding(DecodingError),
     /// missing module
     MissingModule,
+
+    // TODO(seanchen1991): This variant needs to be moved to HostError
     /// unknown port `{0}`
     UnknownPort(PortId),
 }

@@ -44,9 +44,9 @@ pub enum ConnectionError {
     MissingProofHeight,
     /// missing consensus height
     MissingConsensusHeight,
-    /// missing connection `{0}`
+    /// [HostError] missing connection `{0}`
     MissingConnection(ConnectionId),
-    /// missing connection counter
+    /// [HostError] missing connection counter
     MissingConnectionCounter,
     /// missing counterparty
     MissingCounterparty,
@@ -73,11 +73,11 @@ pub enum ConnectionError {
     FailedToVerifyConsensusState(ClientError),
     /// failed to verify client state: `{0}`
     FailedToVerifyClientState(ClientError),
-    /// failed to store connection IDs
+    /// [HostError] failed to store connection IDs
     FailedToStoreConnectionIds,
-    /// failed to store connection end
+    /// [HostError] failed to store connection end
     FailedToStoreConnectionEnd,
-    /// failed to update connection counter
+    /// [HostError] failed to update connection counter
     FailedToUpdateConnectionCounter,
     /// overflowed timestamp: `{0}`
     OverflowedTimestamp(TimestampError),
