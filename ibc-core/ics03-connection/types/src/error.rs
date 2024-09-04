@@ -44,10 +44,6 @@ pub enum ConnectionError {
     MissingProofHeight,
     /// missing consensus height
     MissingConsensusHeight,
-    /// [HostError] missing connection `{0}`
-    MissingConnection(ConnectionId),
-    /// [HostError] missing connection counter
-    MissingConnectionCounter,
     /// missing counterparty
     MissingCounterparty,
     /// missing client state
@@ -73,14 +69,26 @@ pub enum ConnectionError {
     FailedToVerifyConsensusState(ClientError),
     /// failed to verify client state: `{0}`
     FailedToVerifyClientState(ClientError),
-    /// [HostError] failed to store connection IDs
-    FailedToStoreConnectionIds,
-    /// [HostError] failed to store connection end
-    FailedToStoreConnectionEnd,
-    /// [HostError] failed to update connection counter
-    FailedToUpdateConnectionCounter,
     /// overflowed timestamp: `{0}`
     OverflowedTimestamp(TimestampError),
+
+    // TODO(seanchen1991): Move these variants to host-relevant error types
+    /// missing connection `{0}`
+    MissingConnection(ConnectionId),
+    /// missing connection counter
+    MissingConnectionCounter,
+    /// failed to store connection IDs
+    FailedToStoreConnectionIds,
+    /// failed to store connection end
+    FailedToStoreConnectionEnd,
+    /// failed to update connection counter
+    FailedToUpdateConnectionCounter,
+}
+
+impl From<DecodingError> for ConnectionError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
+    }
 }
 
 #[cfg(feature = "std")]
