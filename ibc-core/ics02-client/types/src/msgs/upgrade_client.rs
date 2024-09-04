@@ -60,16 +60,24 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
     fn try_from(proto_msg: RawMsgUpgradeClient) -> Result<Self, Self::Error> {
         let raw_client_state = proto_msg
             .client_state
-            .ok_or(ClientError::MissingRawClientState)?;
+            .ok_or(DecodingError::MissingRawData {
+                description: "no raw client state set".to_string(),
+            })?;
 
-        let raw_consensus_state = proto_msg
-            .consensus_state
-            .ok_or(ClientError::MissingRawConsensusState)?;
+        let raw_consensus_state =
+            proto_msg
+                .consensus_state
+                .ok_or(DecodingError::MissingRawData {
+                    description: "no raw consensus state set".to_string(),
+                })?;
 
         let c_bytes =
             CommitmentProofBytes::try_from(proto_msg.proof_upgrade_client).map_err(|_| {
-                UpgradeClientError::InvalidUpgradeClientProof(CommitmentError::EmptyMerkleProof)
+                UpgradeClientError::InvalidUpgradeClientStateProof(
+                    CommitmentError::EmptyMerkleProof,
+                )
             })?;
+
         let cs_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_consensus_state)
             .map_err(|_| {
                 UpgradeClientError::InvalidUpgradeConsensusStateProof(

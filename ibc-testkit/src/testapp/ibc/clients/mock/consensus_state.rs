@@ -42,7 +42,9 @@ impl TryFrom<RawMockConsensusState> for MockConsensusState {
     type Error = ClientError;
 
     fn try_from(raw: RawMockConsensusState) -> Result<Self, Self::Error> {
-        let raw_header = raw.header.ok_or(ClientError::MissingRawConsensusState)?;
+        let raw_header = raw.header.ok_or(DecodingError::MissingRawData {
+            description: "no raw header set".to_string(),
+        })?;
 
         Ok(Self {
             header: raw_header.try_into()?,

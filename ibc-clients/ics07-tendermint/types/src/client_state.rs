@@ -241,48 +241,64 @@ impl TryFrom<RawTmClientState> for ClientState {
         let chain_id = ChainId::from_str(raw.chain_id.as_str())?;
 
         let trust_level = {
-            let trust_level = raw
-                .trust_level
-                .ok_or(TendermintClientError::MissingTrustingPeriod)?;
+            let trust_level = raw.trust_level.ok_or(DecodingError::MissingRawData {
+                description: "trust level not set".to_string(),
+            })?;
             trust_level
                 .try_into()
-                .map_err(|e| TendermintClientError::InvalidTrustThreshold {
-                    description: format!("{e}"),
+                .map_err(|e| DecodingError::InvalidRawData {
+                    description: format!("failed to decoding trust threshold: {e}"),
                 })?
         };
 
         let trusting_period = raw
             .trusting_period
-            .ok_or(TendermintClientError::MissingTrustingPeriod)?
+            .ok_or(DecodingError::MissingRawData {
+                description: "trusting period not set".to_string(),
+            })?
             .try_into()
-            .map_err(|_| TendermintClientError::MissingTrustingPeriod)?;
+            .map_err(|_| DecodingError::InvalidRawData {
+                description: "failed to decode trusting period".to_string(),
+            })?;
 
         let unbonding_period = raw
             .unbonding_period
-            .ok_or(TendermintClientError::MissingUnbondingPeriod)?
+            .ok_or(DecodingError::MissingRawData {
+                description: "unbonding period not set".to_string(),
+            })?
             .try_into()
-            .map_err(|_| TendermintClientError::MissingUnbondingPeriod)?;
+            .map_err(|_| DecodingError::InvalidRawData {
+                description: "failed to decode unbonding period".to_string(),
+            })?;
 
         let max_clock_drift = raw
             .max_clock_drift
-            .ok_or(TendermintClientError::InvalidMaxClockDrift)?
+            .ok_or(DecodingError::MissingRawData {
+                description: "max clock drift not set".to_string(),
+            })?
             .try_into()
-            .map_err(|_| TendermintClientError::InvalidMaxClockDrift)?;
+            .map_err(|_| DecodingError::InvalidRawData {
+                description: "failed to decode max clock drift".to_string(),
+            })?;
 
         let latest_height = raw
             .latest_height
-            .ok_or(TendermintClientError::MissingLatestHeight)?
+            .ok_or(DecodingError::MissingRawData {
+                description: "latest height not set".to_string(),
+            })?
             .try_into()
-            .map_err(|_| TendermintClientError::MissingLatestHeight)?;
+            .map_err(|e| DecodingError::InvalidRawData {
+                description: format!("failed to decode latest height: {e}"),
+            })?;
 
         // NOTE: In `RawClientState`, a `frozen_height` of `0` means "not
         // frozen". See:
         // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-        let frozen_height = Height::try_from(
-            raw.frozen_height
-                .ok_or(TendermintClientError::MissingFrozenHeight)?,
-        )
-        .ok();
+        let frozen_height =
+            Height::try_from(raw.frozen_height.ok_or(DecodingError::MissingRawData {
+                description: "frozen height not set".to_string(),
+            })?)
+            .ok();
 
         // We use set this deprecated field just so that we can properly convert
         // it back in its raw form

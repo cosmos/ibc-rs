@@ -1,5 +1,6 @@
 //! Definition of domain type message `MsgCreateClient`.
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
@@ -39,11 +40,13 @@ impl TryFrom<RawMsgCreateClient> for MsgCreateClient {
     type Error = ClientError;
 
     fn try_from(raw: RawMsgCreateClient) -> Result<Self, Self::Error> {
-        let raw_client_state = raw.client_state.ok_or(ClientError::MissingRawClientState)?;
+        let raw_client_state = raw.client_state.ok_or(DecodingError::MissingRawData {
+            description: "no raw client state set".to_string(),
+        })?;
 
-        let raw_consensus_state = raw
-            .consensus_state
-            .ok_or(ClientError::MissingRawConsensusState)?;
+        let raw_consensus_state = raw.consensus_state.ok_or(DecodingError::MissingRawData {
+            description: "no raw consensus state set".to_string(),
+        })?;
 
         Ok(MsgCreateClient::new(
             raw_client_state,

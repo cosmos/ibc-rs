@@ -25,12 +25,8 @@ pub enum ClientError {
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// invalid client state type: `{0}`
     InvalidClientStateType(String),
-    /// invalid client consensus state type: `{0}`
-    InvalidConsensusStateType(String),
     /// invalid update client message
     InvalidUpdateClientMessage,
-    /// invalid misbehaviour type: `{0}`
-    InvalidMisbehaviourType(String),
     /// invalid height; cannot be zero or negative
     InvalidHeight,
     /// invalid proof height; expected `{actual}` >= `{expected}`
@@ -43,12 +39,6 @@ pub enum ClientError {
     InvalidAttributeValue(String),
     /// invalid status: `{0}`
     InvalidStatus(String),
-    /// missing raw client state
-    MissingRawClientState,
-    /// missing raw client consensus state
-    MissingRawConsensusState,
-    /// missing raw client message
-    MissingRawClientMessage,
     /// missing local consensus state at `{0}`
     MissingLocalConsensusState(Height),
     /// missing attribute key
@@ -134,7 +124,7 @@ pub enum UpgradeClientError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// invalid proof for the upgraded client state: `{0}`
-    InvalidUpgradeClientProof(CommitmentError),
+    InvalidUpgradeClientStateProof(CommitmentError),
     /// invalid proof for the upgraded consensus state: `{0}`
     InvalidUpgradeConsensusStateProof(CommitmentError),
     /// invalid upgrade path: `{description}`
@@ -180,9 +170,8 @@ impl From<DecodingError> for UpgradeClientError {
 impl std::error::Error for UpgradeClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::InvalidUpgradeClientProof(e) | Self::InvalidUpgradeConsensusStateProof(e) => {
-                Some(e)
-            }
+            Self::InvalidUpgradeClientStateProof(e)
+            | Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
             _ => None,
         }
     }

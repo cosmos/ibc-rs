@@ -35,6 +35,8 @@ pub enum DecodingError {
     Protobuf(ProtoError),
     /// prost decoding error: `{0}`
     Prost(ProstError),
+    /// invalid hash bytes: `{description}`
+    InvalidHash { description: String },
     /// invalid JSON data: `{description}`
     InvalidJson { description: String },
     /// invalid identifier error: `{0}`

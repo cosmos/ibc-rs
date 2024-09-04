@@ -26,30 +26,12 @@ pub enum TendermintClientError {
     InvalidMaxClockDrift,
     /// invalid client proof specs: `{0}`
     InvalidProofSpec(CommitmentError),
-    /// invalid raw client state: `{description}`
-    InvalidRawClientState { description: String },
     /// invalid raw misbehaviour: `{description}`
     InvalidRawMisbehaviour { description: String },
     /// invalid header timestamp: `{0}`
     InvalidHeaderTimestamp(TimestampError),
     /// invalid header height: `{0}`
     InvalidHeaderHeight(u64),
-    /// missing signed header
-    MissingSignedHeader,
-    /// missing validator set
-    MissingValidatorSet,
-    /// missing trusted next validator set
-    MissingTrustedNextValidatorSet,
-    /// missing trusted height
-    MissingTrustedHeight,
-    /// missing trusting period
-    MissingTrustingPeriod,
-    /// missing unbonding period
-    MissingUnbondingPeriod,
-    /// missing the latest height
-    MissingLatestHeight,
-    /// missing frozen height
-    MissingFrozenHeight,
     /// mismatched revision heights: expected `{expected}`, actual `{actual}`
     MismatchedRevisionHeights { expected: u64, actual: u64 },
     /// mismatched header chain ids: expected `{expected}`, actual `{actual}`
@@ -80,6 +62,8 @@ impl std::error::Error for TendermintClientError {
     }
 }
 
+// TODO(seanchen1991): Should this impl be deprecated in favor of a
+// From<ClientError> for TendermintClientError impl?
 impl From<TendermintClientError> for ClientError {
     fn from(e: TendermintClientError) -> Self {
         Self::ClientSpecific {

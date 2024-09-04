@@ -53,27 +53,26 @@ impl TryFrom<RawConsensusState> for ConsensusState {
     fn try_from(raw: RawConsensusState) -> Result<Self, Self::Error> {
         let proto_root = raw
             .root
-            .ok_or(TendermintClientError::InvalidRawClientState {
-                description: "missing commitment root".into(),
+            .ok_or(DecodingError::MissingRawData {
+                description: "no commitment root set".into(),
             })?
             .hash;
 
         let ibc_proto::google::protobuf::Timestamp { seconds, nanos } =
-            raw.timestamp
-                .ok_or(TendermintClientError::InvalidRawClientState {
-                    description: "missing timestamp".into(),
-                })?;
+            raw.timestamp.ok_or(DecodingError::MissingRawData {
+                description: "no timestamp set".into(),
+            })?;
         // FIXME: shunts like this are necessary due to
         // https://github.com/informalsystems/tendermint-rs/issues/1053
         let proto_timestamp = tpb::Timestamp { seconds, nanos };
-        let timestamp = proto_timestamp.try_into().map_err(|e| {
-            TendermintClientError::InvalidRawClientState {
+        let timestamp = proto_timestamp
+            .try_into()
+            .map_err(|e| DecodingError::InvalidRawData {
                 description: format!("invalid timestamp: {e}"),
-            }
-        })?;
+            })?;
 
         let next_validators_hash = Hash::from_bytes(Algorithm::Sha256, &raw.next_validators_hash)
-            .map_err(|e| TendermintClientError::InvalidRawClientState {
+            .map_err(|e| DecodingError::InvalidHash {
             description: e.to_string(),
         })?;
 
