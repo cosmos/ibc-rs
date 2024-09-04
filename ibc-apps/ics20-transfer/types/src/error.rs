@@ -35,14 +35,15 @@ pub enum TokenTransferError {
     MismatchedChannelOrders { expected: Order, actual: Order },
     /// mismatched port IDs: expected `{expected}`, actual `{actual}`
     MismatchedPortIds { expected: PortId, actual: PortId },
-    // TODO(seanchen1991): Used in basecoin; this variant should be moved
-    // to a host-relevant error
-    /// failed to parse account ID
-    FailedToParseAccount,
     /// channel cannot be closed
     UnsupportedClosedChannel,
     /// empty base denomination
     EmptyBaseDenom,
+
+    // TODO(seanchen1991): Used in basecoin; this variant should be moved
+    // to a host-relevant error
+    /// failed to parse account ID
+    FailedToParseAccount,
 }
 
 #[cfg(feature = "std")]

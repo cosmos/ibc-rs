@@ -16,8 +16,6 @@ use crate::Version;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
-    /// application module error: `{description}`
-    AppModule { description: String },
     /// identifier error: `{0}`
     InvalidIdentifier(IdentifierError),
     /// invalid channel id: expected `{expected}`, actual `{actual}`
@@ -41,8 +39,6 @@ pub enum ChannelError {
     MissingCounterparty,
     /// missing channel end in raw message
     MissingRawChannelEnd,
-    /// missing channel counter
-    MissingCounter,
     /// unsupported channel upgrade sequence
     UnsupportedChannelUpgradeSequence,
     /// unsupported version: expected `{expected}`, actual `{actual}`
@@ -62,8 +58,12 @@ pub enum ChannelError {
     /// failed proof verification: `{0}`
     FailedProofVerification(ClientError),
 
-    // TODO(seanchen1991): These two variants should be encoded by host-relevant error types
+    // TODO(seanchen1991): These variants should be encoded by host-relevant error types
     // once those have been defined.
+    /// application module error: `{description}`
+    AppModule { description: String },
+    /// missing channel counter
+    MissingCounter,
     /// failed to update counter: `{description}`
     FailedToUpdateCounter { description: String },
     /// failed to store channel: `{description}`
@@ -72,7 +72,7 @@ pub enum ChannelError {
 
 #[derive(Debug, Display)]
 pub enum PacketError {
-    /// application module error: `{description}`
+    /// [HostError] application module error: `{description}`
     AppModule { description: String },
     /// channel error: `{0}`
     Channel(ChannelError),
@@ -94,11 +94,11 @@ pub enum PacketError {
         expected: PacketCommitment,
         actual: PacketCommitment,
     },
-    /// missing packet receipt for packet `{0}`
+    /// [HostError] missing packet receipt for packet `{0}`
     MissingPacketReceipt(Sequence),
     /// missing proof
     MissingProof,
-    /// missing acknowledgment for packet `{0}`
+    /// [HostError] missing acknowledgment for packet `{0}`
     MissingPacketAcknowledgment(Sequence),
     /// missing proof height
     MissingProofHeight,
