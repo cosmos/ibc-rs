@@ -6,7 +6,6 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_proto::ibc::lightclients::wasm::v1::ClientState as RawClientState;
 
-use crate::error::WasmClientError;
 #[cfg(feature = "serde")]
 use crate::serializer::Base64;
 use crate::Bytes;
@@ -39,14 +38,18 @@ impl From<ClientState> for RawClientState {
 }
 
 impl TryFrom<RawClientState> for ClientState {
-    type Error = WasmClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawClientState) -> Result<Self, Self::Error> {
         let latest_height = raw
             .latest_height
-            .ok_or(WasmClientError::MissingLatestHeight)?
+            .ok_or(DecodingError::MissingRawData {
+                description: "latest height not set".to_string(),
+            })?
             .try_into()
-            .map_err(|_| WasmClientError::InvalidLatestHeight)?;
+            .map_err(|e| DecodingError::InvalidRawData {
+                description: format!("failed to decode latest height: {e}"),
+            })?;
         Ok(Self {
             data: raw.data,
             checksum: raw.checksum,
@@ -67,7 +70,7 @@ impl From<ClientState> for Any {
 }
 
 impl TryFrom<Any> for ClientState {
-    type Error = WasmClientError;
+    type Error = DecodingError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
         fn decode_client_state(value: &[u8]) -> Result<ClientState, DecodingError> {
@@ -76,9 +79,7 @@ impl TryFrom<Any> for ClientState {
         }
 
         match any.type_url.as_str() {
-            WASM_CLIENT_STATE_TYPE_URL => {
-                decode_client_state(&any.value).map_err(WasmClientError::Decoding)
-            }
+            WASM_CLIENT_STATE_TYPE_URL => decode_client_state(&any.value),
             _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: WASM_CLIENT_STATE_TYPE_URL.to_string(),
                 actual: any.type_url,
