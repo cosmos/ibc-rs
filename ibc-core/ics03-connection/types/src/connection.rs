@@ -4,6 +4,7 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::time::Duration;
 
 use ibc_core_commitment_types::commitment::CommitmentPrefix;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::connection::v1::{
@@ -195,15 +196,20 @@ impl Protobuf<RawConnectionEnd> for ConnectionEnd {}
 
 impl TryFrom<RawConnectionEnd> for ConnectionEnd {
     type Error = ConnectionError;
+
     fn try_from(value: RawConnectionEnd) -> Result<Self, Self::Error> {
         let state = value.state.try_into()?;
 
         if value.client_id.is_empty() {
-            return Err(ConnectionError::EmptyProtoConnectionEnd);
+            return Err(DecodingError::MissingRawData {
+                description: "connection end is empty".to_string(),
+            })?;
         }
 
         if value.versions.is_empty() {
-            return Err(ConnectionError::EmptyVersions);
+            return Err(DecodingError::MissingRawData {
+                description: "connection versions is empty".to_string(),
+            })?;
         }
 
         Self::new(

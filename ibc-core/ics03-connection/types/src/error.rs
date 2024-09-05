@@ -18,18 +18,12 @@ pub enum ConnectionError {
     Identifier(IdentifierError),
     /// invalid state for initializing new ConnectionEnd; expected `Init` connection state and a single version
     InvalidStateForConnectionEndInit,
-    /// invalid connection proof
-    InvalidProof,
     /// invalid counterparty
     InvalidCounterparty,
     /// invalid client state: `{description}`
     InvalidClientState { description: String },
     /// mismatched connection states: expected `{expected}`, actual `{actual}`
     MismatchedConnectionStates { expected: String, actual: String },
-    /// empty proto connection end; failed to construct ConnectionEnd domain object
-    EmptyProtoConnectionEnd,
-    /// empty supported versions
-    EmptyVersions,
     /// empty supported features
     EmptyFeatures,
     /// unsupported version \"`{0}`\"
@@ -40,14 +34,8 @@ pub enum ConnectionError {
     MissingCommonVersion,
     /// missing common features
     MissingCommonFeatures,
-    /// missing proof height
-    MissingProofHeight,
-    /// missing consensus height
-    MissingConsensusHeight,
     /// missing counterparty
     MissingCounterparty,
-    /// missing client state
-    MissingClientState,
     /// insufficient consensus height `{current_height}` for host chain; needs to meet counterparty's height `{target_height}`
     InsufficientConsensusHeight {
         target_height: Height,
@@ -98,8 +86,6 @@ impl std::error::Error for ConnectionError {
             Self::FailedToVerifyConnectionState(e)
             | Self::FailedToVerifyConsensusState(e)
             | Self::FailedToVerifyClientState(e) => Some(e),
-            // Self::InvalidIdentifier(e) => Some(e),
-            // Self::OverflowedTimestamp(e) => Some(e),
             _ => None,
         }
     }
