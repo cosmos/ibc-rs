@@ -28,6 +28,10 @@ pub enum CommitmentError {
     InvalidMerkleProof,
     /// invalid child size: `{0}`
     InvalidChildSize(i32),
+    /// invalid hash operation: `{0}`
+    InvalidHashOp(i32),
+    /// invalid length operation: `{0}`
+    InvalidLengthOp(i32),
     /// failed to verify membership
     FailedToVerifyMembership,
 }
