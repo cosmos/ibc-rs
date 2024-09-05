@@ -5,7 +5,7 @@ use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::{Height, Status};
 use ibc_core_commitment_types::specs::ProofSpecs;
 use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::HandlerError;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
@@ -19,7 +19,7 @@ pub trait ValidateSelfClientContext {
     fn validate_self_tendermint_client(
         &self,
         client_state_of_host_on_counterparty: TmClientState,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HandlerError> {
         client_state_of_host_on_counterparty
             .validate()
             .map_err(ClientError::from)?;
@@ -30,7 +30,7 @@ pub trait ValidateSelfClientContext {
 
         let self_chain_id = self.chain_id();
         if self_chain_id != &client_state_of_host_on_counterparty.chain_id {
-            return Err(ContextError::ConnectionError(
+            return Err(HandlerError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "invalid chain-id. expected: {}, got: {}",
@@ -43,7 +43,7 @@ pub trait ValidateSelfClientContext {
         let latest_height = client_state_of_host_on_counterparty.latest_height;
         let self_revision_number = self_chain_id.revision_number();
         if self_revision_number != latest_height.revision_number() {
-            return Err(ContextError::ConnectionError(
+            return Err(HandlerError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "client is not in the same revision as the chain. expected: {}, got: {}",
@@ -55,7 +55,7 @@ pub trait ValidateSelfClientContext {
         }
 
         if latest_height >= self.host_current_height() {
-            return Err(ContextError::ConnectionError(
+            return Err(HandlerError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "client has latest height {} greater than or equal to chain height {}",
@@ -67,7 +67,7 @@ pub trait ValidateSelfClientContext {
         }
 
         if self.proof_specs() != &client_state_of_host_on_counterparty.proof_specs {
-            return Err(ContextError::ConnectionError(
+            return Err(HandlerError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "client has invalid proof specs. expected: {:?}, got: {:?}",
@@ -91,7 +91,7 @@ pub trait ValidateSelfClientContext {
         };
 
         if self.unbonding_period() != client_state_of_host_on_counterparty.unbonding_period {
-            return Err(ContextError::ConnectionError(
+            return Err(HandlerError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "invalid unbonding period. expected: {:?}, got: {:?}",
@@ -105,7 +105,7 @@ pub trait ValidateSelfClientContext {
         if client_state_of_host_on_counterparty.unbonding_period
             < client_state_of_host_on_counterparty.trusting_period
         {
-            return Err(ContextError::ConnectionError(ConnectionError::InvalidClientState{ description: format!(
+            return Err(HandlerError::ConnectionError(ConnectionError::InvalidClientState{ description: format!(
                 "unbonding period must be greater than trusting period. unbonding period ({:?}) < trusting period ({:?})",
                 client_state_of_host_on_counterparty.unbonding_period,
                 client_state_of_host_on_counterparty.trusting_period
@@ -115,7 +115,7 @@ pub trait ValidateSelfClientContext {
         if !client_state_of_host_on_counterparty.upgrade_path.is_empty()
             && self.upgrade_path() != client_state_of_host_on_counterparty.upgrade_path
         {
-            return Err(ContextError::ConnectionError(
+            return Err(HandlerError::ConnectionError(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "invalid upgrade path. expected: {:?}, got: {:?}",

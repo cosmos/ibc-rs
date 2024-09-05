@@ -6,7 +6,7 @@ use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::msgs::{ConnectionMsg, MsgConnectionOpenAck};
 use ibc::core::connection::types::{ConnectionEnd, Counterparty, State};
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::HandlerError;
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChainId, ClientId};
@@ -126,16 +126,16 @@ fn conn_open_ack_validate(fxt: &Fixture<MsgConnectionOpenAck>, expect: Expect) {
     let cons_state_height = fxt.msg.consensus_height_of_a_on_b;
 
     match res.unwrap_err() {
-        ContextError::ConnectionError(ConnectionError::MissingConnection(connection_id)) => {
+        HandlerError::ConnectionError(ConnectionError::MissingConnection(connection_id)) => {
             assert_eq!(connection_id, right_connection_id)
         }
-        ContextError::ConnectionError(ConnectionError::InsufficientConsensusHeight {
+        HandlerError::ConnectionError(ConnectionError::InsufficientConsensusHeight {
             target_height,
             current_height: _,
         }) => {
             assert_eq!(cons_state_height, target_height);
         }
-        ContextError::ConnectionError(ConnectionError::MismatchedConnectionStates {
+        HandlerError::ConnectionError(ConnectionError::MismatchedConnectionStates {
             expected: _,
             actual: _,
         }) => {}
@@ -187,7 +187,7 @@ fn conn_open_ack_healthy() {
 #[test]
 fn conn_open_ack_no_connection() {
     let fxt = conn_open_ack_fixture(Ctx::New);
-    let expected_err = ContextError::ConnectionError(ConnectionError::MissingConnection(
+    let expected_err = HandlerError::ConnectionError(ConnectionError::MissingConnection(
         fxt.msg.conn_id_on_a.clone(),
     ));
     conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
@@ -197,7 +197,7 @@ fn conn_open_ack_no_connection() {
 fn conn_open_ack_invalid_consensus_height() {
     let fxt = conn_open_ack_fixture(Ctx::DefaultWithConnection);
     let expected_err =
-        ContextError::ConnectionError(ConnectionError::InsufficientConsensusHeight {
+        HandlerError::ConnectionError(ConnectionError::InsufficientConsensusHeight {
             target_height: fxt.msg.consensus_height_of_a_on_b,
             current_height: Height::new(0, 10).unwrap(),
         });
@@ -207,7 +207,7 @@ fn conn_open_ack_invalid_consensus_height() {
 #[test]
 fn conn_open_ack_connection_mismatch() {
     let fxt = conn_open_ack_fixture(Ctx::NewWithConnectionEndOpen);
-    let expected_err = ContextError::ConnectionError(ConnectionError::MismatchedConnectionStates {
+    let expected_err = HandlerError::ConnectionError(ConnectionError::MismatchedConnectionStates {
         expected: State::Init.to_string(),
         actual: State::Open.to_string(),
     });

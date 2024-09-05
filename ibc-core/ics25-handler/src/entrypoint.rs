@@ -17,7 +17,7 @@ use ibc_core_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
 use ibc_core_connection::types::msgs::ConnectionMsg;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::msgs::MsgEnvelope;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::router::Router;
@@ -29,7 +29,7 @@ pub fn dispatch<Ctx>(
     ctx: &mut Ctx,
     router: &mut impl Router,
     msg: MsgEnvelope,
-) -> Result<(), ContextError>
+) -> Result<(), HandlerError>
 where
     Ctx: ExecutionContext,
     <<Ctx::V as ClientValidationContext>::ClientStateRef as TryFrom<Any>>::Error: Into<ClientError>,
@@ -48,7 +48,7 @@ where
 /// That is, the state transition of message `i` must be applied before
 /// message `i+1` is validated. This is equivalent to calling
 /// `dispatch()` on each successively.
-pub fn validate<Ctx>(ctx: &Ctx, router: &impl Router, msg: MsgEnvelope) -> Result<(), ContextError>
+pub fn validate<Ctx>(ctx: &Ctx, router: &impl Router, msg: MsgEnvelope) -> Result<(), HandlerError>
 where
     Ctx: ValidationContext,
     <<Ctx::V as ClientValidationContext>::ClientStateRef as TryFrom<Any>>::Error: Into<ClientError>,
@@ -122,7 +122,7 @@ pub fn execute<Ctx>(
     ctx: &mut Ctx,
     router: &mut impl Router,
     msg: MsgEnvelope,
-) -> Result<(), ContextError>
+) -> Result<(), HandlerError>
 where
     Ctx: ExecutionContext,
     <<Ctx::E as ClientExecutionContext>::ClientStateMut as TryFrom<Any>>::Error: Into<ClientError>,

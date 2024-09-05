@@ -8,7 +8,7 @@ use ibc::core::client::types::{Height, Status};
 use ibc::core::commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::HandlerError;
 use ibc::core::host::types::error::DecodingError;
 use ibc::core::host::types::identifiers::{ClientId, ClientType};
 use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path, PathBytes};
@@ -155,10 +155,10 @@ impl From<MockClientState> for Any {
 
 pub trait MockClientContext {
     /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
+    fn host_timestamp(&self) -> Result<Timestamp, HandlerError>;
 
     /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, ContextError>;
+    fn host_height(&self) -> Result<Height, HandlerError>;
 }
 
 impl ClientStateCommon for MockClientState {

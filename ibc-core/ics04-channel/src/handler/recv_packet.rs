@@ -7,7 +7,7 @@ use ibc_core_channel_types::packet::Receipt;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_connection::types::State as ConnectionState;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
@@ -17,7 +17,7 @@ use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
-pub fn recv_packet_validate<ValCtx>(ctx_b: &ValCtx, msg: MsgRecvPacket) -> Result<(), ContextError>
+pub fn recv_packet_validate<ValCtx>(ctx_b: &ValCtx, msg: MsgRecvPacket) -> Result<(), HandlerError>
 where
     ValCtx: ValidationContext,
 {
@@ -32,7 +32,7 @@ pub fn recv_packet_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgRecvPacket,
-) -> Result<(), ContextError>
+) -> Result<(), HandlerError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -136,7 +136,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), HandlerError>
 where
     Ctx: ValidationContext,
 {
@@ -252,7 +252,7 @@ where
             let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
             match packet_rec {
                 Ok(_receipt) => {}
-                Err(ContextError::PacketError(PacketError::MissingPacketReceipt(sequence)))
+                Err(HandlerError::PacketError(PacketError::MissingPacketReceipt(sequence)))
                     if sequence == msg.packet.seq_on_a => {}
                 Err(e) => return Err(e),
             }
@@ -261,7 +261,7 @@ where
             validate_write_acknowledgement(ctx_b, msg)?;
         }
         Order::None => {
-            return Err(ContextError::ChannelError(ChannelError::InvalidOrderType {
+            return Err(HandlerError::ChannelError(ChannelError::InvalidOrderType {
                 expected: "Channel ordering cannot be None".to_string(),
                 actual: chan_end_on_b.ordering.to_string(),
             }))
@@ -271,7 +271,7 @@ where
     Ok(())
 }
 
-fn validate_write_acknowledgement<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ContextError>
+fn validate_write_acknowledgement<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), HandlerError>
 where
     Ctx: ValidationContext,
 {

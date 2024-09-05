@@ -4,7 +4,7 @@ use core::convert::Infallible;
 use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
-use ibc_core::handler::types::error::ContextError;
+use ibc_core::handler::types::error::HandlerError;
 use ibc_core::host::types::error::{DecodingError, IdentifierError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
@@ -13,7 +13,7 @@ use uint::FromDecStrErr;
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
     /// context error: `{0}`
-    ContextError(ContextError),
+    HandlerError(HandlerError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// identifier error: `{0}`
@@ -50,7 +50,7 @@ pub enum TokenTransferError {
 impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::ContextError(e) => Some(e),
+            Self::HandlerError(e) => Some(e),
             Self::Identifier(e) => Some(e),
             Self::InvalidAmount(e) => Some(e),
             Self::Decoding(e) => Some(e),
@@ -65,9 +65,9 @@ impl From<Infallible> for TokenTransferError {
     }
 }
 
-impl From<ContextError> for TokenTransferError {
-    fn from(e: ContextError) -> Self {
-        Self::ContextError(e)
+impl From<HandlerError> for TokenTransferError {
+    fn from(e: HandlerError) -> Self {
+        Self::HandlerError(e)
     }
 }
 

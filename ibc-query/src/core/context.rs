@@ -4,7 +4,7 @@ use ibc::core::channel::types::channel::IdentifiedChannelEnd;
 use ibc::core::channel::types::packet::PacketState;
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::IdentifiedConnectionEnd;
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::HandlerError;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc::core::host::types::path::{ChannelEndPath, Path};
 use ibc::core::host::{ClientStateRef, ConsensusStateRef, ValidationContext};
@@ -22,32 +22,32 @@ pub trait QueryContext: ProvableContext + ValidationContext {
     // Client queries
 
     /// Returns the list of all clients.
-    fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, ContextError>;
+    fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, HandlerError>;
 
     /// Returns the list of all consensus states for the given client.
     fn consensus_states(
         &self,
         client_id: &ClientId,
-    ) -> Result<Vec<(Height, ConsensusStateRef<Self>)>, ContextError>;
+    ) -> Result<Vec<(Height, ConsensusStateRef<Self>)>, HandlerError>;
 
     /// Returns the list of all heights at which consensus states for the given client are.
-    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, HandlerError>;
 
     // Connection queries
 
     /// Returns the list of all connection ends.
-    fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, ContextError>;
+    fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, HandlerError>;
 
     /// Returns the list of all connection ids of the given client.
     fn client_connection_ends(
         &self,
         client_id: &ClientId,
-    ) -> Result<Vec<ConnectionId>, ContextError>;
+    ) -> Result<Vec<ConnectionId>, HandlerError>;
 
     // Channel queries
 
     /// Returns the list of all channel ends.
-    fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, ContextError>;
+    fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, HandlerError>;
 
     // Packet queries
 
@@ -55,7 +55,7 @@ pub trait QueryContext: ProvableContext + ValidationContext {
     fn packet_commitments(
         &self,
         channel_end_path: &ChannelEndPath,
-    ) -> Result<Vec<PacketState>, ContextError>;
+    ) -> Result<Vec<PacketState>, HandlerError>;
 
     /// Filters the list of packet sequences for the given channel end that are acknowledged.
     /// Returns all the packet acknowledgements if `sequences` is empty.
@@ -63,14 +63,14 @@ pub trait QueryContext: ProvableContext + ValidationContext {
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<PacketState>, ContextError>;
+    ) -> Result<Vec<PacketState>, HandlerError>;
 
     /// Filters the packet sequences for the given channel end that are not received.
     fn unreceived_packets(
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<Sequence>, ContextError>;
+    ) -> Result<Vec<Sequence>, HandlerError>;
 
     /// Filters the list of packet sequences for the given channel end whose acknowledgement is not received.
     /// Returns all the unreceived acknowledgements if `sequences` is empty.
@@ -78,5 +78,5 @@ pub trait QueryContext: ProvableContext + ValidationContext {
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<Sequence>, ContextError>;
+    ) -> Result<Vec<Sequence>, HandlerError>;
 }

@@ -1,5 +1,5 @@
 use ibc_core_client::types::error::ClientError;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::HandlerError;
 #[cfg(feature = "wasm-client")]
 use ibc_core_host::types::error::DecodingError;
 use ibc_core_host::types::identifiers::ClientId;
@@ -18,7 +18,7 @@ pub mod conn_open_try;
 pub(crate) fn unpack_host_client_state<CS>(
     value: Any,
     host_client_id_at_counterparty: &ClientId,
-) -> Result<CS, ContextError>
+) -> Result<CS, HandlerError>
 where
     CS: TryFrom<Any>,
     <CS as TryFrom<Any>>::Error: Into<ClientError>,
@@ -31,7 +31,7 @@ where
         use prost::Message;
 
         let wasm_client_state = WasmClientState::try_from(value).map_err(|e| {
-            ContextError::ConnectionError(ConnectionError::InvalidClientState {
+            HandlerError::ConnectionError(ConnectionError::InvalidClientState {
                 description: e.to_string(),
             })
         })?;

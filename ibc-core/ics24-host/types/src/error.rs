@@ -85,3 +85,6 @@ impl std::error::Error for IdentifierError {}
 
 #[cfg(feature = "std")]
 impl std::error::Error for DecodingError {}
+
+#[cfg(feature = "std")]
+impl std::error::Error for HostError {}

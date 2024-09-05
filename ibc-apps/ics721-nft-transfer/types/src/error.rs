@@ -5,7 +5,7 @@ use displaydoc::Display;
 use http::uri::InvalidUri;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
-use ibc_core::handler::types::error::ContextError;
+use ibc_core::handler::types::error::HandlerError;
 use ibc_core::host::types::error::{DecodingError, IdentifierError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
@@ -13,7 +13,7 @@ use ibc_core::primitives::prelude::*;
 #[derive(Display, Debug, derive_more::From)]
 pub enum NftTransferError {
     /// context error: `{0}`
-    ContextError(ContextError),
+    HandlerError(HandlerError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// identifier error: `{0}`
@@ -47,7 +47,7 @@ pub enum NftTransferError {
 impl std::error::Error for NftTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::ContextError(e) => Some(e),
+            Self::HandlerError(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }

@@ -10,7 +10,7 @@ use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::ConnectionEnd;
 use ibc::core::entrypoint::{dispatch, execute, validate};
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::HandlerError;
 use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId, Sequence};
@@ -462,24 +462,24 @@ where
     }
 
     /// Calls [`validate`] function on [`MsgEnvelope`] using the context's IBC store and router.
-    pub fn validate(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+    pub fn validate(&mut self, msg: MsgEnvelope) -> Result<(), HandlerError> {
         validate(&self.ibc_store, &self.ibc_router, msg)
     }
 
     /// Calls [`execute`] function on [`MsgEnvelope`] using the context's IBC store and router.
-    pub fn execute(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+    pub fn execute(&mut self, msg: MsgEnvelope) -> Result<(), HandlerError> {
         execute(&mut self.ibc_store, &mut self.ibc_router, msg)
     }
 
     /// Calls [`dispatch`] function on [`MsgEnvelope`] using the context's IBC store and router.
-    pub fn dispatch(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+    pub fn dispatch(&mut self, msg: MsgEnvelope) -> Result<(), HandlerError> {
         dispatch(&mut self.ibc_store, &mut self.ibc_router, msg)
     }
 
     /// A datagram passes from the relayer to the IBC module (on host chain).
     /// Alternative method to `Ics18Context::send` that does not exercise any serialization.
     /// Used in testing the Ics18 algorithms, hence this may return an Ics18Error.
-    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), ContextError> {
+    pub fn deliver(&mut self, msg: MsgEnvelope) -> Result<(), HandlerError> {
         self.dispatch(msg)?;
 
         // Create a new block.
