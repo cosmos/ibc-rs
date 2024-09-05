@@ -2,6 +2,7 @@
 
 use core::fmt::Display;
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::utils::PrettySlice;
 use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
@@ -72,9 +73,12 @@ impl Protobuf<RawVersion> for Version {}
 
 impl TryFrom<RawVersion> for Version {
     type Error = ConnectionError;
+
     fn try_from(value: RawVersion) -> Result<Self, Self::Error> {
         if value.identifier.trim().is_empty() {
-            return Err(ConnectionError::EmptyVersions);
+            return Err(DecodingError::MissingRawData {
+                description: "version is empty".to_string(),
+            })?;
         }
         for feature in value.features.iter() {
             if feature.trim().is_empty() {
