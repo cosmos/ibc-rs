@@ -9,6 +9,25 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Error as ProtoError;
 use prost::DecodeError as ProstError;
 
+/// Errors that originate from host implementations.
+#[derive(Debug, Display)]
+pub enum HostError {
+    /// invalid data: `{description}`
+    InvalidData { description: String },
+    /// missing data: `{description}`
+    MissingData { description: String },
+    /// failed to update state: `{description}`
+    FailedToUpdateState { description: String },
+    /// failed to store data: `{description}`
+    FailedToStoreData { description: String },
+    /// failed to parse data: `{description}`
+    FailedToParseData { description: String },
+    /// non-existent type: `{description}`
+    NonexistentType { description: String },
+    /// other error: `{description}`
+    Other { description: String },
+}
+
 /// Errors that arise when parsing identifiers.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
@@ -25,7 +44,8 @@ pub enum IdentifierError {
     OverflowedRevisionNumber,
 }
 
-/// Errors that result in decoding failures
+/// Errors that occur during the process of decoding, deserializing,
+/// and/or converting raw types into domain types.
 #[derive(Debug, Display)]
 pub enum DecodingError {
     /// identifier error: `{0}`
