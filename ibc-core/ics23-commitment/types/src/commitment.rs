@@ -95,7 +95,9 @@ impl TryFrom<Vec<u8>> for CommitmentProofBytes {
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         if bytes.is_empty() {
-            Err(Self::Error::EmptyMerkleProof)
+            Err(DecodingError::InvalidRawData {
+                description: "empty commitment proof bytes".to_string(),
+            })?
         } else {
             Ok(Self { bytes })
         }

@@ -1,5 +1,6 @@
 //! Defines proof specs, which encode the structure of proofs
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::ics23::{InnerSpec as RawInnerSpec, LeafOp as RawLeafOp, ProofSpec as RawProofSpec};
 use ics23::{HashOp, LengthOp};
@@ -129,16 +130,21 @@ struct LeafOp(RawLeafOp);
 
 impl TryFrom<RawLeafOp> for LeafOp {
     type Error = CommitmentError;
-    fn try_from(leaf_op: RawLeafOp) -> Result<Self, Self::Error> {
-        let _ = HashOp::try_from(leaf_op.hash)
-            .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.hash))?;
-        let _ = HashOp::try_from(leaf_op.prehash_key)
-            .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.prehash_key))?;
-        let _ = HashOp::try_from(leaf_op.prehash_value)
-            .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.prehash_value))?;
-        let _ = LengthOp::try_from(leaf_op.length)
-            .map_err(|_| CommitmentError::InvalidLengthOp(leaf_op.length))?;
 
+    fn try_from(leaf_op: RawLeafOp) -> Result<Self, Self::Error> {
+        let _ = HashOp::try_from(leaf_op.hash).map_err(|e| DecodingError::InvalidHash {
+            description: format!("hash op {0} is invalid: {e}", leaf_op.hash),
+        })?;
+        let _ = HashOp::try_from(leaf_op.prehash_key).map_err(|e| DecodingError::InvalidHash {
+            description: format!("hash op {0} is invalid: {e}", leaf_op.prehash_key),
+        })?;
+        let _ =
+            HashOp::try_from(leaf_op.prehash_value).map_err(|e| DecodingError::InvalidHash {
+                description: format!("hash op {0} is invalid: {e}", leaf_op.prehash_value),
+            })?;
+        let _ = LengthOp::try_from(leaf_op.length).map_err(|e| DecodingError::InvalidHash {
+            description: format!("length op {0} is invalid: {e}", leaf_op.length),
+        })?;
         Ok(Self(leaf_op))
     }
 }
@@ -155,6 +161,7 @@ struct InnerSpec(RawInnerSpec);
 
 impl TryFrom<RawInnerSpec> for InnerSpec {
     type Error = CommitmentError;
+
     fn try_from(inner_spec: RawInnerSpec) -> Result<Self, CommitmentError> {
         if inner_spec.child_size <= 0 {
             return Err(CommitmentError::InvalidChildSize(inner_spec.child_size));
