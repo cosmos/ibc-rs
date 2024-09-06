@@ -46,7 +46,7 @@ pub enum TendermintClientError {
         duration_since_consensus_state: Duration,
         trusting_period: Duration,
     },
-    /// insufficient misbehaviour header height: header1 height `{height_1}` shoul be >= header2 height `{height_2}`
+    /// insufficient misbehaviour header height: header1 height `{height_1}` should be >= header2 height `{height_2}`
     InsufficientMisbehaviourHeaderHeight { height_1: Height, height_2: Height },
 }
 
