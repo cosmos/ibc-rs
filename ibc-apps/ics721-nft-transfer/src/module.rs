@@ -329,13 +329,8 @@ mod test {
             r#"{"result":"AQ=="}"#,
         );
         ser_json_assert_eq(
-            AcknowledgementStatus::error(
-                DecodingError::InvalidJson {
-                    description: "failed to deserialize packet data".to_string(),
-                }
-                .into(),
-            ),
-            r#"{"error":"invalid JSON data: `failed to deserialize packet data`"}"#,
+            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into()),
+            r#"{"error":"failed to deserialize packet data"}"#,
         );
     }
 
@@ -351,20 +346,16 @@ mod test {
 
     #[test]
     fn test_ack_error_to_vec() {
-        let ack_error: Vec<u8> = AcknowledgementStatus::error(
-            DecodingError::InvalidJson {
-                description: "failed to deserialize packet data".to_string(),
-            }
-            .into(),
-        )
-        .into();
+        let ack_error: Vec<u8> =
+            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into())
+                .into();
 
         // Check that it's the same output as ibc-go
         // Note: this also implicitly checks that the ack bytes are non-empty,
         // which would make the conversion to `Acknowledgement` panic
         assert_eq!(
             ack_error,
-            br#"{"error":"invalid JSON data: `failed to deserialize packet data`"}"#
+            br#"{"error":"failed to deserialize packet data"}"#
         );
     }
 
@@ -380,13 +371,8 @@ mod test {
             AcknowledgementStatus::success(ack_success_b64()),
         );
         de_json_assert_eq(
-            r#"{"error":"invalid JSON data: `failed to deserialize packet data`"}"#,
-            AcknowledgementStatus::error(
-                DecodingError::InvalidJson {
-                    description: "failed to deserialize packet data".to_string(),
-                }
-                .into(),
-            ),
+            r#"{"error":"failed to deserialize packet data"}"#,
+            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into()),
         );
 
         assert!(serde_json::from_str::<AcknowledgementStatus>(r#"{"success":"AQ=="}"#).is_err());
