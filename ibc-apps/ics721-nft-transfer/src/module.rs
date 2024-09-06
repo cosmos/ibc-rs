@@ -371,7 +371,7 @@ mod test {
             AcknowledgementStatus::success(ack_success_b64()),
         );
         de_json_assert_eq(
-            r#"{"error":"failed to deserialize packet data"}"#,
+            r#"{"error":"failed to deserialize acknowledgement"}"#,
             AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into()),
         );
 
