@@ -374,7 +374,7 @@ mod test {
         );
         de_json_assert_eq(
             r#"{"error":"failed to deserialize packet data"}"#,
-            AcknowledgementStatus::error(TokenTransferError::FailedToDeserializeAck.into()),
+            AcknowledgementStatus::error(TokenTransferError::FailedToDeserializePacketData.into()),
         );
 
         assert!(serde_json::from_str::<AcknowledgementStatus>(r#"{"success":"AQ=="}"#).is_err());
