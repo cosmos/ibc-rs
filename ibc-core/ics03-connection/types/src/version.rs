@@ -117,15 +117,18 @@ impl Display for Version {
 /// counterparty. The returned version contains a feature set with the
 /// intersection of the features supported by the source and counterparty
 /// chains. If the feature set intersection is nil, the search for a
-/// compatible version continues. This function is called in the `conn_open_try`
-/// handshake procedure.
+/// compatible version continues. If no feature set intersection is found
+/// after searching through every supported version, then `None` is returned.
 ///
-/// NOTE: Empty feature set is not currently allowed for a chosen version.
+/// This function is called in the `conn_open_try` handshake procedure.
+///
+/// NOTE: Empty feature sets are not currently allowed for a chosen version.
 pub fn pick_version(
     supported_versions: &[Version],
     counterparty_versions: &[Version],
-) -> Result<Version, ConnectionError> {
+) -> Option<Version> {
     let mut intersection: Vec<Version> = Vec::new();
+
     for sv in supported_versions.iter() {
         if let Ok(cv) = find_supported_version(sv, counterparty_versions) {
             if let Ok(feature_set) = get_feature_set_intersection(&sv.features, &cv.features) {
@@ -138,11 +141,12 @@ pub fn pick_version(
     }
 
     if intersection.is_empty() {
-        return Err(ConnectionError::MissingCommonVersion);
+        return None;
     }
 
     intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
-    Ok(intersection[0].clone())
+
+    Some(intersection[0].clone())
 }
 
 /// Returns the version from the list of supported versions that matches the
@@ -380,7 +384,7 @@ mod tests {
 
             assert_eq!(
                 test.want_pass,
-                version.is_ok(),
+                version.is_some(),
                 "Validate versions failed for test {}",
                 test.name,
             );
