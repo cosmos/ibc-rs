@@ -12,7 +12,6 @@ use tendermint::time::Time;
 use tendermint::Hash;
 use tendermint_proto::google::protobuf as tpb;
 
-use crate::error::TendermintClientError;
 use crate::header::Header;
 
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
