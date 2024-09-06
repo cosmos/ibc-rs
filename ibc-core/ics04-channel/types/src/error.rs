@@ -96,8 +96,6 @@ pub enum PacketError {
     InvalidTimeoutHeight(ClientError),
     /// invalid timeout timestamp: `{0}`
     InvalidTimeoutTimestamp(TimestampError),
-    /// identifier error: `{0}`
-    Identifier(IdentifierError),
     /// empty acknowledgment status not allowed
     EmptyAcknowledgmentStatus,
     /// packet acknowledgment for sequence `{0}` already exists
@@ -111,8 +109,6 @@ pub enum PacketError {
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
-    /// implementation-specific error
-    ImplementationSpecific,
 
     // TODO(seanchen1991): Move these variants to host-relevant error types
     /// application module error: `{description}`
@@ -121,6 +117,8 @@ pub enum PacketError {
     MissingPacketAcknowledgment(Sequence),
     /// missing packet receipt for packet `{0}`
     MissingPacketReceipt(Sequence),
+    /// implementation-specific error
+    ImplementationSpecific,
 }
 
 impl From<IdentifierError> for ChannelError {
@@ -131,7 +129,7 @@ impl From<IdentifierError> for ChannelError {
 
 impl From<IdentifierError> for PacketError {
     fn from(e: IdentifierError) -> Self {
-        Self::Identifier(e)
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 
@@ -159,7 +157,6 @@ impl std::error::Error for PacketError {
         match &self {
             Self::Channel(e) => Some(e),
             Self::Decoding(e) => Some(e),
-            Self::Identifier(e) => Some(e),
             _ => None,
         }
     }
