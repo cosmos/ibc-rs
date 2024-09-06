@@ -48,7 +48,7 @@ impl ConsensusState {
 impl Protobuf<RawConsensusState> for ConsensusState {}
 
 impl TryFrom<RawConsensusState> for ConsensusState {
-    type Error = TendermintClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawConsensusState) -> Result<Self, Self::Error> {
         let proto_root = raw
