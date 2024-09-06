@@ -372,7 +372,7 @@ mod test {
         );
         de_json_assert_eq(
             r#"{"error":"failed to deserialize acknowledgement"}"#,
-            AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into()),
+            AcknowledgementStatus::error(NftTransferError::FailedToDeserializeAck.into()),
         );
 
         assert!(serde_json::from_str::<AcknowledgementStatus>(r#"{"success":"AQ=="}"#).is_err());
