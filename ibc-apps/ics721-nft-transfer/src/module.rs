@@ -209,16 +209,11 @@ pub fn on_acknowledgement_packet_validate(
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
 ) -> Result<(), NftTransferError> {
-    let data = serde_json::from_slice::<PacketData>(&packet.data).map_err(|e| {
-        DecodingError::InvalidJson {
-            description: format!("failed to deserialize packet data: {e}"),
-        }
-    })?;
+    let data = serde_json::from_slice::<PacketData>(&packet.data)
+        .map_err(|_| NftTransferError::FailedToDeserializePacketData)?;
 
     let acknowledgement = serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref())
-        .map_err(|e| DecodingError::InvalidJson {
-            description: format!("failed to deserialize acknowledgment: {e}"),
-        })?;
+        .map_err(|__| NftTransferError::FailedToDeserializeAck)?;
 
     if !acknowledgement.is_successful() {
         refund_packet_nft_validate(ctx, packet, &data)?;
@@ -236,10 +231,7 @@ pub fn on_acknowledgement_packet_execute(
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         return (
             ModuleExtras::empty(),
-            Err(DecodingError::InvalidJson {
-                description: "failed to deserialize packet data".to_string(),
-            }
-            .into()),
+            Err(NftTransferError::FailedToDeserializePacketData),
         );
     };
 
@@ -248,10 +240,7 @@ pub fn on_acknowledgement_packet_execute(
     else {
         return (
             ModuleExtras::empty(),
-            Err(DecodingError::InvalidJson {
-                description: "failed to deserialize acknowledgment".to_string(),
-            }
-            .into()),
+            Err(NftTransferError::FailedToDeserializeAck),
         );
     };
 
