@@ -4,8 +4,7 @@ use core::convert::Infallible;
 
 use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::DecodingError;
-use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
