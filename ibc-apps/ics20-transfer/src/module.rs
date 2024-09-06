@@ -172,12 +172,8 @@ pub fn on_recv_packet_execute(
     packet: &Packet,
 ) -> (ModuleExtras, Acknowledgement) {
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
-        let ack = AcknowledgementStatus::error(
-            DecodingError::InvalidJson {
-                description: "failed to deserialize packet data".to_string(),
-            }
-            .into(),
-        );
+        let ack =
+            AcknowledgementStatus::error(TokenTransferError::FailedToDeserializePacketData.into());
         return (ModuleExtras::empty(), ack.into());
     };
 
