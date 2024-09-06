@@ -81,7 +81,7 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
         let cs_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_consensus_state)
             .map_err(|_| {
                 UpgradeClientError::InvalidUpgradeConsensusStateProof(
-                    CommitmentError::InvalidMerkleProof,
+                    CommitmentError::EmptyMerkleProof,
                 )
             })?;
 
