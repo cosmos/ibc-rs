@@ -46,7 +46,7 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
         })?;
 
         Ok(MsgSubmitMisbehaviour {
-            client_id: raw.client_id.parse().map_err(DecodingError::Identifier)?,
+            client_id: raw.client_id.parse()?,
             misbehaviour: raw_misbehaviour,
             signer: raw.signer.into(),
         })

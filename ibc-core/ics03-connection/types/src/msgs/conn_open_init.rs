@@ -98,7 +98,7 @@ impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
         counterparty.verify_empty_connection_id()?;
 
         Ok(Self {
-            client_id_on_a: msg.client_id.parse().map_err(DecodingError::Identifier)?,
+            client_id_on_a: msg.client_id.parse()?,
             counterparty,
             version: msg.version.map(TryInto::try_into).transpose()?,
             delay_period: Duration::from_nanos(msg.delay_period),

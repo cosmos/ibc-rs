@@ -165,7 +165,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
         #[allow(deprecated)]
         Ok(Self {
             previous_connection_id: msg.previous_connection_id,
-            client_id_on_b: msg.client_id.parse().map_err(DecodingError::Identifier)?,
+            client_id_on_b: msg.client_id.parse()?,
             client_state_of_b_on_a: msg.client_state.ok_or(DecodingError::MissingRawData {
                 description: "client state not set".to_string(),
             })?,

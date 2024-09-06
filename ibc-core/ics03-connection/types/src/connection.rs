@@ -68,7 +68,7 @@ impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
         };
 
         Ok(IdentifiedConnectionEnd {
-            connection_id: value.id.parse().map_err(DecodingError::Identifier)?,
+            connection_id: value.id.parse()?,
             connection_end: raw_connection_end.try_into()?,
         })
     }
@@ -214,7 +214,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
 
         Self::new(
             state,
-            value.client_id.parse().map_err(DecodingError::Identifier)?,
+            value.client_id.parse()?,
             value
                 .counterparty
                 .ok_or(DecodingError::MissingRawData {
@@ -376,18 +376,10 @@ impl TryFrom<RawCounterparty> for Counterparty {
         let connection_id: Option<ConnectionId> = if raw_counterparty.connection_id.is_empty() {
             None
         } else {
-            Some(
-                raw_counterparty
-                    .connection_id
-                    .parse()
-                    .map_err(DecodingError::Identifier)?,
-            )
+            Some(raw_counterparty.connection_id.parse()?)
         };
         Ok(Counterparty::new(
-            raw_counterparty
-                .client_id
-                .parse()
-                .map_err(DecodingError::Identifier)?,
+            raw_counterparty.client_id.parse()?,
             connection_id,
             raw_counterparty
                 .prefix

@@ -3,7 +3,7 @@
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
-use ibc_core_host_types::error::DecodingError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_core_host_types::identifiers::ConnectionId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
@@ -74,6 +74,12 @@ pub enum ConnectionError {
 impl From<DecodingError> for ConnectionError {
     fn from(e: DecodingError) -> Self {
         Self::Decoding(e)
+    }
+}
+
+impl From<IdentifierError> for ConnectionError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 
