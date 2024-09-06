@@ -1,5 +1,6 @@
 use core::time::Duration;
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -89,13 +90,15 @@ impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
     fn try_from(msg: RawMsgConnectionOpenInit) -> Result<Self, Self::Error> {
         let counterparty: Counterparty = msg
             .counterparty
-            .ok_or(ConnectionError::MissingCounterparty)?
+            .ok_or(DecodingError::MissingRawData {
+                description: "counterparty not set".to_string(),
+            })?
             .try_into()?;
 
         counterparty.verify_empty_connection_id()?;
 
         Ok(Self {
-            client_id_on_a: msg.client_id.parse().map_err(ConnectionError::Identifier)?,
+            client_id_on_a: msg.client_id.parse().map_err(DecodingError::Identifier)?,
             counterparty,
             version: msg.version.map(TryInto::try_into).transpose()?,
             delay_period: Duration::from_nanos(msg.delay_period),

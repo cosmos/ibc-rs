@@ -68,7 +68,7 @@ impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
         };
 
         Ok(IdentifiedConnectionEnd {
-            connection_id: value.id.parse().map_err(ConnectionError::Identifier)?,
+            connection_id: value.id.parse().map_err(DecodingError::Identifier)?,
             connection_end: raw_connection_end.try_into()?,
         })
     }
@@ -214,13 +214,12 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
 
         Self::new(
             state,
-            value
-                .client_id
-                .parse()
-                .map_err(ConnectionError::Identifier)?,
+            value.client_id.parse().map_err(DecodingError::Identifier)?,
             value
                 .counterparty
-                .ok_or(ConnectionError::MissingCounterparty)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "counterparty not set".to_string(),
+                })?
                 .try_into()?,
             value
                 .versions
@@ -381,18 +380,20 @@ impl TryFrom<RawCounterparty> for Counterparty {
                 raw_counterparty
                     .connection_id
                     .parse()
-                    .map_err(ConnectionError::Identifier)?,
+                    .map_err(DecodingError::Identifier)?,
             )
         };
         Ok(Counterparty::new(
             raw_counterparty
                 .client_id
                 .parse()
-                .map_err(ConnectionError::Identifier)?,
+                .map_err(DecodingError::Identifier)?,
             connection_id,
             raw_counterparty
                 .prefix
-                .ok_or(ConnectionError::MissingCounterparty)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "counterparty prefix not set".to_string(),
+                })?
                 .key_prefix
                 .into(),
         ))
