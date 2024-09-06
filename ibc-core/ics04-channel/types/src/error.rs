@@ -18,8 +18,6 @@ use crate::Version;
 pub enum ChannelError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// identifier error: `{0}`
-    Identifier(IdentifierError),
     /// invalid channel id: expected `{expected}`, actual `{actual}`
     InvalidChannelId { expected: String, actual: String },
     /// invalid channel state: expected `{expected}`, actual `{actual}`
@@ -127,7 +125,7 @@ pub enum PacketError {
 
 impl From<IdentifierError> for ChannelError {
     fn from(e: IdentifierError) -> Self {
-        Self::Identifier(e)
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 
@@ -171,7 +169,6 @@ impl std::error::Error for PacketError {
 impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::Identifier(e) => Some(e),
             Self::Decoding(e) => Some(e),
             Self::FailedPacketVerification {
                 client_error: e, ..
