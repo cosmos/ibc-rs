@@ -208,16 +208,11 @@ pub fn on_acknowledgement_packet_validate<Ctx>(
 where
     Ctx: TokenTransferValidationContext,
 {
-    let data = serde_json::from_slice::<PacketData>(&packet.data).map_err(|e| {
-        DecodingError::InvalidJson {
-            description: format!("failed to deserialize packet data: {e}"),
-        }
-    })?;
+    let data = serde_json::from_slice::<PacketData>(&packet.data)
+        .map_err(|_| TokenTransferError::FailedToDeserializePacketData)?;
 
     let acknowledgement = serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref())
-        .map_err(|e| DecodingError::InvalidJson {
-            description: format!("failed to deserialize acknowledgment status: {e}"),
-        })?;
+        .map_err(|_| TokenTransferError::FailedToDeserializeAck)?;
 
     if !acknowledgement.is_successful() {
         refund_packet_token_validate(ctx, packet, &data)?;
@@ -235,10 +230,7 @@ pub fn on_acknowledgement_packet_execute(
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         return (
             ModuleExtras::empty(),
-            Err(DecodingError::InvalidJson {
-                description: "failed to deserialize packet data".to_string(),
-            }
-            .into()),
+            Err(TokenTransferError::FailedToDeserializePacketData),
         );
     };
 
@@ -247,10 +239,7 @@ pub fn on_acknowledgement_packet_execute(
     else {
         return (
             ModuleExtras::empty(),
-            Err(DecodingError::InvalidJson {
-                description: "failed to deserialize acknowledgment status".to_string(),
-            }
-            .into()),
+            Err(TokenTransferError::FailedToDeserializeAck),
         );
     };
 

@@ -39,6 +39,10 @@ pub enum TokenTransferError {
     UnsupportedClosedChannel,
     /// empty base denomination
     EmptyBaseDenom,
+    /// failed to deserialize packet data
+    FailedToDeserializePacketData,
+    /// failed to deserialize acknowledgement
+    FailedToDeserializeAck,
 
     // TODO(seanchen1991): Used in basecoin; this variant should be moved
     // to a host-relevant error
