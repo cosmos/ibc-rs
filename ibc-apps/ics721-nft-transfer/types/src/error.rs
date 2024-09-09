@@ -65,7 +65,7 @@ impl From<Infallible> for NftTransferError {
 }
 
 impl From<NftTransferError> for StatusValue {
-    fn from(e: NftTransferError) -> Self {
-        StatusValue::new(e.to_string()).expect("error message must not be empty")
+    fn from(err: NftTransferError) -> Self {
+        StatusValue::new(err.to_string()).expect("error message must not be empty")
     }
 }
