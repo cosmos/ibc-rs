@@ -12,8 +12,8 @@ use ibc_core::primitives::prelude::*;
 
 #[derive(Display, Debug, derive_more::From)]
 pub enum NftTransferError {
-    /// context error: `{0}`
-    HandlerError(HandlerError),
+    /// handler error: `{0}`
+    Handler(HandlerError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// identifier error: `{0}`
@@ -47,7 +47,7 @@ pub enum NftTransferError {
 impl std::error::Error for NftTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::HandlerError(e) => Some(e),
+            Self::Handler(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }

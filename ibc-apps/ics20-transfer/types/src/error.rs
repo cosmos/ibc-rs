@@ -12,8 +12,8 @@ use uint::FromDecStrErr;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
-    /// context error: `{0}`
-    HandlerError(HandlerError),
+    /// handler error: `{0}`
+    Handler(HandlerError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// identifier error: `{0}`
@@ -50,7 +50,7 @@ pub enum TokenTransferError {
 impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::HandlerError(e) => Some(e),
+            Self::Handler(e) => Some(e),
             Self::Identifier(e) => Some(e),
             Self::InvalidAmount(e) => Some(e),
             Self::Decoding(e) => Some(e),
@@ -67,7 +67,7 @@ impl From<Infallible> for TokenTransferError {
 
 impl From<HandlerError> for TokenTransferError {
     fn from(e: HandlerError) -> Self {
-        Self::HandlerError(e)
+        Self::Handler(e)
     }
 }
 

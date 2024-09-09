@@ -49,13 +49,13 @@ where
         )?)
     }
 
-    fn host_timestamp(&self) -> Result<Timestamp, HandlerError> {
+    fn host_timestamp(&self) -> Result<Timestamp, HostError> {
         let host_height = self.host_height()?;
         let host_cons_state = self.host_consensus_state(&host_height)?;
         Ok(host_cons_state.timestamp())
     }
 
-    fn client_counter(&self) -> Result<u64, HandlerError> {
+    fn client_counter(&self) -> Result<u64, HostError> {
         Ok(self
             .client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
@@ -64,10 +64,7 @@ where
             })?)
     }
 
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Self::HostConsensusState, HandlerError> {
+    fn host_consensus_state(&self, height: &Height) -> Result<Self::HostConsensusState, HostError> {
         let consensus_states_binding = self.host_consensus_states.lock();
         Ok(consensus_states_binding
             .get(&height.revision_height())
@@ -78,7 +75,7 @@ where
     fn validate_self_client(
         &self,
         client_state_of_host_on_counterparty: Self::HostClientState,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         if client_state_of_host_on_counterparty.is_frozen() {
             return Err(ClientError::UnexpectedStatus(Status::Frozen).into());
         }
@@ -120,7 +117,7 @@ where
         Ok(())
     }
 
-    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, HandlerError> {
+    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, HostError> {
         Ok(self
             .connection_end_store
             .get(StoreHeight::Pending, &ConnectionPath::new(conn_id))
@@ -133,14 +130,14 @@ where
         CommitmentPrefix::from(b"mock".to_vec())
     }
 
-    fn connection_counter(&self) -> Result<u64, HandlerError> {
+    fn connection_counter(&self) -> Result<u64, HostError> {
         Ok(self
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
             .ok_or(ConnectionError::MissingConnectionCounter)?)
     }
 
-    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HandlerError> {
+    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HostError> {
         Ok(self
             .channel_end_store
             .get(
@@ -153,10 +150,7 @@ where
             })?)
     }
 
-    fn get_next_sequence_send(
-        &self,
-        seq_send_path: &SeqSendPath,
-    ) -> Result<Sequence, HandlerError> {
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, HostError> {
         Ok(self
             .send_sequence_store
             .get(
@@ -166,10 +160,7 @@ where
             .ok_or(PacketError::ImplementationSpecific)?)
     }
 
-    fn get_next_sequence_recv(
-        &self,
-        seq_recv_path: &SeqRecvPath,
-    ) -> Result<Sequence, HandlerError> {
+    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, HostError> {
         Ok(self
             .recv_sequence_store
             .get(
@@ -179,7 +170,7 @@ where
             .ok_or(PacketError::ImplementationSpecific)?)
     }
 
-    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, HandlerError> {
+    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, HostError> {
         Ok(self
             .ack_sequence_store
             .get(
@@ -192,7 +183,7 @@ where
     fn get_packet_commitment(
         &self,
         commitment_path: &CommitmentPath,
-    ) -> Result<PacketCommitment, HandlerError> {
+    ) -> Result<PacketCommitment, HostError> {
         Ok(self
             .packet_commitment_store
             .get(
@@ -206,7 +197,7 @@ where
             .ok_or(PacketError::ImplementationSpecific)?)
     }
 
-    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, HandlerError> {
+    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, HostError> {
         Ok(self
             .packet_receipt_store
             .is_path_set(
@@ -224,7 +215,7 @@ where
     fn get_packet_acknowledgement(
         &self,
         ack_path: &AckPath,
-    ) -> Result<AcknowledgementCommitment, HandlerError> {
+    ) -> Result<AcknowledgementCommitment, HostError> {
         Ok(self
             .packet_ack_store
             .get(
@@ -237,7 +228,7 @@ where
     /// Returns a counter of the number of channel ids that have been created thus far.
     /// The value of this counter should increase only via the
     /// `ChannelKeeper::increase_channel_counter` method.
-    fn channel_counter(&self) -> Result<u64, HandlerError> {
+    fn channel_counter(&self) -> Result<u64, HostError> {
         Ok(self
             .channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
@@ -249,7 +240,7 @@ where
         Duration::from_secs(DEFAULT_BLOCK_TIME_SECS)
     }
 
-    fn validate_message_signer(&self, _signer: &Signer) -> Result<(), HandlerError> {
+    fn validate_message_signer(&self, _signer: &Signer) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -289,7 +280,7 @@ where
     S: ProvableStore + Debug,
 {
     /// Returns the list of all client states.
-    fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, HandlerError> {
+    fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, HostError> {
         let path = "clients".to_owned().into();
 
         self.client_state_store
@@ -316,7 +307,7 @@ where
     fn consensus_states(
         &self,
         client_id: &ClientId,
-    ) -> Result<Vec<(Height, ConsensusStateRef<Self>)>, HandlerError> {
+    ) -> Result<Vec<(Height, ConsensusStateRef<Self>)>, HostError> {
         let path = format!("clients/{}/consensusStates", client_id)
             .try_into()
             .map_err(|_| ClientError::Other {
@@ -353,7 +344,7 @@ where
     }
 
     /// Returns the list of heights at which the consensus state of the given client was updated.
-    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, HandlerError> {
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, HostError> {
         let path = format!("clients/{}/consensusStates", client_id)
             .try_into()
             .map_err(|_| ClientError::Other {
@@ -380,7 +371,7 @@ where
     }
 
     /// Returns all the IBC connection ends of a chain.
-    fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, HandlerError> {
+    fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, HostError> {
         let path = "connections".to_owned().into();
 
         self.connection_end_store
@@ -407,10 +398,7 @@ where
     }
 
     /// Returns all the IBC connection ends associated with a client.
-    fn client_connection_ends(
-        &self,
-        client_id: &ClientId,
-    ) -> Result<Vec<ConnectionId>, HandlerError> {
+    fn client_connection_ends(&self, client_id: &ClientId) -> Result<Vec<ConnectionId>, HostError> {
         let client_connection_path = ClientConnectionPath::new(client_id.clone());
 
         Ok(self
@@ -420,7 +408,7 @@ where
     }
 
     /// Returns all the IBC channel ends of a chain.
-    fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, HandlerError> {
+    fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, HostError> {
         let path = "channelEnds".to_owned().into();
 
         self.channel_end_store
@@ -454,7 +442,7 @@ where
     fn packet_commitments(
         &self,
         channel_end_path: &ChannelEndPath,
-    ) -> Result<Vec<PacketState>, HandlerError> {
+    ) -> Result<Vec<PacketState>, HostError> {
         let path = format!(
             "commitments/ports/{}/channels/{}/sequences",
             channel_end_path.0, channel_end_path.1
@@ -496,7 +484,7 @@ where
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<PacketState>, HandlerError> {
+    ) -> Result<Vec<PacketState>, HostError> {
         let collected_paths: Vec<_> = if sequences.len() == 0 {
             // if sequences is empty, return all the acks
             let ack_path_prefix = format!(
@@ -549,7 +537,7 @@ where
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<Sequence>, HandlerError> {
+    ) -> Result<Vec<Sequence>, HostError> {
         // QUESTION. Currently only works for unordered channels; ordered channels
         // don't use receipts. However, ibc-go does it this way. Investigate if
         // this query only ever makes sense on unordered channels.
@@ -574,7 +562,7 @@ where
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<Sequence>, HandlerError> {
+    ) -> Result<Vec<Sequence>, HostError> {
         let collected_paths: Vec<_> = if sequences.len() == 0 {
             // if sequences is empty, return all the acks
             let commitment_path_prefix = format!(
@@ -625,7 +613,7 @@ where
 
     /// Called upon client creation.
     /// Increases the counter, that keeps track of how many clients have been created.
-    fn increase_client_counter(&mut self) -> Result<(), HandlerError> {
+    fn increase_client_counter(&mut self) -> Result<(), HostError> {
         let current_sequence = self
             .client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
@@ -647,7 +635,7 @@ where
         &mut self,
         connection_path: &ConnectionPath,
         connection_end: ConnectionEnd,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         self.connection_end_store
             .set(connection_path.clone(), connection_end)
             .map_err(|_| ConnectionError::FailedToStoreConnectionEnd)?;
@@ -659,7 +647,7 @@ where
         &mut self,
         client_connection_path: &ClientConnectionPath,
         conn_id: ConnectionId,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         let mut conn_ids: Vec<ConnectionId> = self
             .connection_ids_store
             .get(StoreHeight::Pending, client_connection_path)
@@ -673,7 +661,7 @@ where
 
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter, that keeps track of how many connections have been created.
-    fn increase_connection_counter(&mut self) -> Result<(), HandlerError> {
+    fn increase_connection_counter(&mut self) -> Result<(), HostError> {
         let current_sequence = self
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
@@ -690,7 +678,7 @@ where
         &mut self,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         self.packet_commitment_store
             .set(commitment_path.clone(), commitment)
             .map_err(|_| PacketError::ImplementationSpecific)?;
@@ -700,7 +688,7 @@ where
     fn delete_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         self.packet_commitment_store.delete(commitment_path.clone());
         Ok(())
     }
@@ -709,7 +697,7 @@ where
         &mut self,
         receipt_path: &ReceiptPath,
         _receipt: Receipt,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         self.packet_receipt_store
             .set_path(receipt_path.clone())
             .map_err(|_| PacketError::ImplementationSpecific)?;
@@ -720,14 +708,14 @@ where
         &mut self,
         ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         self.packet_ack_store
             .set(ack_path.clone(), ack_commitment)
             .map_err(|_| PacketError::ImplementationSpecific)?;
         Ok(())
     }
 
-    fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), HandlerError> {
+    fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), HostError> {
         self.packet_ack_store.delete(ack_path.clone());
         Ok(())
     }
@@ -736,7 +724,7 @@ where
         &mut self,
         channel_end_path: &ChannelEndPath,
         channel_end: ChannelEnd,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         self.channel_end_store
             .set(channel_end_path.clone(), channel_end)
             .map_err(|e| ChannelError::FailedToStoreChannel {
@@ -749,7 +737,7 @@ where
         &mut self,
         seq_send_path: &SeqSendPath,
         seq: Sequence,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         self.send_sequence_store
             .set(seq_send_path.clone(), seq)
             .map_err(|_| PacketError::ImplementationSpecific)?;
@@ -760,7 +748,7 @@ where
         &mut self,
         seq_recv_path: &SeqRecvPath,
         seq: Sequence,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         self.recv_sequence_store
             .set(seq_recv_path.clone(), seq)
             .map_err(|_| PacketError::ImplementationSpecific)?;
@@ -771,14 +759,14 @@ where
         &mut self,
         seq_ack_path: &SeqAckPath,
         seq: Sequence,
-    ) -> Result<(), HandlerError> {
+    ) -> Result<(), HostError> {
         self.ack_sequence_store
             .set(seq_ack_path.clone(), seq)
             .map_err(|_| PacketError::ImplementationSpecific)?;
         Ok(())
     }
 
-    fn increase_channel_counter(&mut self) -> Result<(), HandlerError> {
+    fn increase_channel_counter(&mut self) -> Result<(), HostError> {
         let current_sequence = self
             .channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
@@ -793,12 +781,12 @@ where
         Ok(())
     }
 
-    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), HandlerError> {
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), HostError> {
         self.events.lock().push(event);
         Ok(())
     }
 
-    fn log_message(&mut self, message: String) -> Result<(), HandlerError> {
+    fn log_message(&mut self, message: String) -> Result<(), HostError> {
         self.logs.lock().push(message);
         Ok(())
     }
