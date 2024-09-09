@@ -5,7 +5,7 @@ use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::HandlerError;
-use ibc_core::host::types::error::{DecodingError, IdentifierError};
+use ibc_core::host::types::error::{DecodingError, HostError, IdentifierError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use uint::FromDecStrErr;
@@ -80,6 +80,12 @@ impl From<IdentifierError> for TokenTransferError {
 impl From<DecodingError> for TokenTransferError {
     fn from(e: DecodingError) -> Self {
         Self::Decoding(e)
+    }
+}
+
+impl From<HostError> for TokenTransferError {
+    fn from(e: HostError) -> Self {
+        Self::Handler(HandlerError::Host(e))
     }
 }
 

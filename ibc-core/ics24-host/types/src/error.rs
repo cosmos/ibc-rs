@@ -16,10 +16,14 @@ pub enum HostError {
     InvalidData { description: String },
     /// missing data: `{description}`
     MissingData { description: String },
+    /// unexpected data: `{description}`
+    UnexpectedData { description: String },
     /// failed to update state: `{description}`
     FailedToUpdateState { description: String },
     /// failed to store data: `{description}`
     FailedToStoreData { description: String },
+    /// failed to retrieve data from store: `{description}`
+    FailedToRetrieveFromStore { description: String },
     /// failed to parse data: `{description}`
     FailedToParseData { description: String },
     /// non-existent type: `{description}`

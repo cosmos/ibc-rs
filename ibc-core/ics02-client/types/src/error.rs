@@ -5,6 +5,7 @@ use core::convert::Infallible;
 use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::DecodingError;
+use ibc_core_host_types::error::HostError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
@@ -16,6 +17,8 @@ use crate::Status;
 /// Encodes all the possible client errors
 #[derive(Debug, Display)]
 pub enum ClientError {
+    /// host error : `{0}`
+    Host(HostError),
     /// upgrade client error: `{0}`
     Upgrade(UpgradeClientError),
     /// decoding error: `{0}`
@@ -103,6 +106,12 @@ impl From<CommitmentError> for ClientError {
 impl From<DecodingError> for ClientError {
     fn from(e: DecodingError) -> Self {
         Self::Decoding(e)
+    }
+}
+
+impl From<HostError> for ClientError {
+    fn from(e: HostError) -> Self {
+        Self::Host(e)
     }
 }
 

@@ -3,7 +3,6 @@
 mod on_recv_packet;
 mod send_transfer;
 
-use ibc_core::channel::types::packet::Packet;
 pub use on_recv_packet::*;
 pub use send_transfer::*;
 
@@ -11,6 +10,9 @@ use crate::context::{NftTransferExecutionContext, NftTransferValidationContext};
 use crate::types::error::NftTransferError;
 use crate::types::is_sender_chain_source;
 use crate::types::packet::PacketData;
+
+use ibc_core::channel::types::packet::Packet;
+use ibc_core::handler::types::error::HandlerError;
 
 pub fn refund_packet_nft_execute(
     ctx_a: &mut impl NftTransferExecutionContext,
@@ -29,13 +31,15 @@ pub fn refund_packet_nft_execute(
         &data.class_id,
     ) {
         data.token_ids.as_ref().iter().try_for_each(|token_id| {
-            ctx_a.unescrow_nft_execute(
-                &sender,
-                &packet.port_id_on_a,
-                &packet.chan_id_on_a,
-                &data.class_id,
-                token_id,
-            )
+            ctx_a
+                .unescrow_nft_execute(
+                    &sender,
+                    &packet.port_id_on_a,
+                    &packet.chan_id_on_a,
+                    &data.class_id,
+                    token_id,
+                )
+                .map_err(|e| NftTransferError::Handler(HandlerError::Host(e)))
         })
     }
     // mint vouchers back to sender
@@ -43,8 +47,12 @@ pub fn refund_packet_nft_execute(
         for (i, token_id) in data.token_ids.0.iter().enumerate() {
             let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
             let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
-            ctx_a.mint_nft_execute(&sender, &data.class_id, token_id, token_uri, token_data)?;
+
+            let _ = ctx_a
+                .mint_nft_execute(&sender, &data.class_id, token_id, token_uri, token_data)
+                .map_err(|_| NftTransferError::Handler);
         }
+
         Ok(())
     }
 }
@@ -66,20 +74,26 @@ pub fn refund_packet_nft_validate(
         &data.class_id,
     ) {
         data.token_ids.0.iter().try_for_each(|token_id| {
-            ctx_a.unescrow_nft_validate(
-                &sender,
-                &packet.port_id_on_a,
-                &packet.chan_id_on_a,
-                &data.class_id,
-                token_id,
-            )
+            ctx_a
+                .unescrow_nft_validate(
+                    &sender,
+                    &packet.port_id_on_a,
+                    &packet.chan_id_on_a,
+                    &data.class_id,
+                    token_id,
+                )
+                .map_err(|e| NftTransferError::Handler(HandlerError::Host(e)))
         })
     } else {
         for (i, token_id) in data.token_ids.0.iter().enumerate() {
             let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
             let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
-            ctx_a.mint_nft_validate(&sender, &data.class_id, token_id, token_uri, token_data)?;
+
+            let _ = ctx_a
+                .mint_nft_validate(&sender, &data.class_id, token_id, token_uri, token_data)
+                .map_err(|_| NftTransferError::Handler);
         }
+
         Ok(())
     }
 }

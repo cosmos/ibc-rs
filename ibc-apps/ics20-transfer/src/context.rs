@@ -1,6 +1,5 @@
 //! Defines the main context traits and IBC module callbacks
 
-use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::{Memo, PrefixedCoin, PrefixedDenom};
 use ibc_core::host::types::error::HostError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};

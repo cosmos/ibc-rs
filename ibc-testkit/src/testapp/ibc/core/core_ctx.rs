@@ -16,8 +16,8 @@ use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::commitment_types::merkle::MerkleProof;
 use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::{ConnectionEnd, IdentifiedConnectionEnd};
-use ibc::core::handler::types::error::HandlerError;
 use ibc::core::handler::types::events::IbcEvent;
+use ibc::core::host::types::error::HostError;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath,
@@ -43,10 +43,13 @@ where
     type HostConsensusState = AnyConsensusState;
 
     fn host_height(&self) -> Result<Height, HostError> {
-        Ok(Height::new(
-            *self.revision_number.lock(),
-            self.store.current_height(),
-        )?)
+        Ok(
+            Height::new(*self.revision_number.lock(), self.store.current_height()).map_err(
+                |e| HostError::InvalidData {
+                    description: e.to_string(),
+                },
+            )?,
+        )
     }
 
     fn host_timestamp(&self) -> Result<Timestamp, HostError> {
@@ -59,17 +62,20 @@ where
         Ok(self
             .client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
-            .ok_or(ClientError::Other {
-                description: "client counter not found".into(),
+            .ok_or(HostError::MissingData {
+                description: "client counter not found".to_string(),
             })?)
     }
 
     fn host_consensus_state(&self, height: &Height) -> Result<Self::HostConsensusState, HostError> {
         let consensus_states_binding = self.host_consensus_states.lock();
+
         Ok(consensus_states_binding
             .get(&height.revision_height())
             .cloned()
-            .ok_or(ClientError::MissingLocalConsensusState(*height))?)
+            .ok_or(HostError::MissingData {
+                description: ClientError::MissingLocalConsensusState(*height).to_string(),
+            })?)
     }
 
     fn validate_self_client(
@@ -77,7 +83,9 @@ where
         client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), HostError> {
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(ClientError::UnexpectedStatus(Status::Frozen).into());
+            return Err(HostError::UnexpectedData {
+                description: ClientError::UnexpectedStatus(Status::Frozen).to_string(),
+            });
         }
 
         let latest_height = self.host_height()?;
@@ -88,30 +96,26 @@ where
                 .latest_height()
                 .revision_number()
         {
-            return Err(HandlerError::Connection(
-                ConnectionError::InvalidClientState {
-                    description: format!(
-                        "client is not in the same revision as the chain. expected: {}, got: {}",
-                        self_revision_number,
-                        client_state_of_host_on_counterparty
-                            .latest_height()
-                            .revision_number()
-                    ),
-                },
-            ));
+            return Err(HostError::InvalidData {
+                description: format!(
+                    "client is not in the same revision as the chain. expected: {}, got: {}",
+                    self_revision_number,
+                    client_state_of_host_on_counterparty
+                        .latest_height()
+                        .revision_number()
+                ),
+            });
         }
 
         let host_current_height = latest_height.increment();
         if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
-            return Err(HandlerError::Connection(
-                ConnectionError::InvalidClientState {
-                    description: format!(
-                        "client has latest height {} greater than or equal to chain height {}",
-                        client_state_of_host_on_counterparty.latest_height(),
-                        host_current_height
-                    ),
-                },
-            ));
+            return Err(HostError::InvalidData {
+                description: format!(
+                    "client has latest height {} greater than or equal to chain height {}",
+                    client_state_of_host_on_counterparty.latest_height(),
+                    host_current_height
+                ),
+            });
         }
 
         Ok(())
@@ -121,7 +125,9 @@ where
         Ok(self
             .connection_end_store
             .get(StoreHeight::Pending, &ConnectionPath::new(conn_id))
-            .ok_or(ConnectionError::MissingConnection(conn_id.clone()))?)
+            .ok_or(HostError::MissingData {
+                description: ConnectionError::MissingConnection(conn_id.clone()).to_string(),
+            })?)
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
@@ -134,7 +140,9 @@ where
         Ok(self
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
-            .ok_or(ConnectionError::MissingConnectionCounter)?)
+            .ok_or(HostError::MissingData {
+                description: ConnectionError::MissingConnectionCounter.to_string(),
+            })?)
     }
 
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HostError> {
@@ -144,9 +152,12 @@ where
                 StoreHeight::Pending,
                 &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
             )
-            .ok_or(ChannelError::NonexistentChannel {
-                port_id: channel_end_path.0.clone(),
-                channel_id: channel_end_path.1.clone(),
+            .ok_or(HostError::NonexistentType {
+                description: ChannelError::NonexistentChannel {
+                    port_id: channel_end_path.0.clone(),
+                    channel_id: channel_end_path.1.clone(),
+                }
+                .to_string(),
             })?)
     }
 
@@ -157,7 +168,9 @@ where
                 StoreHeight::Pending,
                 &SeqSendPath::new(&seq_send_path.0, &seq_send_path.1),
             )
-            .ok_or(PacketError::ImplementationSpecific)?)
+            .ok_or(HostError::FailedToRetrieveFromStore {
+                description: "failed to retrieve send packet sequence from store".to_string(),
+            })?)
     }
 
     fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, HostError> {
@@ -167,7 +180,9 @@ where
                 StoreHeight::Pending,
                 &SeqRecvPath::new(&seq_recv_path.0, &seq_recv_path.1),
             )
-            .ok_or(PacketError::ImplementationSpecific)?)
+            .ok_or(HostError::FailedToRetrieveFromStore {
+                description: "failed to retrieve recv packet sequence from store".to_string(),
+            })?)
     }
 
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, HostError> {
@@ -177,7 +192,9 @@ where
                 StoreHeight::Pending,
                 &SeqAckPath::new(&seq_ack_path.0, &seq_ack_path.1),
             )
-            .ok_or(PacketError::ImplementationSpecific)?)
+            .ok_or(HostError::FailedToRetrieveFromStore {
+                description: "failed to retrieve ack packet sequence from store".to_string(),
+            })?)
     }
 
     fn get_packet_commitment(
@@ -194,7 +211,9 @@ where
                     commitment_path.sequence,
                 ),
             )
-            .ok_or(PacketError::ImplementationSpecific)?)
+            .ok_or(HostError::FailedToRetrieveFromStore {
+                description: "failed to retrieve packet commitment from store".to_string(),
+            })?)
     }
 
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, HostError> {
@@ -209,7 +228,12 @@ where
                 ),
             )
             .then_some(Receipt::Ok)
-            .ok_or(PacketError::MissingPacketReceipt(receipt_path.sequence))?)
+            .ok_or(HostError::FailedToRetrieveFromStore {
+                description: format!(
+                    "failed to retrieve packet receipt {0} from store",
+                    receipt_path.sequence
+                ),
+            })?)
     }
 
     fn get_packet_acknowledgement(

@@ -6,7 +6,7 @@ use http::uri::InvalidUri;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::HandlerError;
-use ibc_core::host::types::error::{DecodingError, IdentifierError};
+use ibc_core::host::types::error::{DecodingError, HostError, IdentifierError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 
@@ -43,6 +43,24 @@ pub enum NftTransferError {
     UnsupportedClosedChannel,
 }
 
+impl From<Infallible> for NftTransferError {
+    fn from(e: Infallible) -> Self {
+        match e {}
+    }
+}
+
+impl From<HostError> for NftTransferError {
+    fn from(e: HostError) -> Self {
+        Self::Handler(HandlerError::Host(e))
+    }
+}
+
+impl From<NftTransferError> for StatusValue {
+    fn from(e: NftTransferError) -> Self {
+        StatusValue::new(e.to_string()).expect("error message must not be empty")
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for NftTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -51,17 +69,5 @@ impl std::error::Error for NftTransferError {
             Self::Decoding(e) => Some(e),
             _ => None,
         }
-    }
-}
-
-impl From<Infallible> for NftTransferError {
-    fn from(e: Infallible) -> Self {
-        match e {}
-    }
-}
-
-impl From<NftTransferError> for StatusValue {
-    fn from(e: NftTransferError) -> Self {
-        StatusValue::new(e.to_string()).expect("error message must not be empty")
     }
 }

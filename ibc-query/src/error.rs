@@ -5,7 +5,7 @@ use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::handler::types::error::HandlerError;
-use ibc::core::host::types::error::IdentifierError;
+use ibc::core::host::types::error::{HostError, IdentifierError};
 use tonic::Status;
 
 /// The main error type of the ibc-query crate. This type mainly
@@ -14,9 +14,9 @@ use tonic::Status;
 #[derive(Debug, Display)]
 pub enum QueryError {
     /// context error: `{0}`
-    HandlerError(HandlerError),
+    Handler(HandlerError),
     /// identifier error: `{0}`
-    IdentifierError(IdentifierError),
+    Identifier(IdentifierError),
     /// missing proof: `{0}`
     MissingProof(String),
     /// missing field: `{0}`
@@ -36,8 +36,8 @@ impl QueryError {
 impl From<QueryError> for Status {
     fn from(e: QueryError) -> Self {
         match e {
-            QueryError::HandlerError(ctx_err) => Self::internal(ctx_err.to_string()),
-            QueryError::IdentifierError(id_err) => Self::internal(id_err.to_string()),
+            QueryError::Handler(ctx_err) => Self::internal(ctx_err.to_string()),
+            QueryError::Identifier(id_err) => Self::internal(id_err.to_string()),
             QueryError::MissingProof(description) => Self::not_found(description),
             QueryError::MissingField(description) => Self::invalid_argument(description),
         }
@@ -46,36 +46,42 @@ impl From<QueryError> for Status {
 
 impl From<HandlerError> for QueryError {
     fn from(e: HandlerError) -> Self {
-        Self::HandlerError(e)
+        Self::Handler(e)
     }
 }
 
 impl From<ClientError> for QueryError {
     fn from(e: ClientError) -> Self {
-        Self::HandlerError(HandlerError::Client(e))
+        Self::Handler(HandlerError::Client(e))
     }
 }
 
 impl From<ConnectionError> for QueryError {
     fn from(e: ConnectionError) -> Self {
-        Self::HandlerError(HandlerError::Connection(e))
+        Self::Handler(HandlerError::Connection(e))
     }
 }
 
 impl From<ChannelError> for QueryError {
     fn from(e: ChannelError) -> Self {
-        Self::HandlerError(HandlerError::Channel(e))
+        Self::Handler(HandlerError::Channel(e))
     }
 }
 
 impl From<PacketError> for QueryError {
     fn from(e: PacketError) -> Self {
-        Self::HandlerError(HandlerError::Packet(e))
+        Self::Handler(HandlerError::Packet(e))
     }
 }
 
 impl From<IdentifierError> for QueryError {
     fn from(e: IdentifierError) -> Self {
-        Self::IdentifierError(e)
+        Self::Identifier(e)
+    }
+}
+
+impl From<HostError> for QueryError {
+    fn from(e: HostError) -> Self {
+        Self::Handler(HandlerError::Host(e))
     }
 }
