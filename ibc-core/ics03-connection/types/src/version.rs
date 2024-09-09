@@ -126,7 +126,7 @@ impl Display for Version {
 pub fn pick_version(
     supported_versions: &[Version],
     counterparty_versions: &[Version],
-) -> Option<Version> {
+) -> Result<Version, ConnectionError> {
     let mut intersection: Vec<Version> = Vec::new();
 
     for sv in supported_versions.iter() {
@@ -141,12 +141,12 @@ pub fn pick_version(
     }
 
     if intersection.is_empty() {
-        return None;
+        return Err(ConnectionError::MissingCommonVersion);
     }
 
     intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
 
-    Some(intersection[0].clone())
+    Ok(intersection[0].clone())
 }
 
 /// Returns the version from the list of supported versions that matches the
@@ -384,7 +384,7 @@ mod tests {
 
             assert_eq!(
                 test.want_pass,
-                version.is_some(),
+                version.is_ok(),
                 "Validate versions failed for test {}",
                 test.name,
             );
