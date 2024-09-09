@@ -1,4 +1,4 @@
-//! Defines the context error type
+//! Defines the handler error type
 
 use derive_more::From;
 use displaydoc::Display;

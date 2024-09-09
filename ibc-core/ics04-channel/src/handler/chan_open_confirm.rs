@@ -64,7 +64,7 @@ where
                 .counterparty()
                 .channel_id
                 .clone()
-                .ok_or(HandlerError::ChannelError(
+                .ok_or(HandlerError::Channel(
                     ChannelError::MissingCounterparty,
                 ))?;
 

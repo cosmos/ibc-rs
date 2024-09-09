@@ -30,7 +30,7 @@ pub fn send_packet_validate(
     packet: &Packet,
 ) -> Result<(), HandlerError> {
     if !packet.timeout_height_on_b.is_set() && !packet.timeout_timestamp_on_b.is_set() {
-        return Err(HandlerError::PacketError(PacketError::MissingTimeout));
+        return Err(HandlerError::Packet(PacketError::MissingTimeout));
     }
 
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);

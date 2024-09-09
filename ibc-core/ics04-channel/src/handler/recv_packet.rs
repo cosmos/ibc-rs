@@ -252,7 +252,7 @@ where
             let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
             match packet_rec {
                 Ok(_receipt) => {}
-                Err(HandlerError::PacketError(PacketError::MissingPacketReceipt(sequence)))
+                Err(HandlerError::Packet(PacketError::MissingPacketReceipt(sequence)))
                     if sequence == msg.packet.seq_on_a => {}
                 Err(e) => return Err(e),
             }
@@ -261,7 +261,7 @@ where
             validate_write_acknowledgement(ctx_b, msg)?;
         }
         Order::None => {
-            return Err(HandlerError::ChannelError(ChannelError::InvalidOrderType {
+            return Err(HandlerError::Channel(ChannelError::InvalidOrderType {
                 expected: "Channel ordering cannot be None".to_string(),
                 actual: chan_end_on_b.ordering.to_string(),
             }))

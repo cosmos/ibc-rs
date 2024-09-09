@@ -27,7 +27,7 @@ where
 
     module
         .on_acknowledgement_packet_validate(&msg.packet, &msg.acknowledgement, &msg.signer)
-        .map_err(HandlerError::PacketError)
+        .map_err(HandlerError::Packet)
 }
 
 pub fn acknowledgement_packet_execute<ExecCtx>(

@@ -31,7 +31,7 @@ where
         use prost::Message;
 
         let wasm_client_state = WasmClientState::try_from(value).map_err(|e| {
-            HandlerError::ConnectionError(ConnectionError::InvalidClientState {
+            HandlerError::Connection(ConnectionError::InvalidClientState {
                 description: e.to_string(),
             })
         })?;

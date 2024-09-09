@@ -41,7 +41,7 @@ where
 
     module
         .on_timeout_packet_validate(&packet, &signer)
-        .map_err(HandlerError::PacketError)
+        .map_err(HandlerError::Packet)
 }
 
 pub fn timeout_packet_execute<ExecCtx>(
@@ -247,7 +247,7 @@ where
                 )
             }
             Order::None => {
-                return Err(HandlerError::ChannelError(ChannelError::InvalidOrderType {
+                return Err(HandlerError::Channel(ChannelError::InvalidOrderType {
                     expected: "Channel ordering cannot be None".to_string(),
                     actual: chan_end_on_a.ordering.to_string(),
                 }))

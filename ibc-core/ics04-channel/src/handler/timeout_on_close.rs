@@ -155,7 +155,7 @@ where
                 )
             }
             Order::None => {
-                return Err(HandlerError::ChannelError(ChannelError::InvalidOrderType {
+                return Err(HandlerError::Channel(ChannelError::InvalidOrderType {
                     expected: "Channel ordering cannot be None".to_string(),
                     actual: chan_end_on_a.ordering.to_string(),
                 }))

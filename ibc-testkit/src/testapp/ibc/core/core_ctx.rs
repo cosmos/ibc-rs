@@ -91,7 +91,7 @@ where
                 .latest_height()
                 .revision_number()
         {
-            return Err(HandlerError::ConnectionError(
+            return Err(HandlerError::Connection(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "client is not in the same revision as the chain. expected: {}, got: {}",
@@ -106,7 +106,7 @@ where
 
         let host_current_height = latest_height.increment();
         if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
-            return Err(HandlerError::ConnectionError(
+            return Err(HandlerError::Connection(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "client has latest height {} greater than or equal to chain height {}",

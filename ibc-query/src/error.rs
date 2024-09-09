@@ -52,25 +52,25 @@ impl From<HandlerError> for QueryError {
 
 impl From<ClientError> for QueryError {
     fn from(e: ClientError) -> Self {
-        Self::HandlerError(HandlerError::ClientError(e))
+        Self::HandlerError(HandlerError::Client(e))
     }
 }
 
 impl From<ConnectionError> for QueryError {
     fn from(e: ConnectionError) -> Self {
-        Self::HandlerError(HandlerError::ConnectionError(e))
+        Self::HandlerError(HandlerError::Connection(e))
     }
 }
 
 impl From<ChannelError> for QueryError {
     fn from(e: ChannelError) -> Self {
-        Self::HandlerError(HandlerError::ChannelError(e))
+        Self::HandlerError(HandlerError::Channel(e))
     }
 }
 
 impl From<PacketError> for QueryError {
     fn from(e: PacketError) -> Self {
-        Self::HandlerError(HandlerError::PacketError(e))
+        Self::HandlerError(HandlerError::Packet(e))
     }
 }
 

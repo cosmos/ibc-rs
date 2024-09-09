@@ -30,7 +30,7 @@ pub trait ValidateSelfClientContext {
 
         let self_chain_id = self.chain_id();
         if self_chain_id != &client_state_of_host_on_counterparty.chain_id {
-            return Err(HandlerError::ConnectionError(
+            return Err(HandlerError::Connection(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "invalid chain-id. expected: {}, got: {}",
@@ -43,7 +43,7 @@ pub trait ValidateSelfClientContext {
         let latest_height = client_state_of_host_on_counterparty.latest_height;
         let self_revision_number = self_chain_id.revision_number();
         if self_revision_number != latest_height.revision_number() {
-            return Err(HandlerError::ConnectionError(
+            return Err(HandlerError::Connection(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "client is not in the same revision as the chain. expected: {}, got: {}",
@@ -55,7 +55,7 @@ pub trait ValidateSelfClientContext {
         }
 
         if latest_height >= self.host_current_height() {
-            return Err(HandlerError::ConnectionError(
+            return Err(HandlerError::Connection(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "client has latest height {} greater than or equal to chain height {}",
@@ -67,7 +67,7 @@ pub trait ValidateSelfClientContext {
         }
 
         if self.proof_specs() != &client_state_of_host_on_counterparty.proof_specs {
-            return Err(HandlerError::ConnectionError(
+            return Err(HandlerError::Connection(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "client has invalid proof specs. expected: {:?}, got: {:?}",
@@ -91,7 +91,7 @@ pub trait ValidateSelfClientContext {
         };
 
         if self.unbonding_period() != client_state_of_host_on_counterparty.unbonding_period {
-            return Err(HandlerError::ConnectionError(
+            return Err(HandlerError::Connection(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "invalid unbonding period. expected: {:?}, got: {:?}",
@@ -105,7 +105,7 @@ pub trait ValidateSelfClientContext {
         if client_state_of_host_on_counterparty.unbonding_period
             < client_state_of_host_on_counterparty.trusting_period
         {
-            return Err(HandlerError::ConnectionError(ConnectionError::InvalidClientState{ description: format!(
+            return Err(HandlerError::Connection(ConnectionError::InvalidClientState{ description: format!(
                 "unbonding period must be greater than trusting period. unbonding period ({:?}) < trusting period ({:?})",
                 client_state_of_host_on_counterparty.unbonding_period,
                 client_state_of_host_on_counterparty.trusting_period
@@ -115,7 +115,7 @@ pub trait ValidateSelfClientContext {
         if !client_state_of_host_on_counterparty.upgrade_path.is_empty()
             && self.upgrade_path() != client_state_of_host_on_counterparty.upgrade_path
         {
-            return Err(HandlerError::ConnectionError(
+            return Err(HandlerError::Connection(
                 ConnectionError::InvalidClientState {
                     description: format!(
                         "invalid upgrade path. expected: {:?}, got: {:?}",
