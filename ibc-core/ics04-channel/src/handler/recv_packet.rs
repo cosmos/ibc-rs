@@ -252,9 +252,7 @@ where
             let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
             match packet_rec {
                 Ok(_receipt) => {}
-                Err(HandlerError::Packet(PacketError::MissingPacketReceipt(sequence)))
-                    if sequence == msg.packet.seq_on_a => {}
-                Err(e) => return Err(e),
+                Err(e) => return Err(e)?,
             }
             // Case where the recvPacket is successful and an
             // acknowledgement will be written (not a no-op)
