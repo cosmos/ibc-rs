@@ -16,8 +16,6 @@ pub enum NftTransferError {
     ContextError(ContextError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// identifier error: `{0}`
-    Identifier(IdentifierError),
     /// invalid trace: `{0}`
     InvalidTrace(String),
     /// invalid URI error: `{0}`
@@ -55,6 +53,12 @@ impl std::error::Error for NftTransferError {
             Self::Decoding(e) => Some(e),
             _ => None,
         }
+    }
+}
+
+impl From<IdentifierError> for NftTransferError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 

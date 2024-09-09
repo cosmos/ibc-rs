@@ -20,8 +20,6 @@ pub enum ClientError {
     Upgrade(UpgradeClientError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// identifier error: `{0}`
-    Identifier(IdentifierError),
     /// invalid trust threshold: `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// invalid client state type: `{0}`
@@ -110,7 +108,7 @@ impl From<DecodingError> for ClientError {
 
 impl From<IdentifierError> for ClientError {
     fn from(e: IdentifierError) -> Self {
-        Self::Identifier(e)
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 
@@ -119,7 +117,6 @@ impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::FailedICS23Verification(e) => Some(e),
-            Self::Identifier(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }
