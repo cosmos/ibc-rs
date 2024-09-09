@@ -1040,7 +1040,6 @@ dependencies = [
  "scale-info",
  "schemars",
  "serde",
- "tendermint-proto",
 ]
 
 [[package]]
