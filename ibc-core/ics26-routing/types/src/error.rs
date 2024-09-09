@@ -3,14 +3,12 @@ use ibc_core_host_types::identifiers::PortId;
 use ibc_primitives::prelude::*;
 
 /// Error type for the router module.
-#[derive(Debug, Display)]
+#[derive(Debug, Display, derive_more::From)]
 pub enum RouterError {
-    /// malformed message that could not be decoded: `{description}`
-    MalformedMessageBytes { description: String },
     /// missing module
     MissingModule,
-    /// unknown message type URL `{0}`
-    UnknownMessageTypeUrl(String),
+
+    // TODO(seanchen1991): This variant needs to be moved to HostError
     /// unknown port `{0}`
     UnknownPort(PortId),
 }

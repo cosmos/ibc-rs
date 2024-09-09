@@ -7,6 +7,7 @@ use ibc_core::channel::types::channel::{Counterparty, Order};
 use ibc_core::channel::types::packet::Packet;
 use ibc_core::channel::types::Version;
 use ibc_core::handler::types::error::ContextError;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
@@ -269,8 +270,11 @@ pub fn on_timeout_packet_validate<Ctx>(
 where
     Ctx: TokenTransferValidationContext,
 {
-    let data = serde_json::from_slice::<PacketData>(&packet.data)
-        .map_err(|_| TokenTransferError::FailedToDeserializePacketData)?;
+    let data = serde_json::from_slice::<PacketData>(&packet.data).map_err(|e| {
+        DecodingError::InvalidJson {
+            description: format!("failed to deserialize packet data: {e}"),
+        }
+    })?;
 
     refund_packet_token_validate(ctx, packet, &data)?;
 
@@ -285,7 +289,10 @@ pub fn on_timeout_packet_execute(
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         return (
             ModuleExtras::empty(),
-            Err(TokenTransferError::FailedToDeserializePacketData),
+            Err(DecodingError::InvalidJson {
+                description: "failed to deserialize packet data".to_string(),
+            }
+            .into()),
         );
     };
 

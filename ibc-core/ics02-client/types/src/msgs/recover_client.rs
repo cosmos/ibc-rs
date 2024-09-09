@@ -42,14 +42,8 @@ impl TryFrom<RawMsgRecoverClient> for MsgRecoverClient {
 
     fn try_from(raw: RawMsgRecoverClient) -> Result<Self, Self::Error> {
         Ok(MsgRecoverClient {
-            subject_client_id: raw
-                .subject_client_id
-                .parse()
-                .map_err(ClientError::InvalidClientIdentifier)?,
-            substitute_client_id: raw
-                .substitute_client_id
-                .parse()
-                .map_err(ClientError::InvalidClientIdentifier)?,
+            subject_client_id: raw.subject_client_id.parse()?,
+            substitute_client_id: raw.substitute_client_id.parse()?,
             signer: raw.signer.into(),
         })
     }

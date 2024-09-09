@@ -9,6 +9,7 @@ use ibc::core::commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
 use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::host::types::identifiers::{ClientId, ClientType};
 use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path, PathBytes};
 use ibc::core::primitives::prelude::*;
@@ -127,16 +128,18 @@ impl TryFrom<Any> for MockClientState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_client_state(value: &[u8]) -> Result<MockClientState, ClientError> {
-            let client_state =
-                Protobuf::<RawMockClientState>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
+        fn decode_client_state(value: &[u8]) -> Result<MockClientState, DecodingError> {
+            let client_state = Protobuf::<RawMockClientState>::decode(value)?;
             Ok(client_state)
         }
         match raw.type_url.as_str() {
-            MOCK_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
-            _ => Err(ClientError::InvalidClientStateType(raw.type_url)),
+            MOCK_CLIENT_STATE_TYPE_URL => {
+                decode_client_state(&raw.value).map_err(ClientError::Decoding)
+            }
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: MOCK_CLIENT_STATE_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })?,
         }
     }
 }
@@ -169,7 +172,7 @@ impl ClientStateCommon for MockClientState {
         if consensus_state_status(&mock_consensus_state, host_timestamp, self.trusting_period)?
             .is_expired()
         {
-            return Err(ClientError::InvalidStatus(Status::Expired));
+            return Err(ClientError::UnexpectedStatus(Status::Expired));
         }
 
         Ok(())

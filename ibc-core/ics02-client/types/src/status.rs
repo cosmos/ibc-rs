@@ -50,7 +50,7 @@ impl Status {
     pub fn verify_is_active(&self) -> Result<(), ClientError> {
         match self {
             Self::Active => Ok(()),
-            &status => Err(ClientError::InvalidStatus(status)),
+            &status => Err(ClientError::UnexpectedStatus(status)),
         }
     }
 
@@ -58,7 +58,7 @@ impl Status {
     pub fn verify_is_inactive(&self) -> Result<(), ClientError> {
         match self {
             Self::Frozen | Self::Expired => Ok(()),
-            &status => Err(ClientError::InvalidStatus(status)),
+            &status => Err(ClientError::UnexpectedStatus(status)),
         }
     }
 }
@@ -78,9 +78,7 @@ impl FromStr for Status {
             "FROZEN" => Ok(Status::Frozen),
             "EXPIRED" => Ok(Status::Expired),
             "UNAUTHORIZED" => Ok(Status::Unauthorized),
-            _ => Err(ClientError::Other {
-                description: format!("invalid status string: {s}"),
-            }),
+            _ => Err(ClientError::InvalidStatus(s.to_string())),
         }
     }
 }

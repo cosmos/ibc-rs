@@ -1,5 +1,6 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -55,17 +56,16 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
     fn try_from(raw_msg: RawMsgChannelOpenTry) -> Result<Self, Self::Error> {
         let chan_end_on_b: ChannelEnd = raw_msg
             .channel
-            .ok_or(ChannelError::MissingRawChannelEnd)?
+            .ok_or(DecodingError::MissingRawData {
+                description: "channel end not set".to_string(),
+            })?
             .try_into()?;
 
         chan_end_on_b.verify_state_matches(&State::TryOpen)?;
 
         #[allow(deprecated)]
         if !raw_msg.previous_channel_id.is_empty() {
-            return Err(ChannelError::InvalidChannelId {
-                expected: "previous channel id must be empty. It has been deprecated as crossing hellos are no longer supported".to_string(),
-                actual: raw_msg.previous_channel_id,
-            });
+            return Err(DecodingError::InvalidRawData { description: "previous channel id must be empty. It has been deprecated as crossing hellos are no longer supported".to_string() })?;
         }
 
         #[allow(deprecated)]

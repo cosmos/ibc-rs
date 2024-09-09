@@ -2,6 +2,7 @@
 
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
@@ -128,13 +129,8 @@ impl TryFrom<RawPacketData> for PacketData {
         } else {
             let decoded = BASE64_STANDARD
                 .decode(raw_pkt_data.class_data)
-                .map_err(|e| NftTransferError::InvalidJsonData {
-                    description: e.to_string(),
-                })?;
-            let data_str =
-                String::from_utf8(decoded).map_err(|e| NftTransferError::InvalidJsonData {
-                    description: e.to_string(),
-                })?;
+                .map_err(DecodingError::Base64)?;
+            let data_str = String::from_utf8(decoded).map_err(DecodingError::StringUtf8)?;
             Some(data_str.parse()?)
         };
 
@@ -145,15 +141,10 @@ impl TryFrom<RawPacketData> for PacketData {
             .token_data
             .iter()
             .map(|data| {
-                let decoded = BASE64_STANDARD.decode(data).map_err(|e| {
-                    NftTransferError::InvalidJsonData {
-                        description: e.to_string(),
-                    }
-                })?;
-                let data_str =
-                    String::from_utf8(decoded).map_err(|e| NftTransferError::InvalidJsonData {
-                        description: e.to_string(),
-                    })?;
+                let decoded = BASE64_STANDARD
+                    .decode(data)
+                    .map_err(DecodingError::Base64)?;
+                let data_str = String::from_utf8(decoded).map_err(DecodingError::StringUtf8)?;
                 data_str.parse()
             })
             .collect();

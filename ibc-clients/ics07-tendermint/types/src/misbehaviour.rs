@@ -1,6 +1,7 @@
 //! Defines the misbehaviour type for the tendermint light client
 
 use ibc_core_client_types::error::ClientError;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
@@ -52,19 +53,19 @@ impl Misbehaviour {
 
         if self.header1.signed_header.header.chain_id != self.header2.signed_header.header.chain_id
         {
-            return Err(TendermintClientError::InvalidRawMisbehaviour {
-                description: "headers must have identical chain_ids".to_owned(),
+            return Err(TendermintClientError::MismatchedHeaderChainIds {
+                expected: self.header1.signed_header.header.chain_id.to_string(),
+                actual: self.header2.signed_header.header.chain_id.to_string(),
             });
         }
 
         if self.header1.height() < self.header2.height() {
-            return Err(TendermintClientError::InvalidRawMisbehaviour {
-                description: format!(
-                    "header1 height is less than header2 height ({} < {})",
-                    self.header1.height(),
-                    self.header2.height()
-                ),
-            });
+            return Err(
+                TendermintClientError::InsufficientMisbehaviourHeaderHeight {
+                    height_1: self.header1.height(),
+                    height_2: self.header2.height(),
+                },
+            );
         }
 
         Ok(())
@@ -81,15 +82,15 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
 
         let header1: Header = raw
             .header_1
-            .ok_or_else(|| TendermintClientError::InvalidRawMisbehaviour {
-                description: "missing header1".into(),
+            .ok_or_else(|| DecodingError::MissingRawData {
+                description: "missing header1 in raw misbehaviour".into(),
             })?
             .try_into()?;
 
         let header2: Header = raw
             .header_2
-            .ok_or_else(|| TendermintClientError::InvalidRawMisbehaviour {
-                description: "missing header2".into(),
+            .ok_or_else(|| DecodingError::MissingRawData {
+                description: "missing header2 in raw misbehaviour".into(),
             })?
             .try_into()?;
 
@@ -114,16 +115,18 @@ impl TryFrom<Any> for Misbehaviour {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, ClientError> {
-        fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, ClientError> {
-            let misbehaviour =
-                Protobuf::<RawMisbehaviour>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
+        fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, DecodingError> {
+            let misbehaviour = Protobuf::<RawMisbehaviour>::decode(value)?;
             Ok(misbehaviour)
         }
         match raw.type_url.as_str() {
-            TENDERMINT_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
-            _ => Err(ClientError::InvalidMisbehaviourType(raw.type_url)),
+            TENDERMINT_MISBEHAVIOUR_TYPE_URL => {
+                decode_misbehaviour(&raw.value).map_err(ClientError::Decoding)
+            }
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: TENDERMINT_MISBEHAVIOUR_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })?,
         }
     }
 }

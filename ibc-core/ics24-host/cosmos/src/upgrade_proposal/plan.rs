@@ -1,6 +1,7 @@
 //! Definition of domain `Plan` type.
 
 use ibc_core_client_types::error::UpgradeClientError;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::cosmos::upgrade::v1beta1::Plan as RawPlan;
 use ibc_proto::google::protobuf::Any;
@@ -82,20 +83,15 @@ impl TryFrom<Any> for Plan {
     type Error = UpgradeClientError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
-        if any.type_url != TYPE_URL {
-            return Err(UpgradeClientError::MismatchedTypeUrls {
+        match any.type_url.as_str() {
+            TYPE_URL => {
+                Ok(Protobuf::<RawPlan>::decode_vec(&any.value).map_err(DecodingError::Protobuf)?)
+            }
+            _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: TYPE_URL.to_string(),
                 actual: any.type_url,
-            });
+            })?,
         }
-
-        let plan = Protobuf::<RawPlan>::decode_vec(&any.value).map_err(|e| {
-            UpgradeClientError::FailedToDecodeRawUpgradePlan {
-                description: e.to_string(),
-            }
-        })?;
-
-        Ok(plan)
     }
 }
 

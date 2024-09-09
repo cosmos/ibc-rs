@@ -2,25 +2,24 @@
 use core::convert::Infallible;
 
 use displaydoc::Display;
+use http::uri::InvalidUri;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
-use ibc_core::host::types::error::IdentifierError;
+use ibc_core::host::types::error::{DecodingError, IdentifierError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 
-#[derive(Display, Debug)]
+#[derive(Display, Debug, derive_more::From)]
 pub enum NftTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
-    /// invalid identifier: `{0}`
-    InvalidIdentifier(IdentifierError),
-    /// invalid URI: `{0}`
-    InvalidUri(http::uri::InvalidUri),
-    /// invalid json data: `{description}`
-    InvalidJsonData { description: String },
-    /// invalid trace `{0}`
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
+    /// invalid trace: `{0}`
     InvalidTrace(String),
+    /// invalid URI error: `{0}`
+    InvalidUri(InvalidUri),
     /// missing destination channel `{channel_id}` on port `{port_id}`
     MissingDestinationChannel {
         port_id: PortId,
@@ -42,12 +41,8 @@ pub enum NftTransferError {
     FailedToDeserializeAck,
     /// failed to parse account ID
     FailedToParseAccount,
-    /// failed to decode raw msg: `{description}`
-    FailedToDecodeRawMsg { description: String },
     /// channel cannot be closed
     UnsupportedClosedChannel,
-    /// unknown msg type: `{0}`
-    UnknownMsgType(String),
 }
 
 #[cfg(feature = "std")]
@@ -55,28 +50,21 @@ impl std::error::Error for NftTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::InvalidUri(e) => Some(e),
-            Self::InvalidIdentifier(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
+    }
+}
+
+impl From<IdentifierError> for NftTransferError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 
 impl From<Infallible> for NftTransferError {
     fn from(e: Infallible) -> Self {
         match e {}
-    }
-}
-
-impl From<ContextError> for NftTransferError {
-    fn from(err: ContextError) -> NftTransferError {
-        Self::ContextError(err)
-    }
-}
-
-impl From<IdentifierError> for NftTransferError {
-    fn from(err: IdentifierError) -> NftTransferError {
-        Self::InvalidIdentifier(err)
     }
 }
 

@@ -1,5 +1,6 @@
 //! Definition of domain type message `MsgUpdateClient`.
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -34,13 +35,10 @@ impl TryFrom<RawMsgUpdateClient> for MsgUpdateClient {
 
     fn try_from(raw: RawMsgUpdateClient) -> Result<Self, Self::Error> {
         Ok(MsgUpdateClient {
-            client_id: raw
-                .client_id
-                .parse()
-                .map_err(ClientError::InvalidClientIdentifier)?,
-            client_message: raw
-                .client_message
-                .ok_or(ClientError::MissingRawClientMessage)?,
+            client_id: raw.client_id.parse()?,
+            client_message: raw.client_message.ok_or(DecodingError::MissingRawData {
+                description: "client message not set".to_string(),
+            })?,
             signer: raw.signer.into(),
         })
     }

@@ -1,6 +1,7 @@
 //! Defines the consensus state type for the ICS-08 Wasm light client.
 
 use ibc_core_client::types::error::ClientError;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_proto::ibc::lightclients::wasm::v1::ConsensusState as RawConsensusState;
@@ -57,18 +58,18 @@ impl TryFrom<Any> for ConsensusState {
     type Error = ClientError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
-        fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, ClientError> {
-            let consensus_state =
-                Protobuf::<RawConsensusState>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
+        fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, DecodingError> {
+            let consensus_state = Protobuf::<RawConsensusState>::decode(value)?;
             Ok(consensus_state)
         }
         match any.type_url.as_str() {
-            WASM_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&any.value),
-            _ => Err(ClientError::Other {
-                description: "type_url does not match".into(),
-            }),
+            WASM_CONSENSUS_STATE_TYPE_URL => {
+                decode_consensus_state(&any.value).map_err(ClientError::Decoding)
+            }
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: WASM_CONSENSUS_STATE_TYPE_URL.to_string(),
+                actual: any.type_url.to_string(),
+            })?,
         }
     }
 }

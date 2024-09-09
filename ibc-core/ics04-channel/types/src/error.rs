@@ -3,7 +3,7 @@
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
-use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
@@ -16,10 +16,8 @@ use crate::Version;
 
 #[derive(Debug, Display)]
 pub enum ChannelError {
-    /// application module error: `{description}`
-    AppModule { description: String },
-    /// identifier error: `{0}`
-    InvalidIdentifier(IdentifierError),
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// invalid channel id: expected `{expected}`, actual `{actual}`
     InvalidChannelId { expected: String, actual: String },
     /// invalid channel state: expected `{expected}`, actual `{actual}`
@@ -39,10 +37,6 @@ pub enum ChannelError {
     MissingProofHeight,
     /// missing counterparty
     MissingCounterparty,
-    /// missing channel end in raw message
-    MissingRawChannelEnd,
-    /// missing channel counter
-    MissingCounter,
     /// unsupported channel upgrade sequence
     UnsupportedChannelUpgradeSequence,
     /// unsupported version: expected `{expected}`, actual `{actual}`
@@ -52,8 +46,6 @@ pub enum ChannelError {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// packet data bytes must be valid UTF-8
-    NonUtf8PacketData,
     /// failed packet verification for packet with sequence `{sequence}`: `{client_error}`
     FailedPacketVerification {
         sequence: Sequence,
@@ -62,8 +54,12 @@ pub enum ChannelError {
     /// failed proof verification: `{0}`
     FailedProofVerification(ClientError),
 
-    // TODO(seanchen1991): These two variants should be encoded by host-relevant error types
+    // TODO(seanchen1991): These variants should be encoded by host-relevant error types
     // once those have been defined.
+    /// application module error: `{description}`
+    AppModule { description: String },
+    /// missing channel counter
+    MissingCounter,
     /// failed to update counter: `{description}`
     FailedToUpdateCounter { description: String },
     /// failed to store channel: `{description}`
@@ -72,10 +68,10 @@ pub enum ChannelError {
 
 #[derive(Debug, Display)]
 pub enum PacketError {
-    /// application module error: `{description}`
-    AppModule { description: String },
     /// channel error: `{0}`
     Channel(ChannelError),
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
     InsufficientPacketHeight {
         chain_height: Height,
@@ -94,28 +90,14 @@ pub enum PacketError {
         expected: PacketCommitment,
         actual: PacketCommitment,
     },
-    /// missing packet receipt for packet `{0}`
-    MissingPacketReceipt(Sequence),
-    /// missing proof
-    MissingProof,
-    /// missing acknowledgment for packet `{0}`
-    MissingPacketAcknowledgment(Sequence),
-    /// missing proof height
-    MissingProofHeight,
     /// missing timeout
     MissingTimeout,
     /// invalid timeout height: `{0}`
     InvalidTimeoutHeight(ClientError),
     /// invalid timeout timestamp: `{0}`
     InvalidTimeoutTimestamp(TimestampError),
-    /// invalid identifier: `{0}`
-    InvalidIdentifier(IdentifierError),
-    /// empty acknowledgment not allowed
-    EmptyAcknowledgment,
     /// empty acknowledgment status not allowed
     EmptyAcknowledgmentStatus,
-    /// packet data bytes cannot be empty
-    EmptyPacketData,
     /// packet acknowledgment for sequence `{0}` already exists
     DuplicateAcknowledgment(Sequence),
     /// packet sequence cannot be 0
@@ -127,25 +109,45 @@ pub enum PacketError {
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
+
+    // TODO(seanchen1991): Move these variants to host-relevant error types
+    /// application module error: `{description}`
+    AppModule { description: String },
+    /// missing acknowledgment for packet `{0}`
+    MissingPacketAcknowledgment(Sequence),
+    /// missing packet receipt for packet `{0}`
+    MissingPacketReceipt(Sequence),
     /// implementation-specific error
     ImplementationSpecific,
 }
 
 impl From<IdentifierError> for ChannelError {
-    fn from(err: IdentifierError) -> Self {
-        Self::InvalidIdentifier(err)
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 
 impl From<IdentifierError> for PacketError {
-    fn from(err: IdentifierError) -> Self {
-        Self::InvalidIdentifier(err)
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
+    }
+}
+
+impl From<DecodingError> for ChannelError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
+    }
+}
+
+impl From<DecodingError> for PacketError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 
 impl From<TimestampError> for PacketError {
-    fn from(err: TimestampError) -> Self {
-        Self::InvalidTimeoutTimestamp(err)
+    fn from(e: TimestampError) -> Self {
+        Self::InvalidTimeoutTimestamp(e)
     }
 }
 
@@ -154,7 +156,7 @@ impl std::error::Error for PacketError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Channel(e) => Some(e),
-            Self::InvalidIdentifier(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
     }
@@ -164,7 +166,7 @@ impl std::error::Error for PacketError {
 impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::InvalidIdentifier(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             Self::FailedPacketVerification {
                 client_error: e, ..
             } => Some(e),

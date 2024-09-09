@@ -177,6 +177,7 @@ where
         client_state_of_b_on_a
             .status(ctx_a.get_client_validation_context(), client_id_on_a)?
             .verify_is_active()?;
+
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(

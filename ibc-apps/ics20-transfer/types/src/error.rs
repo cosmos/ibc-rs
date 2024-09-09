@@ -5,7 +5,7 @@ use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
-use ibc_core::host::types::error::IdentifierError;
+use ibc_core::host::types::error::{DecodingError, IdentifierError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use uint::FromDecStrErr;
@@ -14,14 +14,14 @@ use uint::FromDecStrErr;
 pub enum TokenTransferError {
     /// context error: `{0}`
     ContextError(ContextError),
-    /// invalid identifier: `{0}`
-    InvalidIdentifier(IdentifierError),
-    /// invalid trace: `{0}`
-    InvalidTrace(String),
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// invalid amount: `{0}`
     InvalidAmount(FromDecStrErr),
     /// invalid coin: `{0}`
     InvalidCoin(String),
+    /// invalid trace: `{0}`
+    InvalidTrace(String),
     /// missing token
     MissingToken,
     /// missing destination channel `{channel_id}` on port `{port_id}`
@@ -33,22 +33,19 @@ pub enum TokenTransferError {
     MismatchedChannelOrders { expected: Order, actual: Order },
     /// mismatched port IDs: expected `{expected}`, actual `{actual}`
     MismatchedPortIds { expected: PortId, actual: PortId },
-    /// failed to deserialize packet data
-    FailedToDeserializePacketData,
-    /// failed to deserialize acknowledgement
-    FailedToDeserializeAck,
-    // TODO(seanchen1991): Used in basecoin; this variant should be moved
-    // to a host-relevant error
-    /// failed to parse account ID
-    FailedToParseAccount,
-    /// failed to decode raw msg: `{description}`
-    FailedToDecodeRawMsg { description: String },
     /// channel cannot be closed
     UnsupportedClosedChannel,
     /// empty base denomination
     EmptyBaseDenom,
-    /// unknown msg type: `{0}`
-    UnknownMsgType(String),
+    /// failed to deserialize packet data
+    FailedToDeserializePacketData,
+    /// failed to deserialize acknowledgement
+    FailedToDeserializeAck,
+
+    // TODO(seanchen1991): Used in basecoin; this variant should be moved
+    // to a host-relevant error
+    /// failed to parse account ID
+    FailedToParseAccount,
 }
 
 #[cfg(feature = "std")]
@@ -56,8 +53,8 @@ impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::ContextError(e) => Some(e),
-            Self::InvalidIdentifier(e) => Some(e),
             Self::InvalidAmount(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
     }
@@ -70,19 +67,25 @@ impl From<Infallible> for TokenTransferError {
 }
 
 impl From<ContextError> for TokenTransferError {
-    fn from(err: ContextError) -> TokenTransferError {
-        Self::ContextError(err)
+    fn from(e: ContextError) -> Self {
+        Self::ContextError(e)
     }
 }
 
 impl From<IdentifierError> for TokenTransferError {
-    fn from(err: IdentifierError) -> TokenTransferError {
-        Self::InvalidIdentifier(err)
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
+    }
+}
+
+impl From<DecodingError> for TokenTransferError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 
 impl From<TokenTransferError> for StatusValue {
-    fn from(err: TokenTransferError) -> Self {
-        StatusValue::new(err.to_string()).expect("error message must not be empty")
+    fn from(e: TokenTransferError) -> Self {
+        StatusValue::new(e.to_string()).expect("error message must not be empty")
     }
 }

@@ -36,7 +36,7 @@ where
     let status = client_state.status(client_val_ctx, &client_id)?;
 
     if status.is_frozen() {
-        return Err(ClientError::InvalidStatus(Status::Frozen).into());
+        return Err(ClientError::UnexpectedStatus(Status::Frozen).into());
     };
 
     let host_timestamp = ctx.host_timestamp()?;
@@ -44,7 +44,7 @@ where
     client_state.verify_consensus_state(consensus_state, &host_timestamp)?;
 
     if client_val_ctx.client_state(&client_id).is_ok() {
-        return Err(ClientError::AlreadyExistingClientState(client_id).into());
+        return Err(ClientError::DuplicateClientState(client_id).into());
     };
 
     Ok(())

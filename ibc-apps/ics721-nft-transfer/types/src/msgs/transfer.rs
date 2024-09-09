@@ -3,6 +3,7 @@
 use ibc_core::channel::types::error::PacketError;
 use ibc_core::channel::types::timeout::{TimeoutHeight, TimeoutTimestamp};
 use ibc_core::handler::types::error::ContextError;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
@@ -122,12 +123,11 @@ impl TryFrom<Any> for MsgTransfer {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
-            TYPE_URL => MsgTransfer::decode_vec(&raw.value).map_err(|e| {
-                NftTransferError::FailedToDecodeRawMsg {
-                    description: e.to_string(),
-                }
-            }),
-            _ => Err(NftTransferError::UnknownMsgType(raw.type_url)),
+            TYPE_URL => Ok(MsgTransfer::decode_vec(&raw.value).map_err(DecodingError::Protobuf)?),
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })?,
         }
     }
 }
