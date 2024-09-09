@@ -260,7 +260,7 @@ where
         }
         Order::None => {
             return Err(HandlerError::Channel(ChannelError::InvalidOrderType {
-                expected: "Channel ordering cannot be None".to_string(),
+                expected: "Channel ordering to not be None".to_string(),
                 actual: chan_end_on_b.ordering.to_string(),
             }))
         }

@@ -41,7 +41,7 @@ where
         ValidationContext::host_timestamp(self)
     }
 
-    fn host_height(&self) -> Result<Height, HandlerError> {
+    fn host_height(&self) -> Result<Height, HostError> {
         ValidationContext::host_height(self)
     }
 }
@@ -54,7 +54,7 @@ where
         ValidationContext::host_timestamp(self)
     }
 
-    fn host_height(&self) -> Result<Height, HandlerError> {
+    fn host_height(&self) -> Result<Height, HostError> {
         ValidationContext::host_height(self)
     }
 

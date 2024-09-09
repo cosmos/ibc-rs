@@ -158,7 +158,7 @@ pub trait MockClientContext {
     fn host_timestamp(&self) -> Result<Timestamp, HandlerError>;
 
     /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, HandlerError>;
+    fn host_height(&self) -> Result<Height, HostError>;
 }
 
 impl ClientStateCommon for MockClientState {

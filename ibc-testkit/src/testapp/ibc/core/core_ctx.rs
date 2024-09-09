@@ -42,7 +42,7 @@ where
     type HostClientState = AnyClientState;
     type HostConsensusState = AnyConsensusState;
 
-    fn host_height(&self) -> Result<Height, HandlerError> {
+    fn host_height(&self) -> Result<Height, HostError> {
         Ok(Height::new(
             *self.revision_number.lock(),
             self.store.current_height(),

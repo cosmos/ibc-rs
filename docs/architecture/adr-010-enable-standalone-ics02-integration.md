@@ -308,7 +308,7 @@ pub trait ExtClientValidationContext:
 
 +    fn host_timestamp(&self) -> Result<Timestamp, HandlerError>;
 
-+    fn host_height(&self) -> Result<Height, HandlerError>;
++    fn host_height(&self) -> Result<Height, HostError>;
 
 -    fn consensus_state(
 -        &self,
