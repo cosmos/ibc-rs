@@ -36,10 +36,7 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
 
     fn try_from(msg: RawMsgConnectionOpenConfirm) -> Result<Self, Self::Error> {
         Ok(Self {
-            conn_id_on_b: msg
-                .connection_id
-                .parse()
-                .map_err(DecodingError::Identifier)?,
+            conn_id_on_b: msg.connection_id.parse()?,
             proof_conn_end_on_a: msg.proof_ack.try_into().map_err(|e| {
                 DecodingError::InvalidRawData {
                     description: format!("failed to decode connection end proof: {e}"),

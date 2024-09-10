@@ -68,7 +68,7 @@ impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
         };
 
         Ok(IdentifiedConnectionEnd {
-            connection_id: value.id.parse().map_err(ConnectionError::Identifier)?,
+            connection_id: value.id.parse()?,
             connection_end: raw_connection_end.try_into()?,
         })
     }
@@ -208,19 +208,18 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
 
         if value.versions.is_empty() {
             return Err(DecodingError::MissingRawData {
-                description: "connection versions is empty".to_string(),
+                description: "empty connection versions".to_string(),
             })?;
         }
 
         Self::new(
             state,
-            value
-                .client_id
-                .parse()
-                .map_err(ConnectionError::Identifier)?,
+            value.client_id.parse()?,
             value
                 .counterparty
-                .ok_or(ConnectionError::MissingCounterparty)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "missing counterparty".to_string(),
+                })?
                 .try_into()?,
             value
                 .versions
@@ -377,22 +376,16 @@ impl TryFrom<RawCounterparty> for Counterparty {
         let connection_id: Option<ConnectionId> = if raw_counterparty.connection_id.is_empty() {
             None
         } else {
-            Some(
-                raw_counterparty
-                    .connection_id
-                    .parse()
-                    .map_err(ConnectionError::Identifier)?,
-            )
+            Some(raw_counterparty.connection_id.parse()?)
         };
         Ok(Counterparty::new(
-            raw_counterparty
-                .client_id
-                .parse()
-                .map_err(ConnectionError::Identifier)?,
+            raw_counterparty.client_id.parse()?,
             connection_id,
             raw_counterparty
                 .prefix
-                .ok_or(ConnectionError::MissingCounterparty)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "counterparty prefix not set".to_string(),
+                })?
                 .key_prefix
                 .into(),
         ))

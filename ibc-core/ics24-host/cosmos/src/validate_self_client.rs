@@ -100,7 +100,7 @@ pub trait ValidateSelfClientContext {
             < client_state_of_host_on_counterparty.trusting_period
         {
             return Err(HostError::InvalidData { description: format!(
-                "unbonding period must be greater than trusting period; unbonding period ({:?}) < trusting period ({:?})",
+                "invalid counterparty client state: unbonding period must be greater than trusting period; unbonding period ({:?}) < trusting period ({:?})",
                 client_state_of_host_on_counterparty.unbonding_period,
                 client_state_of_host_on_counterparty.trusting_period
             )});

@@ -52,14 +52,8 @@ impl TryFrom<RawMsgConnectionOpenAck> for MsgConnectionOpenAck {
 
     fn try_from(msg: RawMsgConnectionOpenAck) -> Result<Self, Self::Error> {
         Ok(Self {
-            conn_id_on_a: msg
-                .connection_id
-                .parse()
-                .map_err(DecodingError::Identifier)?,
-            conn_id_on_b: msg
-                .counterparty_connection_id
-                .parse()
-                .map_err(DecodingError::Identifier)?,
+            conn_id_on_a: msg.connection_id.parse()?,
+            conn_id_on_b: msg.counterparty_connection_id.parse()?,
             client_state_of_a_on_b: msg.client_state.ok_or(DecodingError::MissingRawData {
                 description: "client state not set".to_string(),
             })?,

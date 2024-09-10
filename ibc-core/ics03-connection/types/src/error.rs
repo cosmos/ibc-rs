@@ -14,8 +14,6 @@ use crate::version::Version;
 pub enum ConnectionError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// identifier error: `{0}`
-    Identifier(IdentifierError),
     /// invalid state for initializing new ConnectionEnd; expected `Init` connection state and a single version
     InvalidStateForConnectionEndInit,
     /// invalid counterparty
@@ -76,6 +74,12 @@ pub enum ConnectionError {
 impl From<DecodingError> for ConnectionError {
     fn from(e: DecodingError) -> Self {
         Self::Decoding(e)
+    }
+}
+
+impl From<IdentifierError> for ConnectionError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 

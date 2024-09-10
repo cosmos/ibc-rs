@@ -18,8 +18,6 @@ use crate::Version;
 pub enum ChannelError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// identifier error: `{0}`
-    Identifier(IdentifierError),
     /// invalid channel id: expected `{expected}`, actual `{actual}`
     InvalidChannelId { expected: String, actual: String },
     /// invalid channel state: expected `{expected}`, actual `{actual}`
@@ -98,8 +96,6 @@ pub enum PacketError {
     InvalidTimeoutHeight(ClientError),
     /// invalid timeout timestamp: `{0}`
     InvalidTimeoutTimestamp(TimestampError),
-    /// identifier error: `{0}`
-    Identifier(IdentifierError),
     /// empty acknowledgment status not allowed
     EmptyAcknowledgmentStatus,
     /// packet acknowledgment for sequence `{0}` already exists
@@ -113,6 +109,14 @@ pub enum PacketError {
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
+
+    // TODO(seanchen1991): Move these variants to host-relevant error types
+    /// application module error: `{description}`
+    AppModule { description: String },
+    /// missing acknowledgment for packet `{0}`
+    MissingPacketAcknowledgment(Sequence),
+    /// missing packet receipt for packet `{0}`
+    MissingPacketReceipt(Sequence),
     /// implementation-specific error
     ImplementationSpecific,
 
@@ -127,13 +131,13 @@ pub enum PacketError {
 
 impl From<IdentifierError> for ChannelError {
     fn from(e: IdentifierError) -> Self {
-        Self::Identifier(e)
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 
 impl From<IdentifierError> for PacketError {
     fn from(e: IdentifierError) -> Self {
-        Self::Identifier(e)
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 
@@ -161,7 +165,6 @@ impl std::error::Error for PacketError {
         match &self {
             Self::Channel(e) => Some(e),
             Self::Decoding(e) => Some(e),
-            Self::Identifier(e) => Some(e),
             _ => None,
         }
     }
@@ -171,7 +174,6 @@ impl std::error::Error for PacketError {
 impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::Identifier(e) => Some(e),
             Self::Decoding(e) => Some(e),
             Self::FailedPacketVerification {
                 client_error: e, ..

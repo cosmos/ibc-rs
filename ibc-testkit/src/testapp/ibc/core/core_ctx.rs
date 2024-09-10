@@ -81,7 +81,7 @@ where
     ) -> Result<(), HostError> {
         if client_state_of_host_on_counterparty.is_frozen() {
             return Err(HostError::UnexpectedData {
-                description: ClientError::UnexpectedStatus(Status::Frozen).to_string(),
+                description: "client unexpectedly frozen".to_string(),
             });
         }
 

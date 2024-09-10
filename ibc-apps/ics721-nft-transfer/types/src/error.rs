@@ -43,6 +43,12 @@ pub enum NftTransferError {
     UnsupportedClosedChannel,
 }
 
+impl From<IdentifierError> for NftTransferError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
+    }
+}
+
 impl From<Infallible> for NftTransferError {
     fn from(e: Infallible) -> Self {
         match e {}

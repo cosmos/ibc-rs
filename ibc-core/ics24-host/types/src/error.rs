@@ -86,6 +86,12 @@ impl From<ProtoError> for DecodingError {
     }
 }
 
+impl From<IdentifierError> for DecodingError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Identifier(e)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for IdentifierError {}
 

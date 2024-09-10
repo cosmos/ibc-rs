@@ -53,19 +53,19 @@ impl Misbehaviour {
 
         if self.header1.signed_header.header.chain_id != self.header2.signed_header.header.chain_id
         {
-            return Err(TendermintClientError::InvalidRawMisbehaviour {
-                description: "headers must have identical chain_ids".to_owned(),
+            return Err(TendermintClientError::MismatchedHeaderChainIds {
+                expected: self.header1.signed_header.header.chain_id.to_string(),
+                actual: self.header2.signed_header.header.chain_id.to_string(),
             });
         }
 
         if self.header1.height() < self.header2.height() {
-            return Err(TendermintClientError::InvalidRawMisbehaviour {
-                description: format!(
-                    "header1 height is less than header2 height ({} < {})",
-                    self.header1.height(),
-                    self.header2.height()
-                ),
-            });
+            return Err(
+                TendermintClientError::InsufficientMisbehaviourHeaderHeight {
+                    height_1: self.header1.height(),
+                    height_2: self.header2.height(),
+                },
+            );
         }
 
         Ok(())

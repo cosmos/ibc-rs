@@ -8,6 +8,7 @@ use ibc_core_host_types::error::{DecodingError, HostError};
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
+use tendermint::Error as TendermintError;
 
 use crate::height::Height;
 use crate::Status;
@@ -130,8 +131,6 @@ pub enum UpgradeClientError {
     InvalidUpgradePath { description: String },
     /// missing upgrade path
     MissingUpgradePath,
-    /// failed to clear upgrade plan
-    FailedToClearUpgradePlan,
     /// insufficient upgrade client height `{upgraded_height}`; must be greater than current client height `{client_height}`
     InsufficientUpgradeHeight {
         upgraded_height: Height,

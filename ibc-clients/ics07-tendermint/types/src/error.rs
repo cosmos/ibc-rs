@@ -4,6 +4,7 @@ use core::time::Duration;
 
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::Height;
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_primitives::prelude::*;
@@ -26,8 +27,6 @@ pub enum TendermintClientError {
     InvalidMaxClockDrift,
     /// invalid client proof specs: `{0}`
     InvalidProofSpec(CommitmentError),
-    /// invalid raw misbehaviour: `{description}`
-    InvalidRawMisbehaviour { description: String },
     /// invalid header timestamp: `{0}`
     InvalidHeaderTimestamp(TimestampError),
     /// invalid header height: `{0}`
@@ -49,6 +48,8 @@ pub enum TendermintClientError {
         duration_since_consensus_state: Duration,
         trusting_period: Duration,
     },
+    /// insufficient misbehaviour header height: header1 height `{height_1}` should be >= header2 height `{height_2}`
+    InsufficientMisbehaviourHeaderHeight { height_1: Height, height_2: Height },
 }
 
 #[cfg(feature = "std")]

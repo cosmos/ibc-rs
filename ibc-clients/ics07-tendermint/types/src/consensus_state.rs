@@ -12,7 +12,6 @@ use tendermint::time::Time;
 use tendermint::Hash;
 use tendermint_proto::google::protobuf as tpb;
 
-use crate::error::TendermintClientError;
 use crate::header::Header;
 
 pub const TENDERMINT_CONSENSUS_STATE_TYPE_URL: &str =
@@ -48,7 +47,7 @@ impl ConsensusState {
 impl Protobuf<RawConsensusState> for ConsensusState {}
 
 impl TryFrom<RawConsensusState> for ConsensusState {
-    type Error = TendermintClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawConsensusState) -> Result<Self, Self::Error> {
         let proto_root = raw
