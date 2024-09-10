@@ -1,6 +1,7 @@
 //! Foundational error types that are applicable across multiple ibc-rs workspaces.
 
 use alloc::string::{FromUtf8Error, String};
+use core::convert::Infallible;
 use core::str::Utf8Error;
 
 use base64::DecodeError as Base64Error;
@@ -54,15 +55,53 @@ pub enum DecodingError {
     UnknownTypeUrl(String),
 }
 
-impl From<ProtoError> for DecodingError {
-    fn from(e: ProtoError) -> Self {
-        Self::Protobuf(e)
+impl DecodingError {
+    pub fn invalid_raw_data<T: ToString>(description: T) -> Self {
+        Self::InvalidRawData {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn missing_raw_data<T: ToString>(description: T) -> Self {
+        Self::MissingRawData {
+            description: description.to_string(),
+        }
     }
 }
 
 impl From<IdentifierError> for DecodingError {
     fn from(e: IdentifierError) -> Self {
         Self::Identifier(e)
+    }
+}
+
+impl From<ProtoError> for DecodingError {
+    fn from(e: ProtoError) -> Self {
+        Self::Protobuf(e)
+    }
+}
+
+impl From<Base64Error> for DecodingError {
+    fn from(e: Base64Error) -> Self {
+        Self::Base64(e)
+    }
+}
+
+impl From<FromUtf8Error> for DecodingError {
+    fn from(e: FromUtf8Error) -> Self {
+        Self::StringUtf8(e)
+    }
+}
+
+impl From<Utf8Error> for DecodingError {
+    fn from(e: Utf8Error) -> Self {
+        Self::StrUtf8(e)
+    }
+}
+
+impl From<Infallible> for DecodingError {
+    fn from(e: Infallible) -> Self {
+        match e {}
     }
 }
 

@@ -4,6 +4,7 @@ use core::str::FromStr;
 
 use http::Uri;
 pub use ibc_app_transfer_types::{TracePath, TracePrefix};
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
@@ -11,7 +12,6 @@ use ibc_core::primitives::serializers;
 use ibc_proto::ibc::applications::nft_transfer::v1::ClassTrace as RawClassTrace;
 
 use crate::data::Data;
-use crate::error::NftTransferError;
 
 /// Class ID for an NFT
 #[cfg_attr(
@@ -44,11 +44,11 @@ impl Display for ClassId {
 }
 
 impl FromStr for ClassId {
-    type Err = NftTransferError;
+    type Err = DecodingError;
 
     fn from_str(class_id: &str) -> Result<Self, Self::Err> {
         if class_id.trim().is_empty() {
-            Err(NftTransferError::EmptyBaseClassId)
+            Err(DecodingError::missing_raw_data("empty base class ID"))
         } else {
             Ok(Self(class_id.to_string()))
         }
@@ -119,7 +119,7 @@ pub fn is_receiver_chain_source(
 }
 
 impl FromStr for PrefixedClassId {
-    type Err = NftTransferError;
+    type Err = DecodingError;
 
     /// The parsing logic is same as [`FromStr`] impl of
     /// [`PrefixedDenom`](ibc_app_transfer_types::PrefixedDenom) from ICS-20.
@@ -138,12 +138,11 @@ impl FromStr for PrefixedClassId {
 }
 
 impl TryFrom<RawClassTrace> for PrefixedClassId {
-    type Error = NftTransferError;
+    type Error = DecodingError;
 
     fn try_from(value: RawClassTrace) -> Result<Self, Self::Error> {
         let base_class_id = ClassId::from_str(&value.base_class_id)?;
-        let trace_path = TracePath::from_str(&value.path)
-            .map_err(|_| NftTransferError::InvalidTrace(value.path))?;
+        let trace_path = TracePath::from_str(&value.path)?;
 
         Ok(Self {
             trace_path,
@@ -243,12 +242,14 @@ impl Display for ClassUri {
 }
 
 impl FromStr for ClassUri {
-    type Err = NftTransferError;
+    type Err = DecodingError;
 
     fn from_str(class_uri: &str) -> Result<Self, Self::Err> {
         match Uri::from_str(class_uri) {
             Ok(uri) => Ok(Self(uri)),
-            Err(err) => Err(NftTransferError::InvalidUri(err)),
+            Err(err) => Err(DecodingError::invalid_raw_data(format!(
+                "invalid class URI: {err}"
+            ))),
         }
     }
 }
@@ -278,7 +279,7 @@ impl Display for ClassData {
 }
 
 impl FromStr for ClassData {
-    type Err = NftTransferError;
+    type Err = DecodingError;
 
     fn from_str(class_data: &str) -> Result<Self, Self::Err> {
         // validate the data
@@ -336,7 +337,7 @@ mod tests {
     }
 
     #[test]
-    fn test_class_id_trace() -> Result<(), NftTransferError> {
+    fn test_class_id_trace() -> Result<(), DecodingError> {
         assert_eq!(
             PrefixedClassId::from_str("transfer/channel-0/myclass")?,
             PrefixedClassId {
@@ -360,7 +361,7 @@ mod tests {
     }
 
     #[test]
-    fn test_class_id_serde() -> Result<(), NftTransferError> {
+    fn test_class_id_serde() -> Result<(), DecodingError> {
         let dt_str = "transfer/channel-0/myclass";
         let dt = PrefixedClassId::from_str(dt_str)?;
         assert_eq!(dt.to_string(), dt_str, "valid single trace info");
@@ -373,7 +374,7 @@ mod tests {
     }
 
     #[test]
-    fn test_trace_path() -> Result<(), NftTransferError> {
+    fn test_trace_path() -> Result<(), DecodingError> {
         assert!(TracePath::from_str("").is_ok(), "empty trace path");
         assert!(
             TracePath::from_str("transfer/myclass").is_err(),

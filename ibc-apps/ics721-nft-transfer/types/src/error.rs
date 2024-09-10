@@ -1,12 +1,9 @@
 //! Defines the Non-Fungible Token Transfer (ICS-721) error types.
-use core::convert::Infallible;
-
 use displaydoc::Display;
-use http::uri::InvalidUri;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::ContextError;
-use ibc_core::host::types::error::{DecodingError, IdentifierError};
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 
@@ -16,17 +13,11 @@ pub enum NftTransferError {
     ContextError(ContextError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// invalid trace: `{0}`
-    InvalidTrace(String),
-    /// invalid URI error: `{0}`
-    InvalidUri(InvalidUri),
     /// missing destination channel `{channel_id}` on port `{port_id}`
     MissingDestinationChannel {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// empty base class ID
-    EmptyBaseClassId,
     /// empty token ID
     EmptyTokenId,
     /// mismatched number of token IDs: expected `{expected}`, actual `{actual}`
@@ -53,18 +44,6 @@ impl std::error::Error for NftTransferError {
             Self::Decoding(e) => Some(e),
             _ => None,
         }
-    }
-}
-
-impl From<IdentifierError> for NftTransferError {
-    fn from(e: IdentifierError) -> Self {
-        Self::Decoding(DecodingError::Identifier(e))
-    }
-}
-
-impl From<Infallible> for NftTransferError {
-    fn from(e: Infallible) -> Self {
-        match e {}
     }
 }
 

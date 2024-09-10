@@ -3,12 +3,11 @@ use core::ops::Deref;
 use core::str::FromStr;
 
 use derive_more::{Display, From, Into};
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
 use primitive_types::U256;
-
-use super::error::TokenTransferError;
 
 /// A type for representing token transfer amounts.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -103,10 +102,13 @@ impl AsRef<U256> for Amount {
 }
 
 impl FromStr for Amount {
-    type Err = TokenTransferError;
+    type Err = DecodingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let amount = U256::from_dec_str(s).map_err(TokenTransferError::InvalidAmount)?;
+        let amount = U256::from_dec_str(s).map_err(|e| {
+            DecodingError::invalid_raw_data(format!("amount cannot be parsed as U256: {e}"))
+        })?;
+
         Ok(Self(amount))
     }
 }

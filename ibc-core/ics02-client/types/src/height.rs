@@ -5,6 +5,7 @@ use core::num::ParseIntError;
 use core::str::FromStr;
 
 use displaydoc::Display;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::Protobuf;
@@ -116,10 +117,11 @@ impl Ord for Height {
 impl Protobuf<RawHeight> for Height {}
 
 impl TryFrom<RawHeight> for Height {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw_height: RawHeight) -> Result<Self, Self::Error> {
         Height::new(raw_height.revision_number, raw_height.revision_height)
+            .map_err(DecodingError::invalid_raw_data)
     }
 }
 
