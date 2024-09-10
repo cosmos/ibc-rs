@@ -56,7 +56,7 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !timeout_height_on_b.is_set() && !timeout_timestamp_on_b.is_set() {
             return Err(DecodingError::missing_raw_data(
-                "neither timeout height nor timeout timestamp set",
+                "missing timeout height or timeout timestamp",
             ));
         }
 

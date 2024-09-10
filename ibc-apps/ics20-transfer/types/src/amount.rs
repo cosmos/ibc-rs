@@ -106,7 +106,9 @@ impl FromStr for Amount {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let amount = U256::from_dec_str(s).map_err(|e| {
-            DecodingError::invalid_raw_data(format!("amount cannot be parsed as U256: {e}"))
+            DecodingError::invalid_raw_data(format!(
+                "invalid amount that could not be parsed as a U256: {e}"
+            ))
         })?;
 
         Ok(Self(amount))
