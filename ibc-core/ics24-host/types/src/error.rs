@@ -5,10 +5,9 @@ use core::str::Utf8Error;
 
 use base64::DecodeError as Base64Error;
 use displaydoc::Display;
-use prost::DecodeError as ProstError;
-
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Error as ProtoError;
+use prost::DecodeError as ProstError;
 
 /// Errors that originate from host implementations.
 #[derive(Debug, Display)]

@@ -7,8 +7,8 @@ use alloc::string::ToString;
 use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::is_sender_chain_source;
 use ibc_app_transfer_types::packet::PacketData;
-use ibc_core::{channel::types::packet::Packet, host::types::error::HostError};
-
+use ibc_core::channel::types::packet::Packet;
+use ibc_core::host::types::error::HostError;
 pub use on_recv_packet::*;
 pub use send_transfer::*;
 

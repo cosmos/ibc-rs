@@ -4,8 +4,7 @@ use core::convert::Infallible;
 
 use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::DecodingError;
-use ibc_core_host_types::error::HostError;
+use ibc_core_host_types::error::{DecodingError, HostError};
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
@@ -131,6 +130,8 @@ pub enum UpgradeClientError {
     InvalidUpgradePath { description: String },
     /// missing upgrade path
     MissingUpgradePath,
+    /// failed to clear upgrade plan
+    FailedToClearUpgradePlan,
     /// insufficient upgrade client height `{upgraded_height}`; must be greater than current client height `{client_height}`
     InsufficientUpgradeHeight {
         upgraded_height: Height,

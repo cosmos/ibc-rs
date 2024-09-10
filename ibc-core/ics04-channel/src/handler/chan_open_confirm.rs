@@ -59,14 +59,11 @@ where
 
         let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
         let port_id_on_a = chan_end_on_b.counterparty().port_id.clone();
-        let chan_id_on_a =
-            chan_end_on_b
-                .counterparty()
-                .channel_id
-                .clone()
-                .ok_or(HandlerError::Channel(
-                    ChannelError::MissingCounterparty,
-                ))?;
+        let chan_id_on_a = chan_end_on_b
+            .counterparty()
+            .channel_id
+            .clone()
+            .ok_or(HandlerError::Channel(ChannelError::MissingCounterparty))?;
 
         let core_event = IbcEvent::OpenConfirmChannel(OpenConfirm::new(
             msg.port_id_on_b.clone(),

@@ -56,9 +56,11 @@ where
 
         let core_event = {
             let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
-            let chan_id_on_b = chan_end_on_a.counterparty().channel_id.clone().ok_or(
-                HandlerError::Channel(ChannelError::MissingCounterparty),
-            )?;
+            let chan_id_on_b = chan_end_on_a
+                .counterparty()
+                .channel_id
+                .clone()
+                .ok_or(HandlerError::Channel(ChannelError::MissingCounterparty))?;
             let conn_id_on_a = chan_end_on_a.connection_hops[0].clone();
 
             IbcEvent::CloseInitChannel(CloseInit::new(
