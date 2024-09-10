@@ -6,7 +6,6 @@ use core::str::FromStr;
 use base64::prelude::BASE64_STANDARD;
 #[cfg(feature = "serde")]
 use base64::Engine;
-#[cfg(feature = "serde")]
 use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 use mime::Mime;
