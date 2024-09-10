@@ -41,7 +41,7 @@ pub struct Coin<D> {
 
 impl<D: FromStr> Coin<D>
 where
-    D::Err: Into<DecodingError>,
+    D::Err: Display,
 {
     pub fn from_string_list(coin_str: &str) -> Result<Vec<Self>, DecodingError> {
         coin_str.split(',').map(FromStr::from_str).collect()
@@ -50,7 +50,7 @@ where
 
 impl<D: FromStr> FromStr for Coin<D>
 where
-    D::Err: Into<DecodingError>,
+    D::Err: Display,
 {
     type Err = DecodingError;
 
@@ -82,7 +82,7 @@ where
 
         Ok(Coin {
             amount: amount.parse()?,
-            denom: denom.parse().map_err(Into::into)?,
+            denom: denom.parse().map_err(DecodingError::invalid_raw_data)?,
         })
     }
 }

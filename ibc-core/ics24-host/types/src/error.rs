@@ -1,7 +1,6 @@
 //! Foundational error types that are applicable across multiple ibc-rs workspaces.
 
 use alloc::string::{FromUtf8Error, String};
-use core::convert::Infallible;
 use core::str::Utf8Error;
 
 use base64::DecodeError as Base64Error;
@@ -96,12 +95,6 @@ impl From<FromUtf8Error> for DecodingError {
 impl From<Utf8Error> for DecodingError {
     fn from(e: Utf8Error) -> Self {
         Self::StrUtf8(e)
-    }
-}
-
-impl From<Infallible> for DecodingError {
-    fn from(e: Infallible) -> Self {
-        match e {}
     }
 }
 
