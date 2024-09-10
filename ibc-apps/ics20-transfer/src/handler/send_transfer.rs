@@ -6,6 +6,7 @@ use ibc_core::channel::context::{SendPacketExecutionContext, SendPacketValidatio
 use ibc_core::channel::handler::{send_packet_execute, send_packet_validate};
 use ibc_core::channel::types::packet::Packet;
 use ibc_core::handler::types::events::MessageEvent;
+use ibc_core::host::types::error::HostError;
 use ibc_core::host::types::path::{ChannelEndPath, SeqSendPath};
 use ibc_core::primitives::prelude::*;
 use ibc_core::router::types::event::ModuleEvent;
@@ -56,12 +57,14 @@ where
 
     let token = &msg.packet_data.token;
 
-    let sender: TokenCtx::AccountId = msg
-        .packet_data
-        .sender
-        .clone()
-        .try_into()
-        .map_err(|_| TokenTransferError::FailedToParseAccount)?;
+    let sender: TokenCtx::AccountId =
+        msg.packet_data
+            .sender
+            .clone()
+            .try_into()
+            .map_err(|_| HostError::FailedToParseData {
+                description: "invalid signer".to_string(),
+            })?;
 
     if is_sender_chain_source(
         msg.port_id_on_a.clone(),
@@ -129,12 +132,14 @@ where
 
     let token = &msg.packet_data.token;
 
-    let sender = msg
-        .packet_data
-        .sender
-        .clone()
-        .try_into()
-        .map_err(|_| TokenTransferError::FailedToParseAccount)?;
+    let sender =
+        msg.packet_data
+            .sender
+            .clone()
+            .try_into()
+            .map_err(|_| HostError::FailedToParseData {
+                description: "invalid signer".to_string(),
+            })?;
 
     if is_sender_chain_source(
         msg.port_id_on_a.clone(),

@@ -5,7 +5,6 @@ use basecoin_store::types::Height as StoreHeight;
 use ibc::core::client::context::{
     ClientExecutionContext, ClientValidationContext, ExtClientValidationContext,
 };
-use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::error::HostError;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, PortId};
@@ -73,13 +72,13 @@ where
                 }
             })
             .map(|consensus_path| {
-                Ok(Height::new(
+                Height::new(
                     consensus_path.revision_number,
                     consensus_path.revision_height,
                 )
                 .map_err(|e| HostError::InvalidData {
                     description: e.to_string(),
-                })?)
+                })
             })
             .collect::<Result<Vec<_>, _>>()
     }
@@ -107,9 +106,12 @@ where
             .map(|path| {
                 self.consensus_state_store
                     .get(StoreHeight::Pending, &path)
-                    .ok_or_else(|| ClientError::MissingConsensusState {
-                        client_id: client_id.clone(),
-                        height: *height,
+                    .ok_or_else(|| HostError::FailedToRetrieveFromStore {
+                        description: format!(
+                            "missing consensus state for client {0} at height {1}",
+                            client_id.clone(),
+                            *height
+                        ),
                     })
             })
             .transpose()
@@ -143,9 +145,12 @@ where
             .map(|path| {
                 self.consensus_state_store
                     .get(StoreHeight::Pending, &path)
-                    .ok_or_else(|| ClientError::MissingConsensusState {
-                        client_id: client_id.clone(),
-                        height: *height,
+                    .ok_or_else(|| HostError::FailedToRetrieveFromStore {
+                        description: format!(
+                            "missing consensus state for client {0} at height {1}",
+                            client_id.clone(),
+                            *height
+                        ),
                     })
             })
             .transpose()
@@ -165,12 +170,11 @@ where
     type ConsensusStateRef = AnyConsensusState;
 
     fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, HostError> {
-        Ok(self
-            .client_state_store
+        self.client_state_store
             .get(StoreHeight::Pending, &ClientStatePath(client_id.clone()))
-            .ok_or(HostError::MissingData {
-                description: ClientError::MissingClientState(client_id.clone()).to_string(),
-            })?)
+            .ok_or(HostError::FailedToRetrieveFromStore {
+                description: format!("missing client state for client {0}", client_id.clone()),
+            })
     }
 
     fn consensus_state(
@@ -187,12 +191,12 @@ where
         let consensus_state = self
             .consensus_state_store
             .get(StoreHeight::Pending, client_cons_state_path)
-            .ok_or(HostError::MissingData {
-                description: ClientError::MissingConsensusState {
-                    client_id: client_cons_state_path.client_id.clone(),
-                    height,
-                }
-                .to_string(),
+            .ok_or(HostError::FailedToRetrieveFromStore {
+                description: format!(
+                    "missing consensus state for client {0} at height {1}",
+                    client_cons_state_path.client_id.clone(),
+                    height
+                ),
             })?;
 
         Ok(consensus_state)
@@ -213,12 +217,12 @@ where
         let processed_timestamp = self
             .client_processed_times
             .get(StoreHeight::Pending, &client_update_time_path)
-            .ok_or(HostError::MissingData {
-                description: ClientError::MissingUpdateMetaData {
-                    client_id: client_id.clone(),
-                    height: *height,
-                }
-                .to_string(),
+            .ok_or(HostError::FailedToRetrieveFromStore {
+                description: format!(
+                    "missing client update metadata for client {0} at height {1}",
+                    client_id.clone(),
+                    *height,
+                ),
             })?;
         let client_update_height_path = ClientUpdateHeightPath::new(
             client_id.clone(),
@@ -228,12 +232,12 @@ where
         let processed_height = self
             .client_processed_heights
             .get(StoreHeight::Pending, &client_update_height_path)
-            .ok_or(HostError::MissingData {
-                description: ClientError::MissingUpdateMetaData {
-                    client_id: client_id.clone(),
-                    height: *height,
-                }
-                .to_string(),
+            .ok_or(HostError::FailedToRetrieveFromStore {
+                description: format!(
+                    "missing client update metadata for client {0} at height {1}",
+                    client_id.clone(),
+                    *height,
+                ),
             })?;
 
         Ok((processed_timestamp, processed_height))

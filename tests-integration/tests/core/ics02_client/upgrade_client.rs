@@ -8,6 +8,7 @@ use ibc::core::handler::types::error::HandlerError;
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::path::ClientConsensusStatePath;
+use ibc_core_host_types::error::HostError;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tm_client_state_from_header, dummy_valid_tendermint_header,
@@ -142,8 +143,12 @@ fn msg_upgrade_client_healthy() {
 #[test]
 fn upgrade_client_fail_nonexisting_client() {
     let fxt = msg_upgrade_client_fixture(Ctx::Default, Msg::Default);
-    let expected_err =
-        HandlerError::Client(ClientError::MissingClientState(fxt.msg.client_id.clone()));
+    let expected_err = HandlerError::Host(HostError::MissingData {
+        description: format!(
+            "missing client state for client {0}",
+            fxt.msg.client_id.clone()
+        ),
+    });
     upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
 }
 

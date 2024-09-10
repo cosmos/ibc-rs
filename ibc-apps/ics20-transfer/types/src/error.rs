@@ -39,11 +39,6 @@ pub enum TokenTransferError {
     UnsupportedClosedChannel,
     /// empty base denomination
     EmptyBaseDenom,
-
-    // TODO(seanchen1991): Used in basecoin; this variant should be moved
-    // to a host-relevant error
-    /// failed to parse account ID
-    FailedToParseAccount,
 }
 
 #[cfg(feature = "std")]
