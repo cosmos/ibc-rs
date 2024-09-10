@@ -27,6 +27,8 @@ pub enum HostError {
     FailedToRetrieveFromStore { description: String },
     /// failed to parse data: `{description}`
     FailedToParseData { description: String },
+    /// failed to validate client: `{description}`
+    FailedToValidateClient { description: String },
     /// non-existent type: `{description}`
     NonexistentType { description: String },
     /// other error: `{description}`
