@@ -7,14 +7,12 @@ use basecoin_store::context::{ProvableStore, Store};
 use basecoin_store::types::Height as StoreHeight;
 use ibc::core::channel::types::channel::{ChannelEnd, IdentifiedChannelEnd};
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
-use ibc::core::channel::types::error::ChannelError;
 use ibc::core::channel::types::packet::{PacketState, Receipt};
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
-use ibc::core::client::types::{Height, Status};
+use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::commitment_types::merkle::MerkleProof;
-use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::{ConnectionEnd, IdentifiedConnectionEnd};
 use ibc::core::handler::types::events::IbcEvent;
 use ibc::core::host::types::error::HostError;
@@ -147,7 +145,11 @@ where
                 &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
             )
             .ok_or(HostError::NonexistentType {
-                description: format!("non-existent channel {} in port {}", channel_end_path.1.clone(), channel_end_path.0.clone()),
+                description: format!(
+                    "non-existent channel {} in port {}",
+                    channel_end_path.1.clone(),
+                    channel_end_path.0.clone()
+                ),
             })
     }
 

@@ -109,24 +109,6 @@ pub enum PacketError {
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
-
-    // TODO(seanchen1991): Move these variants to host-relevant error types
-    /// application module error: `{description}`
-    AppModule { description: String },
-    /// missing acknowledgment for packet `{0}`
-    MissingPacketAcknowledgment(Sequence),
-    /// missing packet receipt for packet `{0}`
-    MissingPacketReceipt(Sequence),
-    /// implementation-specific error
-    ImplementationSpecific,
-
-    // TODO(seanchen1991): Move these variants to host-relevant error types
-    /// application module error: `{description}`
-    AppModule { description: String },
-    /// missing acknowledgment for packet `{0}`
-    MissingPacketAcknowledgment(Sequence),
-    /// missing packet receipt for packet `{0}`
-    MissingPacketReceipt(Sequence),
 }
 
 impl From<IdentifierError> for ChannelError {

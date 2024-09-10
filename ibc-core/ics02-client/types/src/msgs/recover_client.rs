@@ -7,8 +7,6 @@ use ibc_primitives::Signer;
 use ibc_proto::ibc::core::client::v1::MsgRecoverClient as RawMsgRecoverClient;
 use ibc_proto::Protobuf;
 
-use crate::error::ClientError;
-
 pub const RECOVER_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgRecoverClient";
 
 /// Defines the message used to recover a frozen or expired client.
@@ -39,7 +37,7 @@ pub struct MsgRecoverClient {
 impl Protobuf<RawMsgRecoverClient> for MsgRecoverClient {}
 
 impl TryFrom<RawMsgRecoverClient> for MsgRecoverClient {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMsgRecoverClient) -> Result<Self, Self::Error> {
         Ok(MsgRecoverClient {

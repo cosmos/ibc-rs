@@ -3,7 +3,6 @@
 use core::str::FromStr;
 
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
-use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
@@ -11,8 +10,6 @@ use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgUpgradeClient as RawMsgUpgradeClient;
 use ibc_proto::Protobuf;
-
-use crate::error::{ClientError, UpgradeClientError};
 
 pub const UPGRADE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgUpgradeClient";
 
@@ -55,7 +52,7 @@ impl From<MsgUpgradeClient> for RawMsgUpgradeClient {
 }
 
 impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(proto_msg: RawMsgUpgradeClient) -> Result<Self, Self::Error> {
         let raw_client_state = proto_msg
@@ -72,17 +69,15 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
                 })?;
 
         let c_bytes =
-            CommitmentProofBytes::try_from(proto_msg.proof_upgrade_client).map_err(|_| {
-                UpgradeClientError::InvalidUpgradeClientStateProof(
-                    CommitmentError::InvalidMerkleProof,
-                )
+            CommitmentProofBytes::try_from(proto_msg.proof_upgrade_client).map_err(|e| {
+                DecodingError::InvalidRawData {
+                    description: format!("invalid upgrade client state proof: {e}"),
+                }
             })?;
 
         let cs_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_consensus_state)
-            .map_err(|_| {
-                UpgradeClientError::InvalidUpgradeConsensusStateProof(
-                    CommitmentError::InvalidMerkleProof,
-                )
+            .map_err(|e| DecodingError::InvalidRawData {
+                description: format!("invalid upgrade consensus state proof: {e}"),
             })?;
 
         Ok(MsgUpgradeClient {
