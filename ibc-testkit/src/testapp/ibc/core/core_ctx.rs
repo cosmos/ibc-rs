@@ -60,7 +60,7 @@ where
         self.client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
             .ok_or(HostError::MissingData {
-                description: "client counter not found".to_string(),
+                description: "missing client counter".to_string(),
             })
     }
 
@@ -81,7 +81,7 @@ where
     ) -> Result<(), HostError> {
         if client_state_of_host_on_counterparty.is_frozen() {
             return Err(HostError::UnexpectedData {
-                description: "client unexpectedly frozen".to_string(),
+                description: "unexpected frozen client".to_string(),
             });
         }
 
@@ -108,7 +108,7 @@ where
         if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
             return Err(HostError::InvalidData {
                 description: format!(
-                    "client has latest height {} greater than or equal to chain height {}",
+                    "invalid counterparty client state: client latest height {} should be less than chain height {}",
                     client_state_of_host_on_counterparty.latest_height(),
                     host_current_height
                 ),
@@ -122,7 +122,7 @@ where
         self.connection_end_store
             .get(StoreHeight::Pending, &ConnectionPath::new(conn_id))
             .ok_or(HostError::MissingData {
-                description: ConnectionError::MissingConnection(conn_id.clone()).to_string(),
+                description: format!("missing connection end for connection {}", conn_id.clone()),
             })
     }
 
@@ -136,7 +136,7 @@ where
         self.conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
             .ok_or(HostError::MissingData {
-                description: ConnectionError::MissingConnectionCounter.to_string(),
+                description: "missing connection counter".to_string(),
             })
     }
 
@@ -147,11 +147,7 @@ where
                 &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
             )
             .ok_or(HostError::NonexistentType {
-                description: ChannelError::NonexistentChannel {
-                    port_id: channel_end_path.0.clone(),
-                    channel_id: channel_end_path.1.clone(),
-                }
-                .to_string(),
+                description: format!("non-existent channel {} in port {}", channel_end_path.1.clone(), channel_end_path.0.clone()),
             })
     }
 
