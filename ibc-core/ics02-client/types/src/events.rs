@@ -774,7 +774,7 @@ mod tests {
     )]
     fn test_create_client_try_from(
         #[case] event: abci::Event,
-        #[case] expected: Result<CreateClient, ClientError>,
+        #[case] expected: Result<CreateClient, DecodingError>,
     ) {
         let result = CreateClient::try_from(event);
         if expected.is_err() {
