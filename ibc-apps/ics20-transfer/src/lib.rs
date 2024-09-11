@@ -13,8 +13,6 @@
 )]
 #![allow(clippy::result_large_err)]
 
-extern crate alloc;
-
 #[cfg(any(test, feature = "std"))]
 extern crate std;
 
