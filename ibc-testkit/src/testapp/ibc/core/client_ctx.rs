@@ -108,7 +108,7 @@ where
                     .get(StoreHeight::Pending, &path)
                     .ok_or_else(|| HostError::FailedToRetrieveFromStore {
                         description: format!(
-                            "missing consensus state for client {0} at height {1}",
+                            "missing consensus state for client {} at height {}",
                             client_id.clone(),
                             *height
                         ),
@@ -147,7 +147,7 @@ where
                     .get(StoreHeight::Pending, &path)
                     .ok_or_else(|| HostError::FailedToRetrieveFromStore {
                         description: format!(
-                            "missing consensus state for client {0} at height {1}",
+                            "missing consensus state for client {} at height {}",
                             client_id.clone(),
                             *height
                         ),
@@ -173,7 +173,7 @@ where
         self.client_state_store
             .get(StoreHeight::Pending, &ClientStatePath(client_id.clone()))
             .ok_or(HostError::FailedToRetrieveFromStore {
-                description: format!("missing client state for client {0}", client_id.clone()),
+                description: format!("missing client state for client {}", client_id.clone()),
             })
     }
 
@@ -193,7 +193,7 @@ where
             .get(StoreHeight::Pending, client_cons_state_path)
             .ok_or(HostError::FailedToRetrieveFromStore {
                 description: format!(
-                    "missing consensus state for client {0} at height {1}",
+                    "missing consensus state for client {} at height {}",
                     client_cons_state_path.client_id.clone(),
                     height
                 ),
@@ -219,7 +219,7 @@ where
             .get(StoreHeight::Pending, &client_update_time_path)
             .ok_or(HostError::FailedToRetrieveFromStore {
                 description: format!(
-                    "missing client update metadata for client {0} at height {1}",
+                    "missing client update metadata for client {} at height {}",
                     client_id.clone(),
                     *height,
                 ),
@@ -234,7 +234,7 @@ where
             .get(StoreHeight::Pending, &client_update_height_path)
             .ok_or(HostError::FailedToRetrieveFromStore {
                 description: format!(
-                    "missing client update metadata for client {0} at height {1}",
+                    "missing client update metadata for client {} at height {}",
                     client_id.clone(),
                     *height,
                 ),

@@ -217,7 +217,7 @@ where
             .then_some(Receipt::Ok)
             .ok_or(HostError::FailedToRetrieveFromStore {
                 description: format!(
-                    "failed to retrieve packet receipt {0}",
+                    "failed to retrieve packet receipt {}",
                     receipt_path.sequence
                 ),
             })
@@ -234,7 +234,7 @@ where
             )
             .ok_or(HostError::FailedToRetrieveFromStore {
                 description: format!(
-                    "failed to retrieve packet acknowledgment {0}",
+                    "failed to retrieve packet acknowledgment {}",
                     ack_path.sequence
                 ),
             })
@@ -315,7 +315,7 @@ where
                     .get(StoreHeight::Pending, &client_state_path)
                     .ok_or_else(|| HostError::FailedToRetrieveFromStore {
                         description: format!(
-                            "failed to retrieve client state from path {0}",
+                            "failed to retrieve client state from path {}",
                             client_state_path.0.clone()
                         ),
                     })?;
@@ -354,7 +354,7 @@ where
                     .get(StoreHeight::Pending, &consensus_path)
                     .ok_or(HostError::FailedToRetrieveFromStore {
                         description: format!(
-                            "missing consensus state for client {0} at height {1}",
+                            "missing consensus state for client {} at height {}",
                             consensus_path.client_id, height,
                         ),
                     })?;
@@ -408,7 +408,7 @@ where
                     .connection_end_store
                     .get(StoreHeight::Pending, &connection_path)
                     .ok_or_else(|| HostError::FailedToRetrieveFromStore {
-                        description: format!("missing connection {0}", connection_path.0.clone()),
+                        description: format!("missing connection {}", connection_path.0.clone()),
                     })?;
                 Ok(IdentifiedConnectionEnd {
                     connection_id: connection_path.0,
@@ -448,7 +448,7 @@ where
                     .get(StoreHeight::Pending, &channel_path)
                     .ok_or_else(|| HostError::FailedToRetrieveFromStore {
                         description: format!(
-                            "missing channel {0} with port {1}",
+                            "missing channel {} with port {}",
                             channel_path.1.clone(),
                             channel_path.0.clone()
                         ),
