@@ -38,10 +38,6 @@ pub enum HostError {
     UnknownResource { description: String },
     /// other error: `{description}`
     Other { description: String },
-
-    // this variant exists for testing purposes
-    /// missing connection `{0}`
-    MissingConnection(ConnectionId),
 }
 
 /// Errors that arise when parsing identifiers.
