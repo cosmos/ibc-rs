@@ -799,7 +799,7 @@ dependencies = [
 name = "ibc-app-transfer-types"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core",
  "ibc-proto",
@@ -862,7 +862,7 @@ dependencies = [
 name = "ibc-core-channel-types"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
@@ -895,7 +895,7 @@ dependencies = [
 name = "ibc-core-client-context"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
@@ -910,7 +910,7 @@ dependencies = [
 name = "ibc-core-client-types"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-commitment-types",
  "ibc-core-host-types",
@@ -928,7 +928,7 @@ dependencies = [
 name = "ibc-core-commitment-types"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-host-types",
  "ibc-primitives",
@@ -958,7 +958,7 @@ dependencies = [
 name = "ibc-core-connection-types"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
@@ -991,7 +991,7 @@ dependencies = [
 name = "ibc-core-handler-types"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-channel-types",
  "ibc-core-client-types",
@@ -1013,7 +1013,7 @@ dependencies = [
 name = "ibc-core-host"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-channel-types",
  "ibc-core-client-context",
@@ -1030,7 +1030,7 @@ dependencies = [
 name = "ibc-core-host-types"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-primitives",
  "parity-scale-codec",
@@ -1043,7 +1043,7 @@ dependencies = [
 name = "ibc-core-router"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-channel-types",
  "ibc-core-host-types",
@@ -1056,7 +1056,7 @@ dependencies = [
 name = "ibc-core-router-types"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-host-types",
  "ibc-primitives",
@@ -1082,7 +1082,7 @@ dependencies = [
 name = "ibc-primitives"
 version = "0.54.0"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-proto",
  "parity-scale-codec",
