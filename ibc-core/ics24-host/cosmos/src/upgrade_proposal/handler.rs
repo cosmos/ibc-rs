@@ -1,5 +1,5 @@
 use ibc_client_tendermint::types::ClientState as TmClientState;
-use ibc_core_host_types::error::HostError;
+use ibc_core_client_types::error::UpgradeClientError;
 use ibc_core_host_types::path::UpgradeClientStatePath;
 use ibc_primitives::prelude::*;
 use tendermint::abci::Event as TmEvent;
@@ -15,7 +15,7 @@ use crate::upgrade_proposal::{UpgradeClientProposal, UpgradeExecutionContext, Up
 pub fn execute_upgrade_client_proposal<Ctx>(
     ctx: &mut Ctx,
     proposal: UpgradeProposal,
-) -> Result<TmEvent, HostError>
+) -> Result<TmEvent, UpgradeClientError>
 where
     Ctx: UpgradeExecutionContext,
     UpgradedClientStateRef<Ctx>: From<TmClientState>,
@@ -28,10 +28,8 @@ where
 
     let mut client_state =
         TmClientState::try_from(proposal.upgraded_client_state).map_err(|e| {
-            HostError::InvalidData {
-                description: format!(
-                    "invalid tendermint client state that could not be converted: {e}"
-                ),
+            UpgradeClientError::InvalidUpgradeProposal {
+                description: e.to_string(),
             }
         })?;
 

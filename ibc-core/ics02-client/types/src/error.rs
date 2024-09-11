@@ -110,6 +110,8 @@ impl std::error::Error for ClientError {
         match &self {
             Self::FailedICS23Verification(e) => Some(e),
             Self::Decoding(e) => Some(e),
+            Self::Upgrade(e) => Some(e),
+            Self::Host(e) => Some(e),
             _ => None,
         }
     }
@@ -120,6 +122,8 @@ impl std::error::Error for ClientError {
 pub enum UpgradeClientError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
+    /// host chain error: `{0}`
+    Host(HostError),
     /// invalid upgrade proposal: `{description}`
     InvalidUpgradeProposal { description: String },
     /// invalid proof for the upgraded client state: `{0}`
@@ -149,10 +153,18 @@ impl From<DecodingError> for UpgradeClientError {
     }
 }
 
+impl From<HostError> for UpgradeClientError {
+    fn from(e: HostError) -> Self {
+        Self::Host(e)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for UpgradeClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
+            Self::Decoding(e) => Some(e),
+            Self::Host(e) => Some(e),
             Self::InvalidUpgradeClientStateProof(e)
             | Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
             _ => None,
