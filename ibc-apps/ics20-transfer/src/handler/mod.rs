@@ -10,9 +10,9 @@ use ibc_app_transfer_types::is_sender_chain_source;
 use ibc_app_transfer_types::packet::PacketData;
 use ibc_core::channel::types::packet::Packet;
 use ibc_core::host::types::error::HostError;
+use ibc_core::primitives::prelude::*;
 
 use crate::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
-use crate::std::string::ToString;
 
 pub fn refund_packet_token_execute(
     ctx_a: &mut impl TokenTransferExecutionContext,
