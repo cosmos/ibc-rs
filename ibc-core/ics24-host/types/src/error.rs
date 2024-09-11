@@ -16,8 +16,6 @@ pub enum HostError {
     InvalidData { description: String },
     /// missing data: `{description}`
     MissingData { description: String },
-    /// unexpected data: `{description}`
-    UnexpectedData { description: String },
     /// failed to update store: `{description}`
     FailedToUpdateStore { description: String },
     /// failed to store data: `{description}`
@@ -30,6 +28,10 @@ pub enum HostError {
     FailedToValidateClient { description: String },
     /// non-existent type: `{description}`
     NonexistentType { description: String },
+    /// unexpected data: `{description}`
+    UnexpectedData { description: String },
+    /// unknown resource: `{description}`
+    UnknownResource { description: String },
     /// other error: `{description}`
     Other { description: String },
 }

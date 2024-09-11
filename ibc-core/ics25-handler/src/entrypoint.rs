@@ -19,9 +19,11 @@ use ibc_core_connection::handler::{
 use ibc_core_connection::types::msgs::ConnectionMsg;
 use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::msgs::MsgEnvelope;
+use ibc_core_host::types::error::HostError;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::router::Router;
 use ibc_core_router::types::error::RouterError;
+use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
 /// Entrypoint which performs both validation and message execution
@@ -80,7 +82,9 @@ where
             let port_id = channel_msg_to_port_id(&msg);
             let module_id = router
                 .lookup_module(port_id)
-                .ok_or(RouterError::UnknownPort(port_id.clone()))?;
+                .ok_or(HostError::UnknownResource {
+                    description: format!("port {}", port_id.clone()),
+                })?;
             let module = router
                 .get_route(&module_id)
                 .ok_or(RouterError::MissingModule)?;
@@ -98,7 +102,9 @@ where
             let port_id = packet_msg_to_port_id(&msg);
             let module_id = router
                 .lookup_module(port_id)
-                .ok_or(RouterError::UnknownPort(port_id.clone()))?;
+                .ok_or(HostError::UnknownResource {
+                    description: format!("port {}", port_id.clone()),
+                })?;
             let module = router
                 .get_route(&module_id)
                 .ok_or(RouterError::MissingModule)?;
@@ -153,7 +159,9 @@ where
             let port_id = channel_msg_to_port_id(&msg);
             let module_id = router
                 .lookup_module(port_id)
-                .ok_or(RouterError::UnknownPort(port_id.clone()))?;
+                .ok_or(HostError::UnknownResource {
+                    description: format!("port {}", port_id.clone()),
+                })?;
             let module = router
                 .get_route_mut(&module_id)
                 .ok_or(RouterError::MissingModule)?;
@@ -171,7 +179,9 @@ where
             let port_id = packet_msg_to_port_id(&msg);
             let module_id = router
                 .lookup_module(port_id)
-                .ok_or(RouterError::UnknownPort(port_id.clone()))?;
+                .ok_or(HostError::UnknownResource {
+                    description: format!("port {}", port_id.clone()),
+                })?;
             let module = router
                 .get_route_mut(&module_id)
                 .ok_or(RouterError::MissingModule)?;
