@@ -1,5 +1,4 @@
 use displaydoc::Display;
-
 use ibc_core_host_types::identifiers::PortId;
 use ibc_primitives::prelude::*;
 

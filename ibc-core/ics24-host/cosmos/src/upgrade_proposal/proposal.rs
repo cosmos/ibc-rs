@@ -54,7 +54,8 @@ impl TryFrom<RawUpgradeProposal> for UpgradeProposal {
         let upgraded_client_state =
             raw.upgraded_client_state
                 .ok_or_else(|| DecodingError::InvalidRawData {
-                    description: "invalid upgrade proposal: missing upgraded client state".to_string(),
+                    description: "invalid upgrade proposal: missing upgraded client state"
+                        .to_string(),
                 })?;
 
         Ok(Self {
