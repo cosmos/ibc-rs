@@ -140,6 +140,11 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
             packet.port_id_on_b.clone(),
             packet.chan_id_on_b.clone(),
             packet.seq_on_a,
+        )
+        .with_packet_receipt(
+            packet.port_id_on_b.clone(),
+            packet.chan_id_on_b.clone(),
+            packet.seq_on_a,
         );
 
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));

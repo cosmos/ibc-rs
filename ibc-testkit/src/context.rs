@@ -5,6 +5,7 @@ use basecoin_store::context::ProvableStore;
 use basecoin_store::impls::InMemoryStore;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::PacketCommitment;
+use ibc::core::channel::types::packet::Receipt;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::client::context::{ClientExecutionContext, ClientValidationContext};
 use ibc::core::client::types::Height;
@@ -16,7 +17,7 @@ use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::{ChannelId, ClientId, ConnectionId, PortId, Sequence};
 use ibc::core::host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, ClientStatePath, CommitmentPath, ConnectionPath,
-    SeqAckPath, SeqRecvPath, SeqSendPath,
+    ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc::core::host::{ExecutionContext, ValidationContext};
 use ibc::primitives::prelude::*;
@@ -457,6 +458,22 @@ where
         let commitment_path = CommitmentPath::new(&port_id, &chan_id, seq);
         self.ibc_store
             .store_packet_commitment(&commitment_path, data)
+            .expect("error writing to store");
+        self
+    }
+
+    /// Bootstraps a packet receipt to this context.
+    ///
+    /// This does not bootstrap any corresponding IBC channel, connection or light client.
+    pub fn with_packet_receipt(
+        mut self,
+        port_id: PortId,
+        chan_id: ChannelId,
+        seq: Sequence,
+    ) -> Self {
+        let receipt_path = ReceiptPath::new(&port_id, &chan_id, seq);
+        self.ibc_store
+            .store_packet_receipt(&receipt_path, Receipt::Ok)
             .expect("error writing to store");
         self
     }
