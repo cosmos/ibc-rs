@@ -119,9 +119,7 @@ where
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, HostError> {
         self.connection_end_store
             .get(StoreHeight::Pending, &ConnectionPath::new(conn_id))
-            .ok_or(HostError::MissingData {
-                description: format!("missing connection end for connection {}", conn_id.clone()),
-            })
+            .ok_or(HostError::MissingConnection(conn_id.clone()))
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {

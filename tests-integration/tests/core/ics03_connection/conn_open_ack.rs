@@ -13,6 +13,7 @@ use ibc::core::host::types::identifiers::{ChainId, ClientId};
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
+use ibc_core_host_types::error::HostError;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_ack;
 use ibc_testkit::fixtures::core::context::TestContextConfig;
@@ -126,7 +127,7 @@ fn conn_open_ack_validate(fxt: &Fixture<MsgConnectionOpenAck>, expect: Expect) {
     let cons_state_height = fxt.msg.consensus_height_of_a_on_b;
 
     match res.unwrap_err() {
-        HandlerError::Connection(ConnectionError::MissingConnection(connection_id)) => {
+        HandlerError::Host(HostError::MissingConnection(connection_id)) => {
             assert_eq!(connection_id, right_connection_id)
         }
         HandlerError::Connection(ConnectionError::InsufficientConsensusHeight {
@@ -187,9 +188,8 @@ fn conn_open_ack_healthy() {
 #[test]
 fn conn_open_ack_no_connection() {
     let fxt = conn_open_ack_fixture(Ctx::New);
-    let expected_err = HandlerError::Connection(ConnectionError::MissingConnection(
-        fxt.msg.conn_id_on_a.clone(),
-    ));
+    let expected_err =
+        HandlerError::Host(HostError::MissingConnection(fxt.msg.conn_id_on_a.clone()));
     conn_open_ack_validate(&fxt, Expect::Failure(Some(expected_err)));
 }
 

@@ -9,6 +9,8 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Error as ProtoError;
 use prost::DecodeError as ProstError;
 
+use crate::identifiers::ConnectionId;
+
 /// Errors that originate from host implementations.
 #[derive(Debug, Display)]
 pub enum HostError {
@@ -36,6 +38,10 @@ pub enum HostError {
     UnknownResource { description: String },
     /// other error: `{description}`
     Other { description: String },
+
+    // this variant exists for testing purposes
+    /// missing connection `{0}`
+    MissingConnection(ConnectionId),
 }
 
 /// Errors that arise when parsing identifiers.
