@@ -3,6 +3,7 @@ on:
   pull_request:
     paths:
       - .github/workflows/no-std.yaml
+      - Makefile
       - '*.toml'
       - Cargo.lock
       - ci/no-std-check/**

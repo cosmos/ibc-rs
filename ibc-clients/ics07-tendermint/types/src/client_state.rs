@@ -240,10 +240,7 @@ impl TryFrom<RawTmClientState> for ClientState {
         let chain_id = ChainId::from_str(raw.chain_id.as_str())?;
 
         let trust_level = {
-            let trust_level = raw
-                .trust_level
-                .clone()
-                .ok_or(Error::MissingTrustingPeriod)?;
+            let trust_level = raw.trust_level.ok_or(Error::MissingTrustingPeriod)?;
             trust_level
                 .try_into()
                 .map_err(|e| Error::InvalidTrustThreshold {

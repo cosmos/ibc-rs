@@ -5,9 +5,8 @@ on:
       - .codecov.yaml
       - .github/workflows/rust.yaml
       - .github/workflows/coverage.yaml
-      - '*.toml'
+      - "*.toml"
       - ci/**
-      - cosmwasm/**
       - ibc/**
       - ibc-core/**
       - ibc-apps/**
