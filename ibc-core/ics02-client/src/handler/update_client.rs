@@ -7,6 +7,7 @@ use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;
 use ibc_core_client_types::UpdateKind;
 use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_core_host::types::error::HostError;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
@@ -77,8 +78,8 @@ where
 
         {
             let event = {
-                let consensus_height = consensus_heights.first().ok_or(ClientError::Other {
-                    description: "client update state returned no updated height".to_string(),
+                let consensus_height = consensus_heights.first().ok_or(HostError::MissingData {
+                    description: "missing updated height in client update state".to_string(),
                 })?;
 
                 IbcEvent::UpdateClient(UpdateClient::new(
