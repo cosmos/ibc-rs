@@ -207,18 +207,14 @@ where
     }
 
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError> {
-        Ok(self
+        if self
             .packet_receipt_store
-            .is_path_set(
-                StoreHeight::Pending,
-                &ReceiptPath::new(
-                    &receipt_path.port_id,
-                    &receipt_path.channel_id,
-                    receipt_path.sequence,
-                ),
-            )
-            .then_some(Receipt::Ok)
-            .ok_or(PacketError::MissingPacketReceipt(receipt_path.sequence))?)
+            .is_path_set(StoreHeight::Pending, receipt_path)
+        {
+            Ok(Receipt::Ok)
+        } else {
+            Ok(Receipt::None)
+        }
     }
 
     fn get_packet_acknowledgement(

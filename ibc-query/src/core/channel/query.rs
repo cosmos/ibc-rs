@@ -279,9 +279,8 @@ where
 {
     let receipt_path = ReceiptPath::new(&request.port_id, &request.channel_id, request.sequence);
 
-    // Receipt only has one enum
     // Unreceived packets are not stored
-    let packet_receipt_data = ibc_ctx.get_packet_receipt(&receipt_path);
+    let packet_receipt_data = ibc_ctx.get_packet_receipt(&receipt_path)?;
 
     let proof_height = match request.query_height {
         Some(height) => height,
