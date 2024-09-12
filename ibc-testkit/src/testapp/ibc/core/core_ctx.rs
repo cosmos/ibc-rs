@@ -150,10 +150,7 @@ where
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
         Ok(self
             .channel_end_store
-            .get(
-                StoreHeight::Pending,
-                &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
-            )
+            .get(StoreHeight::Pending, channel_end_path)
             .ok_or(ChannelError::MissingChannel)?)
     }
 
@@ -163,10 +160,7 @@ where
     ) -> Result<Sequence, ContextError> {
         Ok(self
             .send_sequence_store
-            .get(
-                StoreHeight::Pending,
-                &SeqSendPath::new(&seq_send_path.0, &seq_send_path.1),
-            )
+            .get(StoreHeight::Pending, seq_send_path)
             .ok_or(PacketError::ImplementationSpecific)?)
     }
 
@@ -176,20 +170,14 @@ where
     ) -> Result<Sequence, ContextError> {
         Ok(self
             .recv_sequence_store
-            .get(
-                StoreHeight::Pending,
-                &SeqRecvPath::new(&seq_recv_path.0, &seq_recv_path.1),
-            )
+            .get(StoreHeight::Pending, seq_recv_path)
             .ok_or(PacketError::ImplementationSpecific)?)
     }
 
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError> {
         Ok(self
             .ack_sequence_store
-            .get(
-                StoreHeight::Pending,
-                &SeqAckPath::new(&seq_ack_path.0, &seq_ack_path.1),
-            )
+            .get(StoreHeight::Pending, seq_ack_path)
             .ok_or(PacketError::ImplementationSpecific)?)
     }
 
@@ -199,14 +187,7 @@ where
     ) -> Result<PacketCommitment, ContextError> {
         Ok(self
             .packet_commitment_store
-            .get(
-                StoreHeight::Pending,
-                &CommitmentPath::new(
-                    &commitment_path.port_id,
-                    &commitment_path.channel_id,
-                    commitment_path.sequence,
-                ),
-            )
+            .get(StoreHeight::Pending, commitment_path)
             .ok_or(PacketError::ImplementationSpecific)?)
     }
 
@@ -227,10 +208,7 @@ where
     ) -> Result<AcknowledgementCommitment, ContextError> {
         Ok(self
             .packet_ack_store
-            .get(
-                StoreHeight::Pending,
-                &AckPath::new(&ack_path.port_id, &ack_path.channel_id, ack_path.sequence),
-            )
+            .get(StoreHeight::Pending, ack_path)
             .ok_or(PacketError::PacketAcknowledgementNotFound {
                 sequence: ack_path.sequence,
             })?)
