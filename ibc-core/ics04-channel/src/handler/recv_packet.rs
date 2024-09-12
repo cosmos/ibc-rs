@@ -251,7 +251,7 @@ where
             // Note: We don't check for the packet receipt here because another
             // relayer may have already relayed the packet. If that's the case,
             // we want to avoid failing the transaction and consuming
-            // unnecessary fees. Therefore, IBC core treats this as a no-op.
+            // unnecessary fees.
 
             // Case where the recvPacket is successful and an
             // acknowledgement will be written (not a no-op)
