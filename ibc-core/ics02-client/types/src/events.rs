@@ -759,9 +759,9 @@ mod tests {
                 abci::EventAttribute::from(("consensus_height", "1-10")),
             ],
         },
-        Err(IdentifierError::FailedToParse { 
-            value: "CreateClient".to_string(), 
-            description: "failed to parse event".to_string() 
+        Err(IdentifierError::FailedToParse {
+            value: "CreateClient".to_string(),
+            description: "failed to parse event".to_string()
         }.into())
     )]
     #[case(

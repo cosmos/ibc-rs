@@ -249,8 +249,7 @@ where
                 &msg.packet.chan_id_on_a,
                 msg.packet.seq_on_a,
             );
-            let packet_rec = ctx_b.get_packet_receipt(&receipt_path_on_b);
-            match packet_rec {
+            match ctx_b.get_packet_receipt(&receipt_path_on_b) {
                 Ok(_receipt) => {}
                 Err(e) => return Err(e)?,
             }
