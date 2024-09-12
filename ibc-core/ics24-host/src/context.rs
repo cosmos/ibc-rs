@@ -109,7 +109,14 @@ pub trait ValidationContext {
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, HostError>;
 
-    /// Returns the packet receipt for the given store path
+    /// Returns the packet receipt for the given store path. This receipt is
+    /// used to acknowledge the successful processing of a received packet, and
+    /// must not be pruned.
+    ///
+    /// If the receipt is present in the host's state, return `Receipt::Ok`,
+    /// indicating the packet has already been processed. If the receipt is
+    /// absent, return `Receipt::None`, indicating the packet has not been
+    /// received.
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, HostError>;
 
     /// Returns the packet acknowledgement for the given store path

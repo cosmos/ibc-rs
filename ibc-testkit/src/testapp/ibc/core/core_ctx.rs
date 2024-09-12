@@ -205,22 +205,14 @@ where
     }
 
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, HostError> {
-        self.packet_receipt_store
-            .is_path_set(
-                StoreHeight::Pending,
-                &ReceiptPath::new(
-                    &receipt_path.port_id,
-                    &receipt_path.channel_id,
-                    receipt_path.sequence,
-                ),
-            )
-            .then_some(Receipt::Ok)
-            .ok_or(HostError::FailedToRetrieveFromStore {
-                description: format!(
-                    "failed to retrieve packet receipt {}",
-                    receipt_path.sequence
-                ),
-            })
+        if self
+            .packet_receipt_store
+            .is_path_set(StoreHeight::Pending, receipt_path)
+        {
+            Ok(Receipt::Ok)
+        } else {
+            Ok(Receipt::None)
+        }
     }
 
     fn get_packet_acknowledgement(

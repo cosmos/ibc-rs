@@ -147,6 +147,9 @@ fn recv_packet_validate_happy_path(fixture: Fixture) {
             packet.seq_on_a,
         );
 
+    // Note: For unordered channels, there's no need to set a packet receipt.
+    // The validation will pass whether the receipt exists or not.
+
     let msg_envelope = MsgEnvelope::from(PacketMsg::from(msg));
 
     let res = validate(&context.ibc_store, &router, msg_envelope);

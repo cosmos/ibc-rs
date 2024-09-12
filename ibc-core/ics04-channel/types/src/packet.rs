@@ -21,6 +21,10 @@ pub enum PacketMsgType {
 }
 
 /// Packet receipt, used over unordered channels.
+///
+/// If the receipt is present in the host's state, it's marked as `Ok`,
+/// indicating the packet has already been processed. If the receipt is absent,
+/// it's marked as `None`, meaning the packet has not been received.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -37,6 +41,17 @@ pub enum PacketMsgType {
 #[derive(Clone, Debug)]
 pub enum Receipt {
     Ok,
+    None,
+}
+
+impl Receipt {
+    pub fn is_ok(&self) -> bool {
+        matches!(self, Receipt::Ok)
+    }
+
+    pub fn is_none(&self) -> bool {
+        matches!(self, Receipt::None)
+    }
 }
 
 impl core::fmt::Display for PacketMsgType {
