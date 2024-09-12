@@ -729,6 +729,7 @@ impl From<UpgradeClient> for abci::Event {
 mod tests {
     use core::any::Any;
 
+    use ibc_core_host_types::error::IdentifierError;
     use rstest::*;
 
     use super::*;
@@ -758,9 +759,10 @@ mod tests {
                 abci::EventAttribute::from(("consensus_height", "1-10")),
             ],
         },
-        Err(ClientError::Other {
-            description: "Error in parsing CreateClient event".to_string(),
-        }),
+        Err(IdentifierError::FailedToParse { 
+            value: "CreateClient".to_string(), 
+            description: "failed to parse event".to_string() 
+        }.into())
     )]
     #[case(
         abci::Event {
@@ -770,7 +772,7 @@ mod tests {
                 abci::EventAttribute::from(("consensus_height", "1-10")),
             ],
         },
-        Err(ClientError::MissingAttributeKey),
+        Err(DecodingError::MissingRawData { description: "missing attribute key".to_string() }),
     )]
     fn test_create_client_try_from(
         #[case] event: abci::Event,
