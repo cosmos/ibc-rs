@@ -38,6 +38,38 @@ pub enum HostError {
     Other { description: String },
 }
 
+impl HostError {
+    pub fn invalid_state<T: ToString>(description: T) -> Self {
+        Self::InvalidState {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn missing_state<T: ToString>(description: T) -> Self {
+        Self::MissingState {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn failed_to_update_store<T: ToString>(description: T) -> Self {
+        Self::FailedToUpdateStore {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn failed_to_retrieve_from_store<T: ToString>(description: T) -> Self {
+        Self::FailedToRetrieveFromStore {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn failed_to_store_data<T: ToString>(description: T) -> Self {
+        Self::FailedToStoreData {
+            description: description.to_string(),
+        }
+    }
+}
+
 /// Errors that arise when parsing identifiers.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
