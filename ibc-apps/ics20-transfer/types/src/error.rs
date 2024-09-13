@@ -1,6 +1,4 @@
 //! Defines the token transfer error type
-use core::convert::Infallible;
-
 use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
@@ -8,7 +6,6 @@ use ibc_core::handler::types::error::HandlerError;
 use ibc_core::host::types::error::{DecodingError, HostError, IdentifierError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
-use uint::FromDecStrErr;
 
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
@@ -37,8 +34,6 @@ pub enum TokenTransferError {
     MismatchedPortIds { expected: PortId, actual: PortId },
     /// channel cannot be closed
     UnsupportedClosedChannel,
-    /// empty base denomination
-    EmptyBaseDenom,
     /// failed to deserialize packet data
     FailedToDeserializePacketData,
     /// failed to deserialize acknowledgement
@@ -55,12 +50,6 @@ impl std::error::Error for TokenTransferError {
             Self::Decoding(e) => Some(e),
             _ => None,
         }
-    }
-}
-
-impl From<Infallible> for TokenTransferError {
-    fn from(e: Infallible) -> Self {
-        match e {}
     }
 }
 

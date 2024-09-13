@@ -84,15 +84,47 @@ pub enum DecodingError {
     UnknownTypeUrl(String),
 }
 
-impl From<ProtoError> for DecodingError {
-    fn from(e: ProtoError) -> Self {
-        Self::Protobuf(e)
+impl DecodingError {
+    pub fn invalid_raw_data<T: ToString>(description: T) -> Self {
+        Self::InvalidRawData {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn missing_raw_data<T: ToString>(description: T) -> Self {
+        Self::MissingRawData {
+            description: description.to_string(),
+        }
     }
 }
 
 impl From<IdentifierError> for DecodingError {
     fn from(e: IdentifierError) -> Self {
         Self::Identifier(e)
+    }
+}
+
+impl From<ProtoError> for DecodingError {
+    fn from(e: ProtoError) -> Self {
+        Self::Protobuf(e)
+    }
+}
+
+impl From<Base64Error> for DecodingError {
+    fn from(e: Base64Error) -> Self {
+        Self::Base64(e)
+    }
+}
+
+impl From<FromUtf8Error> for DecodingError {
+    fn from(e: FromUtf8Error) -> Self {
+        Self::StringUtf8(e)
+    }
+}
+
+impl From<Utf8Error> for DecodingError {
+    fn from(e: Utf8Error) -> Self {
+        Self::StrUtf8(e)
     }
 }
 

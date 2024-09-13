@@ -1,22 +1,22 @@
 use alloc::string::{String, ToString};
-
 use displaydoc::Display;
+use tonic::Status;
+
 use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::handler::types::error::HandlerError;
 use ibc::core::host::types::error::{HostError, IdentifierError};
-use tonic::Status;
 
 /// The main error type of the ibc-query crate. This type mainly
 /// serves to surface lower-level errors that occur when executing
 /// ibc-query's codepaths.
 #[derive(Debug, Display)]
 pub enum QueryError {
-    /// context error: `{0}`
+    /// handler error: `{0}`
     Handler(HandlerError),
-    /// identifier error: `{0}`
-    Identifier(IdentifierError),
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// missing proof: `{0}`
     MissingProof(String),
     /// missing field: `{0}`
@@ -37,7 +37,7 @@ impl From<QueryError> for Status {
     fn from(e: QueryError) -> Self {
         match e {
             QueryError::Handler(ctx_err) => Self::internal(ctx_err.to_string()),
-            QueryError::Identifier(id_err) => Self::internal(id_err.to_string()),
+            QueryError::Decoding(de) => Self::internal(de.to_string()),
             QueryError::MissingProof(description) => Self::not_found(description),
             QueryError::MissingField(description) => Self::invalid_argument(description),
         }
@@ -74,9 +74,15 @@ impl From<PacketError> for QueryError {
     }
 }
 
+impl From<DecodingError> for QueryError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
+    }
+}
+
 impl From<IdentifierError> for QueryError {
     fn from(e: IdentifierError) -> Self {
-        Self::Identifier(e)
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 

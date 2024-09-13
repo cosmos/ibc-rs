@@ -2,12 +2,12 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 use ibc_proto::cosmos::base::v1beta1::Coin as ProtoCoin;
 
 use super::amount::Amount;
 use super::denom::{BaseDenom, PrefixedDenom};
-use super::error::TokenTransferError;
 
 /// A `Coin` type with fully qualified `PrefixedDenom`.
 pub type PrefixedCoin = Coin<PrefixedDenom>;
@@ -41,21 +41,21 @@ pub struct Coin<D> {
 
 impl<D: FromStr> Coin<D>
 where
-    D::Err: Into<TokenTransferError>,
+    D::Err: Display,
 {
-    pub fn from_string_list(coin_str: &str) -> Result<Vec<Self>, TokenTransferError> {
+    pub fn from_string_list(coin_str: &str) -> Result<Vec<Self>, DecodingError> {
         coin_str.split(',').map(FromStr::from_str).collect()
     }
 }
 
 impl<D: FromStr> FromStr for Coin<D>
 where
-    D::Err: Into<TokenTransferError>,
+    D::Err: Display,
 {
-    type Err = TokenTransferError;
+    type Err = DecodingError;
 
     #[allow(clippy::assign_op_pattern)]
-    fn from_str(coin_str: &str) -> Result<Self, TokenTransferError> {
+    fn from_str(coin_str: &str) -> Result<Self, DecodingError> {
         // Denominations can be 3 ~ 128 characters long and support letters, followed by either
         // a letter, a number or a separator ('/', ':', '.', '_' or '-').
         // Loosely copy the regex from here:
@@ -76,20 +76,22 @@ where
                     .chars()
                     .all(|x| x.is_alphanumeric() || VALID_DENOM_CHARACTERS.contains(x))
             })
-            .ok_or_else(|| TokenTransferError::InvalidCoin(coin_str.to_owned()))?;
+            .ok_or(DecodingError::invalid_raw_data(format!(
+                "invalid coin: {coin_str}"
+            )))?;
 
         Ok(Coin {
             amount: amount.parse()?,
-            denom: denom.parse().map_err(Into::into)?,
+            denom: denom.parse().map_err(DecodingError::invalid_raw_data)?,
         })
     }
 }
 
 impl<D: FromStr> TryFrom<ProtoCoin> for Coin<D>
 where
-    D::Err: Into<TokenTransferError>,
+    D::Err: Into<DecodingError>,
 {
-    type Error = TokenTransferError;
+    type Error = DecodingError;
 
     fn try_from(proto: ProtoCoin) -> Result<Coin<D>, Self::Error> {
         let denom = D::from_str(&proto.denom).map_err(Into::into)?;
@@ -176,7 +178,7 @@ mod tests {
     fn test_parse_raw_coin_list(
         #[case] coins_str: &str,
         #[case] coins: &[(u64, &str)],
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), DecodingError> {
         assert_eq!(
             RawCoin::from_string_list(coins_str)?,
             coins
