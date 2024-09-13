@@ -42,7 +42,7 @@ where
 
     fn host_height(&self) -> Result<Height, HostError> {
         Height::new(*self.revision_number.lock(), self.store.current_height()).map_err(|e| {
-            HostError::InvalidData {
+            HostError::InvalidState {
                 description: e.to_string(),
             }
         })
@@ -57,7 +57,7 @@ where
     fn client_counter(&self) -> Result<u64, HostError> {
         self.client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
-            .ok_or(HostError::MissingData {
+            .ok_or(HostError::MissingState {
                 description: "missing client counter".to_string(),
             })
     }
@@ -68,7 +68,7 @@ where
         consensus_states_binding
             .get(&height.revision_height())
             .cloned()
-            .ok_or(HostError::MissingData {
+            .ok_or(HostError::MissingState {
                 description: ClientError::MissingLocalConsensusState(*height).to_string(),
             })
     }
@@ -91,7 +91,7 @@ where
                 .latest_height()
                 .revision_number()
         {
-            return Err(HostError::InvalidData {
+            return Err(HostError::InvalidState {
                 description: format!(
                     "client is not in the same revision as the chain. expected: {}, got: {}",
                     self_revision_number,
@@ -104,7 +104,7 @@ where
 
         let host_current_height = latest_height.increment();
         if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
-            return Err(HostError::InvalidData {
+            return Err(HostError::InvalidState {
                 description: format!(
                     "invalid counterparty client state: client latest height {} should be less than chain height {}",
                     client_state_of_host_on_counterparty.latest_height(),
@@ -119,7 +119,7 @@ where
     fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, HostError> {
         self.connection_end_store
             .get(StoreHeight::Pending, &ConnectionPath::new(conn_id))
-            .ok_or(HostError::MissingData {
+            .ok_or(HostError::MissingState {
                 description: format!("missing connection end for connection {}", conn_id.clone()),
             })
     }
@@ -133,7 +133,7 @@ where
     fn connection_counter(&self) -> Result<u64, HostError> {
         self.conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
-            .ok_or(HostError::MissingData {
+            .ok_or(HostError::MissingState {
                 description: "missing connection counter".to_string(),
             })
     }
@@ -338,7 +338,7 @@ where
                     consensus_path.revision_number,
                     consensus_path.revision_height,
                 )
-                .map_err(|e| HostError::InvalidData {
+                .map_err(|e| HostError::InvalidState {
                     description: e.to_string(),
                 })?;
                 let client_state = self
@@ -374,7 +374,7 @@ where
                     consensus_path.revision_number,
                     consensus_path.revision_height,
                 )
-                .map_err(|e| HostError::InvalidData {
+                .map_err(|e| HostError::InvalidState {
                     description: e.to_string(),
                 })
             })

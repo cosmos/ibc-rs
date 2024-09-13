@@ -86,7 +86,7 @@ pub trait ValidationContext {
             &self.get_compatible_versions(),
             counterparty_candidate_versions,
         )
-        .map_err(|e| HostError::MissingData {
+        .map_err(|e| HostError::MissingState {
             description: e.to_string(),
         })
     }

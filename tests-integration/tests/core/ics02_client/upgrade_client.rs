@@ -143,7 +143,7 @@ fn msg_upgrade_client_healthy() {
 #[test]
 fn upgrade_client_fail_nonexisting_client() {
     let fxt = msg_upgrade_client_fixture(Ctx::Default, Msg::Default);
-    let expected_err = HandlerError::Host(HostError::MissingData {
+    let expected_err = HandlerError::Host(HostError::MissingState {
         description: format!(
             "missing client state for client {0}",
             fxt.msg.client_id.clone()

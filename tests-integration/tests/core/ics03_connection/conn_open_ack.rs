@@ -127,7 +127,7 @@ fn conn_open_ack_validate(fxt: &Fixture<MsgConnectionOpenAck>, expect: Expect) {
     let cons_state_height = fxt.msg.consensus_height_of_a_on_b;
 
     match res.unwrap_err() {
-        HandlerError::Host(HostError::MissingData { ref description }) => {
+        HandlerError::Host(HostError::MissingState { ref description }) => {
             assert!(description.contains(right_connection_id.to_string().as_str()))
         }
         HandlerError::Connection(ConnectionError::InsufficientConsensusHeight {
@@ -188,7 +188,7 @@ fn conn_open_ack_healthy() {
 #[test]
 fn conn_open_ack_no_connection() {
     let fxt = conn_open_ack_fixture(Ctx::New);
-    let expected_err = HandlerError::Host(HostError::MissingData {
+    let expected_err = HandlerError::Host(HostError::MissingState {
         description: format!(
             "missing connection end for connection {}",
             fxt.msg.conn_id_on_a.clone()

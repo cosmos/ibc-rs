@@ -14,10 +14,10 @@ use prost::DecodeError as ProstError;
 pub enum HostError {
     /// application module error: `{description}`
     AppModule { description: String },
-    /// invalid data: `{description}`
-    InvalidData { description: String },
-    /// missing data: `{description}`
-    MissingData { description: String },
+    /// invalid state: `{description}`
+    InvalidState { description: String },
+    /// missing state: `{description}`
+    MissingState { description: String },
     /// failed to update store: `{description}`
     FailedToUpdateStore { description: String },
     /// failed to store data: `{description}`

@@ -76,7 +76,7 @@ where
                     consensus_path.revision_number,
                     consensus_path.revision_height,
                 )
-                .map_err(|e| HostError::InvalidData {
+                .map_err(|e| HostError::InvalidState {
                     description: e.to_string(),
                 })
             })
@@ -115,7 +115,7 @@ where
                     })
             })
             .transpose()
-            .map_err(|e| HostError::MissingData {
+            .map_err(|e| HostError::MissingState {
                 description: e.to_string(),
             })?;
 
@@ -154,7 +154,7 @@ where
                     })
             })
             .transpose()
-            .map_err(|e| HostError::MissingData {
+            .map_err(|e| HostError::MissingState {
                 description: e.to_string(),
             })?;
 
@@ -185,7 +185,7 @@ where
             client_cons_state_path.revision_number,
             client_cons_state_path.revision_height,
         )
-        .map_err(|e| HostError::InvalidData {
+        .map_err(|e| HostError::InvalidState {
             description: e.to_string(),
         })?;
         let consensus_state = self

@@ -38,9 +38,9 @@ where
     );
     let old_consensus_state = client_val_ctx
         .consensus_state(&old_client_cons_state_path)
-        .map_err(|_| HostError::MissingData {
+        .map_err(|_| HostError::MissingState {
             description: format!(
-                "missing consensus state for client {0} at height {1}",
+                "missing consensus state for client {} at height {}",
                 client_id,
                 old_client_state.latest_height()
             ),
