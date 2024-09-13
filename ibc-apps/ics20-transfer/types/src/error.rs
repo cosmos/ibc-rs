@@ -39,6 +39,10 @@ pub enum TokenTransferError {
     UnsupportedClosedChannel,
     /// empty base denomination
     EmptyBaseDenom,
+    /// failed to deserialize packet data
+    FailedToDeserializePacketData,
+    /// failed to deserialize acknowledgement
+    FailedToDeserializeAck,
 }
 
 #[cfg(feature = "std")]
