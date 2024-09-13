@@ -105,7 +105,7 @@ where
                 self.consensus_state_store
                     .get(StoreHeight::Pending, &path)
                     .ok_or_else(|| {
-                        HostError::failed_to_retrieve_from_store(format!(
+                        HostError::failed_to_retrieve(format!(
                             "missing consensus state for client {} at height {}",
                             client_id.clone(),
                             *height
@@ -142,7 +142,7 @@ where
                 self.consensus_state_store
                     .get(StoreHeight::Pending, &path)
                     .ok_or_else(|| {
-                        HostError::failed_to_retrieve_from_store(format!(
+                        HostError::failed_to_retrieve(format!(
                             "missing consensus state for client {} at height {}",
                             client_id.clone(),
                             *height
@@ -166,7 +166,7 @@ where
     fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, HostError> {
         self.client_state_store
             .get(StoreHeight::Pending, &ClientStatePath(client_id.clone()))
-            .ok_or(HostError::failed_to_retrieve_from_store(format!(
+            .ok_or(HostError::failed_to_retrieve(format!(
                 "missing client state for client {}",
                 client_id.clone()
             )))
@@ -184,7 +184,7 @@ where
         let consensus_state = self
             .consensus_state_store
             .get(StoreHeight::Pending, client_cons_state_path)
-            .ok_or(HostError::failed_to_retrieve_from_store(format!(
+            .ok_or(HostError::failed_to_retrieve(format!(
                 "missing consensus state for client {} at height {}",
                 client_cons_state_path.client_id.clone(),
                 height
@@ -208,7 +208,7 @@ where
         let processed_timestamp = self
             .client_processed_times
             .get(StoreHeight::Pending, &client_update_time_path)
-            .ok_or(HostError::failed_to_retrieve_from_store(format!(
+            .ok_or(HostError::failed_to_retrieve(format!(
                 "missing client update metadata for client {} at height {}",
                 client_id.clone(),
                 *height,
@@ -221,7 +221,7 @@ where
         let processed_height = self
             .client_processed_heights
             .get(StoreHeight::Pending, &client_update_height_path)
-            .ok_or(HostError::failed_to_retrieve_from_store(format!(
+            .ok_or(HostError::failed_to_retrieve(format!(
                 "missing client update metadata for client {} at height {}",
                 client_id.clone(),
                 *height,
@@ -245,9 +245,7 @@ where
     ) -> Result<(), HostError> {
         self.client_state_store
             .set(client_state_path, client_state)
-            .map_err(|e| HostError::FailedToStoreData {
-                description: format!("{e:?}"),
-            })?;
+            .map_err(|e| HostError::failed_to_store(format!("{e:?}")))?;
 
         Ok(())
     }
@@ -260,9 +258,7 @@ where
     ) -> Result<(), HostError> {
         self.consensus_state_store
             .set(consensus_state_path, consensus_state)
-            .map_err(|e| HostError::FailedToStoreData {
-                description: format!("{e:?}"),
-            })?;
+            .map_err(|e| HostError::failed_to_store(format!("{e:?}")))?;
         Ok(())
     }
 
@@ -310,9 +306,7 @@ where
         );
         self.client_processed_times
             .set(client_update_time_path, host_timestamp)
-            .map_err(|e| HostError::FailedToStoreData {
-                description: format!("{e:?}"),
-            })?;
+            .map_err(|e| HostError::failed_to_store(format!("{e:?}")))?;
         let client_update_height_path = ClientUpdateHeightPath::new(
             client_id,
             height.revision_number(),
@@ -320,9 +314,7 @@ where
         );
         self.client_processed_heights
             .set(client_update_height_path, host_height)
-            .map_err(|e| HostError::FailedToStoreData {
-                description: format!("{e:?}"),
-            })?;
+            .map_err(|e| HostError::failed_to_store(format!("{e:?}")))?;
         Ok(())
     }
 }
