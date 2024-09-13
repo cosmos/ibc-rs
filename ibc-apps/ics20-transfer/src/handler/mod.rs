@@ -22,7 +22,7 @@ pub fn refund_packet_token_execute(
         .sender
         .clone()
         .try_into()
-        .map_err(|_| HostError::FailedToParseData {
+        .map_err(|_| HostError::FailedToParse {
             description: "invalid signer".to_string(),
         })?;
 
@@ -53,7 +53,7 @@ pub fn refund_packet_token_validate(
         .sender
         .clone()
         .try_into()
-        .map_err(|_| HostError::FailedToParseData {
+        .map_err(|_| HostError::FailedToParse {
             description: "invalid signer".to_string(),
         })?;
 

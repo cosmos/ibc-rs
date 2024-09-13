@@ -27,7 +27,7 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
     let receiver_account = data.receiver.clone().try_into().map_err(|_| {
         (
             ModuleExtras::empty(),
-            HostError::FailedToParseData {
+            HostError::FailedToParse {
                 description: "account ID".to_string(),
             }
             .into(),

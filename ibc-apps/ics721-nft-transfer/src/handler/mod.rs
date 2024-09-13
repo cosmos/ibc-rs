@@ -3,8 +3,6 @@
 mod on_recv_packet;
 mod send_transfer;
 
-use ibc_core::channel::types::packet::Packet;
-use ibc_core::handler::types::error::HandlerError;
 pub use on_recv_packet::*;
 pub use send_transfer::*;
 
@@ -12,6 +10,7 @@ use crate::context::{NftTransferExecutionContext, NftTransferValidationContext};
 use crate::types::error::NftTransferError;
 use crate::types::is_sender_chain_source;
 use crate::types::packet::PacketData;
+use ibc_core::channel::types::packet::Packet;
 
 pub fn refund_packet_nft_execute(
     ctx_a: &mut impl NftTransferExecutionContext,
@@ -38,7 +37,7 @@ pub fn refund_packet_nft_execute(
                     &data.class_id,
                     token_id,
                 )
-                .map_err(|e| NftTransferError::Handler(HandlerError::Host(e)))
+                .map_err(NftTransferError::from)
         })
     }
     // mint vouchers back to sender
@@ -47,9 +46,8 @@ pub fn refund_packet_nft_execute(
             let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
             let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
 
-            let _ = ctx_a
-                .mint_nft_execute(&sender, &data.class_id, token_id, token_uri, token_data)
-                .map_err(|_| NftTransferError::Handler);
+            let _ =
+                ctx_a.mint_nft_execute(&sender, &data.class_id, token_id, token_uri, token_data);
         }
 
         Ok(())
@@ -81,16 +79,15 @@ pub fn refund_packet_nft_validate(
                     &data.class_id,
                     token_id,
                 )
-                .map_err(|e| NftTransferError::Handler(HandlerError::Host(e)))
+                .map_err(NftTransferError::from)
         })
     } else {
         for (i, token_id) in data.token_ids.0.iter().enumerate() {
             let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
             let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
 
-            let _ = ctx_a
-                .mint_nft_validate(&sender, &data.class_id, token_id, token_uri, token_data)
-                .map_err(|_| NftTransferError::Handler);
+            let _ =
+                ctx_a.mint_nft_validate(&sender, &data.class_id, token_id, token_uri, token_data);
         }
 
         Ok(())

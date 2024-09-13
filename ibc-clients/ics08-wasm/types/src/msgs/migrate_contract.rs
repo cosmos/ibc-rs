@@ -39,7 +39,7 @@ impl TryFrom<RawMsgMigrateContract> for MsgMigrateContract {
     fn try_from(value: RawMsgMigrateContract) -> Result<Self, Self::Error> {
         Ok(Self {
             signer: Signer::from(value.signer),
-            client_id: ClientId::from_str(&value.client_id).map_err(DecodingError::Identifier)?,
+            client_id: ClientId::from_str(&value.client_id)?,
             checksum: value.checksum,
             msg: value.msg,
         })

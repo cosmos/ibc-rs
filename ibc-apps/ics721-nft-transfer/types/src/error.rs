@@ -1,5 +1,7 @@
 //! Defines the Non-Fungible Token Transfer (ICS-721) error types.
+use derive_more::From;
 use displaydoc::Display;
+
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::HandlerError;
@@ -7,7 +9,7 @@ use ibc_core::host::types::error::{DecodingError, HostError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 
-#[derive(Display, Debug, derive_more::From)]
+#[derive(Display, Debug, From)]
 pub enum NftTransferError {
     /// handler error: `{0}`
     Handler(HandlerError),

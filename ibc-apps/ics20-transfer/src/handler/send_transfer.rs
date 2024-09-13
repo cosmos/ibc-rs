@@ -62,7 +62,7 @@ where
             .sender
             .clone()
             .try_into()
-            .map_err(|_| HostError::FailedToParseData {
+            .map_err(|_| HostError::FailedToParse {
                 description: "invalid signer".to_string(),
             })?;
 
@@ -137,7 +137,7 @@ where
             .sender
             .clone()
             .try_into()
-            .map_err(|_| HostError::FailedToParseData {
+            .map_err(|_| HostError::FailedToParse {
                 description: "invalid signer".to_string(),
             })?;
 

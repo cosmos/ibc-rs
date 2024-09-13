@@ -17,13 +17,11 @@ pub enum HostError {
     /// missing state: `{description}`
     MissingState { description: String },
     /// failed to update store: `{description}`
-    FailedToUpdateStore { description: String },
-    /// failed to store data: `{description}`
-    FailedToStoreData { description: String },
-    /// failed to retrieve data from store: `{description}`
-    FailedToRetrieveFromStore { description: String },
+    FailedToStore { description: String },
+    /// failed to retrieve from store: `{description}`
+    FailedToRetrieve { description: String },
     /// failed to parse data: `{description}`
-    FailedToParseData { description: String },
+    FailedToParse { description: String },
     /// failed to validate client: `{description}`
     FailedToValidateClient { description: String },
     /// non-existent type: `{description}`
@@ -49,20 +47,14 @@ impl HostError {
         }
     }
 
-    pub fn failed_to_update_store<T: ToString>(description: T) -> Self {
-        Self::FailedToUpdateStore {
+    pub fn failed_to_retrieve<T: ToString>(description: T) -> Self {
+        Self::FailedToRetrieve {
             description: description.to_string(),
         }
     }
 
-    pub fn failed_to_retrieve_from_store<T: ToString>(description: T) -> Self {
-        Self::FailedToRetrieveFromStore {
-            description: description.to_string(),
-        }
-    }
-
-    pub fn failed_to_store_data<T: ToString>(description: T) -> Self {
-        Self::FailedToStoreData {
+    pub fn failed_to_store<T: ToString>(description: T) -> Self {
+        Self::FailedToStore {
             description: description.to_string(),
         }
     }
