@@ -30,8 +30,8 @@ pub enum HostError {
     FailedToValidateClient { description: String },
     /// non-existent type: `{description}`
     NonexistentType { description: String },
-    /// unexpected data: `{description}`
-    UnexpectedData { description: String },
+    /// unexpected state: `{description}`
+    UnexpectedState { description: String },
     /// unknown resource: `{description}`
     UnknownResource { description: String },
     /// other error: `{description}`

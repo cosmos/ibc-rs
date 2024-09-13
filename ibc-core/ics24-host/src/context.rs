@@ -86,9 +86,7 @@ pub trait ValidationContext {
             &self.get_compatible_versions(),
             counterparty_candidate_versions,
         )
-        .map_err(|e| HostError::MissingState {
-            description: e.to_string(),
-        })
+        .map_err(|e| HostError::missing_state(e.to_string()))
     }
 
     /// Returns the `ChannelEnd` for the given `port_id` and `chan_id`.

@@ -76,9 +76,7 @@ where
                     consensus_path.revision_number,
                     consensus_path.revision_height,
                 )
-                .map_err(|e| HostError::InvalidState {
-                    description: e.to_string(),
-                })
+                .map_err(|e| HostError::invalid_state(e.to_string()))
             })
             .collect::<Result<Vec<_>, _>>()
     }
@@ -106,18 +104,16 @@ where
             .map(|path| {
                 self.consensus_state_store
                     .get(StoreHeight::Pending, &path)
-                    .ok_or_else(|| HostError::FailedToRetrieveFromStore {
-                        description: format!(
+                    .ok_or_else(|| {
+                        HostError::failed_to_retrieve_from_store(format!(
                             "missing consensus state for client {} at height {}",
                             client_id.clone(),
                             *height
-                        ),
+                        ))
                     })
             })
             .transpose()
-            .map_err(|e| HostError::MissingState {
-                description: e.to_string(),
-            })?;
+            .map_err(|e| HostError::missing_state(e.to_string()))?;
 
         Ok(consensus_state)
     }
@@ -145,18 +141,16 @@ where
             .map(|path| {
                 self.consensus_state_store
                     .get(StoreHeight::Pending, &path)
-                    .ok_or_else(|| HostError::FailedToRetrieveFromStore {
-                        description: format!(
+                    .ok_or_else(|| {
+                        HostError::failed_to_retrieve_from_store(format!(
                             "missing consensus state for client {} at height {}",
                             client_id.clone(),
                             *height
-                        ),
+                        ))
                     })
             })
             .transpose()
-            .map_err(|e| HostError::MissingState {
-                description: e.to_string(),
-            })?;
+            .map_err(|e| HostError::missing_state(e.to_string()))?;
 
         Ok(consensus_state)
     }
@@ -172,9 +166,10 @@ where
     fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, HostError> {
         self.client_state_store
             .get(StoreHeight::Pending, &ClientStatePath(client_id.clone()))
-            .ok_or(HostError::FailedToRetrieveFromStore {
-                description: format!("missing client state for client {}", client_id.clone()),
-            })
+            .ok_or(HostError::failed_to_retrieve_from_store(format!(
+                "missing client state for client {}",
+                client_id.clone()
+            )))
     }
 
     fn consensus_state(
@@ -185,19 +180,15 @@ where
             client_cons_state_path.revision_number,
             client_cons_state_path.revision_height,
         )
-        .map_err(|e| HostError::InvalidState {
-            description: e.to_string(),
-        })?;
+        .map_err(|e| HostError::invalid_state(e.to_string()))?;
         let consensus_state = self
             .consensus_state_store
             .get(StoreHeight::Pending, client_cons_state_path)
-            .ok_or(HostError::FailedToRetrieveFromStore {
-                description: format!(
-                    "missing consensus state for client {} at height {}",
-                    client_cons_state_path.client_id.clone(),
-                    height
-                ),
-            })?;
+            .ok_or(HostError::failed_to_retrieve_from_store(format!(
+                "missing consensus state for client {} at height {}",
+                client_cons_state_path.client_id.clone(),
+                height
+            )))?;
 
         Ok(consensus_state)
     }
@@ -217,13 +208,11 @@ where
         let processed_timestamp = self
             .client_processed_times
             .get(StoreHeight::Pending, &client_update_time_path)
-            .ok_or(HostError::FailedToRetrieveFromStore {
-                description: format!(
-                    "missing client update metadata for client {} at height {}",
-                    client_id.clone(),
-                    *height,
-                ),
-            })?;
+            .ok_or(HostError::failed_to_retrieve_from_store(format!(
+                "missing client update metadata for client {} at height {}",
+                client_id.clone(),
+                *height,
+            )))?;
         let client_update_height_path = ClientUpdateHeightPath::new(
             client_id.clone(),
             height.revision_number(),
@@ -232,13 +221,11 @@ where
         let processed_height = self
             .client_processed_heights
             .get(StoreHeight::Pending, &client_update_height_path)
-            .ok_or(HostError::FailedToRetrieveFromStore {
-                description: format!(
-                    "missing client update metadata for client {} at height {}",
-                    client_id.clone(),
-                    *height,
-                ),
-            })?;
+            .ok_or(HostError::failed_to_retrieve_from_store(format!(
+                "missing client update metadata for client {} at height {}",
+                client_id.clone(),
+                *height,
+            )))?;
 
         Ok((processed_timestamp, processed_height))
     }

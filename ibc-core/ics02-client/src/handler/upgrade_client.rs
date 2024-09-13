@@ -38,12 +38,12 @@ where
     );
     let old_consensus_state = client_val_ctx
         .consensus_state(&old_client_cons_state_path)
-        .map_err(|_| HostError::MissingState {
-            description: format!(
+        .map_err(|_| {
+            HostError::missing_state(format!(
                 "missing consensus state for client {} at height {}",
                 client_id,
                 old_client_state.latest_height()
-            ),
+            ))
         })?;
 
     // Validate the upgraded client state and consensus state and verify proofs against the root

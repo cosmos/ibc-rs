@@ -79,9 +79,9 @@ where
         {
             let event = {
                 let consensus_height =
-                    consensus_heights.first().ok_or(HostError::MissingState {
-                        description: "missing updated height in client update state".to_string(),
-                    })?;
+                    consensus_heights.first().ok_or(HostError::missing_state(
+                        "missing updated height in client update state".to_string(),
+                    ))?;
 
                 IbcEvent::UpdateClient(UpdateClient::new(
                     client_id,

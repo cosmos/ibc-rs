@@ -25,7 +25,7 @@ pub trait ValidateSelfClientContext {
             })?;
 
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(HostError::UnexpectedData {
+            return Err(HostError::UnexpectedState {
                 description: "client unexpectedly frozen".to_string(),
             });
         }
@@ -33,45 +33,37 @@ pub trait ValidateSelfClientContext {
         let self_chain_id = self.chain_id();
 
         if self_chain_id != &client_state_of_host_on_counterparty.chain_id {
-            return Err(HostError::InvalidState {
-                description: format!(
-                    "invalid chain ID: expected {}, actual {}",
-                    self_chain_id, client_state_of_host_on_counterparty.chain_id
-                ),
-            });
+            return Err(HostError::invalid_state(format!(
+                "invalid chain ID: expected {}, actual {}",
+                self_chain_id, client_state_of_host_on_counterparty.chain_id
+            )));
         }
 
         let latest_height = client_state_of_host_on_counterparty.latest_height;
         let self_revision_number = self_chain_id.revision_number();
 
         if self_revision_number != latest_height.revision_number() {
-            return Err(HostError::InvalidState {
-                description: format!(
-                    "mismatched client revision numbers; expected {}, actual {}",
-                    self_revision_number,
-                    latest_height.revision_number()
-                ),
-            });
+            return Err(HostError::invalid_state(format!(
+                "mismatched client revision numbers; expected {}, actual {}",
+                self_revision_number,
+                latest_height.revision_number()
+            )));
         }
 
         if latest_height >= self.host_current_height() {
-            return Err(HostError::InvalidState {
-                description: format!(
-                    "client latest height {} should be less than chain height {}",
-                    latest_height,
-                    self.host_current_height()
-                ),
-            });
+            return Err(HostError::invalid_state(format!(
+                "client latest height {} should be less than chain height {}",
+                latest_height,
+                self.host_current_height()
+            )));
         }
 
         if self.proof_specs() != &client_state_of_host_on_counterparty.proof_specs {
-            return Err(HostError::InvalidState {
-                description: format!(
-                    "invalid client proof specs; expected {:?}, actual {:?}",
-                    self.proof_specs(),
-                    client_state_of_host_on_counterparty.proof_specs
-                ),
-            });
+            return Err(HostError::invalid_state(format!(
+                "invalid client proof specs; expected {:?}, actual {:?}",
+                self.proof_specs(),
+                client_state_of_host_on_counterparty.proof_specs
+            )));
         }
 
         let _ = {
@@ -81,41 +73,35 @@ pub trait ValidateSelfClientContext {
                 trust_level.numerator(),
                 trust_level.denominator(),
             )
-            .map_err(|e| HostError::InvalidState {
-                description: e.to_string(),
-            })?
+            .map_err(|e| HostError::invalid_state(e.to_string()))?
         };
 
         if self.unbonding_period() != client_state_of_host_on_counterparty.unbonding_period {
-            return Err(HostError::InvalidState {
-                description: format!(
-                    "invalid unbonding period; expected {:?}, actual {:?}",
-                    self.unbonding_period(),
-                    client_state_of_host_on_counterparty.unbonding_period,
-                ),
-            });
+            return Err(HostError::invalid_state(format!(
+                "invalid unbonding period; expected {:?}, actual {:?}",
+                self.unbonding_period(),
+                client_state_of_host_on_counterparty.unbonding_period,
+            )));
         }
 
         if client_state_of_host_on_counterparty.unbonding_period
             < client_state_of_host_on_counterparty.trusting_period
         {
-            return Err(HostError::InvalidState { description: format!(
+            return Err(HostError::invalid_state(format!(
                 "invalid counterparty client state: unbonding period must be greater than trusting period; unbonding period ({:?}) < trusting period ({:?})",
                 client_state_of_host_on_counterparty.unbonding_period,
                 client_state_of_host_on_counterparty.trusting_period
-            )});
+            )));
         }
 
         if !client_state_of_host_on_counterparty.upgrade_path.is_empty()
             && self.upgrade_path() != client_state_of_host_on_counterparty.upgrade_path
         {
-            return Err(HostError::InvalidState {
-                description: format!(
-                    "invalid upgrade path; expected {:?}, actual {:?}",
-                    self.upgrade_path(),
-                    client_state_of_host_on_counterparty.upgrade_path
-                ),
-            });
+            return Err(HostError::invalid_state(format!(
+                "invalid upgrade path; expected {:?}, actual {:?}",
+                self.upgrade_path(),
+                client_state_of_host_on_counterparty.upgrade_path
+            )));
         }
 
         Ok(())
