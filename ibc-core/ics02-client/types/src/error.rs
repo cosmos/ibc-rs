@@ -1,8 +1,8 @@
 //! Defines the client error type
 
 use core::convert::Infallible;
-
 use displaydoc::Display;
+
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::{DecodingError, HostError};
 use ibc_core_host_types::identifiers::ClientId;
