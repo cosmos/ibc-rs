@@ -31,20 +31,33 @@ host developers to decide whether these errors are relevant or not. In other wor
 distinction between host- and protocol-level errors is not reflected in ibc-rs's error
 handling methodology.
 
-
-
-`ibc-rs`'s myriad `Error` types (see [ics07][ics07-error]
-and [ics25][ics25-error] errors for examples) expose too many variants that are too specific;
-most of them are not errors that would ever be exposed to users, much less reacted to with 
-bespoke logic. 
-
-Since it's unrealistic to expect that users would handle these errors, they should be regarded
-as internal protocol errors that aim to accomplish (2).
+Additionally, in order to improve the readability 
 
 ### Proposal
 
-In light of this rationale, this ADR proposes a restructuring of `ibc-rs`'s error types such
-that each error type adheres to one and only one classification: protocol errors and host errors.
+In light of the rationale stated above, we propose changing ibc-rs's top-level error type
+to make clear the distinction between host-level and protocol-level errors. Additionally,
+we're also opting to rename `ContextError` to `HandlerError`. This makes it more clear
+semantically that the top-level error type should solely be returned by handler methods.
+The `HandlerError` type will continue to expose errors from the core ibc-rs modules. It
+will also now expose an additional variant for ICS25 Host errors, those originating from
+host implementations:
+
+```diff
+- pub enum ContextError {
++ pub enum HandlerError {
+    /// ICS02 Client error: `{0}`
+    Client(ClientError),
+    /// ICS03 Connection error: `{0}`
+    Connection(ConnectionError),
+    /// ICS04 Channel error: `{0}`
+    Channel(ChannelError),
+    /// ICS04 Packet error: `{0}`
+    Packet(PacketError),
++   /// ICS25 Host error: `{0}`
++   Host(HostError)
+}
+```
 
 #### Protocol Errors
 
