@@ -116,7 +116,7 @@ impl PacketData {
 }
 
 impl TryFrom<RawPacketData> for PacketData {
-    type Error = NftTransferError;
+    type Error = DecodingError;
 
     fn try_from(raw_pkt_data: RawPacketData) -> Result<Self, Self::Error> {
         let class_uri = if raw_pkt_data.class_uri.is_empty() {
@@ -127,10 +127,8 @@ impl TryFrom<RawPacketData> for PacketData {
         let class_data = if raw_pkt_data.class_data.is_empty() {
             None
         } else {
-            let decoded = BASE64_STANDARD
-                .decode(raw_pkt_data.class_data)
-                .map_err(DecodingError::Base64)?;
-            let data_str = String::from_utf8(decoded).map_err(DecodingError::StringUtf8)?;
+            let decoded = BASE64_STANDARD.decode(raw_pkt_data.class_data)?;
+            let data_str = String::from_utf8(decoded)?;
             Some(data_str.parse()?)
         };
 
@@ -141,10 +139,8 @@ impl TryFrom<RawPacketData> for PacketData {
             .token_data
             .iter()
             .map(|data| {
-                let decoded = BASE64_STANDARD
-                    .decode(data)
-                    .map_err(DecodingError::Base64)?;
-                let data_str = String::from_utf8(decoded).map_err(DecodingError::StringUtf8)?;
+                let decoded = BASE64_STANDARD.decode(data)?;
+                let data_str = String::from_utf8(decoded)?;
                 data_str.parse()
             })
             .collect();
@@ -159,6 +155,7 @@ impl TryFrom<RawPacketData> for PacketData {
             raw_pkt_data.receiver.into(),
             raw_pkt_data.memo.into(),
         )
+        .map_err(DecodingError::invalid_raw_data)
     }
 }
 

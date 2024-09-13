@@ -1,8 +1,6 @@
 //! Defines the Non-Fungible Token Transfer message type
 
-use ibc_core::channel::types::error::PacketError;
 use ibc_core::channel::types::timeout::{TimeoutHeight, TimeoutTimestamp};
-use ibc_core::handler::types::error::ContextError;
 use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
@@ -49,19 +47,18 @@ pub struct MsgTransfer {
 }
 
 impl TryFrom<RawMsgTransfer> for MsgTransfer {
-    type Error = NftTransferError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
-        let timeout_height_on_b: TimeoutHeight = raw_msg
-            .timeout_height
-            .try_into()
-            .map_err(ContextError::from)?;
+        let timeout_height_on_b: TimeoutHeight = raw_msg.timeout_height.try_into()?;
 
         let timeout_timestamp_on_b: TimeoutTimestamp = raw_msg.timeout_timestamp.into();
 
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !timeout_height_on_b.is_set() && !timeout_timestamp_on_b.is_set() {
-            return Err(ContextError::from(PacketError::MissingTimeout))?;
+            return Err(DecodingError::missing_raw_data(
+                "missing timeout height or timeout timestamp",
+            ));
         }
 
         let memo = if raw_msg.memo.is_empty() {
