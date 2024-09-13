@@ -140,13 +140,11 @@ where
                 StoreHeight::Pending,
                 &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
             )
-            .ok_or(HostError::NonexistentType {
-                description: format!(
-                    "non-existent channel {} in port {}",
-                    channel_end_path.1.clone(),
-                    channel_end_path.0.clone()
-                ),
-            })
+            .ok_or(HostError::missing_state(format!(
+                "missing channel {} in port {}",
+                channel_end_path.1.clone(),
+                channel_end_path.0.clone()
+            )))
     }
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, HostError> {
