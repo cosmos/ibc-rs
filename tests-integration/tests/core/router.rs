@@ -407,8 +407,8 @@ fn routing_module_and_keepers() {
         let res = match test.msg.clone() {
             TestMsg::Ics26(msg) => dispatch(&mut ctx.ibc_store, &mut router, msg),
             TestMsg::Ics20(msg) => send_transfer(&mut ctx.ibc_store, &mut DummyTransferModule, msg)
-                .map_err(|e: TokenTransferError| HostError::AppModule {
-                    description: e.to_string(),
+                .map_err(|e: TokenTransferError| HostError::Other {
+                    description: format!("token transfer application error: {e}"),
                 })
                 .map_err(HandlerError::from),
         };

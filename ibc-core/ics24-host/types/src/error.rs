@@ -12,8 +12,6 @@ use prost::DecodeError as ProstError;
 /// Errors that originate from host implementations.
 #[derive(Debug, Display)]
 pub enum HostError {
-    /// application module error: `{description}`
-    AppModule { description: String },
     /// invalid state: `{description}`
     InvalidState { description: String },
     /// missing state: `{description}`
