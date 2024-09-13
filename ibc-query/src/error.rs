@@ -1,12 +1,12 @@
 use alloc::string::{String, ToString};
-use displaydoc::Display;
-use tonic::Status;
 
+use displaydoc::Display;
 use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::client::types::error::ClientError;
 use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::handler::types::error::HandlerError;
 use ibc::core::host::types::error::{DecodingError, HostError, IdentifierError};
+use tonic::Status;
 
 /// The main error type of the ibc-query crate. This type mainly
 /// serves to surface lower-level errors that occur when executing

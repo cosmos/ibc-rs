@@ -1,6 +1,5 @@
 //! Defines the token transfer error type
 use displaydoc::Display;
-
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::HandlerError;
