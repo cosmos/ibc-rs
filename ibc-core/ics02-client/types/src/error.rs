@@ -1,6 +1,5 @@
 //! Defines the client error type
 
-use core::convert::Infallible;
 use displaydoc::Display;
 
 use ibc_core_commitment_types::error::CommitmentError;
@@ -77,12 +76,6 @@ impl From<&'static str> for ClientError {
         Self::Other {
             description: s.to_string(),
         }
-    }
-}
-
-impl From<Infallible> for ClientError {
-    fn from(value: Infallible) -> Self {
-        match value {}
     }
 }
 
