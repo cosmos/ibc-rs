@@ -37,6 +37,10 @@ pub enum NftTransferError {
     MismatchedChannelOrders { expected: Order, actual: Order },
     /// mismatched port IDs: expected `{expected}`, actual `{actual}`
     MismatchedPortIds { expected: PortId, actual: PortId },
+    /// failed to deserialize packet data
+    FailedToDeserializePacketData,
+    /// failed to deserialize acknowledgement
+    FailedToDeserializeAck,
     /// failed to parse account ID
     FailedToParseAccount,
     /// channel cannot be closed
