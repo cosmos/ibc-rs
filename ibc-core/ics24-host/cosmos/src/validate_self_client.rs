@@ -25,9 +25,9 @@ pub trait ValidateSelfClientContext {
             })?;
 
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(HostError::UnexpectedState {
-                description: "client unexpectedly frozen".to_string(),
-            });
+            return Err(HostError::invalid_state(
+                "client unexpectedly frozen".to_string(),
+            ));
         }
 
         let self_chain_id = self.chain_id();

@@ -75,9 +75,9 @@ where
         client_state_of_host_on_counterparty: Self::HostClientState,
     ) -> Result<(), HostError> {
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(HostError::UnexpectedState {
-                description: "unexpected frozen client".to_string(),
-            });
+            return Err(HostError::invalid_state(
+                "client unexpectedly frozen".to_string(),
+            ));
         }
 
         let latest_height = self.host_height()?;
