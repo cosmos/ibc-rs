@@ -35,9 +35,6 @@ ibc-primitives = { workspace = true }
 parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
-# cosmos dependencies
-tendermint-proto = { workspace = true }
-
 [dev-dependencies]
 rstest     = { workspace = true }
 serde-json = { workspace = true }
