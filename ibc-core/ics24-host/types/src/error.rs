@@ -24,8 +24,6 @@ pub enum HostError {
     FailedToParse { description: String },
     /// failed to validate client: `{description}`
     FailedToValidateClient { description: String },
-    /// unknown resource: `{description}`
-    UnknownResource { description: String },
     /// other error: `{description}`
     Other { description: String },
 }
