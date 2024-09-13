@@ -1,7 +1,6 @@
 //! Defines the Non-Fungible Token Transfer message type
 
 use ibc_core::channel::types::timeout::{TimeoutHeight, TimeoutTimestamp};
-use ibc_core::handler::types::error::HandlerError;
 use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;

@@ -1,5 +1,6 @@
 //! Defines the token transfer error type
 use displaydoc::Display;
+
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
 use ibc_core::handler::types::error::HandlerError;
@@ -15,14 +16,6 @@ pub enum TokenTransferError {
     Decoding(DecodingError),
     /// identifier error: `{0}`
     Identifier(IdentifierError),
-    /// invalid amount: `{0}`
-    InvalidAmount(FromDecStrErr),
-    /// invalid coin: `{0}`
-    InvalidCoin(String),
-    /// invalid trace: `{0}`
-    InvalidTrace(String),
-    /// missing token
-    MissingToken,
     /// missing destination channel `{channel_id}` on port `{port_id}`
     MissingDestinationChannel {
         port_id: PortId,
@@ -46,7 +39,6 @@ impl std::error::Error for TokenTransferError {
         match &self {
             Self::Handler(e) => Some(e),
             Self::Identifier(e) => Some(e),
-            Self::InvalidAmount(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }
