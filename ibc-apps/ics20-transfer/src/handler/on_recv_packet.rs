@@ -3,7 +3,6 @@ use ibc_app_transfer_types::events::DenomTraceEvent;
 use ibc_app_transfer_types::packet::PacketData;
 use ibc_app_transfer_types::{is_receiver_chain_source, TracePrefix};
 use ibc_core::channel::types::packet::Packet;
-use ibc_core::host::types::error::HostError;
 use ibc_core::primitives::prelude::*;
 use ibc_core::router::types::module::ModuleExtras;
 
@@ -27,10 +26,7 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
     let receiver_account = data.receiver.clone().try_into().map_err(|_| {
         (
             ModuleExtras::empty(),
-            HostError::FailedToParse {
-                description: "account ID".to_string(),
-            }
-            .into(),
+            TokenTransferError::FailedToParseAccount,
         )
     })?;
 

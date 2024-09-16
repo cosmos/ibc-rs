@@ -6,7 +6,6 @@ use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::is_sender_chain_source;
 use ibc_app_transfer_types::packet::PacketData;
 use ibc_core::channel::types::packet::Packet;
-use ibc_core::host::types::error::HostError;
 use ibc_core::primitives::prelude::*;
 pub use on_recv_packet::*;
 pub use send_transfer::*;
@@ -22,9 +21,7 @@ pub fn refund_packet_token_execute(
         .sender
         .clone()
         .try_into()
-        .map_err(|_| HostError::FailedToParse {
-            description: "invalid signer".to_string(),
-        })?;
+        .map_err(|_| TokenTransferError::FailedToParseAccount)?;
 
     if is_sender_chain_source(
         packet.port_id_on_a.clone(),
@@ -53,9 +50,7 @@ pub fn refund_packet_token_validate(
         .sender
         .clone()
         .try_into()
-        .map_err(|_| HostError::FailedToParse {
-            description: "invalid signer".to_string(),
-        })?;
+        .map_err(|_| TokenTransferError::FailedToParseAccount)?;
 
     if is_sender_chain_source(
         packet.port_id_on_a.clone(),

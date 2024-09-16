@@ -20,8 +20,10 @@ pub trait ValidateSelfClientContext {
     ) -> Result<(), HostError> {
         client_state_of_host_on_counterparty
             .validate()
-            .map_err(|e| HostError::FailedToValidateClient {
-                description: e.to_string(),
+            .map_err(|e| {
+                HostError::invalid_state(format!(
+                    "invalid counterparty client state that could not be validated: {e}"
+                ))
             })?;
 
         if client_state_of_host_on_counterparty.is_frozen() {

@@ -20,10 +20,6 @@ pub enum HostError {
     FailedToStore { description: String },
     /// failed to retrieve from store: `{description}`
     FailedToRetrieve { description: String },
-    /// failed to parse data: `{description}`
-    FailedToParse { description: String },
-    /// failed to validate client: `{description}`
-    FailedToValidateClient { description: String },
     /// other error: `{description}`
     Other { description: String },
 }
