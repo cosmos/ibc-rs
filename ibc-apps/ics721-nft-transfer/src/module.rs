@@ -4,7 +4,6 @@ use ibc_core::channel::types::channel::{Counterparty, Order};
 use ibc_core::channel::types::packet::Packet;
 use ibc_core::channel::types::Version;
 use ibc_core::handler::types::error::HandlerError;
-use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
@@ -205,16 +204,11 @@ pub fn on_acknowledgement_packet_validate(
     acknowledgement: &Acknowledgement,
     _relayer: &Signer,
 ) -> Result<(), NftTransferError> {
-    let data = serde_json::from_slice::<PacketData>(&packet.data).map_err(|e| {
-        DecodingError::InvalidJson {
-            description: format!("failed to deserialize packet data: {e}"),
-        }
-    })?;
+    let data = serde_json::from_slice::<PacketData>(&packet.data)
+        .map_err(|_| NftTransferError::FailedToDeserializePacketData)?;
 
     let acknowledgement = serde_json::from_slice::<AcknowledgementStatus>(acknowledgement.as_ref())
-        .map_err(|e| DecodingError::InvalidJson {
-            description: format!("failed to deserialize acknowledgment: {e}"),
-        })?;
+        .map_err(|_| NftTransferError::FailedToDeserializeAck)?;
 
     if !acknowledgement.is_successful() {
         refund_packet_nft_validate(ctx, packet, &data)?;
@@ -232,10 +226,7 @@ pub fn on_acknowledgement_packet_execute(
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         return (
             ModuleExtras::empty(),
-            Err(DecodingError::InvalidJson {
-                description: "failed to deserialize packet data".to_string(),
-            }
-            .into()),
+            Err(NftTransferError::FailedToDeserializePacketData),
         );
     };
 
@@ -244,10 +235,7 @@ pub fn on_acknowledgement_packet_execute(
     else {
         return (
             ModuleExtras::empty(),
-            Err(DecodingError::InvalidJson {
-                description: "failed to deserialize acknowledgment".to_string(),
-            }
-            .into()),
+            Err(NftTransferError::FailedToDeserializeAck),
         );
     };
 
@@ -279,11 +267,8 @@ pub fn on_timeout_packet_validate(
     packet: &Packet,
     _relayer: &Signer,
 ) -> Result<(), NftTransferError> {
-    let data = serde_json::from_slice::<PacketData>(&packet.data).map_err(|e| {
-        DecodingError::InvalidJson {
-            description: format!("failed to deserialize packet data: {e}"),
-        }
-    })?;
+    let data = serde_json::from_slice::<PacketData>(&packet.data)
+        .map_err(|_| NftTransferError::FailedToDeserializePacketData)?;
 
     refund_packet_nft_validate(ctx, packet, &data)?;
 
@@ -298,10 +283,7 @@ pub fn on_timeout_packet_execute(
     let Ok(data) = serde_json::from_slice::<PacketData>(&packet.data) else {
         return (
             ModuleExtras::empty(),
-            Err(DecodingError::InvalidJson {
-                description: "failed to deserialize packet data".to_string(),
-            }
-            .into()),
+            Err(NftTransferError::FailedToDeserializePacketData),
         );
     };
 
