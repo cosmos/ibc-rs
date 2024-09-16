@@ -1,12 +1,11 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelCloseConfirm as RawMsgChannelCloseConfirm;
 use ibc_proto::Protobuf;
-
-use crate::error::ChannelError;
 
 pub const CHAN_CLOSE_CONFIRM_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseConfirm";
 
@@ -32,24 +31,27 @@ pub struct MsgChannelCloseConfirm {
 impl Protobuf<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {}
 
 impl TryFrom<RawMsgChannelCloseConfirm> for MsgChannelCloseConfirm {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgChannelCloseConfirm) -> Result<Self, Self::Error> {
         if raw_msg.counterparty_upgrade_sequence != 0 {
-            return Err(ChannelError::UnsupportedChannelUpgradeSequence);
+            return Err(DecodingError::invalid_raw_data(
+                "counterparty upgrade sequence must be 0",
+            ));
         }
 
         Ok(MsgChannelCloseConfirm {
             port_id_on_b: raw_msg.port_id.parse()?,
             chan_id_on_b: raw_msg.channel_id.parse()?,
-            proof_chan_end_on_a: raw_msg
-                .proof_init
-                .try_into()
-                .map_err(|_| ChannelError::MissingProof)?,
+            proof_chan_end_on_a: raw_msg.proof_init.try_into().map_err(|e| {
+                DecodingError::missing_raw_data(format!(
+                    "failed to decode commitment proof bytes: {e}"
+                ))
+            })?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(ChannelError::MissingProofHeight)?,
+                .ok_or(DecodingError::missing_raw_data("missing proof height"))?,
             signer: raw_msg.signer.into(),
         })
     }

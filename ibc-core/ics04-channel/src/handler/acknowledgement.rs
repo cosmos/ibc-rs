@@ -147,7 +147,6 @@ where
 
     if commitment_on_a != expected_commitment_on_a {
         return Err(ChannelError::MismatchedPacketCommitments {
-            sequence: packet.seq_on_a,
             actual: commitment_on_a,
             expected: expected_commitment_on_a,
         }

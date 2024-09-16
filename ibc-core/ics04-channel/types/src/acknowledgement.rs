@@ -84,7 +84,7 @@ impl StatusValue {
         let value = value.to_string();
 
         if value.is_empty() {
-            return Err(ChannelError::EmptyAcknowledgmentStatus);
+            return Err(ChannelError::MissingAcknowledgmentStatus);
         }
 
         Ok(Self(value))

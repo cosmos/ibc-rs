@@ -254,7 +254,7 @@ where
             validate_write_acknowledgement(ctx_b, msg)?;
         }
         Order::None => {
-            return Err(HandlerError::Channel(ChannelError::InvalidOrderType {
+            return Err(HandlerError::Channel(ChannelError::InvalidState {
                 expected: "Channel ordering to not be None".to_string(),
                 actual: chan_end_on_b.ordering.to_string(),
             }))

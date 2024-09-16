@@ -52,7 +52,6 @@ where
     );
     if commitment_on_a != expected_commitment_on_a {
         return Err(ChannelError::MismatchedPacketCommitments {
-            sequence: packet.seq_on_a,
             expected: expected_commitment_on_a,
             actual: commitment_on_a,
         }
@@ -155,8 +154,8 @@ where
                 )
             }
             Order::None => {
-                return Err(HandlerError::Channel(ChannelError::InvalidOrderType {
-                    expected: "Channel ordering cannot be None".to_string(),
+                return Err(HandlerError::Channel(ChannelError::InvalidState {
+                    expected: "Channel ordering to not be None".to_string(),
                     actual: chan_end_on_a.ordering.to_string(),
                 }))
             }
