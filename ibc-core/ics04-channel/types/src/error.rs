@@ -53,17 +53,6 @@ pub enum ChannelError {
     },
     /// failed proof verification: `{0}`
     FailedProofVerification(ClientError),
-
-    // TODO(seanchen1991): These variants should be encoded by host-relevant error types
-    // once those have been defined.
-    /// application module error: `{description}`
-    AppModule { description: String },
-    /// missing channel counter
-    MissingCounter,
-    /// failed to update counter: `{description}`
-    FailedToUpdateCounter { description: String },
-    /// failed to store channel: `{description}`
-    FailedToStoreChannel { description: String },
 }
 
 #[derive(Debug, Display)]
@@ -109,16 +98,6 @@ pub enum PacketError {
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
-
-    // TODO(seanchen1991): Move these variants to host-relevant error types
-    /// application module error: `{description}`
-    AppModule { description: String },
-    /// missing acknowledgment for packet `{0}`
-    MissingPacketAcknowledgment(Sequence),
-    /// missing packet receipt for packet `{0}`
-    MissingPacketReceipt(Sequence),
-    /// implementation-specific error
-    ImplementationSpecific,
 }
 
 impl From<IdentifierError> for ChannelError {

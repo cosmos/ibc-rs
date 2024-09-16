@@ -1,6 +1,6 @@
 //! Definition of domain `UpgradeProposal` type for handling upgrade client proposal
 
-use ibc_core_client_types::error::UpgradeClientError;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::UpgradeProposal as RawUpgradeProposal;
@@ -28,34 +28,35 @@ pub struct UpgradeProposal {
 impl Protobuf<RawUpgradeProposal> for UpgradeProposal {}
 
 impl TryFrom<RawUpgradeProposal> for UpgradeProposal {
-    type Error = UpgradeClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawUpgradeProposal) -> Result<Self, Self::Error> {
         if raw.title.is_empty() {
-            return Err(UpgradeClientError::InvalidUpgradeProposal {
-                description: "missing title field".to_string(),
+            return Err(DecodingError::InvalidRawData {
+                description: "invalid upgrade proposal: missing title field".to_string(),
             });
         }
 
         if raw.description.is_empty() {
-            return Err(UpgradeClientError::InvalidUpgradeProposal {
-                description: "missing description field".to_string(),
+            return Err(DecodingError::InvalidRawData {
+                description: "invalid upgrade proposal: missing description field".to_string(),
             });
         }
 
         let plan = if let Some(plan) = raw.plan {
             plan.try_into()?
         } else {
-            return Err(UpgradeClientError::InvalidUpgradeProposal {
-                description: "missing plan field".to_string(),
+            return Err(DecodingError::InvalidRawData {
+                description: "invalid upgrade proposal: missing plan field".to_string(),
             });
         };
 
-        let upgraded_client_state = raw.upgraded_client_state.ok_or_else(|| {
-            UpgradeClientError::InvalidUpgradeProposal {
-                description: "missing upgraded client state".to_string(),
-            }
-        })?;
+        let upgraded_client_state =
+            raw.upgraded_client_state
+                .ok_or_else(|| DecodingError::InvalidRawData {
+                    description: "invalid upgrade proposal: missing upgraded client state"
+                        .to_string(),
+                })?;
 
         Ok(Self {
             title: raw.title,

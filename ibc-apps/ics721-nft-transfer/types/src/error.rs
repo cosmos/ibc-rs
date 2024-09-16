@@ -1,16 +1,17 @@
 //! Defines the Non-Fungible Token Transfer (ICS-721) error types.
+use derive_more::From;
 use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
-use ibc_core::handler::types::error::ContextError;
-use ibc_core::host::types::error::DecodingError;
+use ibc_core::handler::types::error::HandlerError;
+use ibc_core::host::types::error::{DecodingError, HostError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 
-#[derive(Display, Debug, derive_more::From)]
+#[derive(Display, Debug, From)]
 pub enum NftTransferError {
-    /// context error: `{0}`
-    ContextError(ContextError),
+    /// handler error: `{0}`
+    Handler(HandlerError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// missing destination channel `{channel_id}` on port `{port_id}`
@@ -40,10 +41,16 @@ pub enum NftTransferError {
 impl std::error::Error for NftTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::ContextError(e) => Some(e),
+            Self::Handler(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }
+    }
+}
+
+impl From<HostError> for NftTransferError {
+    fn from(e: HostError) -> Self {
+        Self::Handler(HandlerError::Host(e))
     }
 }
 

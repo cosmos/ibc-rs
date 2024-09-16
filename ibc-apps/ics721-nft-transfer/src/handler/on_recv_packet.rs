@@ -23,7 +23,7 @@ where
 {
     ctx_b
         .can_receive_nft()
-        .map_err(|err| (ModuleExtras::empty(), err))?;
+        .map_err(|err| (ModuleExtras::empty(), err.into()))?;
 
     let receiver_account = data.receiver.clone().try_into().map_err(|_| {
         (
@@ -56,7 +56,7 @@ where
                     &class_id,
                     token_id,
                 )
-                .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
+                .map_err(|err| (ModuleExtras::empty(), err.into()))?;
             ctx_b
                 .unescrow_nft_execute(
                     &receiver_account,
@@ -65,7 +65,7 @@ where
                     &class_id,
                     token_id,
                 )
-                .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
+                .map_err(|err| (ModuleExtras::empty(), err.into()))?;
         }
 
         ModuleExtras::empty()
@@ -102,14 +102,14 @@ where
                     data.class_uri.as_ref(),
                     data.class_data.as_ref(),
                 )
-                .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
+                .map_err(|err| (ModuleExtras::empty(), err.into()))?;
             ctx_b
                 .create_or_update_class_execute(
                     &class_id,
                     data.class_uri.as_ref(),
                     data.class_data.as_ref(),
                 )
-                .map_err(|nft_error| (ModuleExtras::empty(), nft_error))?;
+                .map_err(|err| (ModuleExtras::empty(), err.into()))?;
 
             ctx_b
                 .mint_nft_validate(
@@ -119,7 +119,7 @@ where
                     token_uri,
                     token_data,
                 )
-                .map_err(|nft_error| (extras.clone(), nft_error))?;
+                .map_err(|err| (extras.clone(), err.into()))?;
             ctx_b
                 .mint_nft_execute(
                     &receiver_account,
@@ -128,7 +128,7 @@ where
                     token_uri,
                     token_data,
                 )
-                .map_err(|nft_error| (extras.clone(), nft_error))?;
+                .map_err(|err| (extras.clone(), err.into()))?;
         }
 
         extras

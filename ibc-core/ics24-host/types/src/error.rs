@@ -9,6 +9,47 @@ use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Error as ProtoError;
 use prost::DecodeError as ProstError;
 
+/// Errors that originate from host implementations.
+#[derive(Debug, Display)]
+pub enum HostError {
+    /// invalid state: `{description}`
+    InvalidState { description: String },
+    /// missing state: `{description}`
+    MissingState { description: String },
+    /// failed to update store: `{description}`
+    FailedToStore { description: String },
+    /// failed to retrieve from store: `{description}`
+    FailedToRetrieve { description: String },
+    /// other error: `{description}`
+    Other { description: String },
+}
+
+impl HostError {
+    pub fn invalid_state<T: ToString>(description: T) -> Self {
+        Self::InvalidState {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn missing_state<T: ToString>(description: T) -> Self {
+        Self::MissingState {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn failed_to_retrieve<T: ToString>(description: T) -> Self {
+        Self::FailedToRetrieve {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn failed_to_store<T: ToString>(description: T) -> Self {
+        Self::FailedToStore {
+            description: description.to_string(),
+        }
+    }
+}
+
 /// Errors that arise when parsing identifiers.
 #[cfg_attr(feature = "serde", derive(serde::Serialize))]
 #[derive(Debug, Display)]
@@ -25,7 +66,8 @@ pub enum IdentifierError {
     OverflowedRevisionNumber,
 }
 
-/// Errors that result in decoding failures
+/// Errors that occur during the process of decoding, deserializing,
+/// and/or converting raw types into domain types.
 #[derive(Debug, Display)]
 pub enum DecodingError {
     /// identifier error: `{0}`
@@ -103,3 +145,6 @@ impl std::error::Error for IdentifierError {}
 
 #[cfg(feature = "std")]
 impl std::error::Error for DecodingError {}
+
+#[cfg(feature = "std")]
+impl std::error::Error for HostError {}

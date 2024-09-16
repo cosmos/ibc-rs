@@ -1,14 +1,11 @@
 //! Defines the client error type
 
-use core::convert::Infallible;
-
 use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::{DecodingError, IdentifierError};
+use ibc_core_host_types::error::{DecodingError, HostError};
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
-use tendermint::Error as TendermintError;
 
 use crate::height::Height;
 use crate::Status;
@@ -16,6 +13,8 @@ use crate::Status;
 /// Encodes all the possible client errors
 #[derive(Debug, Display)]
 pub enum ClientError {
+    /// host error : `{0}`
+    Host(HostError),
     /// upgrade client error: `{0}`
     Upgrade(UpgradeClientError),
     /// decoding error: `{0}`
@@ -38,6 +37,8 @@ pub enum ClientError {
     InvalidAttributeValue(String),
     /// invalid status: `{0}`
     InvalidStatus(String),
+    /// invalid header type: `{0}`
+    InvalidHeaderType(String),
     /// missing local consensus state at `{0}`
     MissingLocalConsensusState(Height),
     /// missing attribute key
@@ -61,21 +62,10 @@ pub enum ClientError {
     FailedHeaderVerification { description: String },
     /// failed misbehaviour handling: `{description}`
     FailedMisbehaviourHandling { description: String },
+
+    // TODO(seanchen1991): Incorporate this error into its own variants
     /// client-specific error: `{description}`
     ClientSpecific { description: String },
-
-    // TODO(seanchen1991): Add these to host-relevant errors
-    /// missing client state for client: `{0}`
-    MissingClientState(ClientId),
-    /// missing consensus state for client `{client_id}` at height `{height}`
-    MissingConsensusState { client_id: ClientId, height: Height },
-    /// missing update client metadata for client `{client_id}` at height `{height}`
-    MissingUpdateMetaData { client_id: ClientId, height: Height },
-    /// invalid raw header: `{0}`
-    InvalidRawHeader(TendermintError),
-    /// invalid header type: `{0}`
-    InvalidHeaderType(String),
-    // TODO(seanchen1991): Incorporate this error into its own variants
     /// other error: `{description}`
     Other { description: String },
 }
@@ -85,12 +75,6 @@ impl From<&'static str> for ClientError {
         Self::Other {
             description: s.to_string(),
         }
-    }
-}
-
-impl From<Infallible> for ClientError {
-    fn from(value: Infallible) -> Self {
-        match value {}
     }
 }
 
@@ -106,9 +90,9 @@ impl From<DecodingError> for ClientError {
     }
 }
 
-impl From<IdentifierError> for ClientError {
-    fn from(e: IdentifierError) -> Self {
-        Self::Decoding(DecodingError::Identifier(e))
+impl From<HostError> for ClientError {
+    fn from(e: HostError) -> Self {
+        Self::Host(e)
     }
 }
 
@@ -118,6 +102,8 @@ impl std::error::Error for ClientError {
         match &self {
             Self::FailedICS23Verification(e) => Some(e),
             Self::Decoding(e) => Some(e),
+            Self::Upgrade(e) => Some(e),
+            Self::Host(e) => Some(e),
             _ => None,
         }
     }
@@ -128,6 +114,10 @@ impl std::error::Error for ClientError {
 pub enum UpgradeClientError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
+    /// host chain error: `{0}`
+    Host(HostError),
+    /// invalid upgrade proposal: `{description}`
+    InvalidUpgradeProposal { description: String },
     /// invalid proof for the upgraded client state: `{0}`
     InvalidUpgradeClientStateProof(CommitmentError),
     /// invalid proof for the upgraded consensus state: `{0}`
@@ -141,22 +131,6 @@ pub enum UpgradeClientError {
         upgraded_height: Height,
         client_height: Height,
     },
-
-    // TODO(seanchen1991): Move these variants to host-relevant errors
-    /// invalid upgrade plan: `{description}`
-    InvalidUpgradePlan { description: String },
-    /// invalid upgrade proposal: `{description}`
-    InvalidUpgradeProposal { description: String },
-    /// missing upgraded client state
-    MissingUpgradedClientState,
-    /// missing upgraded consensus state
-    MissingUpgradedConsensusState,
-    /// failed to store upgrade plan: `{description}`
-    FailedToStoreUpgradePlan { description: String },
-    /// failed to store upgraded client state: `{description}`
-    FailedToStoreUpgradedClientState { description: String },
-    /// failed to store upgraded consensus state: `{description}`
-    FailedToStoreUpgradedConsensusState { description: String },
 }
 
 impl From<UpgradeClientError> for ClientError {
@@ -171,10 +145,18 @@ impl From<DecodingError> for UpgradeClientError {
     }
 }
 
+impl From<HostError> for UpgradeClientError {
+    fn from(e: HostError) -> Self {
+        Self::Host(e)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for UpgradeClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
+            Self::Decoding(e) => Some(e),
+            Self::Host(e) => Some(e),
             Self::InvalidUpgradeClientStateProof(e)
             | Self::InvalidUpgradeConsensusStateProof(e) => Some(e),
             _ => None,

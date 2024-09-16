@@ -8,8 +8,6 @@ use ibc_proto::google::protobuf::Any as ProtoAny;
 use ibc_proto::ibc::core::client::v1::MsgSubmitMisbehaviour as RawMsgSubmitMisbehaviour;
 use ibc_proto::Protobuf;
 
-use crate::error::ClientError;
-
 pub const SUBMIT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
 /// A type of message that submits client misbehaviour proof.
@@ -38,7 +36,7 @@ pub struct MsgSubmitMisbehaviour {
 impl Protobuf<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {}
 
 impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMsgSubmitMisbehaviour) -> Result<Self, Self::Error> {
         let raw_misbehaviour = raw.misbehaviour.ok_or(DecodingError::MissingRawData {

@@ -1,7 +1,7 @@
 //! Definition of domain `Plan` type.
 
 use ibc_core_client_types::error::UpgradeClientError;
-use ibc_core_host_types::error::DecodingError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_primitives::prelude::*;
 use ibc_proto::cosmos::upgrade::v1beta1::Plan as RawPlan;
 use ibc_proto::google::protobuf::Any;
@@ -29,35 +29,33 @@ pub struct Plan {
 impl Protobuf<RawPlan> for Plan {}
 
 impl TryFrom<RawPlan> for Plan {
-    type Error = UpgradeClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawPlan) -> Result<Self, Self::Error> {
         if raw.name.is_empty() {
-            return Err(UpgradeClientError::InvalidUpgradePlan {
-                description: "name field cannot be empty".to_string(),
+            return Err(DecodingError::InvalidRawData {
+                description: "upgrade plan name cannot be empty".to_string(),
             });
         }
 
         #[allow(deprecated)]
         if raw.time.is_some() {
-            return Err(UpgradeClientError::InvalidUpgradePlan {
-                description: "time field must be empty".to_string(),
+            return Err(DecodingError::InvalidRawData {
+                description: "upgrade plan time must be empty".to_string(),
             });
         }
 
         #[allow(deprecated)]
         if raw.upgraded_client_state.is_some() {
-            return Err(UpgradeClientError::InvalidUpgradePlan {
-                description: "upgraded_client_state field must be empty".to_string(),
+            return Err(DecodingError::InvalidRawData {
+                description: "upgrade plan `upgraded_client_state` field must be empty".to_string(),
             });
         }
 
         Ok(Self {
             name: raw.name,
             height: u64::try_from(raw.height).map_err(|_| {
-                UpgradeClientError::InvalidUpgradePlan {
-                    description: "height plan overflow".to_string(),
-                }
+                DecodingError::Identifier(IdentifierError::OverflowedRevisionNumber)
             })?,
             info: raw.info,
         })

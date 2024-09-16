@@ -1,16 +1,16 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
 //!
 use ibc_core_client_context::prelude::*;
-use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::UpgradeClient;
 use ibc_core_client_types::msgs::MsgUpgradeClient;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_core_host::types::error::HostError;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), HandlerError>
 where
     Ctx: ValidationContext,
 {
@@ -38,9 +38,12 @@ where
     );
     let old_consensus_state = client_val_ctx
         .consensus_state(&old_client_cons_state_path)
-        .map_err(|_| ClientError::MissingConsensusState {
-            client_id,
-            height: old_client_state.latest_height(),
+        .map_err(|_| {
+            HostError::missing_state(format!(
+                "missing consensus state for client {} at height {}",
+                client_id,
+                old_client_state.latest_height()
+            ))
         })?;
 
     // Validate the upgraded client state and consensus state and verify proofs against the root
@@ -55,7 +58,7 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), HandlerError>
 where
     Ctx: ExecutionContext,
 {

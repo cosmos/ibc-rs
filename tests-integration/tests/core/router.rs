@@ -4,7 +4,6 @@ use ibc::apps::transfer::handler::send_transfer;
 use ibc::apps::transfer::types::error::TokenTransferError;
 use ibc::apps::transfer::types::msgs::transfer::MsgTransfer;
 use ibc::apps::transfer::types::{BaseCoin, U256};
-use ibc::core::channel::types::error::ChannelError;
 use ibc::core::channel::types::msgs::{
     ChannelMsg, MsgAcknowledgement, MsgChannelCloseConfirm, MsgChannelCloseInit, MsgChannelOpenAck,
     MsgChannelOpenInit, MsgChannelOpenTry, MsgRecvPacket, MsgTimeoutOnClose, PacketMsg,
@@ -14,7 +13,7 @@ use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient, MsgUpdateClient
 use ibc::core::client::types::Height;
 use ibc::core::connection::types::msgs::ConnectionMsg;
 use ibc::core::entrypoint::dispatch;
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::HandlerError;
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ConnectionId;
@@ -22,6 +21,7 @@ use ibc::core::host::types::path::CommitmentPath;
 use ibc::core::host::ValidationContext;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
+use ibc_core_host_types::error::HostError;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::applications::transfer::{
     extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
@@ -407,10 +407,10 @@ fn routing_module_and_keepers() {
         let res = match test.msg.clone() {
             TestMsg::Ics26(msg) => dispatch(&mut ctx.ibc_store, &mut router, msg),
             TestMsg::Ics20(msg) => send_transfer(&mut ctx.ibc_store, &mut DummyTransferModule, msg)
-                .map_err(|e: TokenTransferError| ChannelError::AppModule {
-                    description: e.to_string(),
+                .map_err(|e: TokenTransferError| HostError::Other {
+                    description: format!("token transfer application error: {e}"),
                 })
-                .map_err(ContextError::from),
+                .map_err(HandlerError::from),
         };
 
         assert_eq!(

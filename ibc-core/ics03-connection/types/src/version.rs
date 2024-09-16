@@ -120,12 +120,13 @@ impl Display for Version {
 /// compatible version continues. This function is called in the `conn_open_try`
 /// handshake procedure.
 ///
-/// NOTE: Empty feature set is not currently allowed for a chosen version.
+/// NOTE: Empty feature sets are not currently allowed for a chosen version.
 pub fn pick_version(
     supported_versions: &[Version],
     counterparty_versions: &[Version],
 ) -> Result<Version, ConnectionError> {
     let mut intersection: Vec<Version> = Vec::new();
+
     for sv in supported_versions.iter() {
         if let Ok(cv) = find_supported_version(sv, counterparty_versions) {
             if let Ok(feature_set) = get_feature_set_intersection(&sv.features, &cv.features) {
@@ -142,6 +143,7 @@ pub fn pick_version(
     }
 
     intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
+
     Ok(intersection[0].clone())
 }
 

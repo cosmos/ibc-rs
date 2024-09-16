@@ -208,7 +208,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
 
         if value.versions.is_empty() {
             return Err(DecodingError::MissingRawData {
-                description: "connection versions is empty".to_string(),
+                description: "empty connection versions".to_string(),
             })?;
         }
 
@@ -218,7 +218,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
             value
                 .counterparty
                 .ok_or(DecodingError::MissingRawData {
-                    description: "counterparty not set".to_string(),
+                    description: "missing counterparty".to_string(),
                 })?
                 .try_into()?,
             value

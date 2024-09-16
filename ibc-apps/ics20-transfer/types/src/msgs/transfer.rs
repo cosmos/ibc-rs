@@ -50,7 +50,6 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
         let timeout_height_on_b: TimeoutHeight = raw_msg.timeout_height.try_into()?;
-
         let timeout_timestamp_on_b: TimeoutTimestamp = raw_msg.timeout_timestamp.into();
 
         // Packet timeout height and packet timeout timestamp cannot both be unset.

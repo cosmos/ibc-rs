@@ -29,13 +29,15 @@ pub fn refund_packet_nft_execute(
         &data.class_id,
     ) {
         data.token_ids.as_ref().iter().try_for_each(|token_id| {
-            ctx_a.unescrow_nft_execute(
-                &sender,
-                &packet.port_id_on_a,
-                &packet.chan_id_on_a,
-                &data.class_id,
-                token_id,
-            )
+            ctx_a
+                .unescrow_nft_execute(
+                    &sender,
+                    &packet.port_id_on_a,
+                    &packet.chan_id_on_a,
+                    &data.class_id,
+                    token_id,
+                )
+                .map_err(NftTransferError::from)
         })
     }
     // mint vouchers back to sender
@@ -43,8 +45,11 @@ pub fn refund_packet_nft_execute(
         for (i, token_id) in data.token_ids.0.iter().enumerate() {
             let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
             let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
-            ctx_a.mint_nft_execute(&sender, &data.class_id, token_id, token_uri, token_data)?;
+
+            let _ =
+                ctx_a.mint_nft_execute(&sender, &data.class_id, token_id, token_uri, token_data);
         }
+
         Ok(())
     }
 }
@@ -66,20 +71,25 @@ pub fn refund_packet_nft_validate(
         &data.class_id,
     ) {
         data.token_ids.0.iter().try_for_each(|token_id| {
-            ctx_a.unescrow_nft_validate(
-                &sender,
-                &packet.port_id_on_a,
-                &packet.chan_id_on_a,
-                &data.class_id,
-                token_id,
-            )
+            ctx_a
+                .unescrow_nft_validate(
+                    &sender,
+                    &packet.port_id_on_a,
+                    &packet.chan_id_on_a,
+                    &data.class_id,
+                    token_id,
+                )
+                .map_err(NftTransferError::from)
         })
     } else {
         for (i, token_id) in data.token_ids.0.iter().enumerate() {
             let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
             let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
-            ctx_a.mint_nft_validate(&sender, &data.class_id, token_id, token_uri, token_data)?;
+
+            let _ =
+                ctx_a.mint_nft_validate(&sender, &data.class_id, token_id, token_uri, token_data);
         }
+
         Ok(())
     }
 }

@@ -34,6 +34,8 @@ pub enum ConnectionError {
     MissingCommonFeatures,
     /// missing counterparty
     MissingCounterparty,
+    /// missing connection `{0}`
+    MissingConnection(ConnectionId),
     /// insufficient consensus height `{current_height}` for host chain; needs to meet counterparty's height `{target_height}`
     InsufficientConsensusHeight {
         target_height: Height,
@@ -57,18 +59,6 @@ pub enum ConnectionError {
     FailedToVerifyClientState(ClientError),
     /// overflowed timestamp: `{0}`
     OverflowedTimestamp(TimestampError),
-
-    // TODO(seanchen1991): Move these variants to host-relevant error types
-    /// missing connection `{0}`
-    MissingConnection(ConnectionId),
-    /// missing connection counter
-    MissingConnectionCounter,
-    /// failed to store connection IDs
-    FailedToStoreConnectionIds,
-    /// failed to store connection end
-    FailedToStoreConnectionEnd,
-    /// failed to update connection counter
-    FailedToUpdateConnectionCounter,
 }
 
 impl From<DecodingError> for ConnectionError {
