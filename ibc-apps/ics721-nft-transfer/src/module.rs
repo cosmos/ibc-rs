@@ -341,7 +341,7 @@ mod test {
         );
         ser_json_assert_eq(
             AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into()),
-            r#"{"error":"invalid JSON data: `failed to deserialize packet data`"}"#,
+            r#"{"error":"failed to deserialize packet data"}"#,
         );
     }
 
@@ -366,7 +366,7 @@ mod test {
         // which would make the conversion to `Acknowledgement` panic
         assert_eq!(
             ack_error,
-            br#"{"error":"invalid JSON data: `failed to deserialize packet data`"}"#
+            br#"{"error":"failed to deserialize packet data"}"#
         );
     }
 
@@ -382,7 +382,7 @@ mod test {
             AcknowledgementStatus::success(ack_success_b64()),
         );
         de_json_assert_eq(
-            r#"{"error":"invalid JSON data: `failed to deserialize packet data`"}"#,
+            r#"{"error":"failed to deserialize packet data"}"#,
             AcknowledgementStatus::error(NftTransferError::FailedToDeserializePacketData.into()),
         );
 
