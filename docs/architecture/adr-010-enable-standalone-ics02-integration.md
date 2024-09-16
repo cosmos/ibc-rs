@@ -129,26 +129,26 @@ pub trait ValidationContext {
     fn get_client_validation_context(&self) -> &Self::V;
 
      // This method will be removed and replaced by a `ClientStateDecoder` trait that will encapsulate the ability to decode a client state from an `Any`
--    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, HandlerError>;
+-    fn decode_client_state(&self, client_state: Any) -> Result<Self::AnyClientState, HostError>;
 
--    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, HandlerError>;
+-    fn client_state(&self, client_id: &ClientId) -> Result<Self::AnyClientState, HostError>;
 
 -    fn consensus_state(
 -        &self,
 -        client_cons_state_path: &ClientConsensusStatePath,
--    ) -> Result<Self::AnyConsensusState, HandlerError>;
+-    ) -> Result<Self::AnyConsensusState, HostError>;
 
     fn host_consensus_state(
         &self,
         height: &Height,
--    ) -> Result<Self::AnyConsensusState, HandlerError>;
-+    ) -> Result<Self::HostConsensusState, HandlerError>;
+-    ) -> Result<Self::AnyConsensusState, HostError>;
++    ) -> Result<Self::HostConsensusState, HostError>;
 
     fn validate_self_client(
         &self,
 -        client_state_of_host_on_counterparty: Any,
 +        client_state_of_host_on_counterparty: Self::HostClientState,
-    ) -> Result<(), HandlerError>;
+    ) -> Result<(), HostError>;
 
     ... // other methods
 }
@@ -200,18 +200,18 @@ pub trait ClientValidationContext: Sized {
 +    type ClientStateRef: ClientStateValidation<Self>;
 +    type ConsensusStateRef: ConsensusState;
 
-+    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, HandlerError>;
++    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, HostError>;
 
 +    fn consensus_state(
 +        &self,
 +        client_cons_state_path: &ClientConsensusStatePath,
-+    ) -> Result<Self::ConsensusStateRef, HandlerError>;
++    ) -> Result<Self::ConsensusStateRef, HostError>;
 
     fn client_update_meta(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<(Timestamp, Height), HandlerError>;
+    ) -> Result<(Timestamp, Height), HostError>;
 }
 
 pub trait ClientExecutionContext:
@@ -222,7 +222,7 @@ pub trait ClientExecutionContext:
 -    type AnyConsensusState: ConsensusState;
 +    type ClientStateMut: ClientStateExecution<Self>;
 
-+    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, HandlerError> {
++    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, HostError> {
 +        self.client_state(client_id)
 +    }
 
@@ -230,18 +230,18 @@ pub trait ClientExecutionContext:
         &mut self,
         client_state_path: ClientStatePath,
         client_state: Self::ClientStateMut,
-    ) -> Result<(), HandlerError>;
+    ) -> Result<(), HostError>;
 
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Self::ConsensusStateRef,
-    ) -> Result<(), HandlerError>;
+    ) -> Result<(), HostError>;
 
     fn delete_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-    ) -> Result<(), HandlerError>;
+    ) -> Result<(), HostError>;
 
     fn store_update_meta(
         &mut self,
@@ -249,13 +249,13 @@ pub trait ClientExecutionContext:
         height: Height,
         host_timestamp: Timestamp,
         host_height: Height,
-    ) -> Result<(), HandlerError>;
+    ) -> Result<(), HostError>;
 
     fn delete_update_meta(
         &mut self,
         client_id: ClientId,
         height: Height,
-    ) -> Result<(), HandlerError>;
+    ) -> Result<(), HostError>;
 }
 ```
 
@@ -306,28 +306,28 @@ pub trait ExtClientValidationContext:
 +    type ConversionError: ToString;
 +    type AnyConsensusState: TryInto<TmConsensusState, Error = Self::ConversionError>;
 
-+    fn host_timestamp(&self) -> Result<Timestamp, HandlerError>;
++    fn host_timestamp(&self) -> Result<Timestamp, HostError>;
 
 +    fn host_height(&self) -> Result<Height, HostError>;
 
 -    fn consensus_state(
 -        &self,
 -        client_cons_state_path: &ClientConsensusStatePath,
--    ) -> Result<Self::AnyConsensusState, HandlerError>;
+-    ) -> Result<Self::AnyConsensusState, HostError>;
 
-+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, HandlerError>;
++    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, HostError>;
 
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, HandlerError>;
+    ) -> Result<Option<Self::AnyConsensusState>, HostError>;
 
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::AnyConsensusState>, HandlerError>;
+    ) -> Result<Option<Self::AnyConsensusState>, HostError>;
 }
 
 -impl<T> ExecutionContext for T where T: CommonContext + ClientExecutionContext {}

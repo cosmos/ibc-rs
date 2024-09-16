@@ -98,12 +98,12 @@ pub trait ClientExecutionContext: Sized {
     /// Called upon successful client creation and update
     fn store_client_state(
         ...
-    ) -> Result<(), HandlerError>;
+    ) -> Result<(), HostError>;
 
     /// Called upon successful client creation and update
     fn store_consensus_state(
         ...
-    ) -> Result<(), HandlerError>;
+    ) -> Result<(), HostError>;
 }
 ```
 
@@ -120,7 +120,7 @@ pub trait ValidationContext: Router {
     type ClientValidationContext;
     type ClientExecutionContext;
     /// Enum that can contain a `ConsensusState` object of any supported light client
-    type AnyConsensusState: ConsensusState<EncodeError = HandlerError>;
+    type AnyConsensusState: ConsensusState<EncodeError = HostError>;
     /// Enum that can contain a `ClientState` object of any supported light client
     type AnyClientState: ClientState<
         Self::AnyConsensusState,

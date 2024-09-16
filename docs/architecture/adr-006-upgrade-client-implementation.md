@@ -250,7 +250,7 @@ previous section as mentioned:
 
 1. ```rust
    if old_client_state.is_frozen() {
-      return Err(HandlerError::ClientError(ClientError::ClientFrozen {
+      return Err(HandlerError::Client(ClientError::ClientFrozen {
          client_id,
       }));
    }
