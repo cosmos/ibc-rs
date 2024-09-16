@@ -46,7 +46,8 @@ pub fn dummy_raw_msg_recv_packet(height: u64) -> RawMsgRecvPacket {
 
 #[cfg(test)]
 mod test {
-    use ibc::{core::host::types::error::DecodingError, primitives::prelude::*};
+    use ibc::core::host::types::error::DecodingError;
+    use ibc::primitives::prelude::*;
 
     use super::*;
 
