@@ -2,6 +2,7 @@
 use displaydoc::Display;
 use ibc_core::channel::types::acknowledgement::StatusValue;
 use ibc_core::channel::types::channel::Order;
+use ibc_core::handler::types::error::HandlerError;
 use ibc_core::host::types::error::{DecodingError, HostError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
@@ -9,7 +10,7 @@ use ibc_core::primitives::prelude::*;
 #[derive(Display, Debug)]
 pub enum TokenTransferError {
     /// host error: `{0}`
-    Host(HostError),
+    Handler(HandlerError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// missing destination channel `{channel_id}` on port `{port_id}`
@@ -35,16 +36,22 @@ pub enum TokenTransferError {
 impl std::error::Error for TokenTransferError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::Host(e) => Some(e),
+            Self::Handler(e) => Some(e),
             Self::Decoding(e) => Some(e),
             _ => None,
         }
     }
 }
 
+impl From<HandlerError> for TokenTransferError {
+    fn from(e: HandlerError) -> Self {
+        Self::Handler(e)
+    }
+}
+
 impl From<HostError> for TokenTransferError {
     fn from(e: HostError) -> Self {
-        Self::Host(e)
+        Self::Handler(HandlerError::Host(e))
     }
 }
 
