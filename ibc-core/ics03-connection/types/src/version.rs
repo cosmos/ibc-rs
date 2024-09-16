@@ -117,10 +117,8 @@ impl Display for Version {
 /// counterparty. The returned version contains a feature set with the
 /// intersection of the features supported by the source and counterparty
 /// chains. If the feature set intersection is nil, the search for a
-/// compatible version continues. If no feature set intersection is found
-/// after searching through every supported version, then `None` is returned.
-///
-/// This function is called in the `conn_open_try` handshake procedure.
+/// compatible version continues. This function is called in the `conn_open_try`
+/// handshake procedure.
 ///
 /// NOTE: Empty feature sets are not currently allowed for a chosen version.
 pub fn pick_version(
