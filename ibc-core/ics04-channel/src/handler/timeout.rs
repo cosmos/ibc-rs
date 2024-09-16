@@ -254,10 +254,7 @@ where
             }
         };
 
-        next_seq_recv_verification_result.map_err(|e| ChannelError::FailedPacketVerification {
-            sequence: msg.next_seq_recv_on_b,
-            client_error: e,
-        })?;
+        next_seq_recv_verification_result.map_err(ChannelError::FailedVerification)?;
     }
 
     Ok(())

@@ -221,7 +221,7 @@ where
                 Path::Commitment(commitment_path_on_a),
                 expected_commitment_on_a.into_vec(),
             )
-            .map_err(ChannelError::FailedProofVerification)?;
+            .map_err(ChannelError::FailedVerification)?;
     }
 
     match chan_end_on_b.ordering {

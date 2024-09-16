@@ -23,13 +23,8 @@ pub enum ChannelError {
     DuplicateAcknowledgment(Sequence),
     /// empty acknowledgment status not allowed
     EmptyAcknowledgmentStatus,
-    /// failed packet verification for packet with sequence `{sequence}`: `{client_error}`
-    FailedPacketVerification {
-        sequence: Sequence,
-        client_error: ClientError,
-    },
-    /// failed proof verification: `{0}`
-    FailedProofVerification(ClientError),
+    /// failed verification: `{0}`
+    FailedVerification(ClientError),
     /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
     InsufficientPacketHeight {
         chain_height: Height,
@@ -116,9 +111,7 @@ impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Decoding(e) => Some(e),
-            Self::FailedPacketVerification {
-                client_error: e, ..
-            } => Some(e),
+            Self::FailedVerification(e) => Some(e),
             _ => None,
         }
     }
