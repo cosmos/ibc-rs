@@ -14,10 +14,29 @@ use crate::commitment::PacketCommitment;
 use crate::timeout::TimeoutTimestamp;
 use crate::Version;
 
+/// Errors that arise from the ICS04 Channel module
 #[derive(Debug, Display)]
 pub enum ChannelError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
+    /// packet acknowledgment for sequence `{0}` already exists
+    DuplicateAcknowledgment(Sequence),
+    /// empty acknowledgment status not allowed
+    EmptyAcknowledgmentStatus,
+    /// failed packet verification for packet with sequence `{sequence}`: `{client_error}`
+    FailedPacketVerification {
+        sequence: Sequence,
+        client_error: ClientError,
+    },
+    /// failed proof verification: `{0}`
+    FailedProofVerification(ClientError),
+    /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
+    InsufficientPacketHeight {
+        chain_height: Height,
+        timeout_height: TimeoutHeight,
+    },
+    /// insufficient packet timestamp: should be greater than chain block timestamp
+    InsufficientPacketTimestamp,
     /// invalid channel id: expected `{expected}`, actual `{actual}`
     InvalidChannelId { expected: String, actual: String },
     /// invalid channel state: expected `{expected}`, actual `{actual}`
@@ -31,43 +50,18 @@ pub enum ChannelError {
         expected: Counterparty,
         actual: Counterparty,
     },
+    /// invalid timeout height: `{0}`
+    InvalidTimeoutHeight(ClientError),
+    /// invalid timeout timestamp: `{0}`
+    InvalidTimeoutTimestamp(TimestampError),
     /// missing proof
     MissingProof,
     /// missing proof height
     MissingProofHeight,
     /// missing counterparty
     MissingCounterparty,
-    /// unsupported channel upgrade sequence
-    UnsupportedChannelUpgradeSequence,
-    /// unsupported version: expected `{expected}`, actual `{actual}`
-    UnsupportedVersion { expected: Version, actual: Version },
-    /// non-existent channel end: (`{port_id}`, `{channel_id}`)
-    NonexistentChannel {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
-    /// failed packet verification for packet with sequence `{sequence}`: `{client_error}`
-    FailedPacketVerification {
-        sequence: Sequence,
-        client_error: ClientError,
-    },
-    /// failed proof verification: `{0}`
-    FailedProofVerification(ClientError),
-}
-
-#[derive(Debug, Display)]
-pub enum PacketError {
-    /// channel error: `{0}`
-    Channel(ChannelError),
-    /// decoding error: `{0}`
-    Decoding(DecodingError),
-    /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
-    InsufficientPacketHeight {
-        chain_height: Height,
-        timeout_height: TimeoutHeight,
-    },
-    /// insufficient packet timestamp: should be greater than chain block timestamp
-    InsufficientPacketTimestamp,
+    /// missing timeout
+    MissingTimeout,
     /// mismatched packet sequences: expected `{expected}`, actual `{actual}`
     MismatchedPacketSequences {
         expected: Sequence,
@@ -79,18 +73,11 @@ pub enum PacketError {
         expected: PacketCommitment,
         actual: PacketCommitment,
     },
-    /// missing timeout
-    MissingTimeout,
-    /// invalid timeout height: `{0}`
-    InvalidTimeoutHeight(ClientError),
-    /// invalid timeout timestamp: `{0}`
-    InvalidTimeoutTimestamp(TimestampError),
-    /// empty acknowledgment status not allowed
-    EmptyAcknowledgmentStatus,
-    /// packet acknowledgment for sequence `{0}` already exists
-    DuplicateAcknowledgment(Sequence),
-    /// packet sequence cannot be 0
-    ZeroPacketSequence,
+    /// non-existent channel end: (`{port_id}`, `{channel_id}`)
+    NonexistentChannel {
+        port_id: PortId,
+        channel_id: ChannelId,
+    },
     /// packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
     PacketTimeoutNotReached {
         timeout_height: TimeoutHeight,
@@ -98,15 +85,15 @@ pub enum PacketError {
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
+    /// unsupported channel upgrade sequence
+    UnsupportedChannelUpgradeSequence,
+    /// unsupported version: expected `{expected}`, actual `{actual}`
+    UnsupportedVersion { expected: Version, actual: Version },
+    /// packet sequence cannot be 0
+    ZeroPacketSequence,
 }
 
 impl From<IdentifierError> for ChannelError {
-    fn from(e: IdentifierError) -> Self {
-        Self::Decoding(DecodingError::Identifier(e))
-    }
-}
-
-impl From<IdentifierError> for PacketError {
     fn from(e: IdentifierError) -> Self {
         Self::Decoding(DecodingError::Identifier(e))
     }
@@ -118,26 +105,9 @@ impl From<DecodingError> for ChannelError {
     }
 }
 
-impl From<DecodingError> for PacketError {
-    fn from(e: DecodingError) -> Self {
-        Self::Decoding(e)
-    }
-}
-
-impl From<TimestampError> for PacketError {
+impl From<TimestampError> for ChannelError {
     fn from(e: TimestampError) -> Self {
         Self::InvalidTimeoutTimestamp(e)
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for PacketError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self {
-            Self::Channel(e) => Some(e),
-            Self::Decoding(e) => Some(e),
-            _ => None,
-        }
     }
 }
 

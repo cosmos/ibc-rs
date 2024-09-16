@@ -46,8 +46,7 @@ pub fn dummy_raw_msg_recv_packet(height: u64) -> RawMsgRecvPacket {
 
 #[cfg(test)]
 mod test {
-    use ibc::core::channel::types::error::PacketError;
-    use ibc::primitives::prelude::*;
+    use ibc::{core::host::types::error::DecodingError, primitives::prelude::*};
 
     use super::*;
 
@@ -94,7 +93,7 @@ mod test {
         ];
 
         for test in tests {
-            let res_msg: Result<MsgRecvPacket, PacketError> = test.raw.clone().try_into();
+            let res_msg: Result<MsgRecvPacket, DecodingError> = test.raw.clone().try_into();
 
             assert_eq!(
                 res_msg.is_ok(),

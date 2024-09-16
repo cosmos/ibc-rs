@@ -1,6 +1,6 @@
 use ibc_core_channel_types::channel::{Counterparty, Order, State as ChannelState};
 use ibc_core_channel_types::commitment::{compute_ack_commitment, compute_packet_commitment};
-use ibc_core_channel_types::error::{ChannelError, PacketError};
+use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::{ReceivePacket, WriteAcknowledgement};
 use ibc_core_channel_types::msgs::MsgRecvPacket;
 use ibc_core_channel_types::packet::Receipt;
@@ -162,7 +162,7 @@ where
 
     let latest_height = ctx_b.host_height()?;
     if msg.packet.timeout_height_on_b.has_expired(latest_height) {
-        return Err(PacketError::InsufficientPacketHeight {
+        return Err(ChannelError::InsufficientPacketHeight {
             chain_height: latest_height,
             timeout_height: msg.packet.timeout_height_on_b,
         }
@@ -175,7 +175,7 @@ where
         .timeout_timestamp_on_b
         .has_expired(&latest_timestamp)
     {
-        return Err(PacketError::InsufficientPacketTimestamp.into());
+        return Err(ChannelError::InsufficientPacketTimestamp.into());
     }
 
     // Verify proofs
@@ -230,7 +230,7 @@ where
                 SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
             let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
             if msg.packet.seq_on_a > next_seq_recv {
-                return Err(PacketError::MismatchedPacketSequences {
+                return Err(ChannelError::MismatchedPacketSequences {
                     actual: msg.packet.seq_on_a,
                     expected: next_seq_recv,
                 }
@@ -271,7 +271,7 @@ where
     let packet = msg.packet.clone();
     let ack_path_on_b = AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
     if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {
-        return Err(PacketError::DuplicateAcknowledgment(msg.packet.seq_on_a).into());
+        return Err(ChannelError::DuplicateAcknowledgment(msg.packet.seq_on_a).into());
     }
 
     Ok(())
