@@ -25,9 +25,7 @@ pub trait ValidateSelfClientContext {
             })?;
 
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(HostError::invalid_state(
-                "client unexpectedly frozen".to_string(),
-            ));
+            return Err(HostError::invalid_state("client unexpectedly frozen"));
         }
 
         let self_chain_id = self.chain_id();
@@ -73,7 +71,7 @@ pub trait ValidateSelfClientContext {
                 trust_level.numerator(),
                 trust_level.denominator(),
             )
-            .map_err(|e| HostError::invalid_state(e.to_string()))?
+            .map_err(HostError::invalid_state)?
         };
 
         if self.unbonding_period() != client_state_of_host_on_counterparty.unbonding_period {

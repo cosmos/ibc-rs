@@ -76,7 +76,7 @@ where
                     consensus_path.revision_number,
                     consensus_path.revision_height,
                 )
-                .map_err(|e| HostError::invalid_state(e.to_string()))
+                .map_err(HostError::invalid_state)
             })
             .collect::<Result<Vec<_>, _>>()
     }
@@ -113,7 +113,7 @@ where
                     })
             })
             .transpose()
-            .map_err(|e| HostError::missing_state(e.to_string()))?;
+            .map_err(HostError::missing_state)?;
 
         Ok(consensus_state)
     }
@@ -150,7 +150,7 @@ where
                     })
             })
             .transpose()
-            .map_err(|e| HostError::missing_state(e.to_string()))?;
+            .map_err(HostError::missing_state)?;
 
         Ok(consensus_state)
     }
@@ -180,7 +180,7 @@ where
             client_cons_state_path.revision_number,
             client_cons_state_path.revision_height,
         )
-        .map_err(|e| HostError::invalid_state(e.to_string()))?;
+        .map_err(HostError::invalid_state)?;
         let consensus_state = self
             .consensus_state_store
             .get(StoreHeight::Pending, client_cons_state_path)
