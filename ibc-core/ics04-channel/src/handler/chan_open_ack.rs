@@ -6,7 +6,6 @@ use ibc_core_channel_types::msgs::MsgChannelOpenAck;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
 use ibc_core_host::{ExecutionContext, ValidationContext};
@@ -18,7 +17,7 @@ pub fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
     module: &dyn Module,
     msg: MsgChannelOpenAck,
-) -> Result<(), HandlerError>
+) -> Result<(), ChannelError>
 where
     ValCtx: ValidationContext,
 {
@@ -33,7 +32,7 @@ pub fn chan_open_ack_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgChannelOpenAck,
-) -> Result<(), HandlerError>
+) -> Result<(), ChannelError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -87,7 +86,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), HandlerError>
+fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ChannelError>
 where
     Ctx: ValidationContext,
 {

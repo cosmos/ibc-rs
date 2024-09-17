@@ -3,6 +3,7 @@
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
+use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_core_host_types::identifiers::Sequence;
 use ibc_primitives::prelude::*;
@@ -21,6 +22,10 @@ pub enum ChannelError {
     Decoding(DecodingError),
     /// host error: `{0}`
     Host(HostError),
+    /// client error: `{0}`
+    Client(ClientError),
+    /// connection error: `{0}`
+    Connection(ConnectionError),
     /// packet acknowledgment for sequence `{0}` already exists
     DuplicateAcknowledgment(Sequence),
     /// failed verification: `{0}`
@@ -90,6 +95,18 @@ impl From<HostError> for ChannelError {
     }
 }
 
+impl From<ConnectionError> for ChannelError {
+    fn from(e: ConnectionError) -> Self {
+        Self::Connection(e)
+    }
+}
+
+impl From<ClientError> for ChannelError {
+    fn from(e: ClientError) -> Self {
+        Self::Client(e)
+    }
+}
+
 impl From<TimestampError> for ChannelError {
     fn from(e: TimestampError) -> Self {
         Self::InvalidTimeoutTimestamp(e)
@@ -101,6 +118,8 @@ impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Decoding(e) => Some(e),
+            Self::Client(e) => Some(e),
+            Self::Connection(e) => Some(e),
             Self::Host(e) => Some(e),
             Self::FailedVerification(e) => Some(e),
             Self::InvalidTimeoutTimestamp(e) => Some(e),

@@ -5,7 +5,6 @@ use ibc_core_channel_types::msgs::MsgTimeoutOnClose;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_connection::types::error::ConnectionError;
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
@@ -13,7 +12,7 @@ use ibc_core_host::ValidationContext;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), HandlerError>
+pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ChannelError>
 where
     Ctx: ValidationContext,
 {
@@ -54,8 +53,7 @@ where
         return Err(ChannelError::MismatchedPacketCommitments {
             expected: expected_commitment_on_a,
             actual: commitment_on_a,
-        }
-        .into());
+        });
     }
 
     let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
@@ -107,15 +105,13 @@ where
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
-        client_state_of_b_on_a
-            .verify_membership(
-                prefix_on_b,
-                &msg.proof_close_on_b,
-                consensus_state_of_b_on_a.root(),
-                Path::ChannelEnd(chan_end_path_on_b),
-                expected_chan_end_on_b.encode_vec(),
-            )
-            .map_err(ChannelError::FailedVerification)?;
+        client_state_of_b_on_a.verify_membership(
+            prefix_on_b,
+            &msg.proof_close_on_b,
+            consensus_state_of_b_on_a.root(),
+            Path::ChannelEnd(chan_end_path_on_b),
+            expected_chan_end_on_b.encode_vec(),
+        )?;
 
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 
@@ -125,8 +121,7 @@ where
                     return Err(ChannelError::MismatchedPacketSequences {
                         actual: packet.seq_on_a,
                         expected: msg.next_seq_recv_on_b,
-                    }
-                    .into());
+                    });
                 }
                 let seq_recv_path_on_b =
                     SeqRecvPath::new(&packet.port_id_on_b, &packet.chan_id_on_b);
@@ -154,14 +149,14 @@ where
                 )
             }
             Order::None => {
-                return Err(HandlerError::Channel(ChannelError::InvalidState {
+                return Err(ChannelError::InvalidState {
                     expected: "Channel ordering to not be None".to_string(),
                     actual: chan_end_on_a.ordering.to_string(),
-                }))
+                })
             }
         };
 
-        next_seq_recv_verification_result.map_err(ChannelError::FailedVerification)?;
+        next_seq_recv_verification_result?;
     };
 
     Ok(())

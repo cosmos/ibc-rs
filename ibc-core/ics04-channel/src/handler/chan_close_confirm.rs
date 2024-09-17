@@ -7,7 +7,6 @@ use ibc_core_channel_types::msgs::MsgChannelCloseConfirm;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
 use ibc_core_host::{ExecutionContext, ValidationContext};
@@ -19,7 +18,7 @@ pub fn chan_close_confirm_validate<ValCtx>(
     ctx_b: &ValCtx,
     module: &dyn Module,
     msg: MsgChannelCloseConfirm,
-) -> Result<(), HandlerError>
+) -> Result<(), ChannelError>
 where
     ValCtx: ValidationContext,
 {
@@ -34,7 +33,7 @@ pub fn chan_close_confirm_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgChannelCloseConfirm,
-) -> Result<(), HandlerError>
+) -> Result<(), ChannelError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -62,7 +61,7 @@ where
                 .counterparty()
                 .channel_id
                 .clone()
-                .ok_or(HandlerError::Channel(ChannelError::MissingCounterparty))?;
+                .ok_or(ChannelError::MissingCounterparty)?;
             let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
 
             IbcEvent::CloseConfirmChannel(CloseConfirm::new(
@@ -88,7 +87,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelCloseConfirm) -> Result<(), HandlerError>
+fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelCloseConfirm) -> Result<(), ChannelError>
 where
     Ctx: ValidationContext,
 {
