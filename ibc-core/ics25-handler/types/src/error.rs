@@ -5,7 +5,6 @@ use displaydoc::Display;
 use ibc_core_channel_types::error::ChannelError;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_host_types::error::HostError;
 use ibc_core_router_types::error::RouterError;
 use ibc_primitives::prelude::*;
 
