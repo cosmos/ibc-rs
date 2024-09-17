@@ -16,14 +16,17 @@ pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), Hand
 where
     Ctx: ValidationContext,
 {
-    ctx.validate_message_signer(msg.signer())?;
+    ctx.validate_message_signer(msg.signer())
+        .map_err(ClientError::Host)?;
 
     let client_id = msg.client_id().clone();
 
     let client_val_ctx = ctx.get_client_validation_context();
 
     // Read client state from the host chain store. The client should already exist.
-    let client_state = client_val_ctx.client_state(&client_id)?;
+    let client_state = client_val_ctx
+        .client_state(&client_id)
+        .map_err(ClientError::Host)?;
 
     client_state
         .status(client_val_ctx, &client_id)?
@@ -49,7 +52,9 @@ where
 
     let client_exec_ctx = ctx.get_client_execution_context();
 
-    let client_state = client_exec_ctx.client_state(&client_id)?;
+    let client_state = client_exec_ctx
+        .client_state(&client_id)
+        .map_err(ClientError::Host)?;
 
     let found_misbehaviour =
         client_state.check_for_misbehaviour(client_exec_ctx, &client_id, client_message.clone())?;
@@ -61,8 +66,9 @@ where
             client_id,
             client_state.client_type(),
         ));
-        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
-        ctx.emit_ibc_event(event)?;
+        ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))
+            .map_err(ClientError::Host)?;
+        ctx.emit_ibc_event(event).map_err(ClientError::Host)?;
     } else {
         if !matches!(update_kind, UpdateKind::UpdateClient) {
             return Err(ClientError::FailedMisbehaviourHandling {
@@ -78,9 +84,9 @@ where
 
         {
             let event = {
-                let consensus_height = consensus_heights.first().ok_or(
+                let consensus_height = consensus_heights.first().ok_or(ClientError::Host(
                     HostError::missing_state("missing updated height in client update state"),
-                )?;
+                ))?;
 
                 IbcEvent::UpdateClient(UpdateClient::new(
                     client_id,
@@ -90,8 +96,9 @@ where
                     header.to_vec(),
                 ))
             };
-            ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
-            ctx.emit_ibc_event(event)?;
+            ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))
+                .map_err(ClientError::Host)?;
+            ctx.emit_ibc_event(event).map_err(ClientError::Host)?;
         }
     }
 
