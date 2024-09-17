@@ -4,7 +4,7 @@ use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
 use ibc_core_host_types::error::{DecodingError, IdentifierError};
-use ibc_core_host_types::identifiers::{ChannelId, PortId, Sequence};
+use ibc_core_host_types::identifiers::Sequence;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
 
@@ -14,53 +14,15 @@ use crate::commitment::PacketCommitment;
 use crate::timeout::TimeoutTimestamp;
 use crate::Version;
 
+/// Errors that arise from the ICS04 Channel module
 #[derive(Debug, Display)]
 pub enum ChannelError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// invalid channel id: expected `{expected}`, actual `{actual}`
-    InvalidChannelId { expected: String, actual: String },
-    /// invalid channel state: expected `{expected}`, actual `{actual}`
-    InvalidState { expected: String, actual: String },
-    /// invalid channel order type: expected `{expected}`, actual `{actual}`
-    InvalidOrderType { expected: String, actual: String },
-    /// invalid connection hops length: expected `{expected}`, actual `{actual}`
-    InvalidConnectionHopsLength { expected: u64, actual: u64 },
-    /// invalid counterparty: expected `{expected}`, actual `{actual}`
-    InvalidCounterparty {
-        expected: Counterparty,
-        actual: Counterparty,
-    },
-    /// missing proof
-    MissingProof,
-    /// missing proof height
-    MissingProofHeight,
-    /// missing counterparty
-    MissingCounterparty,
-    /// unsupported channel upgrade sequence
-    UnsupportedChannelUpgradeSequence,
-    /// unsupported version: expected `{expected}`, actual `{actual}`
-    UnsupportedVersion { expected: Version, actual: Version },
-    /// non-existent channel end: (`{port_id}`, `{channel_id}`)
-    NonexistentChannel {
-        port_id: PortId,
-        channel_id: ChannelId,
-    },
-    /// failed packet verification for packet with sequence `{sequence}`: `{client_error}`
-    FailedPacketVerification {
-        sequence: Sequence,
-        client_error: ClientError,
-    },
-    /// failed proof verification: `{0}`
-    FailedProofVerification(ClientError),
-}
-
-#[derive(Debug, Display)]
-pub enum PacketError {
-    /// channel error: `{0}`
-    Channel(ChannelError),
-    /// decoding error: `{0}`
-    Decoding(DecodingError),
+    /// packet acknowledgment for sequence `{0}` already exists
+    DuplicateAcknowledgment(Sequence),
+    /// failed verification: `{0}`
+    FailedVerification(ClientError),
     /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
     InsufficientPacketHeight {
         chain_height: Height,
@@ -68,29 +30,33 @@ pub enum PacketError {
     },
     /// insufficient packet timestamp: should be greater than chain block timestamp
     InsufficientPacketTimestamp,
+    /// invalid channel state: expected `{expected}`, actual `{actual}`
+    InvalidState { expected: String, actual: String },
+    /// invalid connection hops length: expected `{expected}`, actual `{actual}`
+    InvalidConnectionHopsLength { expected: u64, actual: u64 },
+    /// invalid timeout timestamp: `{0}`
+    InvalidTimeoutTimestamp(TimestampError),
+    /// missing acknowledgment status
+    MissingAcknowledgmentStatus,
+    /// missing counterparty
+    MissingCounterparty,
+    /// missing timeout
+    MissingTimeout,
+    /// mismatched counterparty: expected `{expected}`, actual `{actual}`
+    MismatchedCounterparty {
+        expected: Counterparty,
+        actual: Counterparty,
+    },
     /// mismatched packet sequences: expected `{expected}`, actual `{actual}`
     MismatchedPacketSequences {
         expected: Sequence,
         actual: Sequence,
     },
-    /// mismatched commitments for packet `{sequence}`: expected `{expected:?}`, actual `{actual:?}`
+    /// mismatched packet commitments: expected `{expected:?}`, actual `{actual:?}`
     MismatchedPacketCommitments {
-        sequence: Sequence,
         expected: PacketCommitment,
         actual: PacketCommitment,
     },
-    /// missing timeout
-    MissingTimeout,
-    /// invalid timeout height: `{0}`
-    InvalidTimeoutHeight(ClientError),
-    /// invalid timeout timestamp: `{0}`
-    InvalidTimeoutTimestamp(TimestampError),
-    /// empty acknowledgment status not allowed
-    EmptyAcknowledgmentStatus,
-    /// packet acknowledgment for sequence `{0}` already exists
-    DuplicateAcknowledgment(Sequence),
-    /// packet sequence cannot be 0
-    ZeroPacketSequence,
     /// packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
     PacketTimeoutNotReached {
         timeout_height: TimeoutHeight,
@@ -98,15 +64,13 @@ pub enum PacketError {
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
+    /// unexpected channel ID: expected to be empty
+    UnexpectedChannelId,
+    /// unsupported version: expected `{expected}`, actual `{actual}`
+    UnsupportedVersion { expected: Version, actual: Version },
 }
 
 impl From<IdentifierError> for ChannelError {
-    fn from(e: IdentifierError) -> Self {
-        Self::Decoding(DecodingError::Identifier(e))
-    }
-}
-
-impl From<IdentifierError> for PacketError {
     fn from(e: IdentifierError) -> Self {
         Self::Decoding(DecodingError::Identifier(e))
     }
@@ -118,26 +82,9 @@ impl From<DecodingError> for ChannelError {
     }
 }
 
-impl From<DecodingError> for PacketError {
-    fn from(e: DecodingError) -> Self {
-        Self::Decoding(e)
-    }
-}
-
-impl From<TimestampError> for PacketError {
+impl From<TimestampError> for ChannelError {
     fn from(e: TimestampError) -> Self {
         Self::InvalidTimeoutTimestamp(e)
-    }
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for PacketError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self {
-            Self::Channel(e) => Some(e),
-            Self::Decoding(e) => Some(e),
-            _ => None,
-        }
     }
 }
 
@@ -146,9 +93,8 @@ impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Decoding(e) => Some(e),
-            Self::FailedPacketVerification {
-                client_error: e, ..
-            } => Some(e),
+            Self::FailedVerification(e) => Some(e),
+            Self::InvalidTimeoutTimestamp(e) => Some(e),
             _ => None,
         }
     }

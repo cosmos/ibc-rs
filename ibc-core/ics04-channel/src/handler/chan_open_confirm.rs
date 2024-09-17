@@ -156,7 +156,7 @@ where
                 Path::ChannelEnd(chan_end_path_on_a),
                 expected_chan_end_on_a.encode_vec(),
             )
-            .map_err(ChannelError::FailedProofVerification)?;
+            .map_err(ChannelError::FailedVerification)?;
     }
 
     Ok(())

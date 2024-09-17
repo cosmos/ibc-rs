@@ -7,7 +7,6 @@ use ibc_proto::ibc::core::channel::v1::MsgAcknowledgement as RawMsgAcknowledgeme
 use ibc_proto::Protobuf;
 
 use crate::acknowledgement::Acknowledgement;
-use crate::error::PacketError;
 use crate::packet::Packet;
 
 pub const ACKNOWLEDGEMENT_TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgement";
@@ -34,7 +33,7 @@ pub struct MsgAcknowledgement {
 impl Protobuf<RawMsgAcknowledgement> for MsgAcknowledgement {}
 
 impl TryFrom<RawMsgAcknowledgement> for MsgAcknowledgement {
-    type Error = PacketError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgAcknowledgement) -> Result<Self, Self::Error> {
         Ok(MsgAcknowledgement {

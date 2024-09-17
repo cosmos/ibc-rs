@@ -6,7 +6,6 @@ use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgRecvPacket as RawMsgRecvPacket;
 use ibc_proto::Protobuf;
 
-use crate::error::PacketError;
 use crate::packet::Packet;
 
 pub const RECV_PACKET_TYPE_URL: &str = "/ibc.core.channel.v1.MsgRecvPacket";
@@ -34,7 +33,7 @@ pub struct MsgRecvPacket {
 impl Protobuf<RawMsgRecvPacket> for MsgRecvPacket {}
 
 impl TryFrom<RawMsgRecvPacket> for MsgRecvPacket {
-    type Error = PacketError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgRecvPacket) -> Result<Self, Self::Error> {
         Ok(MsgRecvPacket {
