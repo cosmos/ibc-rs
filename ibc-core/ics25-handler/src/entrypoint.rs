@@ -75,7 +75,7 @@ where
         MsgEnvelope::Connection(msg) => match msg {
             ConnectionMsg::OpenInit(msg) => conn_open_init::validate(ctx, msg),
             ConnectionMsg::OpenTry(msg) => conn_open_try::validate(ctx, msg),
-            ConnectionMsg::OpenAck(msg) => Ok(conn_open_ack::validate(ctx, msg)?),
+            ConnectionMsg::OpenAck(msg) => conn_open_ack::validate(ctx, msg),
             ConnectionMsg::OpenConfirm(msg) => conn_open_confirm::validate(ctx, &msg),
         },
         MsgEnvelope::Channel(msg) => {

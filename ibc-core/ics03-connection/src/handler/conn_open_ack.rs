@@ -2,11 +2,12 @@
 
 use ibc_core_client::context::prelude::*;
 use ibc_core_client::types::error::ClientError;
+use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenAck;
 use ibc_core_connection_types::msgs::MsgConnectionOpenAck;
 use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
+use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::error::HostError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path};
 use ibc_core_host::{ExecutionContext, ValidationContext};
@@ -16,7 +17,7 @@ use ibc_primitives::ToVec;
 
 use crate::handler::{pack_host_consensus_state, unpack_host_client_state};
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), HostError>
+pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), HandlerError>
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
@@ -29,7 +30,7 @@ fn validate_impl<Ctx>(
     ctx_a: &Ctx,
     msg: &MsgConnectionOpenAck,
     vars: &LocalVars,
-) -> Result<(), HostError>
+) -> Result<(), HandlerError>
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
@@ -39,10 +40,11 @@ where
     let host_height = ctx_a.host_height()?;
 
     if msg.consensus_height_of_a_on_b > host_height {
-        return Err(HostError::invalid_state(format!(
-            "insufficient consensus height {}; must be at least {}",
-            host_height, msg.consensus_height_of_a_on_b
-        )));
+        return Err(ConnectionError::InsufficientConsensusHeight {
+            target_height: msg.consensus_height_of_a_on_b,
+            current_height: host_height,
+        }
+        .into());
     }
 
     let client_val_ctx_a = ctx_a.get_client_validation_context();
@@ -55,26 +57,19 @@ where
     ctx_a.validate_self_client(client_state_of_a_on_b)?;
 
     msg.version
-        .verify_is_supported(vars.conn_end_on_a.versions())
-        .map_err(HostError::failed_to_verify)?;
+        .verify_is_supported(vars.conn_end_on_a.versions())?;
 
-    vars.conn_end_on_a
-        .verify_state_matches(&State::Init)
-        .map_err(HostError::failed_to_verify)?;
+    vars.conn_end_on_a.verify_state_matches(&State::Init)?;
 
     // Proof verification.
     {
         let client_state_of_b_on_a = client_val_ctx_a.client_state(vars.client_id_on_a())?;
 
         client_state_of_b_on_a
-            .status(client_val_ctx_a, vars.client_id_on_a())
-            .map_err(|e| HostError::invalid_state(format!("failed to fetch client status: {e}")))?
-            .verify_is_active()
-            .map_err(HostError::failed_to_verify)?;
+            .status(client_val_ctx_a, vars.client_id_on_a())?
+            .verify_is_active()?;
 
-        client_state_of_b_on_a
-            .validate_proof_height(msg.proofs_height_on_b)
-            .map_err(HostError::failed_to_verify)?;
+        client_state_of_b_on_a.validate_proof_height(msg.proofs_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
             vars.client_id_on_a().clone(),
@@ -99,8 +94,7 @@ where
                 ),
                 vec![msg.version.clone()],
                 vars.conn_end_on_a.delay_period(),
-            )
-            .map_err(HostError::invalid_state)?;
+            )?;
 
             client_state_of_b_on_a
                 .verify_membership(
@@ -110,7 +104,7 @@ where
                     Path::Connection(ConnectionPath::new(&msg.conn_id_on_b)),
                     expected_conn_end_on_b.encode_vec(),
                 )
-                .map_err(HostError::failed_to_verify)?;
+                .map_err(ConnectionError::FailedToVerifyClient)?;
         }
 
         client_state_of_b_on_a
@@ -121,7 +115,7 @@ where
                 Path::ClientState(ClientStatePath::new(vars.client_id_on_b().clone())),
                 msg.client_state_of_a_on_b.to_vec(),
             )
-            .map_err(HostError::failed_to_verify)?;
+            .map_err(ConnectionError::FailedToVerifyClient)?;
 
         let expected_consensus_state_of_a_on_b =
             ctx_a.host_consensus_state(&msg.consensus_height_of_a_on_b)?;
@@ -143,13 +137,13 @@ where
                 Path::ClientConsensusState(client_cons_state_path_on_b),
                 stored_consensus_state_of_a_on_b.to_vec(),
             )
-            .map_err(HostError::failed_to_verify)?;
+            .map_err(ConnectionError::FailedToVerifyClient)?;
     }
 
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), HostError>
+pub fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), HandlerError>
 where
     Ctx: ExecutionContext,
 {
@@ -161,7 +155,7 @@ fn execute_impl<Ctx>(
     ctx_a: &mut Ctx,
     msg: MsgConnectionOpenAck,
     vars: LocalVars,
-) -> Result<(), HostError>
+) -> Result<(), HandlerError>
 where
     Ctx: ExecutionContext,
 {
@@ -199,7 +193,7 @@ struct LocalVars {
 }
 
 impl LocalVars {
-    fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, HostError>
+    fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, HandlerError>
     where
         Ctx: ValidationContext,
     {
