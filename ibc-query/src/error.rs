@@ -15,6 +15,8 @@ use tonic::Status;
 pub enum QueryError {
     /// handler error: `{0}`
     Handler(HandlerError),
+    /// host error: `{0}`
+    Host(HostError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// missing proof: `{0}`
@@ -37,6 +39,7 @@ impl From<QueryError> for Status {
     fn from(e: QueryError) -> Self {
         match e {
             QueryError::Handler(ctx_err) => Self::internal(ctx_err.to_string()),
+            QueryError::Host(host_err) => Self::internal(host_err.to_string()),
             QueryError::Decoding(de) => Self::internal(de.to_string()),
             QueryError::MissingProof(description) => Self::not_found(description),
             QueryError::MissingField(description) => Self::invalid_argument(description),
@@ -82,6 +85,6 @@ impl From<IdentifierError> for QueryError {
 
 impl From<HostError> for QueryError {
     fn from(e: HostError) -> Self {
-        Self::Handler(HandlerError::Host(e))
+        Self::Host(e)
     }
 }
