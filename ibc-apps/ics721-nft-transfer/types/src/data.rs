@@ -6,10 +6,9 @@ use core::str::FromStr;
 use base64::prelude::BASE64_STANDARD;
 #[cfg(feature = "serde")]
 use base64::Engine;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 use mime::Mime;
-
-use crate::error::NftTransferError;
 
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -30,7 +29,7 @@ pub struct Data(String);
 #[cfg(feature = "serde")]
 impl Data {
     /// Parses the data in the format specified by ICS-721.
-    pub fn parse_as_ics721_data(&self) -> Result<Ics721Data, NftTransferError> {
+    pub fn parse_as_ics721_data(&self) -> Result<Ics721Data, DecodingError> {
         self.0.parse::<Ics721Data>()
     }
 }
@@ -42,7 +41,7 @@ impl Display for Data {
 }
 
 impl FromStr for Data {
-    type Err = NftTransferError;
+    type Err = DecodingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self(s.to_string()))
@@ -94,10 +93,10 @@ pub struct Ics721Data(BTreeMap<String, DataValue>);
 
 #[cfg(feature = "serde")]
 impl FromStr for Ics721Data {
-    type Err = NftTransferError;
+    type Err = DecodingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        serde_json::from_str(s).map_err(|e| NftTransferError::InvalidJsonData {
+        serde_json::from_str(s).map_err(|e| DecodingError::InvalidJson {
             description: e.to_string(),
         })
     }

@@ -5,6 +5,7 @@ use core::str::FromStr;
 
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
@@ -170,23 +171,37 @@ impl TryFrom<RawHeader> for Header {
         let header = Self {
             signed_header: raw
                 .signed_header
-                .ok_or(TendermintClientError::MissingSignedHeader)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "signed header not set".to_string(),
+                })?
                 .try_into()
-                .map_err(TendermintClientError::InvalidRawHeader)?,
+                .map_err(|e| DecodingError::InvalidRawData {
+                    description: format!("failed to decode signed header: {e:?}"),
+                })?,
             validator_set: raw
                 .validator_set
-                .ok_or(TendermintClientError::MissingValidatorSet)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "validator set not set".to_string(),
+                })?
                 .try_into()
-                .map_err(TendermintClientError::InvalidRawHeader)?,
+                .map_err(|e| DecodingError::InvalidRawData {
+                    description: format!("failed to decode validator set: {e:?}"),
+                })?,
             trusted_height: raw
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(TendermintClientError::MissingTrustedHeight)?,
+                .ok_or(DecodingError::MissingRawData {
+                    description: "trusted height not set".to_string(),
+                })?,
             trusted_next_validator_set: raw
                 .trusted_validators
-                .ok_or(TendermintClientError::MissingTrustedNextValidatorSet)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "trusted next validator set not set".to_string(),
+                })?
                 .try_into()
-                .map_err(TendermintClientError::InvalidRawHeader)?,
+                .map_err(|e| DecodingError::InvalidRawData {
+                    description: format!("failed to decode trusted next validator set: {e:?}"),
+                })?,
         };
 
         Ok(header)
@@ -199,15 +214,16 @@ impl TryFrom<Any> for Header {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_header(value: &[u8]) -> Result<Header, ClientError> {
-            let header = Protobuf::<RawHeader>::decode(value).map_err(|e| ClientError::Other {
-                description: e.to_string(),
-            })?;
+        fn decode_header(value: &[u8]) -> Result<Header, DecodingError> {
+            let header = Protobuf::<RawHeader>::decode(value)?;
             Ok(header)
         }
         match raw.type_url.as_str() {
-            TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value),
-            _ => Err(ClientError::InvalidHeaderType(raw.type_url)),
+            TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value).map_err(ClientError::Decoding),
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: TENDERMINT_HEADER_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })?,
         }
     }
 }

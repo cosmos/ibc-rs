@@ -1,5 +1,5 @@
 use ibc_core_client_types::Height;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_host_types::error::HostError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_core_host_types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_primitives::prelude::*;
@@ -19,7 +19,7 @@ pub trait ClientValidationContext: Sized {
     /// Returns the ClientState for the given identifier `client_id`.
     ///
     /// Note: Clients have the responsibility to store client states on client creation and update.
-    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, ContextError>;
+    fn client_state(&self, client_id: &ClientId) -> Result<Self::ClientStateRef, HostError>;
 
     /// Retrieve the consensus state for the given client ID at the specified
     /// height.
@@ -30,7 +30,7 @@ pub trait ClientValidationContext: Sized {
     fn consensus_state(
         &self,
         client_cons_state_path: &ClientConsensusStatePath,
-    ) -> Result<Self::ConsensusStateRef, ContextError>;
+    ) -> Result<Self::ConsensusStateRef, HostError>;
 
     /// Returns the timestamp and height of the host when it processed a client
     /// update request at the specified height.
@@ -38,7 +38,7 @@ pub trait ClientValidationContext: Sized {
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<(Timestamp, Height), ContextError>;
+    ) -> Result<(Timestamp, Height), HostError>;
 }
 
 /// Defines the methods that all client `ExecutionContext`s (precisely the
@@ -54,7 +54,7 @@ pub trait ClientExecutionContext:
 {
     type ClientStateMut: ClientStateExecution<Self>;
 
-    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, ContextError> {
+    fn client_state_mut(&self, client_id: &ClientId) -> Result<Self::ClientStateMut, HostError> {
         self.client_state(client_id)
     }
 
@@ -63,20 +63,20 @@ pub trait ClientExecutionContext:
         &mut self,
         client_state_path: ClientStatePath,
         client_state: Self::ClientStateRef,
-    ) -> Result<(), ContextError>;
+    ) -> Result<(), HostError>;
 
     /// Called upon successful client creation and update
     fn store_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
         consensus_state: Self::ConsensusStateRef,
-    ) -> Result<(), ContextError>;
+    ) -> Result<(), HostError>;
 
     /// Delete the consensus state from the store located at the given `ClientConsensusStatePath`
     fn delete_consensus_state(
         &mut self,
         consensus_state_path: ClientConsensusStatePath,
-    ) -> Result<(), ContextError>;
+    ) -> Result<(), HostError>;
 
     /// Called upon successful client update.
     ///
@@ -88,7 +88,7 @@ pub trait ClientExecutionContext:
         height: Height,
         host_timestamp: Timestamp,
         host_height: Height,
-    ) -> Result<(), ContextError>;
+    ) -> Result<(), HostError>;
 
     /// Delete the update time and height associated with the client at the
     /// specified height.
@@ -97,11 +97,7 @@ pub trait ClientExecutionContext:
     /// specified height.
     ///
     /// Note that this timestamp is determined by the host.
-    fn delete_update_meta(
-        &mut self,
-        client_id: ClientId,
-        height: Height,
-    ) -> Result<(), ContextError>;
+    fn delete_update_meta(&mut self, client_id: ClientId, height: Height) -> Result<(), HostError>;
 }
 
 /// An optional trait that extends the client validation context capabilities by
@@ -115,27 +111,27 @@ pub trait ClientExecutionContext:
 /// specific light client requirements.
 pub trait ExtClientValidationContext: ClientValidationContext {
     /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
+    fn host_timestamp(&self) -> Result<Timestamp, HostError>;
 
     /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, ContextError>;
+    fn host_height(&self) -> Result<Height, HostError>;
 
     /// Returns all the heights at which a consensus state is stored.
-    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError>;
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, HostError>;
 
     /// Search for the lowest consensus state higher than `height`.
     fn next_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
+    ) -> Result<Option<Self::ConsensusStateRef>, HostError>;
 
     /// Search for the highest consensus state lower than `height`.
     fn prev_consensus_state(
         &self,
         client_id: &ClientId,
         height: &Height,
-    ) -> Result<Option<Self::ConsensusStateRef>, ContextError>;
+    ) -> Result<Option<Self::ConsensusStateRef>, HostError>;
 }
 
 /// An optional trait that extends the client context required during execution.

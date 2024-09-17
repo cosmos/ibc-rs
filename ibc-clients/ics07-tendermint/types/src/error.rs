@@ -4,11 +4,12 @@ use core::time::Duration;
 
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::Height;
 use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::IdentifierError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_primitives::prelude::*;
 use ibc_primitives::TimestampError;
-use tendermint::{Error as TendermintError, Hash};
+use tendermint::Hash;
 use tendermint_light_client_verifier::errors::VerificationErrorDetail as LightClientErrorDetail;
 use tendermint_light_client_verifier::operations::VotingPowerTally;
 use tendermint_light_client_verifier::Verdict;
@@ -16,40 +17,18 @@ use tendermint_light_client_verifier::Verdict;
 /// The main error type for the Tendermint light client
 #[derive(Debug, Display)]
 pub enum TendermintClientError {
-    /// invalid identifier: `{0}`
-    InvalidIdentifier(IdentifierError),
+    /// decoding error: `{0}`
+    Decoding(DecodingError),
     /// invalid client state trust threshold: `{description}`
     InvalidTrustThreshold { description: String },
     /// invalid clock drift; must be greater than 0
     InvalidMaxClockDrift,
     /// invalid client proof specs: `{0}`
     InvalidProofSpec(CommitmentError),
-    /// invalid raw client state: `{description}`
-    InvalidRawClientState { description: String },
-    /// invalid raw header error: `{0}`
-    InvalidRawHeader(TendermintError),
-    /// invalid raw misbehaviour: `{description}`
-    InvalidRawMisbehaviour { description: String },
     /// invalid header timestamp: `{0}`
     InvalidHeaderTimestamp(TimestampError),
     /// invalid header height: `{0}`
     InvalidHeaderHeight(u64),
-    /// missing signed header
-    MissingSignedHeader,
-    /// missing validator set
-    MissingValidatorSet,
-    /// missing trusted next validator set
-    MissingTrustedNextValidatorSet,
-    /// missing trusted height
-    MissingTrustedHeight,
-    /// missing trusting period
-    MissingTrustingPeriod,
-    /// missing unbonding period
-    MissingUnbondingPeriod,
-    /// missing the latest height
-    MissingLatestHeight,
-    /// missing frozen height
-    MissingFrozenHeight,
     /// mismatched revision heights: expected `{expected}`, actual `{actual}`
     MismatchedRevisionHeights { expected: u64, actual: u64 },
     /// mismatched header chain ids: expected `{expected}`, actual `{actual}`
@@ -67,19 +46,22 @@ pub enum TendermintClientError {
         duration_since_consensus_state: Duration,
         trusting_period: Duration,
     },
+    /// insufficient misbehaviour header height: header1 height `{height_1}` should be >= header2 height `{height_2}`
+    InsufficientMisbehaviourHeaderHeight { height_1: Height, height_2: Height },
 }
 
 #[cfg(feature = "std")]
 impl std::error::Error for TendermintClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::InvalidIdentifier(e) => Some(e),
-            Self::InvalidRawHeader(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
     }
 }
 
+// TODO(seanchen1991): Should this impl be deprecated in favor of a
+// From<ClientError> for TendermintClientError impl?
 impl From<TendermintClientError> for ClientError {
     fn from(e: TendermintClientError) -> Self {
         Self::ClientSpecific {
@@ -90,13 +72,19 @@ impl From<TendermintClientError> for ClientError {
 
 impl From<IdentifierError> for TendermintClientError {
     fn from(e: IdentifierError) -> Self {
-        Self::InvalidIdentifier(e)
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 
 impl From<CommitmentError> for TendermintClientError {
     fn from(e: CommitmentError) -> Self {
         Self::InvalidProofSpec(e)
+    }
+}
+
+impl From<DecodingError> for TendermintClientError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
     }
 }
 

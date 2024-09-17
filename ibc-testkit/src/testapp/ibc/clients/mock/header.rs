@@ -3,6 +3,7 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 
 use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
 
@@ -95,12 +96,12 @@ impl TryFrom<Any> for MockHeader {
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
-            MOCK_HEADER_TYPE_URL => Ok(Protobuf::<RawMockHeader>::decode_vec(&raw.value).map_err(
-                |e| ClientError::InvalidRawHeader {
-                    description: e.to_string(),
-                },
-            )?),
-            _ => Err(ClientError::InvalidHeaderType(raw.type_url)),
+            MOCK_HEADER_TYPE_URL => Ok(Protobuf::<RawMockHeader>::decode_vec(&raw.value)
+                .map_err(DecodingError::Protobuf)?),
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: MOCK_HEADER_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })?,
         }
     }
 }

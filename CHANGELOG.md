@@ -641,9 +641,9 @@ There are no consensus-breaking changes.
 - Bump ibc-proto-rs to v0.34.0
   ([#790](https://github.com/cosmos/ibc-rs/issues/790))
 - Allow hosts to handle overflow cases in `increase_*_counter` methods by
-  returning `Result<(),ContextError>` type.
+  returning `Result<(),HandlerError>` type.
   ([#857](https://github.com/cosmos/ibc-rs/issues/857))
-- logger and event emitter methods return `Result<(), ContextError>` type.
+- logger and event emitter methods return `Result<(), HandlerError>` type.
   ([#859](https://github.com/cosmos/ibc-rs/issues/859))
 - Bump `ibc-proto-rs` to v0.35.0 along with some other minor dependency updates
   ([#873](https://github.com/cosmos/ibc-rs/issues/873))
@@ -1042,7 +1042,7 @@ There are no consensus-breaking changes.
 
 ### IMPROVEMENT
 
-- Fix `ContextError` Display output
+- Fix `HandlerError` Display output
   ([#547](https://github.com/cosmos/ibc-rs/issues/547))
 
 ## v0.32.0
@@ -1099,7 +1099,7 @@ There are no consensus-breaking changes.
   ([#479](https://github.com/cosmos/ibc-rs/issues/479))
 - Remove Send + Sync supertraits on the Module trait
   ([#480](https://github.com/cosmos/ibc-rs/issues/480))
-- Modify `validate_self_client` error type to return `ContextError` instead of
+- Modify `validate_self_client` error type to return `HandlerError` instead of
   `ConnectionError`
   ([#482](https://github.com/cosmos/ibc-rs/issues/482))
 

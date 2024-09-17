@@ -5,13 +5,14 @@ use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::{ClientMisbehaviour, UpdateClient};
 use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;
 use ibc_core_client_types::UpdateKind;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_core_host::types::error::HostError;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), HandlerError>
 where
     Ctx: ValidationContext,
 {
@@ -35,7 +36,7 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ContextError>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), HandlerError>
 where
     Ctx: ExecutionContext,
 {
@@ -77,9 +78,9 @@ where
 
         {
             let event = {
-                let consensus_height = consensus_heights.first().ok_or(ClientError::Other {
-                    description: "client update state returned no updated height".to_string(),
-                })?;
+                let consensus_height = consensus_heights.first().ok_or(
+                    HostError::missing_state("missing updated height in client update state"),
+                )?;
 
                 IbcEvent::UpdateClient(UpdateClient::new(
                     client_id,

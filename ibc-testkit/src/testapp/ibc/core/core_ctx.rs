@@ -7,17 +7,15 @@ use basecoin_store::context::{ProvableStore, Store};
 use basecoin_store::types::Height as StoreHeight;
 use ibc::core::channel::types::channel::{ChannelEnd, IdentifiedChannelEnd};
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
-use ibc::core::channel::types::error::{ChannelError, PacketError};
 use ibc::core::channel::types::packet::{PacketState, Receipt};
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
-use ibc::core::client::types::{Height, Status};
+use ibc::core::client::types::Height;
 use ibc::core::commitment_types::commitment::CommitmentPrefix;
 use ibc::core::commitment_types::merkle::MerkleProof;
-use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::connection::types::{ConnectionEnd, IdentifiedConnectionEnd};
-use ibc::core::handler::types::error::ContextError;
 use ibc::core::handler::types::events::IbcEvent;
+use ibc::core::host::types::error::HostError;
 use ibc::core::host::types::identifiers::{ClientId, ConnectionId, Sequence};
 use ibc::core::host::types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath,
@@ -42,45 +40,40 @@ where
     type HostClientState = AnyClientState;
     type HostConsensusState = AnyConsensusState;
 
-    fn host_height(&self) -> Result<Height, ContextError> {
-        Ok(Height::new(
-            *self.revision_number.lock(),
-            self.store.current_height(),
-        )?)
+    fn host_height(&self) -> Result<Height, HostError> {
+        Height::new(*self.revision_number.lock(), self.store.current_height())
+            .map_err(HostError::invalid_state)
     }
 
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError> {
+    fn host_timestamp(&self) -> Result<Timestamp, HostError> {
         let host_height = self.host_height()?;
         let host_cons_state = self.host_consensus_state(&host_height)?;
         Ok(host_cons_state.timestamp())
     }
 
-    fn client_counter(&self) -> Result<u64, ContextError> {
-        Ok(self
-            .client_counter
+    fn client_counter(&self) -> Result<u64, HostError> {
+        self.client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
-            .ok_or(ClientError::Other {
-                description: "client counter not found".into(),
-            })?)
+            .ok_or(HostError::missing_state("missing client counter"))
     }
 
-    fn host_consensus_state(
-        &self,
-        height: &Height,
-    ) -> Result<Self::HostConsensusState, ContextError> {
+    fn host_consensus_state(&self, height: &Height) -> Result<Self::HostConsensusState, HostError> {
         let consensus_states_binding = self.host_consensus_states.lock();
-        Ok(consensus_states_binding
+
+        consensus_states_binding
             .get(&height.revision_height())
             .cloned()
-            .ok_or(ClientError::MissingLocalConsensusState(*height))?)
+            .ok_or(HostError::missing_state(
+                ClientError::MissingLocalConsensusState(*height),
+            ))
     }
 
     fn validate_self_client(
         &self,
         client_state_of_host_on_counterparty: Self::HostClientState,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         if client_state_of_host_on_counterparty.is_frozen() {
-            return Err(ClientError::InvalidStatus(Status::Frozen).into());
+            return Err(HostError::invalid_state("client unexpectedly frozen"));
         }
 
         let latest_height = self.host_height()?;
@@ -91,40 +84,36 @@ where
                 .latest_height()
                 .revision_number()
         {
-            return Err(ContextError::ConnectionError(
-                ConnectionError::InvalidClientState {
-                    description: format!(
-                        "client is not in the same revision as the chain. expected: {}, got: {}",
-                        self_revision_number,
-                        client_state_of_host_on_counterparty
-                            .latest_height()
-                            .revision_number()
-                    ),
-                },
-            ));
+            return Err(HostError::invalid_state(format!(
+                "client is not in the same revision as the chain; expected {}, actual {}",
+                self_revision_number,
+                client_state_of_host_on_counterparty
+                    .latest_height()
+                    .revision_number()
+            )));
         }
 
         let host_current_height = latest_height.increment();
         if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
-            return Err(ContextError::ConnectionError(
-                ConnectionError::InvalidClientState {
-                    description: format!(
-                        "client has latest height {} greater than or equal to chain height {}",
-                        client_state_of_host_on_counterparty.latest_height(),
-                        host_current_height
-                    ),
-                },
+            return Err(HostError::invalid_state(
+                format!(
+                    "invalid counterparty client state: client latest height {} should be less than chain height {}",
+                    client_state_of_host_on_counterparty.latest_height(),
+                    host_current_height
+                ),
             ));
         }
 
         Ok(())
     }
 
-    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, ContextError> {
-        Ok(self
-            .connection_end_store
+    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, HostError> {
+        self.connection_end_store
             .get(StoreHeight::Pending, &ConnectionPath::new(conn_id))
-            .ok_or(ConnectionError::MissingConnection(conn_id.clone()))?)
+            .ok_or(HostError::missing_state(format!(
+                "missing connection end for connection {}",
+                conn_id.clone()
+            )))
     }
 
     fn commitment_prefix(&self) -> CommitmentPrefix {
@@ -133,68 +122,63 @@ where
         CommitmentPrefix::from(b"mock".to_vec())
     }
 
-    fn connection_counter(&self) -> Result<u64, ContextError> {
-        Ok(self
-            .conn_counter
+    fn connection_counter(&self) -> Result<u64, HostError> {
+        self.conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
-            .ok_or(ConnectionError::MissingConnectionCounter)?)
+            .ok_or(HostError::missing_state("missing connection counter"))
     }
 
-    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, ContextError> {
-        Ok(self
-            .channel_end_store
+    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HostError> {
+        self.channel_end_store
             .get(
                 StoreHeight::Pending,
                 &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
             )
-            .ok_or(ChannelError::NonexistentChannel {
-                port_id: channel_end_path.0.clone(),
-                channel_id: channel_end_path.1.clone(),
-            })?)
+            .ok_or(HostError::missing_state(format!(
+                "missing channel {} in port {}",
+                channel_end_path.1.clone(),
+                channel_end_path.0.clone()
+            )))
     }
 
-    fn get_next_sequence_send(
-        &self,
-        seq_send_path: &SeqSendPath,
-    ) -> Result<Sequence, ContextError> {
-        Ok(self
-            .send_sequence_store
+    fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, HostError> {
+        self.send_sequence_store
             .get(
                 StoreHeight::Pending,
                 &SeqSendPath::new(&seq_send_path.0, &seq_send_path.1),
             )
-            .ok_or(PacketError::ImplementationSpecific)?)
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve send packet sequence",
+            ))
     }
 
-    fn get_next_sequence_recv(
-        &self,
-        seq_recv_path: &SeqRecvPath,
-    ) -> Result<Sequence, ContextError> {
-        Ok(self
-            .recv_sequence_store
+    fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, HostError> {
+        self.recv_sequence_store
             .get(
                 StoreHeight::Pending,
                 &SeqRecvPath::new(&seq_recv_path.0, &seq_recv_path.1),
             )
-            .ok_or(PacketError::ImplementationSpecific)?)
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve recv packet sequence",
+            ))
     }
 
-    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, ContextError> {
-        Ok(self
-            .ack_sequence_store
+    fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, HostError> {
+        self.ack_sequence_store
             .get(
                 StoreHeight::Pending,
                 &SeqAckPath::new(&seq_ack_path.0, &seq_ack_path.1),
             )
-            .ok_or(PacketError::ImplementationSpecific)?)
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve ack packet sequence",
+            ))
     }
 
     fn get_packet_commitment(
         &self,
         commitment_path: &CommitmentPath,
-    ) -> Result<PacketCommitment, ContextError> {
-        Ok(self
-            .packet_commitment_store
+    ) -> Result<PacketCommitment, HostError> {
+        self.packet_commitment_store
             .get(
                 StoreHeight::Pending,
                 &CommitmentPath::new(
@@ -203,45 +187,46 @@ where
                     commitment_path.sequence,
                 ),
             )
-            .ok_or(PacketError::ImplementationSpecific)?)
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve packet commitment",
+            ))
     }
 
-    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, ContextError> {
-        Ok(self
+    fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, HostError> {
+        if self
             .packet_receipt_store
-            .is_path_set(
-                StoreHeight::Pending,
-                &ReceiptPath::new(
-                    &receipt_path.port_id,
-                    &receipt_path.channel_id,
-                    receipt_path.sequence,
-                ),
-            )
-            .then_some(Receipt::Ok)
-            .ok_or(PacketError::MissingPacketReceipt(receipt_path.sequence))?)
+            .is_path_set(StoreHeight::Pending, receipt_path)
+        {
+            Ok(Receipt::Ok)
+        } else {
+            Ok(Receipt::None)
+        }
     }
 
     fn get_packet_acknowledgement(
         &self,
         ack_path: &AckPath,
-    ) -> Result<AcknowledgementCommitment, ContextError> {
-        Ok(self
-            .packet_ack_store
+    ) -> Result<AcknowledgementCommitment, HostError> {
+        self.packet_ack_store
             .get(
                 StoreHeight::Pending,
                 &AckPath::new(&ack_path.port_id, &ack_path.channel_id, ack_path.sequence),
             )
-            .ok_or(PacketError::MissingPacketAcknowledgment(ack_path.sequence))?)
+            .ok_or(HostError::failed_to_retrieve(format!(
+                "failed to retrieve packet acknowledgment {}",
+                ack_path.sequence
+            )))
     }
 
     /// Returns a counter of the number of channel ids that have been created thus far.
     /// The value of this counter should increase only via the
     /// `ChannelKeeper::increase_channel_counter` method.
-    fn channel_counter(&self) -> Result<u64, ContextError> {
-        Ok(self
-            .channel_counter
+    fn channel_counter(&self) -> Result<u64, HostError> {
+        self.channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
-            .ok_or(ChannelError::MissingCounter)?)
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve channel counter",
+            ))
     }
 
     /// Returns the maximum expected time per block
@@ -249,7 +234,7 @@ where
         Duration::from_secs(DEFAULT_BLOCK_TIME_SECS)
     }
 
-    fn validate_message_signer(&self, _signer: &Signer) -> Result<(), ContextError> {
+    fn validate_message_signer(&self, _signer: &Signer) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -289,7 +274,7 @@ where
     S: ProvableStore + Debug,
 {
     /// Returns the list of all client states.
-    fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, ContextError> {
+    fn client_states(&self) -> Result<Vec<(ClientId, ClientStateRef<Self>)>, HostError> {
         let path = "clients".to_owned().into();
 
         self.client_state_store
@@ -306,7 +291,12 @@ where
                 let client_state = self
                     .client_state_store
                     .get(StoreHeight::Pending, &client_state_path)
-                    .ok_or_else(|| ClientError::MissingClientState(client_state_path.0.clone()))?;
+                    .ok_or_else(|| {
+                        HostError::failed_to_retrieve(format!(
+                            "failed to retrieve client state from path {}",
+                            client_state_path.0.clone()
+                        ))
+                    })?;
                 Ok((client_state_path.0, client_state))
             })
             .collect()
@@ -316,12 +306,8 @@ where
     fn consensus_states(
         &self,
         client_id: &ClientId,
-    ) -> Result<Vec<(Height, ConsensusStateRef<Self>)>, ContextError> {
-        let path = format!("clients/{}/consensusStates", client_id)
-            .try_into()
-            .map_err(|_| ClientError::Other {
-                description: "Invalid consensus state path".into(),
-            })?;
+    ) -> Result<Vec<(Height, ConsensusStateRef<Self>)>, HostError> {
+        let path = format!("clients/{}/consensusStates", client_id).into();
 
         self.consensus_state_store
             .get_keys(&path)
@@ -337,28 +323,23 @@ where
                 let height = Height::new(
                     consensus_path.revision_number,
                     consensus_path.revision_height,
-                )?;
+                )
+                .map_err(HostError::invalid_state)?;
                 let client_state = self
                     .consensus_state_store
                     .get(StoreHeight::Pending, &consensus_path)
-                    .ok_or({
-                        ClientError::MissingConsensusState {
-                            client_id: consensus_path.client_id,
-                            height,
-                        }
-                    })?;
+                    .ok_or(HostError::failed_to_retrieve(format!(
+                        "missing consensus state for client {} at height {}",
+                        consensus_path.client_id, height,
+                    )))?;
                 Ok((height, client_state))
             })
             .collect()
     }
 
     /// Returns the list of heights at which the consensus state of the given client was updated.
-    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, ContextError> {
-        let path = format!("clients/{}/consensusStates", client_id)
-            .try_into()
-            .map_err(|_| ClientError::Other {
-                description: "Invalid consensus state path".into(),
-            })?;
+    fn consensus_state_heights(&self, client_id: &ClientId) -> Result<Vec<Height>, HostError> {
+        let path = format!("clients/{}/consensusStates", client_id).into();
 
         self.consensus_state_store
             .get_keys(&path)
@@ -371,16 +352,17 @@ where
                 }
             })
             .map(|consensus_path| {
-                Ok(Height::new(
+                Height::new(
                     consensus_path.revision_number,
                     consensus_path.revision_height,
-                )?)
+                )
+                .map_err(HostError::invalid_state)
             })
             .collect::<Result<Vec<_>, _>>()
     }
 
     /// Returns all the IBC connection ends of a chain.
-    fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, ContextError> {
+    fn connection_ends(&self) -> Result<Vec<IdentifiedConnectionEnd>, HostError> {
         let path = "connections".to_owned().into();
 
         self.connection_end_store
@@ -397,7 +379,12 @@ where
                 let connection_end = self
                     .connection_end_store
                     .get(StoreHeight::Pending, &connection_path)
-                    .ok_or_else(|| ConnectionError::MissingConnection(connection_path.0.clone()))?;
+                    .ok_or_else(|| {
+                        HostError::failed_to_retrieve(format!(
+                            "missing connection {}",
+                            connection_path.0.clone()
+                        ))
+                    })?;
                 Ok(IdentifiedConnectionEnd {
                     connection_id: connection_path.0,
                     connection_end,
@@ -407,10 +394,7 @@ where
     }
 
     /// Returns all the IBC connection ends associated with a client.
-    fn client_connection_ends(
-        &self,
-        client_id: &ClientId,
-    ) -> Result<Vec<ConnectionId>, ContextError> {
+    fn client_connection_ends(&self, client_id: &ClientId) -> Result<Vec<ConnectionId>, HostError> {
         let client_connection_path = ClientConnectionPath::new(client_id.clone());
 
         Ok(self
@@ -420,7 +404,7 @@ where
     }
 
     /// Returns all the IBC channel ends of a chain.
-    fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, ContextError> {
+    fn channel_ends(&self) -> Result<Vec<IdentifiedChannelEnd>, HostError> {
         let path = "channelEnds".to_owned().into();
 
         self.channel_end_store
@@ -437,9 +421,12 @@ where
                 let channel_end = self
                     .channel_end_store
                     .get(StoreHeight::Pending, &channel_path)
-                    .ok_or_else(|| ChannelError::NonexistentChannel {
-                        port_id: channel_path.0.clone(),
-                        channel_id: channel_path.1.clone(),
+                    .ok_or_else(|| {
+                        HostError::failed_to_retrieve(format!(
+                            "missing channel {} with port {}",
+                            channel_path.1.clone(),
+                            channel_path.0.clone()
+                        ))
                     })?;
                 Ok(IdentifiedChannelEnd {
                     port_id: channel_path.0,
@@ -454,7 +441,7 @@ where
     fn packet_commitments(
         &self,
         channel_end_path: &ChannelEndPath,
-    ) -> Result<Vec<PacketState>, ContextError> {
+    ) -> Result<Vec<PacketState>, HostError> {
         let path = format!(
             "commitments/ports/{}/channels/{}/sequences",
             channel_end_path.0, channel_end_path.1
@@ -496,7 +483,7 @@ where
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<PacketState>, ContextError> {
+    ) -> Result<Vec<PacketState>, HostError> {
         let collected_paths: Vec<_> = if sequences.len() == 0 {
             // if sequences is empty, return all the acks
             let ack_path_prefix = format!(
@@ -549,7 +536,7 @@ where
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<Sequence>, ContextError> {
+    ) -> Result<Vec<Sequence>, HostError> {
         // QUESTION. Currently only works for unordered channels; ordered channels
         // don't use receipts. However, ibc-go does it this way. Investigate if
         // this query only ever makes sense on unordered channels.
@@ -574,7 +561,7 @@ where
         &self,
         channel_end_path: &ChannelEndPath,
         sequences: impl ExactSizeIterator<Item = Sequence>,
-    ) -> Result<Vec<Sequence>, ContextError> {
+    ) -> Result<Vec<Sequence>, HostError> {
         let collected_paths: Vec<_> = if sequences.len() == 0 {
             // if sequences is empty, return all the acks
             let commitment_path_prefix = format!(
@@ -625,18 +612,16 @@ where
 
     /// Called upon client creation.
     /// Increases the counter, that keeps track of how many clients have been created.
-    fn increase_client_counter(&mut self) -> Result<(), ContextError> {
+    fn increase_client_counter(&mut self) -> Result<(), HostError> {
         let current_sequence = self
             .client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
-            .ok_or(ClientError::Other {
-                description: "client counter not found".into(),
-            })?;
+            .ok_or(HostError::failed_to_retrieve("missing client counter"))?;
 
         self.client_counter
             .set(NextClientSequencePath, current_sequence + 1)
-            .map_err(|e| ClientError::Other {
-                description: format!("client counter update failed: {e:?}"),
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to update client counter: {e:?}"))
             })?;
 
         Ok(())
@@ -647,10 +632,12 @@ where
         &mut self,
         connection_path: &ConnectionPath,
         connection_end: ConnectionEnd,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         self.connection_end_store
             .set(connection_path.clone(), connection_end)
-            .map_err(|_| ConnectionError::FailedToStoreConnectionEnd)?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to set connection end: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -659,7 +646,7 @@ where
         &mut self,
         client_connection_path: &ClientConnectionPath,
         conn_id: ConnectionId,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         let mut conn_ids: Vec<ConnectionId> = self
             .connection_ids_store
             .get(StoreHeight::Pending, client_connection_path)
@@ -667,21 +654,25 @@ where
         conn_ids.push(conn_id);
         self.connection_ids_store
             .set(client_connection_path.clone(), conn_ids)
-            .map_err(|_| ConnectionError::FailedToStoreConnectionIds)?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store connection IDs: {e:?}"))
+            })?;
         Ok(())
     }
 
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter, that keeps track of how many connections have been created.
-    fn increase_connection_counter(&mut self) -> Result<(), ContextError> {
+    fn increase_connection_counter(&mut self) -> Result<(), HostError> {
         let current_sequence = self
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
-            .ok_or(ConnectionError::MissingConnectionCounter)?;
+            .ok_or(HostError::failed_to_retrieve("missing connection counter"))?;
 
         self.conn_counter
             .set(NextConnectionSequencePath, current_sequence + 1)
-            .map_err(|_| ConnectionError::FailedToUpdateConnectionCounter)?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to update connection counter: {e:?}"))
+            })?;
 
         Ok(())
     }
@@ -690,17 +681,19 @@ where
         &mut self,
         commitment_path: &CommitmentPath,
         commitment: PacketCommitment,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         self.packet_commitment_store
             .set(commitment_path.clone(), commitment)
-            .map_err(|_| PacketError::ImplementationSpecific)?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store packet commitment: {e:?}"))
+            })?;
         Ok(())
     }
 
     fn delete_packet_commitment(
         &mut self,
         commitment_path: &CommitmentPath,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         self.packet_commitment_store.delete(commitment_path.clone());
         Ok(())
     }
@@ -709,10 +702,12 @@ where
         &mut self,
         receipt_path: &ReceiptPath,
         _receipt: Receipt,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         self.packet_receipt_store
             .set_path(receipt_path.clone())
-            .map_err(|_| PacketError::ImplementationSpecific)?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store packet receipt: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -720,14 +715,16 @@ where
         &mut self,
         ack_path: &AckPath,
         ack_commitment: AcknowledgementCommitment,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         self.packet_ack_store
             .set(ack_path.clone(), ack_commitment)
-            .map_err(|_| PacketError::ImplementationSpecific)?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store packet acknowledgment: {e:?}"))
+            })?;
         Ok(())
     }
 
-    fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), ContextError> {
+    fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), HostError> {
         self.packet_ack_store.delete(ack_path.clone());
         Ok(())
     }
@@ -736,12 +733,10 @@ where
         &mut self,
         channel_end_path: &ChannelEndPath,
         channel_end: ChannelEnd,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         self.channel_end_store
             .set(channel_end_path.clone(), channel_end)
-            .map_err(|e| ChannelError::FailedToStoreChannel {
-                description: format!("{e:?}"),
-            })?;
+            .map_err(|e| HostError::failed_to_store(format!("failed to store channel: {e:?}")))?;
         Ok(())
     }
 
@@ -749,10 +744,12 @@ where
         &mut self,
         seq_send_path: &SeqSendPath,
         seq: Sequence,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         self.send_sequence_store
             .set(seq_send_path.clone(), seq)
-            .map_err(|_| PacketError::ImplementationSpecific)?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store send sequence: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -760,10 +757,12 @@ where
         &mut self,
         seq_recv_path: &SeqRecvPath,
         seq: Sequence,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         self.recv_sequence_store
             .set(seq_recv_path.clone(), seq)
-            .map_err(|_| PacketError::ImplementationSpecific)?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store recv sequence: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -771,34 +770,33 @@ where
         &mut self,
         seq_ack_path: &SeqAckPath,
         seq: Sequence,
-    ) -> Result<(), ContextError> {
+    ) -> Result<(), HostError> {
         self.ack_sequence_store
             .set(seq_ack_path.clone(), seq)
-            .map_err(|_| PacketError::ImplementationSpecific)?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store ack sequence: {e:?}"))
+            })?;
         Ok(())
     }
 
-    fn increase_channel_counter(&mut self) -> Result<(), ContextError> {
+    fn increase_channel_counter(&mut self) -> Result<(), HostError> {
         let current_sequence = self
             .channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
-            .ok_or(ChannelError::MissingCounter)?;
+            .ok_or(HostError::failed_to_retrieve("missing counter"))?;
 
         self.channel_counter
             .set(NextChannelSequencePath, current_sequence + 1)
-            .map_err(|e| ChannelError::FailedToUpdateCounter {
-                description: format!("{e:?}"),
-            })?;
-
+            .map_err(|e| HostError::failed_to_store(format!("failed to update counter: {e:?}")))?;
         Ok(())
     }
 
-    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), ContextError> {
+    fn emit_ibc_event(&mut self, event: IbcEvent) -> Result<(), HostError> {
         self.events.lock().push(event);
         Ok(())
     }
 
-    fn log_message(&mut self, message: String) -> Result<(), ContextError> {
+    fn log_message(&mut self, message: String) -> Result<(), HostError> {
         self.logs.lock().push(message);
         Ok(())
     }

@@ -1,5 +1,6 @@
 //! Defines the packet type
 use ibc_core_client_types::Height;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
@@ -20,6 +21,10 @@ pub enum PacketMsgType {
 }
 
 /// Packet receipt, used over unordered channels.
+///
+/// If the receipt is present in the host's state, it's marked as `Ok`,
+/// indicating the packet has already been processed. If the receipt is absent,
+/// it's marked as `None`, meaning the packet has not been received.
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -36,6 +41,17 @@ pub enum PacketMsgType {
 #[derive(Clone, Debug)]
 pub enum Receipt {
     Ok,
+    None,
+}
+
+impl Receipt {
+    pub fn is_ok(&self) -> bool {
+        matches!(self, Receipt::Ok)
+    }
+
+    pub fn is_none(&self) -> bool {
+        matches!(self, Receipt::None)
+    }
 }
 
 impl core::fmt::Display for PacketMsgType {
@@ -172,7 +188,9 @@ impl TryFrom<RawPacket> for Packet {
         }
 
         if raw_pkt.data.is_empty() {
-            return Err(PacketError::EmptyPacketData);
+            return Err(DecodingError::MissingRawData {
+                description: "packet data is not set".to_string(),
+            })?;
         }
 
         // Note: ibc-go currently (July 2022) incorrectly treats the timeout
@@ -282,7 +300,9 @@ impl TryFrom<RawPacketState> for PacketState {
         }
 
         if raw_pkt.data.is_empty() {
-            return Err(PacketError::EmptyPacketData);
+            return Err(DecodingError::MissingRawData {
+                description: "packet data not set".to_string(),
+            })?;
         }
 
         Ok(PacketState {

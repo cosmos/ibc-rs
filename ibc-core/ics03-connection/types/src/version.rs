@@ -2,6 +2,7 @@
 
 use core::fmt::Display;
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::utils::PrettySlice;
 use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
@@ -72,9 +73,12 @@ impl Protobuf<RawVersion> for Version {}
 
 impl TryFrom<RawVersion> for Version {
     type Error = ConnectionError;
+
     fn try_from(value: RawVersion) -> Result<Self, Self::Error> {
         if value.identifier.trim().is_empty() {
-            return Err(ConnectionError::EmptyVersions);
+            return Err(DecodingError::MissingRawData {
+                description: "version is empty".to_string(),
+            })?;
         }
         for feature in value.features.iter() {
             if feature.trim().is_empty() {
@@ -116,12 +120,13 @@ impl Display for Version {
 /// compatible version continues. This function is called in the `conn_open_try`
 /// handshake procedure.
 ///
-/// NOTE: Empty feature set is not currently allowed for a chosen version.
+/// NOTE: Empty feature sets are not currently allowed for a chosen version.
 pub fn pick_version(
     supported_versions: &[Version],
     counterparty_versions: &[Version],
 ) -> Result<Version, ConnectionError> {
     let mut intersection: Vec<Version> = Vec::new();
+
     for sv in supported_versions.iter() {
         if let Ok(cv) = find_supported_version(sv, counterparty_versions) {
             if let Ok(feature_set) = get_feature_set_intersection(&sv.features, &cv.features) {
@@ -138,6 +143,7 @@ pub fn pick_version(
     }
 
     intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
+
     Ok(intersection[0].clone())
 }
 

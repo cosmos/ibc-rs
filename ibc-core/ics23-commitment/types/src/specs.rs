@@ -129,6 +129,7 @@ struct LeafOp(RawLeafOp);
 
 impl TryFrom<RawLeafOp> for LeafOp {
     type Error = CommitmentError;
+
     fn try_from(leaf_op: RawLeafOp) -> Result<Self, Self::Error> {
         let _ = HashOp::try_from(leaf_op.hash)
             .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.hash))?;
@@ -155,6 +156,7 @@ struct InnerSpec(RawInnerSpec);
 
 impl TryFrom<RawInnerSpec> for InnerSpec {
     type Error = CommitmentError;
+
     fn try_from(inner_spec: RawInnerSpec) -> Result<Self, CommitmentError> {
         if inner_spec.child_size <= 0 {
             return Err(CommitmentError::InvalidChildSize(inner_spec.child_size));

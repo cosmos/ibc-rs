@@ -6,6 +6,7 @@ use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::is_sender_chain_source;
 use ibc_app_transfer_types::packet::PacketData;
 use ibc_core::channel::types::packet::Packet;
+use ibc_core::primitives::prelude::*;
 pub use on_recv_packet::*;
 pub use send_transfer::*;
 
@@ -27,16 +28,16 @@ pub fn refund_packet_token_execute(
         packet.chan_id_on_a.clone(),
         &data.token.denom,
     ) {
-        ctx_a.unescrow_coins_execute(
+        Ok(ctx_a.unescrow_coins_execute(
             &sender,
             &packet.port_id_on_a,
             &packet.chan_id_on_a,
             &data.token,
-        )
+        )?)
     }
     // mint vouchers back to sender
     else {
-        ctx_a.mint_coins_execute(&sender, &data.token)
+        Ok(ctx_a.mint_coins_execute(&sender, &data.token)?)
     }
 }
 
@@ -56,13 +57,13 @@ pub fn refund_packet_token_validate(
         packet.chan_id_on_a.clone(),
         &data.token.denom,
     ) {
-        ctx_a.unescrow_coins_validate(
+        Ok(ctx_a.unescrow_coins_validate(
             &sender,
             &packet.port_id_on_a,
             &packet.chan_id_on_a,
             &data.token,
-        )
+        )?)
     } else {
-        ctx_a.mint_coins_validate(&sender, &data.token)
+        Ok(ctx_a.mint_coins_validate(&sender, &data.token)?)
     }
 }

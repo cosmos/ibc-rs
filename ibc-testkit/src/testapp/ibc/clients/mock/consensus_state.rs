@@ -1,6 +1,7 @@
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::commitment_types::commitment::CommitmentRoot;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
@@ -41,7 +42,9 @@ impl TryFrom<RawMockConsensusState> for MockConsensusState {
     type Error = ClientError;
 
     fn try_from(raw: RawMockConsensusState) -> Result<Self, Self::Error> {
-        let raw_header = raw.header.ok_or(ClientError::MissingRawConsensusState)?;
+        let raw_header = raw.header.ok_or(DecodingError::MissingRawData {
+            description: "no raw header set".to_string(),
+        })?;
 
         Ok(Self {
             header: raw_header.try_into()?,
@@ -64,18 +67,18 @@ impl TryFrom<Any> for MockConsensusState {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_consensus_state(value: &[u8]) -> Result<MockConsensusState, ClientError> {
-            let mock_consensus_state =
-                Protobuf::<RawMockConsensusState>::decode(value).map_err(|e| {
-                    ClientError::Other {
-                        description: e.to_string(),
-                    }
-                })?;
+        fn decode_consensus_state(value: &[u8]) -> Result<MockConsensusState, DecodingError> {
+            let mock_consensus_state = Protobuf::<RawMockConsensusState>::decode(value)?;
             Ok(mock_consensus_state)
         }
         match raw.type_url.as_str() {
-            MOCK_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
-            _ => Err(ClientError::InvalidConsensusStateType(raw.type_url)),
+            MOCK_CONSENSUS_STATE_TYPE_URL => {
+                decode_consensus_state(&raw.value).map_err(ClientError::Decoding)
+            }
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: MOCK_CONSENSUS_STATE_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })?,
         }
     }
 }

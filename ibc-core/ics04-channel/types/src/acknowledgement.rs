@@ -3,6 +3,7 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use derive_more::Into;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 
 use super::error::PacketError;
@@ -45,7 +46,9 @@ impl TryFrom<Vec<u8>> for Acknowledgement {
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         if bytes.is_empty() {
-            Err(PacketError::EmptyAcknowledgment)
+            Err(DecodingError::MissingRawData {
+                description: "acknowledgment not set".to_string(),
+            })?
         } else {
             Ok(Self(bytes))
         }

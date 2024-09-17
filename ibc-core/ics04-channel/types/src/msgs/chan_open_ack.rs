@@ -1,5 +1,6 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -41,14 +42,17 @@ impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
             chan_id_on_a: raw_msg.channel_id.parse()?,
             chan_id_on_b: raw_msg.counterparty_channel_id.parse()?,
             version_on_b: raw_msg.counterparty_version.into(),
-            proof_chan_end_on_b: raw_msg
-                .proof_try
-                .try_into()
-                .map_err(|_| ChannelError::MissingProof)?,
+            proof_chan_end_on_b: raw_msg.proof_try.try_into().map_err(|e| {
+                DecodingError::InvalidRawData {
+                    description: format!("failed to decode proof: {e}"),
+                }
+            })?,
             proof_height_on_b: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(ChannelError::MissingProofHeight)?,
+                .ok_or(DecodingError::MissingRawData {
+                    description: "proof height not set".to_string(),
+                })?,
             signer: raw_msg.signer.into(),
         })
     }

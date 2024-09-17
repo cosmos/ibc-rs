@@ -1,7 +1,7 @@
 //! Defines the main context traits and IBC module callbacks
 
-use ibc_app_transfer_types::error::TokenTransferError;
 use ibc_app_transfer_types::{Memo, PrefixedCoin, PrefixedDenom};
+use ibc_core::host::types::error::HostError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
@@ -11,13 +11,13 @@ pub trait TokenTransferValidationContext {
     type AccountId: TryFrom<Signer>;
 
     /// get_port returns the portID for the transfer module.
-    fn get_port(&self) -> Result<PortId, TokenTransferError>;
+    fn get_port(&self) -> Result<PortId, HostError>;
 
     /// Returns Ok() if the host chain supports sending coins.
-    fn can_send_coins(&self) -> Result<(), TokenTransferError>;
+    fn can_send_coins(&self) -> Result<(), HostError>;
 
     /// Returns Ok() if the host chain supports receiving coins.
-    fn can_receive_coins(&self) -> Result<(), TokenTransferError>;
+    fn can_receive_coins(&self) -> Result<(), HostError>;
 
     /// Validates that the tokens can be escrowed successfully.
     ///
@@ -30,7 +30,7 @@ pub trait TokenTransferValidationContext {
         channel_id: &ChannelId,
         coin: &PrefixedCoin,
         memo: &Memo,
-    ) -> Result<(), TokenTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Validates that the tokens can be unescrowed successfully.
     fn unescrow_coins_validate(
@@ -39,14 +39,14 @@ pub trait TokenTransferValidationContext {
         port_id: &PortId,
         channel_id: &ChannelId,
         coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Validates the receiver account and the coin input
     fn mint_coins_validate(
         &self,
         account: &Self::AccountId,
         coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Validates the sender account and the coin input before burning.
     ///
@@ -57,7 +57,7 @@ pub trait TokenTransferValidationContext {
         account: &Self::AccountId,
         coin: &PrefixedCoin,
         memo: &Memo,
-    ) -> Result<(), TokenTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Returns a hash of the prefixed denom.
     /// Implement only if the host chain supports hashed denominations.
@@ -79,7 +79,7 @@ pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
         channel_id: &ChannelId,
         coin: &PrefixedCoin,
         memo: &Memo,
-    ) -> Result<(), TokenTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Executes the unescrow of the tokens in a user account.
     fn unescrow_coins_execute(
@@ -88,14 +88,14 @@ pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
         port_id: &PortId,
         channel_id: &ChannelId,
         coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Executes minting of the tokens in a user account.
     fn mint_coins_execute(
         &mut self,
         account: &Self::AccountId,
         coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Executes burning of the tokens in a user account.
     ///
@@ -106,5 +106,5 @@ pub trait TokenTransferExecutionContext: TokenTransferValidationContext {
         account: &Self::AccountId,
         coin: &PrefixedCoin,
         memo: &Memo,
-    ) -> Result<(), TokenTransferError>;
+    ) -> Result<(), HostError>;
 }

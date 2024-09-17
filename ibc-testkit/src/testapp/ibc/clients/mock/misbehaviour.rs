@@ -1,4 +1,5 @@
 use ibc::core::client::types::error::ClientError;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
 use ibc::primitives::proto::{Any, Protobuf};
@@ -26,11 +27,15 @@ impl TryFrom<RawMisbehaviour> for Misbehaviour {
             client_id: ClientId::new("07-tendermint", 0).expect("no error"),
             header1: raw
                 .header1
-                .ok_or(ClientError::MissingRawMisbehaviour)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "missing header1 in raw misbehaviour".into(),
+                })?
                 .try_into()?,
             header2: raw
                 .header2
-                .ok_or(ClientError::MissingRawMisbehaviour)?
+                .ok_or(DecodingError::MissingRawData {
+                    description: "missing header2 in raw misbehaviour".into(),
+                })?
                 .try_into()?,
         })
     }
@@ -52,16 +57,18 @@ impl TryFrom<Any> for Misbehaviour {
     type Error = ClientError;
 
     fn try_from(raw: Any) -> Result<Self, ClientError> {
-        fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, ClientError> {
-            let raw_misbehaviour =
-                Protobuf::<RawMisbehaviour>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
+        fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, DecodingError> {
+            let raw_misbehaviour = Protobuf::<RawMisbehaviour>::decode(value)?;
             Ok(raw_misbehaviour)
         }
         match raw.type_url.as_str() {
-            MOCK_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
-            _ => Err(ClientError::InvalidMisbehaviourType(raw.type_url)),
+            MOCK_MISBEHAVIOUR_TYPE_URL => {
+                decode_misbehaviour(&raw.value).map_err(ClientError::Decoding)
+            }
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: MOCK_MISBEHAVIOUR_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })?,
         }
     }
 }

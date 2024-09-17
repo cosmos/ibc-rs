@@ -7,7 +7,7 @@ use ibc_core_channel_types::msgs::MsgChannelOpenTry;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ChannelId;
 use ibc_core_host::types::path::{
@@ -22,7 +22,7 @@ pub fn chan_open_try_validate<ValCtx>(
     ctx_b: &ValCtx,
     module: &dyn Module,
     msg: MsgChannelOpenTry,
-) -> Result<(), ContextError>
+) -> Result<(), HandlerError>
 where
     ValCtx: ValidationContext,
 {
@@ -46,7 +46,7 @@ pub fn chan_open_try_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgChannelOpenTry,
-) -> Result<(), ContextError>
+) -> Result<(), HandlerError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -116,7 +116,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), HandlerError>
 where
     Ctx: ValidationContext,
 {

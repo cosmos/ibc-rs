@@ -66,10 +66,7 @@ impl ClientStateCommon for ClientState {
         let upgrade_path = &self.inner().upgrade_path;
         let (upgrade_path_prefix, upgrade_path) = match upgrade_path.len() {
             0 => {
-                return Err(UpgradeClientError::InvalidUpgradePath {
-                    description: "no upgrade path has been set".to_string(),
-                }
-                .into());
+                return Err(UpgradeClientError::MissingUpgradePath.into());
             }
             1 => (CommitmentPrefix::empty(), upgrade_path[0].clone()),
             2 => (
@@ -166,7 +163,7 @@ pub fn verify_consensus_state(
     };
 
     if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
-        return Err(ClientError::InvalidStatus(Status::Expired));
+        return Err(ClientError::UnexpectedStatus(Status::Expired));
     }
 
     Ok(())

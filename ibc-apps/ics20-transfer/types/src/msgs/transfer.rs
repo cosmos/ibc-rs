@@ -1,15 +1,13 @@
 //! Defines the token transfer message type
 
-use ibc_core::channel::types::error::PacketError;
 use ibc_core::channel::types::timeout::{TimeoutHeight, TimeoutTimestamp};
-use ibc_core::handler::types::error::ContextError;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::Protobuf;
 
-use crate::error::TokenTransferError;
 use crate::packet::PacketData;
 
 pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
@@ -48,19 +46,17 @@ pub struct MsgTransfer {
 }
 
 impl TryFrom<RawMsgTransfer> for MsgTransfer {
-    type Error = TokenTransferError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgTransfer) -> Result<Self, Self::Error> {
-        let timeout_height_on_b: TimeoutHeight = raw_msg
-            .timeout_height
-            .try_into()
-            .map_err(ContextError::from)?;
-
+        let timeout_height_on_b: TimeoutHeight = raw_msg.timeout_height.try_into()?;
         let timeout_timestamp_on_b: TimeoutTimestamp = raw_msg.timeout_timestamp.into();
 
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !timeout_height_on_b.is_set() && !timeout_timestamp_on_b.is_set() {
-            return Err(ContextError::from(PacketError::MissingTimeout))?;
+            return Err(DecodingError::missing_raw_data(
+                "missing timeout height or timeout timestamp",
+            ));
         }
 
         Ok(MsgTransfer {
@@ -69,9 +65,8 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
             packet_data: PacketData {
                 token: raw_msg
                     .token
-                    .ok_or(TokenTransferError::MissingToken)?
-                    .try_into()
-                    .map_err(|_| TokenTransferError::MissingToken)?,
+                    .ok_or(DecodingError::missing_raw_data("missing token"))?
+                    .try_into()?,
                 sender: raw_msg.sender.into(),
                 receiver: raw_msg.receiver.into(),
                 memo: raw_msg.memo.into(),
@@ -100,16 +95,15 @@ impl From<MsgTransfer> for RawMsgTransfer {
 impl Protobuf<RawMsgTransfer> for MsgTransfer {}
 
 impl TryFrom<Any> for MsgTransfer {
-    type Error = TokenTransferError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
-            TYPE_URL => MsgTransfer::decode_vec(&raw.value).map_err(|e| {
-                TokenTransferError::FailedToDecodeRawMsg {
-                    description: e.to_string(),
-                }
-            }),
-            _ => Err(TokenTransferError::UnknownMsgType(raw.type_url)),
+            TYPE_URL => Ok(MsgTransfer::decode_vec(&raw.value)?),
+            _ => Err(DecodingError::MismatchedTypeUrls {
+                expected: TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })?,
         }
     }
 }

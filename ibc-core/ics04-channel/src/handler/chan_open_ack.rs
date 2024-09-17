@@ -6,7 +6,7 @@ use ibc_core_channel_types::msgs::MsgChannelOpenAck;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_handler_types::error::ContextError;
+use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
 use ibc_core_host::{ExecutionContext, ValidationContext};
@@ -18,7 +18,7 @@ pub fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
     module: &dyn Module,
     msg: MsgChannelOpenAck,
-) -> Result<(), ContextError>
+) -> Result<(), HandlerError>
 where
     ValCtx: ValidationContext,
 {
@@ -33,7 +33,7 @@ pub fn chan_open_ack_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgChannelOpenAck,
-) -> Result<(), ContextError>
+) -> Result<(), HandlerError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -87,7 +87,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), HandlerError>
 where
     Ctx: ValidationContext,
 {
@@ -115,6 +115,7 @@ where
         client_state_of_b_on_a
             .status(ctx_a.get_client_validation_context(), client_id_on_a)?
             .verify_is_active()?;
+
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(

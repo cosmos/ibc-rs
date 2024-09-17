@@ -2,6 +2,7 @@
 
 use core::fmt;
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
 use ibc_proto::ibc::core::commitment::v1::MerkleProof as RawMerkleProof;
@@ -94,7 +95,9 @@ impl TryFrom<Vec<u8>> for CommitmentProofBytes {
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         if bytes.is_empty() {
-            Err(Self::Error::EmptyMerkleProof)
+            Err(DecodingError::MissingRawData {
+                description: "empty commitment proof bytes".to_string(),
+            })?
         } else {
             Ok(Self { bytes })
         }
@@ -121,8 +124,7 @@ impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
     type Error = CommitmentError;
 
     fn try_from(value: &'a CommitmentProofBytes) -> Result<Self, Self::Error> {
-        Protobuf::<RawMerkleProof>::decode(value.as_ref())
-            .map_err(|e| CommitmentError::FailedDecoding(e.to_string()))
+        Ok(Protobuf::<RawMerkleProof>::decode(value.as_ref()).map_err(DecodingError::Protobuf)?)
     }
 }
 
