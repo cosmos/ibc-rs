@@ -6,7 +6,6 @@ use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenAck;
 use ibc_core_connection_types::msgs::MsgConnectionOpenAck;
 use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path};
@@ -17,7 +16,7 @@ use ibc_primitives::ToVec;
 
 use crate::handler::{pack_host_consensus_state, unpack_host_client_state};
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), HandlerError>
+pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenAck) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
@@ -30,7 +29,7 @@ fn validate_impl<Ctx>(
     ctx_a: &Ctx,
     msg: &MsgConnectionOpenAck,
     vars: &LocalVars,
-) -> Result<(), HandlerError>
+) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
@@ -43,8 +42,7 @@ where
         return Err(ConnectionError::InsufficientConsensusHeight {
             target_height: msg.consensus_height_of_a_on_b,
             current_height: host_height,
-        }
-        .into());
+        });
     }
 
     let client_val_ctx_a = ctx_a.get_client_validation_context();
@@ -143,7 +141,7 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), HandlerError>
+pub fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenAck) -> Result<(), ConnectionError>
 where
     Ctx: ExecutionContext,
 {
@@ -155,7 +153,7 @@ fn execute_impl<Ctx>(
     ctx_a: &mut Ctx,
     msg: MsgConnectionOpenAck,
     vars: LocalVars,
-) -> Result<(), HandlerError>
+) -> Result<(), ConnectionError>
 where
     Ctx: ExecutionContext,
 {
@@ -193,7 +191,7 @@ struct LocalVars {
 }
 
 impl LocalVars {
-    fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, HandlerError>
+    fn new<Ctx>(ctx_a: &Ctx, msg: &MsgConnectionOpenAck) -> Result<Self, ConnectionError>
     where
         Ctx: ValidationContext,
     {

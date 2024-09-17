@@ -9,6 +9,8 @@ use ibc_primitives::{Timestamp, TimestampError};
 
 #[derive(Debug, Display)]
 pub enum ConnectionError {
+    /// client error: `{0}`
+    Client(ClientError),
     /// decoding error: `{0}`
     Decoding(DecodingError),
     /// host error: `{0}`
@@ -58,6 +60,12 @@ impl From<IdentifierError> for ConnectionError {
     }
 }
 
+impl From<ClientError> for ConnectionError {
+    fn from(e: ClientError) -> Self {
+        Self::Client(e)
+    }
+}
+
 impl From<HostError> for ConnectionError {
     fn from(e: HostError) -> Self {
         Self::Host(e)
@@ -70,7 +78,7 @@ impl std::error::Error for ConnectionError {
         match &self {
             Self::Decoding(e) => Some(e),
             Self::Host(e) => Some(e),
-            Self::FailedToVerifyClient(e) => Some(e),
+            Self::Client(e) | Self::FailedToVerifyClient(e) => Some(e),
             _ => None,
         }
     }

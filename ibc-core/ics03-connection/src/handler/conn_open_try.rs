@@ -5,7 +5,6 @@ use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenTry;
 use ibc_core_connection_types::msgs::MsgConnectionOpenTry;
 use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::{ClientId, ConnectionId};
 use ibc_core_host::types::path::{
@@ -18,7 +17,7 @@ use ibc_primitives::ToVec;
 
 use crate::handler::{pack_host_consensus_state, unpack_host_client_state};
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), HandlerError>
+pub fn validate<Ctx>(ctx_b: &Ctx, msg: MsgConnectionOpenTry) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
@@ -31,7 +30,7 @@ fn validate_impl<Ctx>(
     ctx_b: &Ctx,
     msg: &MsgConnectionOpenTry,
     vars: &LocalVars,
-) -> Result<(), HandlerError>
+) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
     <Ctx::HostClientState as TryFrom<Any>>::Error: Into<ClientError>,
@@ -54,8 +53,7 @@ where
         return Err(ConnectionError::InsufficientConsensusHeight {
             target_height: msg.consensus_height_of_b_on_a,
             current_height: host_height,
-        }
-        .into());
+        });
     }
 
     let client_id_on_a = msg.counterparty.client_id();
@@ -139,7 +137,7 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenTry) -> Result<(), HandlerError>
+pub fn execute<Ctx>(ctx_b: &mut Ctx, msg: MsgConnectionOpenTry) -> Result<(), ConnectionError>
 where
     Ctx: ExecutionContext,
 {
@@ -151,7 +149,7 @@ fn execute_impl<Ctx>(
     ctx_b: &mut Ctx,
     msg: MsgConnectionOpenTry,
     vars: LocalVars,
-) -> Result<(), HandlerError>
+) -> Result<(), ConnectionError>
 where
     Ctx: ExecutionContext,
 {
@@ -188,7 +186,7 @@ struct LocalVars {
 }
 
 impl LocalVars {
-    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenTry) -> Result<Self, HandlerError>
+    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenTry) -> Result<Self, ConnectionError>
     where
         Ctx: ValidationContext,
     {

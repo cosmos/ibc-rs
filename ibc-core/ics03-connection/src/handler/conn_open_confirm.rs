@@ -5,7 +5,6 @@ use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenConfirm;
 use ibc_core_connection_types::msgs::MsgConnectionOpenConfirm;
 use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::{ClientId, ConnectionId};
 use ibc_core_host::types::path::{ClientConsensusStatePath, ConnectionPath, Path};
@@ -13,7 +12,7 @@ use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), HandlerError>
+pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
 {
@@ -25,7 +24,7 @@ fn validate_impl<Ctx>(
     ctx_b: &Ctx,
     msg: &MsgConnectionOpenConfirm,
     vars: &LocalVars,
-) -> Result<(), HandlerError>
+) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
 {
@@ -88,7 +87,7 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx_b: &mut Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), HandlerError>
+pub fn execute<Ctx>(ctx_b: &mut Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ConnectionError>
 where
     Ctx: ExecutionContext,
 {
@@ -100,7 +99,7 @@ fn execute_impl<Ctx>(
     ctx_b: &mut Ctx,
     msg: &MsgConnectionOpenConfirm,
     vars: LocalVars,
-) -> Result<(), HandlerError>
+) -> Result<(), ConnectionError>
 where
     Ctx: ExecutionContext,
 {
@@ -137,7 +136,7 @@ struct LocalVars {
 }
 
 impl LocalVars {
-    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, HandlerError>
+    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, ConnectionError>
     where
         Ctx: ValidationContext,
     {
