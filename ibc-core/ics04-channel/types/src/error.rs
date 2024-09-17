@@ -38,10 +38,6 @@ pub enum ChannelError {
     InvalidTimeoutTimestamp(TimestampError),
     /// missing acknowledgment status
     MissingAcknowledgmentStatus,
-    /// missing proof
-    MissingProof,
-    /// missing proof height
-    MissingProofHeight,
     /// missing counterparty
     MissingCounterparty,
     /// missing timeout

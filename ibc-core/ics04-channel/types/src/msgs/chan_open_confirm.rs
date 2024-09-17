@@ -1,12 +1,11 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenConfirm as RawMsgChannelOpenConfirm;
 use ibc_proto::Protobuf;
-
-use crate::error::ChannelError;
 
 pub const CHAN_OPEN_CONFIRM_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenConfirm";
 
@@ -32,20 +31,19 @@ pub struct MsgChannelOpenConfirm {
 impl Protobuf<RawMsgChannelOpenConfirm> for MsgChannelOpenConfirm {}
 
 impl TryFrom<RawMsgChannelOpenConfirm> for MsgChannelOpenConfirm {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgChannelOpenConfirm) -> Result<Self, Self::Error> {
         Ok(MsgChannelOpenConfirm {
             port_id_on_b: raw_msg.port_id.parse()?,
             chan_id_on_b: raw_msg.channel_id.parse()?,
-            proof_chan_end_on_a: raw_msg
-                .proof_ack
-                .try_into()
-                .map_err(|_| ChannelError::MissingProof)?,
+            proof_chan_end_on_a: raw_msg.proof_ack.try_into().map_err(|e| {
+                DecodingError::invalid_raw_data(format!("invalid commitment proof bytes: {e}"))
+            })?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(ChannelError::MissingProofHeight)?,
+                .ok_or(DecodingError::invalid_raw_data("invalid proof height"))?,
             signer: raw_msg.signer.into(),
         })
     }
