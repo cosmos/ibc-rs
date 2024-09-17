@@ -317,7 +317,7 @@ impl ChannelEnd {
     /// Checks if the counterparty of this channel end matches with an expected counterparty.
     pub fn verify_counterparty_matches(&self, expected: &Counterparty) -> Result<(), ChannelError> {
         if !self.counterparty().eq(expected) {
-            return Err(ChannelError::MismatchedCounterparties {
+            return Err(ChannelError::MismatchedCounterparty {
                 expected: expected.clone(),
                 actual: self.counterparty().clone(),
             });

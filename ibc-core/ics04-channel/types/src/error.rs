@@ -46,8 +46,8 @@ pub enum ChannelError {
     MissingCounterparty,
     /// missing timeout
     MissingTimeout,
-    /// mismatched counterparties: expected `{expected}`, actual `{actual}`
-    MismatchedCounterparties {
+    /// mismatched counterparty: expected `{expected}`, actual `{actual}`
+    MismatchedCounterparty {
         expected: Counterparty,
         actual: Counterparty,
     },
