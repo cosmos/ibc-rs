@@ -1,8 +1,7 @@
 use ibc_core_client::types::error::ClientError;
-use ibc_core_handler_types::error::HandlerError;
 #[cfg(feature = "wasm-client")]
-use ibc_core_host::types::error::DecodingError;
-use ibc_core_host::types::identifiers::ClientId;
+use ibc_core_host::types::{error::HostError, identifiers::ClientId};
+use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
 pub mod conn_open_ack;
@@ -18,7 +17,7 @@ pub mod conn_open_try;
 pub(crate) fn unpack_host_client_state<CS>(
     value: Any,
     host_client_id_at_counterparty: &ClientId,
-) -> Result<CS, HandlerError>
+) -> Result<CS, HostError>
 where
     CS: TryFrom<Any>,
     <CS as TryFrom<Any>>::Error: Into<ClientError>,
@@ -26,29 +25,29 @@ where
     #[cfg(feature = "wasm-client")]
     if host_client_id_at_counterparty.is_wasm_client_id() {
         use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
-        use ibc_core_connection_types::error::ConnectionError;
-        use ibc_primitives::prelude::ToString;
         use prost::Message;
 
-        let wasm_client_state = WasmClientState::try_from(value).map_err(|e| {
-            HandlerError::Connection(ConnectionError::InvalidClientState {
-                description: e.to_string(),
-            })
-        })?;
+        let wasm_client_state =
+            WasmClientState::try_from(value).map_err(HostError::invalid_state)?;
 
         let any_client_state = <Any as Message>::decode(wasm_client_state.data.as_slice())
-            .map_err(|e| ConnectionError::Decoding(DecodingError::Prost(e)))?;
+            .map_err(|e| {
+                HostError::invalid_state(format!("failed to decode wasm client state: {e}"))
+            })?;
 
-        Ok(CS::try_from(any_client_state).map_err(Into::<ClientError>::into)?)
+        Ok(CS::try_from(any_client_state)
+            .map_err(|_| HostError::invalid_state("failed to unpack wasm host client state"))?)
     } else {
-        Ok(CS::try_from(value).map_err(Into::<ClientError>::into)?)
+        Ok(CS::try_from(value)
+            .map_err(|_| HostError::invalid_state("failed to unpack host client state"))?)
     }
 
     #[cfg(not(feature = "wasm-client"))]
     {
         // this avoids lint warning for unused variable.
         let _ = host_client_id_at_counterparty;
-        Ok(CS::try_from(value).map_err(Into::<ClientError>::into)?)
+        Ok(CS::try_from(value)
+            .map_err(|_| HostError::invalid_state("failed to unpack host client state"))?)
     }
 }
 

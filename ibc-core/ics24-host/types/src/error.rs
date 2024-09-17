@@ -20,6 +20,8 @@ pub enum HostError {
     FailedToStore { description: String },
     /// failed to retrieve from store: `{description}`
     FailedToRetrieve { description: String },
+    /// failed to verify state: `{description}`
+    FailedToVerify { description: String },
     /// other error: `{description}`
     Other { description: String },
 }
@@ -45,6 +47,12 @@ impl HostError {
 
     pub fn failed_to_store<T: ToString>(description: T) -> Self {
         Self::FailedToStore {
+            description: description.to_string(),
+        }
+    }
+
+    pub fn failed_to_verify<T: ToString>(description: T) -> Self {
+        Self::FailedToVerify {
             description: description.to_string(),
         }
     }
