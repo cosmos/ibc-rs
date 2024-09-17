@@ -22,11 +22,10 @@ where
         signer,
     } = msg;
 
-    ctx.validate_message_signer(&signer)
-        .map_err(ClientError::Host)?;
+    ctx.validate_message_signer(&signer)?;
 
     // Construct this client's identifier
-    let id_counter = ctx.client_counter().map_err(ClientError::Host)?;
+    let id_counter = ctx.client_counter()?;
 
     let client_val_ctx = ctx.get_client_validation_context();
 
@@ -40,7 +39,7 @@ where
         return Err(ClientError::UnexpectedStatus(Status::Frozen).into());
     };
 
-    let host_timestamp = ctx.host_timestamp().map_err(ClientError::Host)?;
+    let host_timestamp = ctx.host_timestamp()?;
 
     client_state.verify_consensus_state(consensus_state, &host_timestamp)?;
 
@@ -63,7 +62,7 @@ where
     } = msg;
 
     // Construct this client's identifier
-    let id_counter = ctx.client_counter().map_err(ClientError::Host)?;
+    let id_counter = ctx.client_counter()?;
 
     let client_exec_ctx = ctx.get_client_execution_context();
 
@@ -74,21 +73,19 @@ where
 
     client_state.initialise(client_exec_ctx, &client_id, consensus_state)?;
 
-    ctx.increase_client_counter().map_err(ClientError::Host)?;
+    ctx.increase_client_counter()?;
 
     let event = IbcEvent::CreateClient(CreateClient::new(
         client_id.clone(),
         client_type,
         client_state.latest_height(),
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))
-        .map_err(ClientError::Host)?;
-    ctx.emit_ibc_event(event).map_err(ClientError::Host)?;
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+    ctx.emit_ibc_event(event)?;
 
     ctx.log_message(format!(
         "success: generated new client identifier: {client_id}"
-    ))
-    .map_err(ClientError::Host)?;
+    ))?;
 
     Ok(())
 }

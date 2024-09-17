@@ -19,17 +19,12 @@ where
     let subject_client_id = msg.subject_client_id.clone();
     let substitute_client_id = msg.substitute_client_id.clone();
 
-    ctx.validate_message_signer(&signer)
-        .map_err(ClientError::Host)?;
+    ctx.validate_message_signer(&signer)?;
 
     let client_val_ctx = ctx.get_client_validation_context();
 
-    let subject_client_state = client_val_ctx
-        .client_state(&subject_client_id)
-        .map_err(ClientError::Host)?;
-    let substitute_client_state = client_val_ctx
-        .client_state(&substitute_client_id)
-        .map_err(ClientError::Host)?;
+    let subject_client_state = client_val_ctx.client_state(&subject_client_id)?;
+    let substitute_client_state = client_val_ctx.client_state(&substitute_client_id)?;
 
     let subject_height = subject_client_state.latest_height();
     let substitute_height = substitute_client_state.latest_height();
@@ -76,19 +71,14 @@ where
 
     let client_exec_ctx = ctx.get_client_execution_context();
 
-    let subject_client_state = client_exec_ctx
-        .client_state(&subject_client_id)
-        .map_err(ClientError::Host)?;
-    let substitute_client_state = client_exec_ctx
-        .client_state(&substitute_client_id)
-        .map_err(ClientError::Host)?;
-    let substitute_consensus_state = client_exec_ctx
-        .consensus_state(&ClientConsensusStatePath::new(
+    let subject_client_state = client_exec_ctx.client_state(&subject_client_id)?;
+    let substitute_client_state = client_exec_ctx.client_state(&substitute_client_id)?;
+    let substitute_consensus_state =
+        client_exec_ctx.consensus_state(&ClientConsensusStatePath::new(
             substitute_client_id.clone(),
             substitute_client_state.latest_height().revision_number(),
             substitute_client_state.latest_height().revision_height(),
-        ))
-        .map_err(ClientError::Host)?;
+        ))?;
 
     subject_client_state.update_on_recovery(
         ctx.get_client_execution_context(),

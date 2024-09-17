@@ -1,11 +1,11 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
 //!
 use ibc_core_client_context::prelude::*;
-use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::UpgradeClient;
 use ibc_core_client_types::msgs::MsgUpgradeClient;
 use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_core_host::types::error::HostError;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
@@ -18,15 +18,12 @@ where
         client_id, signer, ..
     } = msg;
 
-    ctx.validate_message_signer(&signer)
-        .map_err(ClientError::Host)?;
+    ctx.validate_message_signer(&signer)?;
 
     let client_val_ctx = ctx.get_client_validation_context();
 
     // Read the current latest client state from the host chain store.
-    let old_client_state = client_val_ctx
-        .client_state(&client_id)
-        .map_err(ClientError::Host)?;
+    let old_client_state = client_val_ctx.client_state(&client_id)?;
 
     // Check if the client is active.
     old_client_state
@@ -41,7 +38,13 @@ where
     );
     let old_consensus_state = client_val_ctx
         .consensus_state(&old_client_cons_state_path)
-        .map_err(ClientError::Host)?;
+        .map_err(|_| {
+            HostError::missing_state(format!(
+                "missing consensus state for client {} at height {}",
+                client_id,
+                old_client_state.latest_height()
+            ))
+        })?;
 
     // Validate the upgraded client state and consensus state and verify proofs against the root
     old_client_state.verify_upgrade_client(
@@ -63,9 +66,7 @@ where
 
     let client_exec_ctx = ctx.get_client_execution_context();
 
-    let old_client_state = client_exec_ctx
-        .client_state(&client_id)
-        .map_err(ClientError::Host)?;
+    let old_client_state = client_exec_ctx.client_state(&client_id)?;
 
     let latest_height = old_client_state.update_state_on_upgrade(
         client_exec_ctx,
@@ -79,9 +80,8 @@ where
         old_client_state.client_type(),
         latest_height,
     ));
-    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))
-        .map_err(ClientError::Host)?;
-    ctx.emit_ibc_event(event).map_err(ClientError::Host)?;
+    ctx.emit_ibc_event(IbcEvent::Message(MessageEvent::Client))?;
+    ctx.emit_ibc_event(event)?;
 
     Ok(())
 }
