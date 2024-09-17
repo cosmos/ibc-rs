@@ -3,39 +3,28 @@
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
-use ibc_core_host_types::error::{DecodingError, IdentifierError};
-use ibc_core_host_types::identifiers::ConnectionId;
+use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
-
-use crate::version::Version;
 
 #[derive(Debug, Display)]
 pub enum ConnectionError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
-    /// invalid state for initializing new ConnectionEnd; expected `Init` connection state and a single version
-    InvalidStateForConnectionEndInit,
+    /// host error: `{0}`
+    Host(HostError),
     /// invalid counterparty
     InvalidCounterparty,
     /// invalid client state: `{description}`
     InvalidClientState { description: String },
     /// mismatched connection states: expected `{expected}`, actual `{actual}`
     MismatchedConnectionStates { expected: String, actual: String },
-    /// empty supported features
-    EmptyFeatures,
-    /// unsupported version \"`{0}`\"
-    UnsupportedVersion(Version),
-    /// unsupported feature \"`{0}`\"
-    UnsupportedFeature(String),
+    /// missing supported features
+    MissingFeatures,
     /// missing common version
     MissingCommonVersion,
-    /// missing common features
-    MissingCommonFeatures,
     /// missing counterparty
     MissingCounterparty,
-    /// missing connection `{0}`
-    MissingConnection(ConnectionId),
     /// insufficient consensus height `{current_height}` for host chain; needs to meet counterparty's height `{target_height}`
     InsufficientConsensusHeight {
         target_height: Height,
@@ -51,12 +40,8 @@ pub enum ConnectionError {
         current_host_time: Timestamp,
         earliest_valid_time: Timestamp,
     },
-    /// failed to verify connection state: `{0}`
-    FailedToVerifyConnectionState(ClientError),
-    /// failed to verify consensus state: `{0}`
-    FailedToVerifyConsensusState(ClientError),
-    /// failed to verify client state: `{0}`
-    FailedToVerifyClientState(ClientError),
+    /// failed to verify client: `{0}`
+    FailedToVerifyClient(ClientError),
     /// overflowed timestamp: `{0}`
     OverflowedTimestamp(TimestampError),
 }
@@ -73,13 +58,19 @@ impl From<IdentifierError> for ConnectionError {
     }
 }
 
+impl From<HostError> for ConnectionError {
+    fn from(e: HostError) -> Self {
+        Self::Host(e)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for ConnectionError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::FailedToVerifyConnectionState(e)
-            | Self::FailedToVerifyConsensusState(e)
-            | Self::FailedToVerifyClientState(e) => Some(e),
+            Self::Decoding(e) => Some(e),
+            Self::Host(e) => Some(e),
+            Self::FailedToVerifyClient(e) => Some(e),
             _ => None,
         }
     }

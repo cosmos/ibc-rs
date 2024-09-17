@@ -104,7 +104,7 @@ where
                     Path::Connection(ConnectionPath::new(&msg.conn_id_on_b)),
                     expected_conn_end_on_b.encode_vec(),
                 )
-                .map_err(ConnectionError::FailedToVerifyConnectionState)?;
+                .map_err(ConnectionError::FailedToVerifyClient)?;
         }
 
         client_state_of_b_on_a
@@ -115,7 +115,7 @@ where
                 Path::ClientState(ClientStatePath::new(vars.client_id_on_b().clone())),
                 msg.client_state_of_a_on_b.to_vec(),
             )
-            .map_err(ConnectionError::FailedToVerifyClientState)?;
+            .map_err(ConnectionError::FailedToVerifyClient)?;
 
         let expected_consensus_state_of_a_on_b =
             ctx_a.host_consensus_state(&msg.consensus_height_of_a_on_b)?;
@@ -137,7 +137,7 @@ where
                 Path::ClientConsensusState(client_cons_state_path_on_b),
                 stored_consensus_state_of_a_on_b.to_vec(),
             )
-            .map_err(ConnectionError::FailedToVerifyConsensusState)?;
+            .map_err(ConnectionError::FailedToVerifyClient)?;
     }
 
     Ok(())
