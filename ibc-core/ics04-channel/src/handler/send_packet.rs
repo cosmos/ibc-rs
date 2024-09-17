@@ -1,6 +1,6 @@
 use ibc_core_channel_types::channel::Counterparty;
 use ibc_core_channel_types::commitment::compute_packet_commitment;
-use ibc_core_channel_types::error::PacketError;
+use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::SendPacket;
 use ibc_core_channel_types::packet::Packet;
 use ibc_core_client::context::prelude::*;
@@ -30,7 +30,7 @@ pub fn send_packet_validate(
     packet: &Packet,
 ) -> Result<(), HandlerError> {
     if !packet.timeout_height_on_b.is_set() && !packet.timeout_timestamp_on_b.is_set() {
-        return Err(HandlerError::Packet(PacketError::MissingTimeout));
+        return Err(HandlerError::Channel(ChannelError::MissingTimeout));
     }
 
     let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
@@ -64,7 +64,7 @@ pub fn send_packet_validate(
     let latest_height_on_a = client_state_of_b_on_a.latest_height();
 
     if packet.timeout_height_on_b.has_expired(latest_height_on_a) {
-        return Err(PacketError::InsufficientPacketHeight {
+        return Err(ChannelError::InsufficientPacketHeight {
             chain_height: latest_height_on_a,
             timeout_height: packet.timeout_height_on_b,
         }
@@ -81,14 +81,14 @@ pub fn send_packet_validate(
     let latest_timestamp = consensus_state_of_b_on_a.timestamp();
     let packet_timestamp = packet.timeout_timestamp_on_b;
     if packet_timestamp.has_expired(&latest_timestamp) {
-        return Err(PacketError::InsufficientPacketTimestamp.into());
+        return Err(ChannelError::InsufficientPacketTimestamp.into());
     }
 
     let seq_send_path_on_a = SeqSendPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
     let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
     if packet.seq_on_a != next_seq_send_on_a {
-        return Err(PacketError::MismatchedPacketSequences {
+        return Err(ChannelError::MismatchedPacketSequences {
             actual: packet.seq_on_a,
             expected: next_seq_send_on_a,
         }

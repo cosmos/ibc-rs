@@ -130,10 +130,7 @@ where
 
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HostError> {
         self.channel_end_store
-            .get(
-                StoreHeight::Pending,
-                &ChannelEndPath::new(&channel_end_path.0, &channel_end_path.1),
-            )
+            .get(StoreHeight::Pending, channel_end_path)
             .ok_or(HostError::missing_state(format!(
                 "missing channel {} in port {}",
                 channel_end_path.1.clone(),
@@ -143,10 +140,7 @@ where
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, HostError> {
         self.send_sequence_store
-            .get(
-                StoreHeight::Pending,
-                &SeqSendPath::new(&seq_send_path.0, &seq_send_path.1),
-            )
+            .get(StoreHeight::Pending, seq_send_path)
             .ok_or(HostError::failed_to_retrieve(
                 "failed to retrieve send packet sequence",
             ))
@@ -154,10 +148,7 @@ where
 
     fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, HostError> {
         self.recv_sequence_store
-            .get(
-                StoreHeight::Pending,
-                &SeqRecvPath::new(&seq_recv_path.0, &seq_recv_path.1),
-            )
+            .get(StoreHeight::Pending, seq_recv_path)
             .ok_or(HostError::failed_to_retrieve(
                 "failed to retrieve recv packet sequence",
             ))
@@ -165,10 +156,7 @@ where
 
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, HostError> {
         self.ack_sequence_store
-            .get(
-                StoreHeight::Pending,
-                &SeqAckPath::new(&seq_ack_path.0, &seq_ack_path.1),
-            )
+            .get(StoreHeight::Pending, seq_ack_path)
             .ok_or(HostError::failed_to_retrieve(
                 "failed to retrieve ack packet sequence",
             ))
@@ -179,14 +167,7 @@ where
         commitment_path: &CommitmentPath,
     ) -> Result<PacketCommitment, HostError> {
         self.packet_commitment_store
-            .get(
-                StoreHeight::Pending,
-                &CommitmentPath::new(
-                    &commitment_path.port_id,
-                    &commitment_path.channel_id,
-                    commitment_path.sequence,
-                ),
-            )
+            .get(StoreHeight::Pending, commitment_path)
             .ok_or(HostError::failed_to_retrieve(
                 "failed to retrieve packet commitment",
             ))
@@ -208,10 +189,7 @@ where
         ack_path: &AckPath,
     ) -> Result<AcknowledgementCommitment, HostError> {
         self.packet_ack_store
-            .get(
-                StoreHeight::Pending,
-                &AckPath::new(&ack_path.port_id, &ack_path.channel_id, ack_path.sequence),
-            )
+            .get(StoreHeight::Pending, ack_path)
             .ok_or(HostError::failed_to_retrieve(format!(
                 "failed to retrieve packet acknowledgment {}",
                 ack_path.sequence

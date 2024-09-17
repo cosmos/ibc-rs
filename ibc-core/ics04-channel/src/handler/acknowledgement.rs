@@ -1,6 +1,6 @@
 use ibc_core_channel_types::channel::{Counterparty, Order, State as ChannelState};
 use ibc_core_channel_types::commitment::{compute_ack_commitment, compute_packet_commitment};
-use ibc_core_channel_types::error::{ChannelError, PacketError};
+use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::AcknowledgePacket;
 use ibc_core_channel_types::msgs::MsgAcknowledgement;
 use ibc_core_client::context::prelude::*;
@@ -27,7 +27,7 @@ where
 
     module
         .on_acknowledgement_packet_validate(&msg.packet, &msg.acknowledgement, &msg.signer)
-        .map_err(HandlerError::Packet)
+        .map_err(HandlerError::Channel)
 }
 
 pub fn acknowledgement_packet_execute<ExecCtx>(
@@ -146,8 +146,7 @@ where
     );
 
     if commitment_on_a != expected_commitment_on_a {
-        return Err(PacketError::MismatchedPacketCommitments {
-            sequence: packet.seq_on_a,
+        return Err(ChannelError::MismatchedPacketCommitments {
             actual: commitment_on_a,
             expected: expected_commitment_on_a,
         }
@@ -158,7 +157,7 @@ where
         let seq_ack_path_on_a = SeqAckPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
         let next_seq_ack = ctx_a.get_next_sequence_ack(&seq_ack_path_on_a)?;
         if packet.seq_on_a != next_seq_ack {
-            return Err(PacketError::MismatchedPacketSequences {
+            return Err(ChannelError::MismatchedPacketSequences {
                 actual: packet.seq_on_a,
                 expected: next_seq_ack,
             }
@@ -202,7 +201,7 @@ where
                 Path::Ack(ack_path_on_b),
                 ack_commitment.into_vec(),
             )
-            .map_err(ChannelError::FailedProofVerification)?;
+            .map_err(ChannelError::FailedVerification)?;
     }
 
     Ok(())

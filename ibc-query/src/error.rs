@@ -1,7 +1,7 @@
 use alloc::string::{String, ToString};
 
 use displaydoc::Display;
-use ibc::core::channel::types::error::{ChannelError, PacketError};
+use ibc::core::channel::types::error::ChannelError;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::handler::types::error::HandlerError;
@@ -65,12 +65,6 @@ impl From<ConnectionError> for QueryError {
 impl From<ChannelError> for QueryError {
     fn from(e: ChannelError) -> Self {
         Self::Handler(HandlerError::Channel(e))
-    }
-}
-
-impl From<PacketError> for QueryError {
-    fn from(e: PacketError) -> Self {
-        Self::Handler(HandlerError::Packet(e))
     }
 }
 

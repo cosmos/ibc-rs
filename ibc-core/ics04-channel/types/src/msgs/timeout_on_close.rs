@@ -7,7 +7,6 @@ use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgTimeoutOnClose as RawMsgTimeoutOnClose;
 use ibc_proto::Protobuf;
 
-use crate::error::{ChannelError, PacketError};
 use crate::packet::Packet;
 
 pub const TIMEOUT_ON_CLOSE_TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
@@ -33,43 +32,39 @@ pub struct MsgTimeoutOnClose {
 impl Protobuf<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {}
 
 impl TryFrom<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {
-    type Error = PacketError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgTimeoutOnClose) -> Result<Self, Self::Error> {
         if raw_msg.next_sequence_recv == 0 {
-            return Err(PacketError::ZeroPacketSequence);
+            return Err(DecodingError::invalid_raw_data(
+                "packet sequence cannot be 0",
+            ));
         }
 
         if raw_msg.counterparty_upgrade_sequence != 0 {
-            return Err(PacketError::Channel(
-                ChannelError::UnsupportedChannelUpgradeSequence,
+            return Err(DecodingError::invalid_raw_data(
+                "unsupported channel upgrade sequence",
             ));
         }
 
         Ok(MsgTimeoutOnClose {
             packet: raw_msg
                 .packet
-                .ok_or(DecodingError::MissingRawData {
-                    description: "packet data not set".to_string(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("packet data not set"))?
                 .try_into()?,
             next_seq_recv_on_b: Sequence::from(raw_msg.next_sequence_recv),
             proof_unreceived_on_b: raw_msg.proof_unreceived.try_into().map_err(|e| {
-                DecodingError::InvalidRawData {
-                    description: format!("failed to decode proof: {e}"),
-                }
+                DecodingError::invalid_raw_data(format!("failed to decode proof: {e}"))
             })?,
             proof_close_on_b: raw_msg.proof_close.try_into().map_err(|e| {
-                DecodingError::InvalidRawData {
-                    description: format!("failed to decode proof: {e}"),
-                }
+                DecodingError::invalid_raw_data(format!("failed to decode proof: {e}"))
             })?,
             proof_height_on_b: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::InvalidRawData {
-                    description: "failed to decode proof height".to_string(),
-                })?,
+                .ok_or(DecodingError::invalid_raw_data(
+                    "failed to decode proof height",
+                ))?,
             signer: raw_msg.signer.into(),
         })
     }

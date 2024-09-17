@@ -1,6 +1,6 @@
 use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, Order, State};
 use ibc_core_channel_types::commitment::compute_packet_commitment;
-use ibc_core_channel_types::error::{ChannelError, PacketError};
+use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::msgs::MsgTimeoutOnClose;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
@@ -51,8 +51,7 @@ where
         &packet.timeout_timestamp_on_b,
     );
     if commitment_on_a != expected_commitment_on_a {
-        return Err(PacketError::MismatchedPacketCommitments {
-            sequence: packet.seq_on_a,
+        return Err(ChannelError::MismatchedPacketCommitments {
             expected: expected_commitment_on_a,
             actual: commitment_on_a,
         }
@@ -86,7 +85,7 @@ where
         let chan_id_on_b = chan_end_on_a
             .counterparty()
             .channel_id()
-            .ok_or(PacketError::Channel(ChannelError::MissingCounterparty))?;
+            .ok_or(ChannelError::MissingCounterparty)?;
         let conn_id_on_b = conn_end_on_a
             .counterparty()
             .connection_id()
@@ -116,14 +115,14 @@ where
                 Path::ChannelEnd(chan_end_path_on_b),
                 expected_chan_end_on_b.encode_vec(),
             )
-            .map_err(ChannelError::FailedProofVerification)?;
+            .map_err(ChannelError::FailedVerification)?;
 
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 
         let next_seq_recv_verification_result = match chan_end_on_a.ordering {
             Order::Ordered => {
                 if packet.seq_on_a < msg.next_seq_recv_on_b {
-                    return Err(PacketError::MismatchedPacketSequences {
+                    return Err(ChannelError::MismatchedPacketSequences {
                         actual: packet.seq_on_a,
                         expected: msg.next_seq_recv_on_b,
                     }
@@ -155,17 +154,14 @@ where
                 )
             }
             Order::None => {
-                return Err(HandlerError::Channel(ChannelError::InvalidOrderType {
-                    expected: "Channel ordering cannot be None".to_string(),
+                return Err(HandlerError::Channel(ChannelError::InvalidState {
+                    expected: "Channel ordering to not be None".to_string(),
                     actual: chan_end_on_a.ordering.to_string(),
                 }))
             }
         };
 
-        next_seq_recv_verification_result.map_err(|e| ChannelError::FailedPacketVerification {
-            sequence: msg.next_seq_recv_on_b,
-            client_error: e,
-        })?;
+        next_seq_recv_verification_result.map_err(ChannelError::FailedVerification)?;
     };
 
     Ok(())

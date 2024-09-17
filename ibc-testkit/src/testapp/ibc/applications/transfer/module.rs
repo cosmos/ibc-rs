@@ -1,6 +1,6 @@
 use ibc::core::channel::types::acknowledgement::Acknowledgement;
 use ibc::core::channel::types::channel::{Counterparty, Order};
-use ibc::core::channel::types::error::{ChannelError, PacketError};
+use ibc::core::channel::types::error::ChannelError;
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::Version;
 use ibc::core::host::types::identifiers::{ChannelId, ConnectionId, PortId};
@@ -75,7 +75,7 @@ impl Module for DummyTransferModule {
         &self,
         _packet: &Packet,
         _relayer: &Signer,
-    ) -> Result<(), PacketError> {
+    ) -> Result<(), ChannelError> {
         Ok(())
     }
 
@@ -83,7 +83,7 @@ impl Module for DummyTransferModule {
         &mut self,
         _packet: &Packet,
         _relayer: &Signer,
-    ) -> (ModuleExtras, Result<(), PacketError>) {
+    ) -> (ModuleExtras, Result<(), ChannelError>) {
         (ModuleExtras::empty(), Ok(()))
     }
 
@@ -92,7 +92,7 @@ impl Module for DummyTransferModule {
         _packet: &Packet,
         _acknowledgement: &Acknowledgement,
         _relayer: &Signer,
-    ) -> Result<(), PacketError> {
+    ) -> Result<(), ChannelError> {
         Ok(())
     }
 
@@ -101,7 +101,7 @@ impl Module for DummyTransferModule {
         _packet: &Packet,
         _acknowledgement: &Acknowledgement,
         _relayer: &Signer,
-    ) -> (ModuleExtras, Result<(), PacketError>) {
+    ) -> (ModuleExtras, Result<(), ChannelError>) {
         (ModuleExtras::empty(), Ok(()))
     }
 }
