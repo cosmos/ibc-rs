@@ -20,8 +20,6 @@ pub enum HandlerError {
     Channel(ChannelError),
     /// ICS26 Routing error: {0}
     Router(RouterError),
-    /// ICS25 Host error: {0}
-    Host(HostError),
 }
 
 // TODO(seanchen1991): Figure out how to remove this
@@ -44,7 +42,6 @@ impl std::error::Error for HandlerError {
             Self::Connection(e) => Some(e),
             Self::Channel(e) => Some(e),
             Self::Router(e) => Some(e),
-            Self::Host(e) => Some(e),
         }
     }
 }
