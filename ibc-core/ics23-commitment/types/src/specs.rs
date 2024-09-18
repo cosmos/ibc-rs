@@ -30,7 +30,7 @@ impl ProofSpecs {
 
     pub fn validate(&self) -> Result<(), CommitmentError> {
         if self.is_empty() {
-            return Err(CommitmentError::EmptyProofSpecs);
+            return Err(CommitmentError::MissingProofSpecs);
         }
         for proof_spec in &self.0 {
             // A non-positive `min_depth` or `max_depth` indicates no limit on the respective bound.
@@ -59,7 +59,7 @@ impl TryFrom<Vec<RawProofSpec>> for ProofSpecs {
     fn try_from(ics23_specs: Vec<RawProofSpec>) -> Result<Self, CommitmentError> {
         // no proof specs provided
         if ics23_specs.is_empty() {
-            return Err(CommitmentError::EmptyProofSpecs);
+            return Err(CommitmentError::MissingProofSpecs);
         }
 
         ics23_specs

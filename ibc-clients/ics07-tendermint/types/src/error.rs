@@ -60,8 +60,7 @@ impl std::error::Error for TendermintClientError {
     }
 }
 
-// TODO(seanchen1991): Should this impl be deprecated in favor of a
-// From<ClientError> for TendermintClientError impl?
+// TODO(seanchen1991): Figure out how to remove this conversion
 impl From<TendermintClientError> for ClientError {
     fn from(e: TendermintClientError) -> Self {
         Self::ClientSpecific {

@@ -159,7 +159,7 @@ pub fn verify_consensus_state(
     let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
     if tm_consensus_state.root().is_empty() {
-        Err(CommitmentError::EmptyCommitmentRoot)?;
+        Err(CommitmentError::MissingCommitmentRoot)?;
     };
 
     if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
@@ -294,7 +294,7 @@ pub fn verify_membership<H: HostFunctionsProvider>(
     value: Vec<u8>,
 ) -> Result<(), ClientError> {
     if prefix.is_empty() {
-        Err(CommitmentError::EmptyCommitmentPrefix)?;
+        Err(CommitmentError::MissingCommitmentPrefix)?;
     }
 
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);

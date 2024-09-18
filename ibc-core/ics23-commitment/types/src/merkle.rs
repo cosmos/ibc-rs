@@ -98,10 +98,10 @@ impl MerkleProof {
     ) -> Result<(), CommitmentError> {
         // validate arguments
         if self.proofs.is_empty() {
-            return Err(CommitmentError::EmptyMerkleProof);
+            return Err(CommitmentError::MissingMerkleProof);
         }
         if root.hash.is_empty() {
-            return Err(CommitmentError::EmptyMerkleRoot);
+            return Err(CommitmentError::MissingMerkleRoot);
         }
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());
@@ -118,7 +118,7 @@ impl MerkleProof {
             });
         }
         if value.is_empty() {
-            return Err(CommitmentError::EmptyVerifiedValue);
+            return Err(CommitmentError::MissingVerifiedValue);
         }
 
         let mut subroot = value.clone();
@@ -164,10 +164,10 @@ impl MerkleProof {
     ) -> Result<(), CommitmentError> {
         // validate arguments
         if self.proofs.is_empty() {
-            return Err(CommitmentError::EmptyMerkleProof);
+            return Err(CommitmentError::MissingMerkleProof);
         }
         if root.hash.is_empty() {
-            return Err(CommitmentError::EmptyMerkleRoot);
+            return Err(CommitmentError::MissingMerkleRoot);
         }
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());

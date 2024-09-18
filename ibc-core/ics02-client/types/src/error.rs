@@ -56,16 +56,6 @@ pub enum ClientError {
     // TODO(seanchen1991): Incorporate this error into its own variants
     /// client-specific error: `{description}`
     ClientSpecific { description: String },
-    /// other error: `{description}`
-    Other { description: String },
-}
-
-impl From<&'static str> for ClientError {
-    fn from(s: &'static str) -> Self {
-        Self::Other {
-            description: s.to_string(),
-        }
-    }
 }
 
 impl From<CommitmentError> for ClientError {
