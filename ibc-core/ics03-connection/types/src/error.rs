@@ -17,8 +17,8 @@ pub enum ConnectionError {
     Host(HostError),
     /// invalid counterparty
     InvalidCounterparty,
-    /// invalid client state: `{description}`
-    InvalidClientState { description: String },
+    /// invalid connection state: `{description}`
+    InvalidState { description: String },
     /// mismatched connection states: expected `{expected}`, actual `{actual}`
     MismatchedConnectionStates { expected: String, actual: String },
     /// missing supported features
