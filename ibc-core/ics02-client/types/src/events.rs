@@ -60,14 +60,13 @@ impl TryFrom<abci::EventAttribute> for ClientIdAttribute {
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != CLIENT_ID_ATTRIBUTE_KEY {
-                return Err(DecodingError::InvalidRawData {
-                    description: format!("invalid attribute key {}", key_str),
-                });
+                return Err(DecodingError::invalid_raw_data(format!(
+                    "invalid attribute key {}",
+                    key_str
+                )));
             }
         } else {
-            return Err(DecodingError::MissingRawData {
-                description: "missing attribute key".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("missing attribute key"));
         }
 
         value
@@ -76,9 +75,7 @@ impl TryFrom<abci::EventAttribute> for ClientIdAttribute {
                 let client_id = ClientId::from_str(value)?;
                 Ok(ClientIdAttribute { client_id })
             })
-            .map_err(|e| DecodingError::MissingRawData {
-                description: format!("missing attribute value: {e}"),
-            })?
+            .map_err(|e| DecodingError::missing_raw_data(format!("missing attribute value: {e}")))?
     }
 }
 
@@ -112,14 +109,13 @@ impl TryFrom<abci::EventAttribute> for ClientTypeAttribute {
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != CLIENT_TYPE_ATTRIBUTE_KEY {
-                return Err(DecodingError::InvalidRawData {
-                    description: format!("invalid attribute key {}", key_str),
-                });
+                return Err(DecodingError::invalid_raw_data(format!(
+                    "invalid attribute key {}",
+                    key_str
+                )));
             }
         } else {
-            return Err(DecodingError::MissingRawData {
-                description: "missing attribute key".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("missing attribute key"));
         }
 
         value
@@ -128,9 +124,7 @@ impl TryFrom<abci::EventAttribute> for ClientTypeAttribute {
                 let client_type = ClientType::from_str(value)?;
                 Ok(ClientTypeAttribute { client_type })
             })
-            .map_err(|e| DecodingError::MissingRawData {
-                description: format!("missing attribute value: {e}"),
-            })?
+            .map_err(|e| DecodingError::missing_raw_data(format!("missing attribute value: {e}")))?
     }
 }
 
@@ -164,28 +158,24 @@ impl TryFrom<abci::EventAttribute> for ConsensusHeightAttribute {
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != CONSENSUS_HEIGHT_ATTRIBUTE_KEY {
-                return Err(DecodingError::InvalidRawData {
-                    description: format!("invalid attribute key {}", key_str),
-                });
+                return Err(DecodingError::invalid_raw_data(format!(
+                    "invalid attribute key {}",
+                    key_str
+                )));
             }
         } else {
-            return Err(DecodingError::MissingRawData {
-                description: "missing attribute key".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("missing attribute key"));
         }
 
         value
             .value_str()
             .map(|value| {
-                let consensus_height =
-                    Height::from_str(value).map_err(|e| DecodingError::InvalidRawData {
-                        description: format!("invalid attribute value: {e}"),
-                    })?;
+                let consensus_height = Height::from_str(value).map_err(|e| {
+                    DecodingError::invalid_raw_data(format!("invalid attribute value: {e}"))
+                })?;
                 Ok(ConsensusHeightAttribute { consensus_height })
             })
-            .map_err(|e| DecodingError::MissingRawData {
-                description: format!("missing attribute value: {e}"),
-            })?
+            .map_err(|e| DecodingError::missing_raw_data(format!("missing attribute value: {e}")))?
     }
 }
 
@@ -296,9 +286,7 @@ impl TryFrom<abci::EventAttribute> for HeaderAttribute {
                 )));
             }
         } else {
-            return Err(DecodingError::MissingRawData {
-                description: "missing attribute key".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("missing attribute key"));
         }
 
         value
@@ -381,9 +369,10 @@ impl TryFrom<abci::Event> for CreateClient {
 
     fn try_from(value: abci::Event) -> Result<Self, Self::Error> {
         if value.kind != CREATE_CLIENT_EVENT {
-            return Err(DecodingError::InvalidRawData {
-                description: format!("invalid event kind: expected `{}`", CREATE_CLIENT_EVENT),
-            });
+            return Err(DecodingError::invalid_raw_data(format!(
+                "invalid event kind: expected `{}`",
+                CREATE_CLIENT_EVENT
+            )));
         }
 
         value
@@ -399,17 +388,11 @@ impl TryFrom<abci::Event> for CreateClient {
                  attribute| {
                     let key = attribute
                         .key_str()
-                        .map_err(|_| DecodingError::MissingRawData {
-                            description: "missing attribute key".to_string(),
-                        })?;
+                        .map_err(|_| DecodingError::missing_raw_data("missing attribute key"))?;
 
                     match key {
                         CLIENT_ID_ATTRIBUTE_KEY => Ok((
-                            Some(attribute.clone().try_into().map_err(|e| {
-                                DecodingError::InvalidRawData {
-                                    description: format!("{e}"),
-                                }
-                            })?),
+                            Some(attribute.clone().try_into()?),
                             client_type,
                             consensus_height,
                         )),
@@ -431,16 +414,12 @@ impl TryFrom<abci::Event> for CreateClient {
                     Option<ClientTypeAttribute>,
                     Option<ConsensusHeightAttribute>,
                 )| {
-                    let client_id = client_id.ok_or(DecodingError::MissingRawData {
-                        description: "missing attribute key".to_string(),
-                    })?;
-                    let client_type = client_type.ok_or(DecodingError::MissingRawData {
-                        description: "missing attribute key".to_string(),
-                    })?;
-                    let consensus_height =
-                        consensus_height.ok_or(DecodingError::MissingRawData {
-                            description: "missing attribute key".to_string(),
-                        })?;
+                    let client_id = client_id
+                        .ok_or(DecodingError::missing_raw_data("missing attribute key"))?;
+                    let client_type = client_type
+                        .ok_or(DecodingError::missing_raw_data("missing attribute key"))?;
+                    let consensus_height = consensus_height
+                        .ok_or(DecodingError::missing_raw_data("missing attribute key"))?;
 
                     Ok(CreateClient::new(
                         client_id.client_id,
