@@ -259,7 +259,7 @@ impl ConnectionEnd {
         // + Init: contains the set of compatible versions,
         // + TryOpen/Open: contains the single version chosen by the handshake protocol.
         if state != State::Init && versions.len() != 1 {
-            return Err(ConnectionError::InvalidStateForConnectionEndInit);
+            return Err(ConnectionError::InvalidState { description: "invalid state for initializing new ConnectionEnd; expected `Init` connection state and a single version".to_string() });
         }
 
         Ok(Self {

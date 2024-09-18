@@ -6,7 +6,6 @@ use ibc_core_channel_types::msgs::MsgAcknowledgement;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_connection::types::State as ConnectionState;
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, SeqAckPath,
@@ -19,22 +18,20 @@ pub fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
     module: &dyn Module,
     msg: MsgAcknowledgement,
-) -> Result<(), HandlerError>
+) -> Result<(), ChannelError>
 where
     ValCtx: ValidationContext,
 {
     validate(ctx_a, &msg)?;
 
-    module
-        .on_acknowledgement_packet_validate(&msg.packet, &msg.acknowledgement, &msg.signer)
-        .map_err(HandlerError::Channel)
+    module.on_acknowledgement_packet_validate(&msg.packet, &msg.acknowledgement, &msg.signer)
 }
 
 pub fn acknowledgement_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgAcknowledgement,
-) -> Result<(), HandlerError>
+) -> Result<(), ChannelError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -103,7 +100,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgAcknowledgement) -> Result<(), HandlerError>
+fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgAcknowledgement) -> Result<(), ChannelError>
 where
     Ctx: ValidationContext,
 {
@@ -149,8 +146,7 @@ where
         return Err(ChannelError::MismatchedPacketCommitments {
             actual: commitment_on_a,
             expected: expected_commitment_on_a,
-        }
-        .into());
+        });
     }
 
     if let Order::Ordered = chan_end_on_a.ordering {
@@ -160,8 +156,7 @@ where
             return Err(ChannelError::MismatchedPacketSequences {
                 actual: packet.seq_on_a,
                 expected: next_seq_ack,
-            }
-            .into());
+            });
         }
     }
 
@@ -193,15 +188,13 @@ where
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 
         // Verify the proof for the packet against the chain store.
-        client_state_of_b_on_a
-            .verify_membership(
-                conn_end_on_a.counterparty().prefix(),
-                &msg.proof_acked_on_b,
-                consensus_state_of_b_on_a.root(),
-                Path::Ack(ack_path_on_b),
-                ack_commitment.into_vec(),
-            )
-            .map_err(ChannelError::FailedVerification)?;
+        client_state_of_b_on_a.verify_membership(
+            conn_end_on_a.counterparty().prefix(),
+            &msg.proof_acked_on_b,
+            consensus_state_of_b_on_a.root(),
+            Path::Ack(ack_path_on_b),
+            ack_commitment.into_vec(),
+        )?;
     }
 
     Ok(())

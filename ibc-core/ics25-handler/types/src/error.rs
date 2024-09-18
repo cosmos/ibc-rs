@@ -5,7 +5,6 @@ use displaydoc::Display;
 use ibc_core_channel_types::error::ChannelError;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_host_types::error::HostError;
 use ibc_core_router_types::error::RouterError;
 use ibc_primitives::prelude::*;
 
@@ -20,20 +19,6 @@ pub enum HandlerError {
     Channel(ChannelError),
     /// ICS26 Routing error: {0}
     Router(RouterError),
-    /// ICS25 Host error: {0}
-    Host(HostError),
-}
-
-// TODO(seanchen1991): Figure out how to remove this
-impl From<HandlerError> for ClientError {
-    fn from(e: HandlerError) -> Self {
-        match e {
-            HandlerError::Client(e) => e,
-            _ => ClientError::Other {
-                description: e.to_string(),
-            },
-        }
-    }
 }
 
 #[cfg(feature = "std")]
@@ -44,7 +29,6 @@ impl std::error::Error for HandlerError {
             Self::Connection(e) => Some(e),
             Self::Channel(e) => Some(e),
             Self::Router(e) => Some(e),
-            Self::Host(e) => Some(e),
         }
     }
 }

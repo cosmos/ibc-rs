@@ -5,13 +5,12 @@ use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::CreateClient;
 use ibc_core_client_types::msgs::MsgCreateClient;
 use ibc_core_client_types::Status;
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::{ClientStateMut, ClientStateRef, ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), HandlerError>
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgCreateClient) -> Result<(), ClientError>
 where
     Ctx: ValidationContext,
     <ClientStateRef<Ctx> as TryFrom<Any>>::Error: Into<ClientError>,
@@ -36,7 +35,7 @@ where
     let status = client_state.status(client_val_ctx, &client_id)?;
 
     if status.is_frozen() {
-        return Err(ClientError::UnexpectedStatus(Status::Frozen).into());
+        return Err(ClientError::UnexpectedStatus(Status::Frozen));
     };
 
     let host_timestamp = ctx.host_timestamp()?;
@@ -44,13 +43,13 @@ where
     client_state.verify_consensus_state(consensus_state, &host_timestamp)?;
 
     if client_val_ctx.client_state(&client_id).is_ok() {
-        return Err(ClientError::DuplicateClientState(client_id).into());
+        return Err(ClientError::DuplicateClientState(client_id));
     };
 
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), HandlerError>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgCreateClient) -> Result<(), ClientError>
 where
     Ctx: ExecutionContext,
     <ClientStateMut<Ctx> as TryFrom<Any>>::Error: Into<ClientError>,

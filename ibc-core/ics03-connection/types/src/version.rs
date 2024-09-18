@@ -43,7 +43,7 @@ impl Version {
         let maybe_supported_version = find_supported_version(self, supported_versions)?;
 
         if self.features.is_empty() {
-            return Err(ConnectionError::EmptyFeatures);
+            return Err(ConnectionError::MissingFeatures);
         }
 
         for feature in self.features.iter() {
@@ -55,7 +55,7 @@ impl Version {
     /// Checks whether the given feature is supported in this version
     pub fn verify_feature_supported(&self, feature: String) -> Result<(), ConnectionError> {
         if !self.features.contains(&feature) {
-            return Err(ConnectionError::UnsupportedFeature(feature));
+            return Err(ConnectionError::MissingFeatures);
         }
         Ok(())
     }
@@ -82,7 +82,7 @@ impl TryFrom<RawVersion> for Version {
         }
         for feature in value.features.iter() {
             if feature.trim().is_empty() {
-                return Err(ConnectionError::EmptyFeatures);
+                return Err(ConnectionError::MissingFeatures);
             }
         }
         Ok(Version {
@@ -156,7 +156,7 @@ fn find_supported_version(
     supported_versions
         .iter()
         .find(|sv| sv.identifier == version.identifier)
-        .ok_or(ConnectionError::UnsupportedVersion(version.clone()))
+        .ok_or(ConnectionError::MissingCommonVersion)
         .cloned()
 }
 
@@ -175,7 +175,7 @@ fn get_feature_set_intersection(
         .collect();
 
     if feature_set_intersection.is_empty() {
-        return Err(ConnectionError::MissingCommonFeatures);
+        return Err(ConnectionError::MissingFeatures);
     }
 
     Ok(feature_set_intersection)

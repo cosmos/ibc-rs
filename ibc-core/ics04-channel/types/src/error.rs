@@ -3,7 +3,8 @@
 use displaydoc::Display;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
-use ibc_core_host_types::error::{DecodingError, IdentifierError};
+use ibc_core_connection_types::error::ConnectionError;
+use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_core_host_types::identifiers::Sequence;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
@@ -15,14 +16,18 @@ use crate::timeout::TimeoutTimestamp;
 use crate::Version;
 
 /// Errors that arise from the ICS04 Channel module
-#[derive(Debug, Display)]
+#[derive(Debug, Display, derive_more::From)]
 pub enum ChannelError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
+    /// host error: `{0}`
+    Host(HostError),
+    /// client error: `{0}`
+    Client(ClientError),
+    /// connection error: `{0}`
+    Connection(ConnectionError),
     /// packet acknowledgment for sequence `{0}` already exists
     DuplicateAcknowledgment(Sequence),
-    /// failed verification: `{0}`
-    FailedVerification(ClientError),
     /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
     InsufficientPacketHeight {
         chain_height: Height,
@@ -68,6 +73,8 @@ pub enum ChannelError {
     UnexpectedChannelId,
     /// unsupported version: expected `{expected}`, actual `{actual}`
     UnsupportedVersion { expected: Version, actual: Version },
+    /// application specific error: `{description}`
+    AppSpecific { description: String },
 }
 
 impl From<IdentifierError> for ChannelError {
@@ -76,24 +83,14 @@ impl From<IdentifierError> for ChannelError {
     }
 }
 
-impl From<DecodingError> for ChannelError {
-    fn from(e: DecodingError) -> Self {
-        Self::Decoding(e)
-    }
-}
-
-impl From<TimestampError> for ChannelError {
-    fn from(e: TimestampError) -> Self {
-        Self::InvalidTimeoutTimestamp(e)
-    }
-}
-
 #[cfg(feature = "std")]
 impl std::error::Error for ChannelError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Decoding(e) => Some(e),
-            Self::FailedVerification(e) => Some(e),
+            Self::Client(e) => Some(e),
+            Self::Connection(e) => Some(e),
+            Self::Host(e) => Some(e),
             Self::InvalidTimeoutTimestamp(e) => Some(e),
             _ => None,
         }
