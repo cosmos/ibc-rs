@@ -7,7 +7,7 @@ use ibc_core::host::types::error::{DecodingError, HostError};
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 
-#[derive(Display, Debug)]
+#[derive(Display, Debug, derive_more::From)]
 pub enum TokenTransferError {
     /// host error: `{0}`
     Host(HostError),
@@ -43,24 +43,6 @@ impl std::error::Error for TokenTransferError {
             Self::Channel(e) => Some(e),
             _ => None,
         }
-    }
-}
-
-impl From<HostError> for TokenTransferError {
-    fn from(e: HostError) -> Self {
-        Self::Host(e)
-    }
-}
-
-impl From<DecodingError> for TokenTransferError {
-    fn from(e: DecodingError) -> Self {
-        Self::Decoding(e)
-    }
-}
-
-impl From<ChannelError> for TokenTransferError {
-    fn from(e: ChannelError) -> Self {
-        Self::Channel(e)
     }
 }
 

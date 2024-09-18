@@ -28,8 +28,6 @@ pub enum ChannelError {
     Connection(ConnectionError),
     /// packet acknowledgment for sequence `{0}` already exists
     DuplicateAcknowledgment(Sequence),
-    /// failed verification: `{0}`
-    FailedVerification(ClientError),
     /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
     InsufficientPacketHeight {
         chain_height: Height,
@@ -75,6 +73,8 @@ pub enum ChannelError {
     UnexpectedChannelId,
     /// unsupported version: expected `{expected}`, actual `{actual}`
     UnsupportedVersion { expected: Version, actual: Version },
+    /// application specific error: `{description}`
+    AppSpecific { description: String },
 }
 
 impl From<IdentifierError> for ChannelError {
@@ -121,7 +121,6 @@ impl std::error::Error for ChannelError {
             Self::Client(e) => Some(e),
             Self::Connection(e) => Some(e),
             Self::Host(e) => Some(e),
-            Self::FailedVerification(e) => Some(e),
             Self::InvalidTimeoutTimestamp(e) => Some(e),
             _ => None,
         }

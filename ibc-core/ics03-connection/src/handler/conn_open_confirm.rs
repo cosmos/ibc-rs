@@ -73,15 +73,13 @@ where
             conn_end_on_b.delay_period(),
         )?;
 
-        client_state_of_a_on_b
-            .verify_membership(
-                prefix_on_a,
-                &msg.proof_conn_end_on_a,
-                consensus_state_of_a_on_b.root(),
-                Path::Connection(ConnectionPath::new(conn_id_on_a)),
-                expected_conn_end_on_a.encode_vec(),
-            )
-            .map_err(ConnectionError::FailedToVerifyClient)?;
+        client_state_of_a_on_b.verify_membership(
+            prefix_on_a,
+            &msg.proof_conn_end_on_a,
+            consensus_state_of_a_on_b.root(),
+            Path::Connection(ConnectionPath::new(conn_id_on_a)),
+            expected_conn_end_on_a.encode_vec(),
+        )?;
     }
 
     Ok(())

@@ -90,26 +90,22 @@ where
                 msg.delay_period,
             )?;
 
-            client_state_of_a_on_b
-                .verify_membership(
-                    prefix_on_a,
-                    &msg.proof_conn_end_on_a,
-                    consensus_state_of_a_on_b.root(),
-                    Path::Connection(ConnectionPath::new(&vars.conn_id_on_a)),
-                    expected_conn_end_on_a.encode_vec(),
-                )
-                .map_err(ConnectionError::FailedToVerifyClient)?;
+            client_state_of_a_on_b.verify_membership(
+                prefix_on_a,
+                &msg.proof_conn_end_on_a,
+                consensus_state_of_a_on_b.root(),
+                Path::Connection(ConnectionPath::new(&vars.conn_id_on_a)),
+                expected_conn_end_on_a.encode_vec(),
+            )?;
         }
 
-        client_state_of_a_on_b
-            .verify_membership(
-                prefix_on_a,
-                &msg.proof_client_state_of_b_on_a,
-                consensus_state_of_a_on_b.root(),
-                Path::ClientState(ClientStatePath::new(client_id_on_a.clone())),
-                msg.client_state_of_b_on_a.to_vec(),
-            )
-            .map_err(ConnectionError::FailedToVerifyClient)?;
+        client_state_of_a_on_b.verify_membership(
+            prefix_on_a,
+            &msg.proof_client_state_of_b_on_a,
+            consensus_state_of_a_on_b.root(),
+            Path::ClientState(ClientStatePath::new(client_id_on_a.clone())),
+            msg.client_state_of_b_on_a.to_vec(),
+        )?;
 
         let expected_consensus_state_of_b_on_a =
             ctx_b.host_consensus_state(&msg.consensus_height_of_b_on_a)?;
@@ -123,15 +119,13 @@ where
             msg.consensus_height_of_b_on_a.revision_height(),
         );
 
-        client_state_of_a_on_b
-            .verify_membership(
-                prefix_on_a,
-                &msg.proof_consensus_state_of_b_on_a,
-                consensus_state_of_a_on_b.root(),
-                Path::ClientConsensusState(client_cons_state_path_on_a),
-                stored_consensus_state_of_b_on_a.to_vec(),
-            )
-            .map_err(ConnectionError::FailedToVerifyClient)?;
+        client_state_of_a_on_b.verify_membership(
+            prefix_on_a,
+            &msg.proof_consensus_state_of_b_on_a,
+            consensus_state_of_a_on_b.root(),
+            Path::ClientConsensusState(client_cons_state_path_on_a),
+            stored_consensus_state_of_b_on_a.to_vec(),
+        )?;
     }
 
     Ok(())

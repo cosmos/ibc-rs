@@ -144,15 +144,13 @@ where
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
-        client_state_of_b_on_a
-            .verify_membership(
-                prefix_on_b,
-                &msg.proof_chan_end_on_b,
-                consensus_state_of_b_on_a.root(),
-                Path::ChannelEnd(chan_end_path_on_b),
-                expected_chan_end_on_b.encode_vec(),
-            )
-            .map_err(ChannelError::FailedVerification)?;
+        client_state_of_b_on_a.verify_membership(
+            prefix_on_b,
+            &msg.proof_chan_end_on_b,
+            consensus_state_of_b_on_a.root(),
+            Path::ChannelEnd(chan_end_path_on_b),
+            expected_chan_end_on_b.encode_vec(),
+        )?;
     }
 
     Ok(())

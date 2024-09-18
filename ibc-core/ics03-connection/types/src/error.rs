@@ -42,8 +42,6 @@ pub enum ConnectionError {
         current_host_time: Timestamp,
         earliest_valid_time: Timestamp,
     },
-    /// failed to verify client: `{0}`
-    FailedToVerifyClient(ClientError),
     /// overflowed timestamp: `{0}`
     OverflowedTimestamp(TimestampError),
 }
@@ -76,9 +74,9 @@ impl From<HostError> for ConnectionError {
 impl std::error::Error for ConnectionError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::Decoding(e) => Some(e),
             Self::Host(e) => Some(e),
-            Self::Client(e) | Self::FailedToVerifyClient(e) => Some(e),
+            Self::Client(e) => Some(e),
+            Self::Decoding(e) => Some(e),
             _ => None,
         }
     }
