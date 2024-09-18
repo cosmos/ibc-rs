@@ -26,7 +26,6 @@ where
     #[cfg(feature = "wasm-client")]
     if host_client_id_at_counterparty.is_wasm_client_id() {
         use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
-        use ibc_core_connection_types::error::ConnectionError;
         use prost::Message;
 
         let wasm_client_state = WasmClientState::try_from(value)?;
