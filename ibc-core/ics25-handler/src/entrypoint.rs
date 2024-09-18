@@ -6,6 +6,7 @@ use ibc_core_channel::handler::{
     chan_open_try_execute, chan_open_try_validate, recv_packet_execute, recv_packet_validate,
     timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
 };
+use ibc_core_channel::types::error::ChannelError;
 use ibc_core_channel::types::msgs::{
     channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
 };
@@ -58,14 +59,16 @@ where
 {
     match msg {
         MsgEnvelope::Client(msg) => match msg {
-            ClientMsg::CreateClient(msg) => create_client::validate(ctx, msg),
-            ClientMsg::UpdateClient(msg) => {
-                update_client::validate(ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg))
-            }
-            ClientMsg::Misbehaviour(msg) => {
-                update_client::validate(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
-            }
-            ClientMsg::UpgradeClient(msg) => upgrade_client::validate(ctx, msg),
+            ClientMsg::CreateClient(msg) => Ok(create_client::validate(ctx, msg)?),
+            ClientMsg::UpdateClient(msg) => Ok(update_client::validate(
+                ctx,
+                MsgUpdateOrMisbehaviour::UpdateClient(msg),
+            )?),
+            ClientMsg::Misbehaviour(msg) => Ok(update_client::validate(
+                ctx,
+                MsgUpdateOrMisbehaviour::Misbehaviour(msg),
+            )?),
+            ClientMsg::UpgradeClient(msg) => Ok(upgrade_client::validate(ctx, msg)?),
             ClientMsg::RecoverClient(_msg) => {
                 // Recover client messages are not dispatched by ibc-rs as they can only be
                 // authorized via a passing governance proposal
@@ -73,53 +76,51 @@ where
             }
         },
         MsgEnvelope::Connection(msg) => match msg {
-            ConnectionMsg::OpenInit(msg) => conn_open_init::validate(ctx, msg),
-            ConnectionMsg::OpenTry(msg) => conn_open_try::validate(ctx, msg),
-            ConnectionMsg::OpenAck(msg) => conn_open_ack::validate(ctx, msg),
-            ConnectionMsg::OpenConfirm(msg) => conn_open_confirm::validate(ctx, &msg),
+            ConnectionMsg::OpenInit(msg) => Ok(conn_open_init::validate(ctx, msg)?),
+            ConnectionMsg::OpenTry(msg) => Ok(conn_open_try::validate(ctx, msg)?),
+            ConnectionMsg::OpenAck(msg) => Ok(conn_open_ack::validate(ctx, msg)?),
+            ConnectionMsg::OpenConfirm(msg) => Ok(conn_open_confirm::validate(ctx, &msg)?),
         },
         MsgEnvelope::Channel(msg) => {
             let port_id = channel_msg_to_port_id(&msg);
-            let module_id = router
-                .lookup_module(port_id)
-                .ok_or(HostError::missing_state(format!(
-                    "failed to look up port {}",
-                    port_id.clone()
-                )))?;
+            let module_id = router.lookup_module(port_id).ok_or(ChannelError::Host(
+                HostError::missing_state(format!("failed to look up port {}", port_id.clone())),
+            ))?;
             let module = router
                 .get_route(&module_id)
                 .ok_or(RouterError::MissingModule)?;
 
             match msg {
-                ChannelMsg::OpenInit(msg) => chan_open_init_validate(ctx, module, msg),
-                ChannelMsg::OpenTry(msg) => chan_open_try_validate(ctx, module, msg),
-                ChannelMsg::OpenAck(msg) => chan_open_ack_validate(ctx, module, msg),
-                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_validate(ctx, module, msg),
-                ChannelMsg::CloseInit(msg) => chan_close_init_validate(ctx, module, msg),
-                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_validate(ctx, module, msg),
+                ChannelMsg::OpenInit(msg) => Ok(chan_open_init_validate(ctx, module, msg)?),
+                ChannelMsg::OpenTry(msg) => Ok(chan_open_try_validate(ctx, module, msg)?),
+                ChannelMsg::OpenAck(msg) => Ok(chan_open_ack_validate(ctx, module, msg)?),
+                ChannelMsg::OpenConfirm(msg) => Ok(chan_open_confirm_validate(ctx, module, msg)?),
+                ChannelMsg::CloseInit(msg) => Ok(chan_close_init_validate(ctx, module, msg)?),
+                ChannelMsg::CloseConfirm(msg) => Ok(chan_close_confirm_validate(ctx, module, msg)?),
             }
         }
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);
-            let module_id = router
-                .lookup_module(port_id)
-                .ok_or(HostError::missing_state(format!(
-                    "failed to look up port {}",
-                    port_id.clone()
-                )))?;
+            let module_id = router.lookup_module(port_id).ok_or(ChannelError::Host(
+                HostError::missing_state(format!("failed to look up port {}", port_id.clone())),
+            ))?;
             let module = router
                 .get_route(&module_id)
                 .ok_or(RouterError::MissingModule)?;
 
             match msg {
-                PacketMsg::Recv(msg) => recv_packet_validate(ctx, msg),
-                PacketMsg::Ack(msg) => acknowledgement_packet_validate(ctx, module, msg),
-                PacketMsg::Timeout(msg) => {
-                    timeout_packet_validate(ctx, module, TimeoutMsgType::Timeout(msg))
-                }
-                PacketMsg::TimeoutOnClose(msg) => {
-                    timeout_packet_validate(ctx, module, TimeoutMsgType::TimeoutOnClose(msg))
-                }
+                PacketMsg::Recv(msg) => Ok(recv_packet_validate(ctx, msg)?),
+                PacketMsg::Ack(msg) => Ok(acknowledgement_packet_validate(ctx, module, msg)?),
+                PacketMsg::Timeout(msg) => Ok(timeout_packet_validate(
+                    ctx,
+                    module,
+                    TimeoutMsgType::Timeout(msg),
+                )?),
+                PacketMsg::TimeoutOnClose(msg) => Ok(timeout_packet_validate(
+                    ctx,
+                    module,
+                    TimeoutMsgType::TimeoutOnClose(msg),
+                )?),
             }
         }
     }
@@ -137,14 +138,16 @@ where
 {
     match msg {
         MsgEnvelope::Client(msg) => match msg {
-            ClientMsg::CreateClient(msg) => create_client::execute(ctx, msg),
-            ClientMsg::UpdateClient(msg) => {
-                update_client::execute(ctx, MsgUpdateOrMisbehaviour::UpdateClient(msg))
-            }
-            ClientMsg::Misbehaviour(msg) => {
-                update_client::execute(ctx, MsgUpdateOrMisbehaviour::Misbehaviour(msg))
-            }
-            ClientMsg::UpgradeClient(msg) => upgrade_client::execute(ctx, msg),
+            ClientMsg::CreateClient(msg) => Ok(create_client::execute(ctx, msg)?),
+            ClientMsg::UpdateClient(msg) => Ok(update_client::execute(
+                ctx,
+                MsgUpdateOrMisbehaviour::UpdateClient(msg),
+            )?),
+            ClientMsg::Misbehaviour(msg) => Ok(update_client::execute(
+                ctx,
+                MsgUpdateOrMisbehaviour::Misbehaviour(msg),
+            )?),
+            ClientMsg::UpgradeClient(msg) => Ok(upgrade_client::execute(ctx, msg)?),
             ClientMsg::RecoverClient(_msg) => {
                 // Recover client messages are not dispatched by ibc-rs as they can only be
                 // authorized via a passing governance proposal
@@ -152,53 +155,51 @@ where
             }
         },
         MsgEnvelope::Connection(msg) => match msg {
-            ConnectionMsg::OpenInit(msg) => conn_open_init::execute(ctx, msg),
-            ConnectionMsg::OpenTry(msg) => conn_open_try::execute(ctx, msg),
-            ConnectionMsg::OpenAck(msg) => conn_open_ack::execute(ctx, msg),
-            ConnectionMsg::OpenConfirm(msg) => conn_open_confirm::execute(ctx, &msg),
+            ConnectionMsg::OpenInit(msg) => Ok(conn_open_init::execute(ctx, msg)?),
+            ConnectionMsg::OpenTry(msg) => Ok(conn_open_try::execute(ctx, msg)?),
+            ConnectionMsg::OpenAck(msg) => Ok(conn_open_ack::execute(ctx, msg)?),
+            ConnectionMsg::OpenConfirm(msg) => Ok(conn_open_confirm::execute(ctx, &msg)?),
         },
         MsgEnvelope::Channel(msg) => {
             let port_id = channel_msg_to_port_id(&msg);
-            let module_id = router
-                .lookup_module(port_id)
-                .ok_or(HostError::missing_state(format!(
-                    "failed to look up port {}",
-                    port_id.clone()
-                )))?;
+            let module_id = router.lookup_module(port_id).ok_or(ChannelError::Host(
+                HostError::missing_state(format!("failed to look up port {}", port_id.clone())),
+            ))?;
             let module = router
                 .get_route_mut(&module_id)
                 .ok_or(RouterError::MissingModule)?;
 
             match msg {
-                ChannelMsg::OpenInit(msg) => chan_open_init_execute(ctx, module, msg),
-                ChannelMsg::OpenTry(msg) => chan_open_try_execute(ctx, module, msg),
-                ChannelMsg::OpenAck(msg) => chan_open_ack_execute(ctx, module, msg),
-                ChannelMsg::OpenConfirm(msg) => chan_open_confirm_execute(ctx, module, msg),
-                ChannelMsg::CloseInit(msg) => chan_close_init_execute(ctx, module, msg),
-                ChannelMsg::CloseConfirm(msg) => chan_close_confirm_execute(ctx, module, msg),
+                ChannelMsg::OpenInit(msg) => Ok(chan_open_init_execute(ctx, module, msg)?),
+                ChannelMsg::OpenTry(msg) => Ok(chan_open_try_execute(ctx, module, msg)?),
+                ChannelMsg::OpenAck(msg) => Ok(chan_open_ack_execute(ctx, module, msg)?),
+                ChannelMsg::OpenConfirm(msg) => Ok(chan_open_confirm_execute(ctx, module, msg)?),
+                ChannelMsg::CloseInit(msg) => Ok(chan_close_init_execute(ctx, module, msg)?),
+                ChannelMsg::CloseConfirm(msg) => Ok(chan_close_confirm_execute(ctx, module, msg)?),
             }
         }
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);
-            let module_id = router
-                .lookup_module(port_id)
-                .ok_or(HostError::missing_state(format!(
-                    "failed to look up port {}",
-                    port_id.clone()
-                )))?;
+            let module_id = router.lookup_module(port_id).ok_or(ChannelError::Host(
+                HostError::missing_state(format!("failed to look up port {}", port_id.clone())),
+            ))?;
             let module = router
                 .get_route_mut(&module_id)
                 .ok_or(RouterError::MissingModule)?;
 
             match msg {
-                PacketMsg::Recv(msg) => recv_packet_execute(ctx, module, msg),
-                PacketMsg::Ack(msg) => acknowledgement_packet_execute(ctx, module, msg),
-                PacketMsg::Timeout(msg) => {
-                    timeout_packet_execute(ctx, module, TimeoutMsgType::Timeout(msg))
-                }
-                PacketMsg::TimeoutOnClose(msg) => {
-                    timeout_packet_execute(ctx, module, TimeoutMsgType::TimeoutOnClose(msg))
-                }
+                PacketMsg::Recv(msg) => Ok(recv_packet_execute(ctx, module, msg)?),
+                PacketMsg::Ack(msg) => Ok(acknowledgement_packet_execute(ctx, module, msg)?),
+                PacketMsg::Timeout(msg) => Ok(timeout_packet_execute(
+                    ctx,
+                    module,
+                    TimeoutMsgType::Timeout(msg),
+                )?),
+                PacketMsg::TimeoutOnClose(msg) => Ok(timeout_packet_execute(
+                    ctx,
+                    module,
+                    TimeoutMsgType::TimeoutOnClose(msg),
+                )?),
             }
         }
     }

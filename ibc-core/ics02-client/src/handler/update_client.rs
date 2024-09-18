@@ -5,14 +5,13 @@ use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::{ClientMisbehaviour, UpdateClient};
 use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;
 use ibc_core_client_types::UpdateKind;
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::error::HostError;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), HandlerError>
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ClientError>
 where
     Ctx: ValidationContext,
 {
@@ -36,7 +35,7 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), HandlerError>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpdateOrMisbehaviour) -> Result<(), ClientError>
 where
     Ctx: ExecutionContext,
 {
@@ -67,8 +66,7 @@ where
         if !matches!(update_kind, UpdateKind::UpdateClient) {
             return Err(ClientError::FailedMisbehaviourHandling {
                 description: "misbehaviour submitted, but none found".to_string(),
-            }
-            .into());
+            });
         }
 
         let header = client_message;

@@ -1,13 +1,12 @@
 use ibc_core_channel_types::channel::{Counterparty, Order, State as ChannelState};
 use ibc_core_channel_types::commitment::{compute_ack_commitment, compute_packet_commitment};
-use ibc_core_channel_types::error::{ChannelError, PacketError};
+use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::{ReceivePacket, WriteAcknowledgement};
 use ibc_core_channel_types::msgs::MsgRecvPacket;
 use ibc_core_channel_types::packet::Receipt;
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_connection::types::State as ConnectionState;
-use ibc_core_handler_types::error::HandlerError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
@@ -17,7 +16,7 @@ use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
-pub fn recv_packet_validate<ValCtx>(ctx_b: &ValCtx, msg: MsgRecvPacket) -> Result<(), HandlerError>
+pub fn recv_packet_validate<ValCtx>(ctx_b: &ValCtx, msg: MsgRecvPacket) -> Result<(), ChannelError>
 where
     ValCtx: ValidationContext,
 {
@@ -32,7 +31,7 @@ pub fn recv_packet_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgRecvPacket,
-) -> Result<(), HandlerError>
+) -> Result<(), ChannelError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -136,7 +135,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), HandlerError>
+fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ChannelError>
 where
     Ctx: ValidationContext,
 {
@@ -162,11 +161,10 @@ where
 
     let latest_height = ctx_b.host_height()?;
     if msg.packet.timeout_height_on_b.has_expired(latest_height) {
-        return Err(PacketError::InsufficientPacketHeight {
+        return Err(ChannelError::InsufficientPacketHeight {
             chain_height: latest_height,
             timeout_height: msg.packet.timeout_height_on_b,
-        }
-        .into());
+        });
     }
 
     let latest_timestamp = ctx_b.host_timestamp()?;
@@ -175,7 +173,7 @@ where
         .timeout_timestamp_on_b
         .has_expired(&latest_timestamp)
     {
-        return Err(PacketError::InsufficientPacketTimestamp.into());
+        return Err(ChannelError::InsufficientPacketTimestamp);
     }
 
     // Verify proofs
@@ -213,15 +211,13 @@ where
         verify_conn_delay_passed(ctx_b, msg.proof_height_on_a, &conn_end_on_b)?;
 
         // Verify the proof for the packet against the chain store.
-        client_state_of_a_on_b
-            .verify_membership(
-                conn_end_on_b.counterparty().prefix(),
-                &msg.proof_commitment_on_a,
-                consensus_state_of_a_on_b.root(),
-                Path::Commitment(commitment_path_on_a),
-                expected_commitment_on_a.into_vec(),
-            )
-            .map_err(ChannelError::FailedProofVerification)?;
+        client_state_of_a_on_b.verify_membership(
+            conn_end_on_b.counterparty().prefix(),
+            &msg.proof_commitment_on_a,
+            consensus_state_of_a_on_b.root(),
+            Path::Commitment(commitment_path_on_a),
+            expected_commitment_on_a.into_vec(),
+        )?;
     }
 
     match chan_end_on_b.ordering {
@@ -230,11 +226,10 @@ where
                 SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
             let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
             if msg.packet.seq_on_a > next_seq_recv {
-                return Err(PacketError::MismatchedPacketSequences {
+                return Err(ChannelError::MismatchedPacketSequences {
                     actual: msg.packet.seq_on_a,
                     expected: next_seq_recv,
-                }
-                .into());
+                });
             }
 
             if msg.packet.seq_on_a == next_seq_recv {
@@ -254,24 +249,24 @@ where
             validate_write_acknowledgement(ctx_b, msg)?;
         }
         Order::None => {
-            return Err(HandlerError::Channel(ChannelError::InvalidOrderType {
+            return Err(ChannelError::InvalidState {
                 expected: "Channel ordering to not be None".to_string(),
                 actual: chan_end_on_b.ordering.to_string(),
-            }))
+            })
         }
     }
 
     Ok(())
 }
 
-fn validate_write_acknowledgement<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), HandlerError>
+fn validate_write_acknowledgement<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Result<(), ChannelError>
 where
     Ctx: ValidationContext,
 {
     let packet = msg.packet.clone();
     let ack_path_on_b = AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
     if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {
-        return Err(PacketError::DuplicateAcknowledgment(msg.packet.seq_on_a).into());
+        return Err(ChannelError::DuplicateAcknowledgment(msg.packet.seq_on_a));
     }
 
     Ok(())
