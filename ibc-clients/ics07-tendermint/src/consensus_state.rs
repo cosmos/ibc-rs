@@ -6,12 +6,11 @@
 //! implementations that serve to pass through traits implemented on the wrapped
 //! `ConsensusState` type.
 
-use ibc_client_tendermint_types::error::TendermintClientError;
 use ibc_client_tendermint_types::proto::v1::ConsensusState as RawTmConsensusState;
 use ibc_client_tendermint_types::ConsensusState as ConsensusStateType;
 use ibc_core_client::context::consensus_state::ConsensusState as ConsensusStateTrait;
-use ibc_core_client::types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentRoot;
+use ibc_core_host::types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::Timestamp;
@@ -52,7 +51,7 @@ impl From<ConsensusState> for ConsensusStateType {
 impl Protobuf<RawTmConsensusState> for ConsensusState {}
 
 impl TryFrom<RawTmConsensusState> for ConsensusState {
-    type Error = TendermintClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawTmConsensusState) -> Result<Self, Self::Error> {
         Ok(Self(ConsensusStateType::try_from(raw)?))
@@ -68,7 +67,7 @@ impl From<ConsensusState> for RawTmConsensusState {
 impl Protobuf<Any> for ConsensusState {}
 
 impl TryFrom<Any> for ConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         Ok(Self(ConsensusStateType::try_from(raw)?))

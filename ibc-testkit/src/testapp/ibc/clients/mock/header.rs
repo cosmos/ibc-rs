@@ -41,15 +41,13 @@ impl Display for MockHeader {
 impl Protobuf<RawMockHeader> for MockHeader {}
 
 impl TryFrom<RawMockHeader> for MockHeader {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMockHeader) -> Result<Self, Self::Error> {
         Ok(Self {
             height: raw
                 .height
-                .ok_or(ClientError::Other {
-                    description: "missing height".into(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("missing height"))?
                 .try_into()?,
             timestamp: Timestamp::from_nanoseconds(raw.timestamp),
         })

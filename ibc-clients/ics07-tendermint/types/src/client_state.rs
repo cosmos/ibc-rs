@@ -235,61 +235,53 @@ impl ClientState {
 impl Protobuf<RawTmClientState> for ClientState {}
 
 impl TryFrom<RawTmClientState> for ClientState {
-    type Error = TendermintClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
         let chain_id = ChainId::from_str(raw.chain_id.as_str())?;
 
         let trust_level = {
-            let trust_level = raw.trust_level.ok_or(DecodingError::MissingRawData {
-                description: "trust level not set".to_string(),
-            })?;
+            let trust_level = raw
+                .trust_level
+                .ok_or(DecodingError::missing_raw_data("missing trust level"))?;
             trust_level
                 .try_into()
-                .map_err(|e| DecodingError::InvalidRawData {
-                    description: format!("failed to decoding trust threshold: {e}"),
-                })?
+                .map_err(DecodingError::invalid_raw_data)?
         };
 
         let trusting_period = raw
             .trusting_period
-            .ok_or(DecodingError::MissingRawData {
-                description: "trusting period not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data("missing trusting period"))?
             .try_into()
-            .map_err(|_| DecodingError::InvalidRawData {
-                description: "failed to decode trusting period".to_string(),
+            .map_err(|d| {
+                DecodingError::invalid_raw_data(format!("invalid trusting period: {d:?}"))
             })?;
 
         let unbonding_period = raw
             .unbonding_period
-            .ok_or(DecodingError::MissingRawData {
-                description: "unbonding period not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data("missing unbonding period"))?
             .try_into()
-            .map_err(|_| DecodingError::InvalidRawData {
-                description: "failed to decode unbonding period".to_string(),
+            .map_err(|d| {
+                DecodingError::invalid_raw_data(format!("invalid unbonding period: {d:?}"))
             })?;
 
         let max_clock_drift = raw
             .max_clock_drift
-            .ok_or(DecodingError::MissingRawData {
-                description: "max clock drift not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data("missing max clock drift"))?
             .try_into()
-            .map_err(|_| DecodingError::InvalidRawData {
-                description: "failed to decode max clock drift".to_string(),
+            .map_err(|d| {
+                DecodingError::invalid_raw_data(format!("invalid max clock drift: {d:?}"))
             })?;
 
         let latest_height = raw
             .latest_height
-            .ok_or(DecodingError::MissingRawData {
-                description: "latest height not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data("missing latest height"))?
+            .try_into()?;
+
+        let proof_specs = raw
+            .proof_specs
             .try_into()
-            .map_err(|e| DecodingError::InvalidRawData {
-                description: format!("failed to decode latest height: {e}"),
-            })?;
+            .map_err(|e| DecodingError::invalid_raw_data(format!("invalid proof specs: {e:?}")))?;
 
         // NOTE: In `RawClientState`, a `frozen_height` of `0` means "not
         // frozen". See:
@@ -315,7 +307,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             unbonding_period,
             max_clock_drift,
             latest_height,
-            raw.proof_specs.try_into()?,
+            proof_specs,
             raw.upgrade_path,
             frozen_height,
             allow_update,
@@ -355,7 +347,7 @@ impl From<ClientState> for RawTmClientState {
 impl Protobuf<Any> for ClientState {}
 
 impl TryFrom<Any> for ClientState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_client_state(value: &[u8]) -> Result<ClientState, DecodingError> {
@@ -365,9 +357,7 @@ impl TryFrom<Any> for ClientState {
         }
 
         match raw.type_url.as_str() {
-            TENDERMINT_CLIENT_STATE_TYPE_URL => {
-                decode_client_state(&raw.value).map_err(ClientError::Decoding)
-            }
+            TENDERMINT_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
             _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,

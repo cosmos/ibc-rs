@@ -10,8 +10,8 @@ use ibc::clients::tendermint::types::{
     ClientState as ClientStateType, ConsensusState as ConsensusStateType,
     TENDERMINT_CLIENT_STATE_TYPE_URL, TENDERMINT_CONSENSUS_STATE_TYPE_URL,
 };
-use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::primitives::prelude::*;
 use ibc::derive::{ClientState, ConsensusState};
 use ibc::primitives::proto::{Any, Protobuf};
@@ -51,7 +51,7 @@ impl AnyClientState {
 impl Protobuf<Any> for AnyClientState {}
 
 impl TryFrom<Any> for AnyClientState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         if raw.type_url == TENDERMINT_CLIENT_STATE_TYPE_URL {
@@ -59,9 +59,7 @@ impl TryFrom<Any> for AnyClientState {
         } else if raw.type_url == MOCK_CLIENT_STATE_TYPE_URL {
             MockClientState::try_from(raw).map(Into::into)
         } else {
-            Err(ClientError::Other {
-                description: "failed to deserialize message".to_string(),
-            })
+            Err(DecodingError::UnknownTypeUrl(raw.type_url))
         }
     }
 }
@@ -94,7 +92,7 @@ pub enum AnyConsensusState {
 }
 
 impl TryFrom<Any> for AnyConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         if raw.type_url == TENDERMINT_CONSENSUS_STATE_TYPE_URL {
@@ -102,9 +100,7 @@ impl TryFrom<Any> for AnyConsensusState {
         } else if raw.type_url == MOCK_CONSENSUS_STATE_TYPE_URL {
             MockConsensusState::try_from(raw).map(Into::into)
         } else {
-            Err(ClientError::Other {
-                description: "failed to deserialize message".to_string(),
-            })
+            Err(DecodingError::UnknownTypeUrl(raw.type_url))
         }
     }
 }
@@ -119,28 +115,27 @@ impl From<AnyConsensusState> for Any {
 }
 
 impl TryFrom<AnyConsensusState> for ConsensusStateType {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(value: AnyConsensusState) -> Result<Self, Self::Error> {
         match value {
             AnyConsensusState::Tendermint(cs) => Ok(cs.inner().clone()),
-            _ => Err(ClientError::Other {
-                description: "failed to convert AnyConsensusState to TmConsensusState".to_string(),
-            }),
+            _ => Err(DecodingError::invalid_raw_data(
+                "invalid AnyConsensusState that could not be converted to TmConsensusState",
+            )),
         }
     }
 }
 
 impl TryFrom<AnyConsensusState> for MockConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(value: AnyConsensusState) -> Result<Self, Self::Error> {
         match value {
             AnyConsensusState::Mock(cs) => Ok(cs),
-            _ => Err(ClientError::Other {
-                description: "failed to convert AnyConsensusState to MockConsensusState"
-                    .to_string(),
-            }),
+            _ => Err(DecodingError::invalid_raw_data(
+                "invalid AnyConsensusState that could not be converted to MockConsensusState",
+            )),
         }
     }
 }

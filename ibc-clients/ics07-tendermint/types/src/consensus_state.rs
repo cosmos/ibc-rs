@@ -1,6 +1,5 @@
 //! Defines Tendermint's `ConsensusState` type
 
-use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
@@ -103,7 +102,7 @@ impl From<ConsensusState> for RawConsensusState {
 impl Protobuf<Any> for ConsensusState {}
 
 impl TryFrom<Any> for ConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, DecodingError> {
@@ -112,9 +111,7 @@ impl TryFrom<Any> for ConsensusState {
         }
 
         match raw.type_url.as_str() {
-            TENDERMINT_CONSENSUS_STATE_TYPE_URL => {
-                decode_consensus_state(&raw.value).map_err(ClientError::Decoding)
-            }
+            TENDERMINT_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
             _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,

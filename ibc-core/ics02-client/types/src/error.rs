@@ -2,7 +2,7 @@
 
 use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::{DecodingError, HostError};
+use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
@@ -31,20 +31,10 @@ pub enum ClientError {
     InvalidProofHeight { actual: Height, expected: Height },
     /// invalid consensus state timestamp: `{0}`
     InvalidConsensusStateTimestamp(Timestamp),
-    /// invalid attribute key: `{0}`
-    InvalidAttributeKey(String),
-    /// invalid attribute value: `{0}`
-    InvalidAttributeValue(String),
-    /// invalid status: `{0}`
-    InvalidStatus(String),
     /// invalid header type: `{0}`
     InvalidHeaderType(String),
     /// missing local consensus state at `{0}`
     MissingLocalConsensusState(Height),
-    /// missing attribute key
-    MissingAttributeKey,
-    /// missing attribute value
-    MissingAttributeValue,
     /// unexpected status found: `{0}`
     UnexpectedStatus(Status),
     /// client state already exists: `{0}`
@@ -93,6 +83,12 @@ impl From<DecodingError> for ClientError {
 impl From<HostError> for ClientError {
     fn from(e: HostError) -> Self {
         Self::Host(e)
+    }
+}
+
+impl From<IdentifierError> for ClientError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
     }
 }
 

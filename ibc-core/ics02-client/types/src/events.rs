@@ -1,15 +1,15 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the client module.
 
 use derive_more::From;
-use ibc_core_host_types::error::DecodingError;
+use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_core_host_types::identifiers::{ClientId, ClientType};
 use ibc_primitives::prelude::*;
 use subtle_encoding::hex;
 use tendermint::abci;
 
 use self::str::FromStr;
-use crate::error::ClientError;
 use crate::height::Height;
+
 /// Client event types
 pub const CREATE_CLIENT_EVENT: &str = "create_client";
 pub const UPDATE_CLIENT_EVENT: &str = "update_client";
@@ -219,15 +219,18 @@ impl From<ConsensusHeightsAttribute> for abci::EventAttribute {
 }
 
 impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != CONSENSUS_HEIGHTS_ATTRIBUTE_KEY {
-                return Err(ClientError::InvalidAttributeKey(key_str.to_string()));
+                return Err(DecodingError::invalid_raw_data(format!(
+                    "invalid attribute key: expected {}, actual {}",
+                    CONSENSUS_HEIGHTS_ATTRIBUTE_KEY, key_str
+                )));
             }
         } else {
-            return Err(ClientError::MissingAttributeKey);
+            return Err(DecodingError::missing_raw_data("missing attribute key"));
         }
 
         value
@@ -236,14 +239,18 @@ impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
                 let consensus_heights: Vec<Height> = value
                     .split(',')
                     .map(|height_str| {
-                        Height::from_str(height_str)
-                            .map_err(|_| ClientError::InvalidAttributeValue(height_str.to_string()))
+                        Height::from_str(height_str).map_err(|e| {
+                            DecodingError::Identifier(IdentifierError::FailedToParse {
+                                value: height_str.to_string(),
+                                description: e.to_string(),
+                            })
+                        })
                     })
-                    .collect::<Result<Vec<Height>, ClientError>>()?;
+                    .collect::<Result<Vec<Height>, DecodingError>>()?;
 
                 Ok(ConsensusHeightsAttribute { consensus_heights })
             })
-            .map_err(|_| ClientError::MissingAttributeValue)?
+            .map_err(|e| DecodingError::invalid_raw_data(format!("invalid attribute value: {e}")))?
     }
 }
 
@@ -278,26 +285,34 @@ impl From<HeaderAttribute> for abci::EventAttribute {
     }
 }
 impl TryFrom<abci::EventAttribute> for HeaderAttribute {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != HEADER_ATTRIBUTE_KEY {
-                return Err(ClientError::InvalidAttributeKey(key_str.to_string()));
+                return Err(DecodingError::invalid_raw_data(format!(
+                    "invalid attribute key: expected {}, actual {}",
+                    HEADER_ATTRIBUTE_KEY, key_str
+                )));
             }
         } else {
-            return Err(ClientError::MissingAttributeKey);
+            return Err(DecodingError::MissingRawData {
+                description: "missing attribute key".to_string(),
+            });
         }
 
         value
             .value_str()
             .map(|value| {
-                let header = hex::decode(value)
-                    .map_err(|_| ClientError::InvalidAttributeValue(value.to_string()))?;
+                let header = hex::decode(value).map_err(|e| {
+                    DecodingError::invalid_raw_data(format!(
+                        "failed to decode attribute value: {e}"
+                    ))
+                })?;
 
                 Ok(HeaderAttribute { header })
             })
-            .map_err(|_| ClientError::MissingAttributeValue)?
+            .map_err(|e| DecodingError::invalid_raw_data(format!("invalid attribute value: {e}")))?
     }
 }
 
@@ -522,13 +537,14 @@ impl From<UpdateClient> for abci::Event {
     }
 }
 impl TryFrom<abci::Event> for UpdateClient {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(value: abci::Event) -> Result<Self, Self::Error> {
         if value.kind != UPDATE_CLIENT_EVENT {
-            return Err(ClientError::Other {
-                description: "Error in parsing UpdateClient event".to_string(),
-            });
+            return Err(IdentifierError::FailedToParse {
+                value: value.kind,
+                description: "failed to parse UpdateClient event".to_string(),
+            })?;
         }
 
         type UpdateClientAttributes = (
@@ -545,9 +561,9 @@ impl TryFrom<abci::Event> for UpdateClient {
             .try_fold(
                 (None, None, None, None, None),
                 |acc: UpdateClientAttributes, attribute| {
-                    let key = attribute
-                        .key_str()
-                        .map_err(|_| ClientError::MissingAttributeKey)?;
+                    let key = attribute.key_str().map_err(|e| {
+                        DecodingError::invalid_raw_data(format!("invalid attribute key: {e}"))
+                    })?;
 
                     match key {
                         CLIENT_ID_ATTRIBUTE_KEY => Ok((
@@ -591,17 +607,27 @@ impl TryFrom<abci::Event> for UpdateClient {
             )
             .and_then(
                 |(client_id, client_type, consensus_height, consensus_heights, header)| {
-                    let client_id = client_id.ok_or(ClientError::MissingAttributeKey)?.client_id;
+                    let client_id = client_id
+                        .ok_or(DecodingError::missing_raw_data("missing client ID"))?
+                        .client_id;
                     let client_type = client_type
-                        .ok_or(ClientError::MissingAttributeKey)?
+                        .ok_or(DecodingError::missing_raw_data(
+                            "missing client type attribute",
+                        ))?
                         .client_type;
                     let consensus_height = consensus_height
-                        .ok_or(ClientError::MissingAttributeKey)?
+                        .ok_or(DecodingError::missing_raw_data(
+                            "missing consensus height attribute",
+                        ))?
                         .consensus_height;
                     let consensus_heights = consensus_heights
-                        .ok_or(ClientError::MissingAttributeKey)?
+                        .ok_or(DecodingError::missing_raw_data(
+                            "missing consensus heights attribute",
+                        ))?
                         .consensus_heights;
-                    let header = header.ok_or(ClientError::MissingAttributeKey)?.header;
+                    let header = header
+                        .ok_or(DecodingError::missing_raw_data("missing header"))?
+                        .header;
 
                     Ok(UpdateClient::new(
                         client_id,
@@ -820,9 +846,10 @@ mod tests {
                 abci::EventAttribute::from(("header", "1234")),
             ],
         },
-        Err(ClientError::Other {
-            description: "Error in parsing UpdateClient event".to_string(),
-        }),
+        Err(DecodingError::Identifier(IdentifierError::FailedToParse {
+            value: "some_other_event".to_owned(),
+            description: "failed to parse UpdateClient event".to_string(),
+        })),
     )]
     #[case(
         abci::Event {
@@ -834,11 +861,11 @@ mod tests {
                 abci::EventAttribute::from(("header", "1234")),
             ],
         },
-        Err(ClientError::MissingAttributeKey),
+        Err(DecodingError::missing_raw_data("missing attribute key")),
     )]
     fn test_update_client_try_from(
         #[case] event: abci::Event,
-        #[case] expected: Result<UpdateClient, ClientError>,
+        #[case] expected: Result<UpdateClient, DecodingError>,
     ) {
         let result = UpdateClient::try_from(event);
         if expected.is_err() {

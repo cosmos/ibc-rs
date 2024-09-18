@@ -4,6 +4,7 @@ use ibc_client_tendermint_types::{
 };
 use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
+use ibc_core_host::types::error::IdentifierError;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
@@ -116,12 +117,14 @@ where
     // main header verification, delegated to the tendermint-light-client crate.
     let untrusted_state = header.as_untrusted_block_state();
 
-    let tm_chain_id = &chain_id
-        .as_str()
-        .try_into()
-        .map_err(|e| ClientError::Other {
-            description: format!("failed to parse chain id: {e}"),
-        })?;
+    let tm_chain_id =
+        &chain_id
+            .as_str()
+            .try_into()
+            .map_err(|e| IdentifierError::FailedToParse {
+                value: chain_id.to_string(),
+                description: format!("{e:?}"),
+            })?;
 
     let trusted_state =
         header.as_trusted_block_state(tm_chain_id, trusted_time, trusted_next_validator_hash)?;

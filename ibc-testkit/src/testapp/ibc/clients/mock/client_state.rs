@@ -91,15 +91,13 @@ impl MockClientState {
 impl Protobuf<RawMockClientState> for MockClientState {}
 
 impl TryFrom<RawMockClientState> for MockClientState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMockClientState) -> Result<Self, Self::Error> {
         Ok(Self {
             header: raw
                 .header
-                .ok_or(ClientError::Other {
-                    description: "header is not present".into(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("missing header"))?
                 .try_into()?,
             trusting_period: Duration::from_nanos(raw.trusting_period),
             frozen: raw.frozen,
@@ -124,7 +122,7 @@ impl From<MockClientState> for RawMockClientState {
 impl Protobuf<Any> for MockClientState {}
 
 impl TryFrom<Any> for MockClientState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_client_state(value: &[u8]) -> Result<MockClientState, DecodingError> {
@@ -132,9 +130,7 @@ impl TryFrom<Any> for MockClientState {
             Ok(client_state)
         }
         match raw.type_url.as_str() {
-            MOCK_CLIENT_STATE_TYPE_URL => {
-                decode_client_state(&raw.value).map_err(ClientError::Decoding)
-            }
+            MOCK_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
             _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: MOCK_CLIENT_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
@@ -308,9 +304,9 @@ where
         let now = ctx.host_timestamp()?;
         let elapsed_since_latest_consensus_state = now
             .duration_since(&latest_consensus_state.timestamp())
-            .ok_or(ClientError::Other {
-                description: format!("latest consensus state is in the future. now: {now}, latest consensus state: {}", latest_consensus_state.timestamp()),
-            })?;
+            .ok_or(ClientError::InvalidConsensusStateTimestamp(
+                latest_consensus_state.timestamp(),
+            ))?;
 
         if self.expired(elapsed_since_latest_consensus_state) {
             return Ok(Status::Expired);

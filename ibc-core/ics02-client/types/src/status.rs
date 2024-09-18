@@ -1,6 +1,7 @@
 use core::fmt::{Debug, Display, Formatter};
 use core::str::FromStr;
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 
 use crate::error::ClientError;
@@ -70,7 +71,7 @@ impl Display for Status {
 }
 
 impl FromStr for Status {
-    type Err = ClientError;
+    type Err = DecodingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
@@ -78,7 +79,9 @@ impl FromStr for Status {
             "FROZEN" => Ok(Status::Frozen),
             "EXPIRED" => Ok(Status::Expired),
             "UNAUTHORIZED" => Ok(Status::Unauthorized),
-            _ => Err(ClientError::InvalidStatus(s.to_string())),
+            _ => Err(DecodingError::invalid_raw_data(format!(
+                "invalid status: {s}",
+            ))),
         }
     }
 }

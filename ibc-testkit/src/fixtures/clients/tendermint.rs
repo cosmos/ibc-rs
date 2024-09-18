@@ -22,7 +22,10 @@ use typed_builder::TypedBuilder;
 pub fn dummy_tm_client_state_from_raw(
     frozen_height: RawHeight,
 ) -> Result<TmClientState, TendermintClientError> {
-    ClientStateType::try_from(dummy_raw_tm_client_state(frozen_height)).map(TmClientState::from)
+    Ok(
+        ClientStateType::try_from(dummy_raw_tm_client_state(frozen_height))
+            .map(TmClientState::from)?,
+    )
 }
 
 /// Returns a dummy tendermint `ClientState` from a `TmHeader`, for testing purposes only!
