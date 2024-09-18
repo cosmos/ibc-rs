@@ -16,7 +16,7 @@ use crate::timeout::TimeoutTimestamp;
 use crate::Version;
 
 /// Errors that arise from the ICS04 Channel module
-#[derive(Debug, Display)]
+#[derive(Debug, Display, derive_more::From)]
 pub enum ChannelError {
     /// decoding error: `{0}`
     Decoding(DecodingError),
@@ -80,36 +80,6 @@ pub enum ChannelError {
 impl From<IdentifierError> for ChannelError {
     fn from(e: IdentifierError) -> Self {
         Self::Decoding(DecodingError::Identifier(e))
-    }
-}
-
-impl From<DecodingError> for ChannelError {
-    fn from(e: DecodingError) -> Self {
-        Self::Decoding(e)
-    }
-}
-
-impl From<HostError> for ChannelError {
-    fn from(e: HostError) -> Self {
-        Self::Host(e)
-    }
-}
-
-impl From<ConnectionError> for ChannelError {
-    fn from(e: ConnectionError) -> Self {
-        Self::Connection(e)
-    }
-}
-
-impl From<ClientError> for ChannelError {
-    fn from(e: ClientError) -> Self {
-        Self::Client(e)
-    }
-}
-
-impl From<TimestampError> for ChannelError {
-    fn from(e: TimestampError) -> Self {
-        Self::InvalidTimeoutTimestamp(e)
     }
 }
 
