@@ -31,17 +31,9 @@ host developers to decide whether these errors are relevant or not. In other wor
 distinction between host- and protocol-level errors is not reflected in ibc-rs's error
 handling methodology.
 
-Additionally, in order to improve the readability 
-
 ### Proposal
 
-In light of the rationale stated above, we propose changing ibc-rs's top-level error type
-to make clear the distinction between host-level and protocol-level errors. Additionally,
-we're also opting to rename `ContextError` to `HandlerError`. This makes it more clear
-semantically that the top-level error type should solely be returned by handler methods.
-The `HandlerError` type will continue to expose errors from the core ibc-rs modules. It
-will also now expose an additional variant for ICS25 Host errors, those originating from
-host implementations:
+#### Some changes to `ContextError`
 
 ```diff
 - pub enum ContextError {
@@ -52,92 +44,62 @@ host implementations:
     Connection(ConnectionError),
     /// ICS04 Channel error: `{0}`
     Channel(ChannelError),
-    /// ICS04 Packet error: `{0}`
-    Packet(PacketError),
-+   /// ICS25 Host error: `{0}`
-+   Host(HostError)
+-   /// ICS04 Packet error: `{0}`
+-   Packet(PacketError),
+    /// ICS26 Router error: `{0}`
+    Router(RouterError),
 }
 ```
 
-#### Protocol Errors
+#### The new `HostError` type
 
-These errors are defined within `ibc-rs`, and are emitted with the goal of building
-up a helpful stack trace when an error occurs.
-
-The top-level type that encapsulates all protocol errors would be a cleaned up version
-of the current [`ContextError`][context-error] type; this cleaned up version will be
-renamed to `ProtocolError` in order to better capture its IBC-internal nature.
-The main differences between the `ProtocolError` type and the current `ContextError` type are that:
-
-- it would no longer include error variants for representing errors that arise from hosts' code
-- its purpose is solely to generate clear error messages for debugging
-
-Thus, protocol errors are not ones that we expect users to handle. They should instead provide
-nicely-formatted backtrace and source information to aid in the debugging process as much as possible.
-
-#### Host Errors
-
-These errors are defined and controlled by hosts. They should ideally only be returned
-from host implementations of `ValidationContext`/`ExecutionContext` methods. We introduce a
-`HostError` associated type on those contexts:
-
-```diff
-use core::fmt::{Debug, Display};
-use std::error::Error as StdError;
-use ibc_core_handler_types::error::ContextError;
-
-pub trait ValidationContext {
-+    type HostError: Debug + Display + StdError;
-
--    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
-+    fn host_timestamp(&self) -> Result<Timestamp, ContextError<Self::HostError>>;
-}
-```
-
-Note that the old `ContextError` type is being renamed to `ProtocolError`. The name
-`ContextError` will now be used as `ibc-rs`'s new top-level error type and is defined as such:
+In light of the rationale stated above, we propose adding a new `HostError` type that makes
+clear that an error is originating from a host context, as opposed to originating from within
+the ibc-rs library. We introduce the following concrete `HostError` type in the ics24-host
+crate:
 
 ```rust
-#[derive(Debug, Display)]
-pub enum ContextError<E: Debug + Display> {
-    /// Host-defined errors.
-    Host(E),
-    /// Internal protocol-level errors.
-    Protocol(ProtocolError),
+pub enum HostError {
+    /// invalid state: `{description}`
+    InvalidState { description: String },
+    /// missing state: `{description}`
+    MissingState { description: String },
+    /// failed to update store: `{description}`
+    FailedToStore { description: String },
+    /// failed to retrieve from store: `{description}`
+    FailedToRetrieve { description: String },
+    /// other error: `{description}`
+    Other { description: String },
 }
 ```
 
-This new `ContextError` type captures the `HostError` via a generic parameter, enabling
-`ibc-rs`'s logic to react or respond to host-originating errors. This is as opposed to
-the current status quo of how host-originating errors are handled, which is that they
-are clumsily mapped onto `ibc-rs`'s internal error types. This results in these host-
-originating errors not being handled appropriately, as well as contributing to the bloat
-of `ibc-rs`'s error enums.
+This initial definition offers fairly generic error variants that nonetheless aim to capture
+most of the error use-cases faced by hosts. One such notable use-case is fetching/retrieving
+data from the host's storage. 
 
-## Outstanding Questions
+Host errors can occur within any of the core ibc-rs modules. Thus, we'll be adding `HostError`
+variants to each of the module-level error types where appropriate: `ClientError` in ICS02, 
+`ConnectionError` in ICS03, and `ChannelError` in ICS04. Note that as of now a `HostError`
+variant is not being added to the `RouterError` type in ICS26 as it is not used by hosts, i.e.,
+it does not expose its own handlers. 
 
-- What trait bounds should exist on the `HostError` associated type?
-  - Just `Display` and `Debug`, or perhaps also `std::error::Error`?
-- Should `ValidationContext`s implemented on apps (i.e. the TokenTransfer app) also implement a `HostError` associated type?
+[Add context here about some of the error calls that changed to `HostError`]
 
-## Decision
+#### Defining a new `DecodingError` type
 
-## Tradeoffs
 
-### Positive
+### Positives
 
-### Negative
+### Negatives
 
-## References
 
 ## Future Work
 
 A natural follow-up of this work would be to generalize ibc-rs's error handling architecture
-to allow hosts to introduce their own bespoke error type. This would allow host developers
+to allow hosts to introduce their own bespoke error types. This would allow host developers
 to define more precise error types and variants that can better signal what the root cause
-of an error might be. The downside is that this would add additional work on top of the
-already considerable amount of work that it takes to integrate ibc-rs into host chains.
+of an error might be. This would improve upon the rather generic error variants that are
+exposed through ibc-rs's own `HostError` definition. 
 
-[ics07-error]: https://github.com/cosmos/ibc-rs/blob/4ea4dcb863efa12f5628a05588e2207112035e4a/ibc-clients/ics07-tendermint/types/src/error.rs#L19
-[ics25-error]: https://github.com/cosmos/ibc-rs/blob/4ea4dcb863efa12f5628a05588e2207112035e4a/ibc-core/ics25-handler/types/src/events.rs#L16
-[context-error]: https://github.com/cosmos/ibc-rs/blob/3a4acfd64d80277808ba0e8cc5ff1c50ca6f7966/crates/ibc/src/core/context.rs#L74
+The downside is that this would add additional work on top of the already considerable amount 
+of work that it takes to integrate ibc-rs into host chains.
