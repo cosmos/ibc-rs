@@ -43,13 +43,10 @@ impl TryFrom<RawClientState> for ClientState {
     fn try_from(raw: RawClientState) -> Result<Self, Self::Error> {
         let latest_height = raw
             .latest_height
-            .ok_or(DecodingError::MissingRawData {
-                description: "latest height not set".to_string(),
-            })?
-            .try_into()
-            .map_err(|e| DecodingError::InvalidRawData {
-                description: format!("failed to decode latest height: {e}"),
-            })?;
+            .ok_or(DecodingError::missing_raw_data(
+                "client state latest height",
+            ))?
+            .try_into()?;
         Ok(Self {
             data: raw.data,
             checksum: raw.checksum,

@@ -46,7 +46,7 @@ impl TryFrom<RawMockHeader> for MockHeader {
         Ok(Self {
             height: raw
                 .height
-                .ok_or(DecodingError::missing_raw_data("missing height"))?
+                .ok_or(DecodingError::missing_raw_data("mock header height"))?
                 .try_into()?,
             timestamp: Timestamp::from_nanoseconds(raw.timestamp),
         })

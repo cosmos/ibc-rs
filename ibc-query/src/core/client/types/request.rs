@@ -84,7 +84,11 @@ impl TryFrom<RawQueryConsensusStateRequest> for QueryConsensusStateRequest {
             consensus_height: (!request.latest_height)
                 .then(|| Height::new(request.revision_number, request.revision_height))
                 .transpose()
-                .map_err(|e| DecodingError::invalid_raw_data(format!("consensus height: {e}")))?,
+                .map_err(|e| {
+                    DecodingError::invalid_raw_data(format!(
+                        "consensus state request consensus height: {e}"
+                    ))
+                })?,
             query_height: None,
         })
     }

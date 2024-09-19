@@ -218,9 +218,7 @@ impl FromStr for TracePath {
         remaining_parts
             .is_none()
             .then_some(trace_path)
-            .ok_or(DecodingError::invalid_raw_data(format!(
-                "invalid trace path: {s}"
-            )))
+            .ok_or(DecodingError::invalid_raw_data(format!("trace path: {s}")))
     }
 }
 

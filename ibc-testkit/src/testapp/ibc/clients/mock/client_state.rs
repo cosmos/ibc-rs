@@ -97,7 +97,7 @@ impl TryFrom<RawMockClientState> for MockClientState {
         Ok(Self {
             header: raw
                 .header
-                .ok_or(DecodingError::missing_raw_data("missing header"))?
+                .ok_or(DecodingError::missing_raw_data("mock client state header"))?
                 .try_into()?,
             trusting_period: Duration::from_nanos(raw.trusting_period),
             frozen: raw.frozen,

@@ -39,21 +39,13 @@ impl TryFrom<RawMsgRecvPacket> for MsgRecvPacket {
         Ok(MsgRecvPacket {
             packet: raw_msg
                 .packet
-                .ok_or(DecodingError::MissingRawData {
-                    description: "packet data not set".to_string(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("msg recv packet data"))?
                 .try_into()?,
-            proof_commitment_on_a: raw_msg.proof_commitment.try_into().map_err(|e| {
-                DecodingError::InvalidRawData {
-                    description: format!("failed to decode proof: {e}"),
-                }
-            })?,
+            proof_commitment_on_a: raw_msg.proof_commitment.try_into()?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::InvalidRawData {
-                    description: "failed to decode proof height".to_string(),
-                })?,
+                .ok_or(DecodingError::invalid_raw_data("msg recv proof height"))?,
             signer: raw_msg.signer.into(),
         })
     }

@@ -37,13 +37,13 @@ impl TryFrom<RawMsgChannelOpenConfirm> for MsgChannelOpenConfirm {
         Ok(MsgChannelOpenConfirm {
             port_id_on_b: raw_msg.port_id.parse()?,
             chan_id_on_b: raw_msg.channel_id.parse()?,
-            proof_chan_end_on_a: raw_msg.proof_ack.try_into().map_err(|e| {
-                DecodingError::invalid_raw_data(format!("invalid commitment proof bytes: {e}"))
-            })?,
+            proof_chan_end_on_a: raw_msg.proof_ack.try_into()?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::invalid_raw_data("invalid proof height"))?,
+                .ok_or(DecodingError::invalid_raw_data(
+                    "msg channel open confirm proof height",
+                ))?,
             signer: raw_msg.signer.into(),
         })
     }

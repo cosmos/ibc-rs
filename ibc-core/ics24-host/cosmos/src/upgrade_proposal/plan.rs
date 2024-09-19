@@ -1,6 +1,6 @@
 //! Definition of domain `Plan` type.
 
-use ibc_core_host_types::error::{DecodingError, IdentifierError};
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::cosmos::upgrade::v1beta1::Plan as RawPlan;
 use ibc_proto::google::protobuf::Any;
@@ -32,30 +32,26 @@ impl TryFrom<RawPlan> for Plan {
 
     fn try_from(raw: RawPlan) -> Result<Self, Self::Error> {
         if raw.name.is_empty() {
-            return Err(DecodingError::InvalidRawData {
-                description: "upgrade plan name cannot be empty".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("upgrade plan name"));
         }
 
         #[allow(deprecated)]
         if raw.time.is_some() {
-            return Err(DecodingError::InvalidRawData {
-                description: "upgrade plan time must be empty".to_string(),
-            });
+            return Err(DecodingError::invalid_raw_data(
+                "upgrade plan time must be empty",
+            ));
         }
 
         #[allow(deprecated)]
         if raw.upgraded_client_state.is_some() {
-            return Err(DecodingError::InvalidRawData {
-                description: "upgrade plan `upgraded_client_state` field must be empty".to_string(),
-            });
+            return Err(DecodingError::invalid_raw_data(
+                "upgrade plan `upgraded_client_state` field must be empty",
+            ));
         }
 
         Ok(Self {
             name: raw.name,
-            height: u64::try_from(raw.height).map_err(|_| {
-                DecodingError::Identifier(IdentifierError::OverflowedRevisionNumber)
-            })?,
+            height: u64::try_from(raw.height)?,
             info: raw.info,
         })
     }

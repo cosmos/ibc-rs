@@ -4,11 +4,10 @@ use ibc_client_tendermint_types::{
 use ibc_core_client::context::prelude::*;
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
-use ibc_core_host::types::error::DecodingError;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
-use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
+use ibc_primitives::{prelude::*, TimestampError};
 
 use super::ClientState;
 
@@ -340,10 +339,9 @@ where
         let host_timestamp = ctx.host_timestamp()?.into_tm_time();
 
         let tm_consensus_state_timestamp = tm_consensus_state.timestamp();
-        let tm_consensus_state_expiry =
-            (tm_consensus_state_timestamp + client_state.trusting_period).map_err(|e| {
-                DecodingError::invalid_raw_data(format!("failed to parse TmConsensusState: {e}"))
-            })?;
+        let tm_consensus_state_expiry = (tm_consensus_state_timestamp
+            + client_state.trusting_period)
+            .map_err(|_| TimestampError::TimestampOverflow)?;
 
         if tm_consensus_state_expiry > host_timestamp {
             break;

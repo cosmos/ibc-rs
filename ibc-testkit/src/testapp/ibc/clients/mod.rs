@@ -121,7 +121,7 @@ impl TryFrom<AnyConsensusState> for ConsensusStateType {
         match value {
             AnyConsensusState::Tendermint(cs) => Ok(cs.inner().clone()),
             _ => Err(DecodingError::invalid_raw_data(
-                "invalid AnyConsensusState that could not be converted to TmConsensusState",
+                "AnyConsensusState could not be converted to TmConsensusState",
             )),
         }
     }
@@ -134,7 +134,7 @@ impl TryFrom<AnyConsensusState> for MockConsensusState {
         match value {
             AnyConsensusState::Mock(cs) => Ok(cs),
             _ => Err(DecodingError::invalid_raw_data(
-                "invalid AnyConsensusState that could not be converted to MockConsensusState",
+                "AnyConsensusState could not be converted to MockConsensusState",
             )),
         }
     }

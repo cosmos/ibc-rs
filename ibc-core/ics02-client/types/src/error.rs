@@ -4,8 +4,8 @@ use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
 use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_core_host_types::identifiers::ClientId;
-use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
+use ibc_primitives::{prelude::*, TimestampError};
 
 use crate::height::Height;
 use crate::Status;
@@ -19,6 +19,8 @@ pub enum ClientError {
     Upgrade(UpgradeClientError),
     /// decoding error: {0}
     Decoding(DecodingError),
+    /// timestamp error: {0}
+    Timestamp(TimestampError),
     /// invalid trust threshold `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
     /// invalid client state type `{0}`
@@ -80,6 +82,12 @@ impl From<IdentifierError> for ClientError {
     }
 }
 
+impl From<TimestampError> for ClientError {
+    fn from(e: TimestampError) -> Self {
+        Self::Timestamp(e)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -88,6 +96,7 @@ impl std::error::Error for ClientError {
             Self::Decoding(e) => Some(e),
             Self::Upgrade(e) => Some(e),
             Self::Host(e) => Some(e),
+            Self::Timestamp(e) => Some(e),
             _ => None,
         }
     }

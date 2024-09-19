@@ -1,7 +1,7 @@
 //! Foundational error types that are applicable across multiple ibc-rs workspaces.
 
 use alloc::string::{FromUtf8Error, String};
-use core::num::ParseIntError;
+use core::num::{ParseIntError, TryFromIntError};
 use core::str::Utf8Error;
 
 use base64::DecodeError as Base64Error;
@@ -83,12 +83,12 @@ pub enum DecodingError {
     StrUtf8(Utf8Error),
     /// integer parsing error: {0}
     ParseInt(ParseIntError),
+    /// integer TryFrom error: {0}
+    TryFromInt(TryFromIntError),
     /// protobuf decoding error: {0}
     Protobuf(ProtoError),
     /// prost decoding error: {0}
     Prost(ProstError),
-    /// invalid hash bytes: `{description}`
-    InvalidHash { description: String },
     /// invalid JSON data: `{description}`
     InvalidJson { description: String },
     /// invalid raw data: `{description}`
@@ -148,6 +148,12 @@ impl From<Utf8Error> for DecodingError {
 impl From<ParseIntError> for DecodingError {
     fn from(e: ParseIntError) -> Self {
         Self::ParseInt(e)
+    }
+}
+
+impl From<TryFromIntError> for DecodingError {
+    fn from(e: TryFromIntError) -> Self {
+        Self::TryFromInt(e)
     }
 }
 

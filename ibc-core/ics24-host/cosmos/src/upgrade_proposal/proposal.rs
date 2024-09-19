@@ -32,31 +32,24 @@ impl TryFrom<RawUpgradeProposal> for UpgradeProposal {
 
     fn try_from(raw: RawUpgradeProposal) -> Result<Self, Self::Error> {
         if raw.title.is_empty() {
-            return Err(DecodingError::InvalidRawData {
-                description: "invalid upgrade proposal: missing title field".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("upgrade proposal title"));
         }
 
         if raw.description.is_empty() {
-            return Err(DecodingError::InvalidRawData {
-                description: "invalid upgrade proposal: missing description field".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data(
+                "upgrade proposal description",
+            ));
         }
 
         let plan = if let Some(plan) = raw.plan {
             plan.try_into()?
         } else {
-            return Err(DecodingError::InvalidRawData {
-                description: "invalid upgrade proposal: missing plan field".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("upgrade proposal plan"));
         };
 
-        let upgraded_client_state =
-            raw.upgraded_client_state
-                .ok_or_else(|| DecodingError::InvalidRawData {
-                    description: "invalid upgrade proposal: missing upgraded client state"
-                        .to_string(),
-                })?;
+        let upgraded_client_state = raw.upgraded_client_state.ok_or_else(|| {
+            DecodingError::missing_raw_data("upgrade proposal upgraded client state")
+        })?;
 
         Ok(Self {
             title: raw.title,

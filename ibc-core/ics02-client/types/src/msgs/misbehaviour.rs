@@ -39,9 +39,9 @@ impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
     type Error = DecodingError;
 
     fn try_from(raw: RawMsgSubmitMisbehaviour) -> Result<Self, Self::Error> {
-        let raw_misbehaviour = raw.misbehaviour.ok_or(DecodingError::MissingRawData {
-            description: "misbehaviour not set".to_string(),
-        })?;
+        let raw_misbehaviour = raw
+            .misbehaviour
+            .ok_or(DecodingError::missing_raw_data("msg submit misbehaviour"))?;
 
         Ok(MsgSubmitMisbehaviour {
             client_id: raw.client_id.parse()?,

@@ -55,7 +55,7 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !timeout_height_on_b.is_set() && !timeout_timestamp_on_b.is_set() {
             return Err(DecodingError::missing_raw_data(
-                "missing timeout height or timeout timestamp",
+                "msg transfer timeout height or timeout timestamp",
             ));
         }
 
@@ -65,7 +65,7 @@ impl TryFrom<RawMsgTransfer> for MsgTransfer {
             packet_data: PacketData {
                 token: raw_msg
                     .token
-                    .ok_or(DecodingError::missing_raw_data("missing token"))?
+                    .ok_or(DecodingError::missing_raw_data("msg transfer token"))?
                     .try_into()?,
                 sender: raw_msg.sender.into(),
                 receiver: raw_msg.receiver.into(),
