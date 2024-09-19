@@ -73,8 +73,6 @@ pub enum ChannelError {
     UnexpectedChannelId,
     /// unsupported version: expected `{expected}`, actual `{actual}`
     UnsupportedVersion { expected: Version, actual: Version },
-
-    // TODO(seanchen1991): Figure out how to get rid of this variant
     /// application specific error: `{description}`
     AppSpecific { description: String },
 }

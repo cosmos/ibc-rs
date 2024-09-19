@@ -53,7 +53,7 @@ impl Header {
             .header
             .time
             .try_into()
-            .map_err(TendermintClientError::InvalidHeaderTimestamp)
+            .map_err(TendermintClientError::InvalidTimestamp)
     }
 
     pub fn height(&self) -> Height {

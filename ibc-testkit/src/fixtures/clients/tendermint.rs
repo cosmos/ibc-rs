@@ -13,6 +13,7 @@ use ibc::clients::tendermint::types::{
 use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::specs::ProofSpecs;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use tendermint::block::Header as TmHeader;
@@ -21,11 +22,8 @@ use typed_builder::TypedBuilder;
 /// Returns a dummy tendermint `ClientState` by given `frozen_height`, for testing purposes only!
 pub fn dummy_tm_client_state_from_raw(
     frozen_height: RawHeight,
-) -> Result<TmClientState, TendermintClientError> {
-    Ok(
-        ClientStateType::try_from(dummy_raw_tm_client_state(frozen_height))
-            .map(TmClientState::from)?,
-    )
+) -> Result<TmClientState, DecodingError> {
+    ClientStateType::try_from(dummy_raw_tm_client_state(frozen_height)).map(TmClientState::from)
 }
 
 /// Returns a dummy tendermint `ClientState` from a `TmHeader`, for testing purposes only!

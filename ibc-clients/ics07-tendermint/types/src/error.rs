@@ -25,8 +25,8 @@ pub enum TendermintClientError {
     InvalidMaxClockDrift,
     /// invalid client proof specs: `{0}`
     InvalidProofSpec(CommitmentError),
-    /// invalid header timestamp: `{0}`
-    InvalidHeaderTimestamp(TimestampError),
+    /// invalid timestamp: `{0}`
+    InvalidTimestamp(TimestampError),
     /// invalid header height: `{0}`
     InvalidHeaderHeight(u64),
     /// mismatched revision heights: expected `{expected}`, actual `{actual}`
@@ -55,12 +55,13 @@ impl std::error::Error for TendermintClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Decoding(e) => Some(e),
+            Self::InvalidTimestamp(e) => Some(e),
+            Self::InvalidProofSpec(e) => Some(e),
             _ => None,
         }
     }
 }
 
-// TODO(seanchen1991): Figure out how to remove this conversion
 impl From<TendermintClientError> for ClientError {
     fn from(e: TendermintClientError) -> Self {
         Self::ClientSpecific {
@@ -84,6 +85,12 @@ impl From<CommitmentError> for TendermintClientError {
 impl From<DecodingError> for TendermintClientError {
     fn from(e: DecodingError) -> Self {
         Self::Decoding(e)
+    }
+}
+
+impl From<TimestampError> for TendermintClientError {
+    fn from(e: TimestampError) -> Self {
+        Self::InvalidTimestamp(e)
     }
 }
 

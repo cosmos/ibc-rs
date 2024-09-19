@@ -52,8 +52,6 @@ pub enum ClientError {
     FailedHeaderVerification { description: String },
     /// failed misbehaviour handling: `{description}`
     FailedMisbehaviourHandling { description: String },
-
-    // TODO(seanchen1991): Incorporate this error into its own variants
     /// client-specific error: `{description}`
     ClientSpecific { description: String },
 }
