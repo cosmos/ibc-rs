@@ -49,7 +49,7 @@ impl TryFrom<RawMsgAcknowledgement> for MsgAcknowledgement {
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
                 .ok_or(DecodingError::invalid_raw_data(
-                    "msg acknowledgemnt proof height",
+                    "msg acknowledgement proof height",
                 ))?,
             signer: raw_msg.signer.into(),
         })
