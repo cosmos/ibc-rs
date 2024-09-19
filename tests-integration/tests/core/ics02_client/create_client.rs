@@ -31,7 +31,7 @@ use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusStat
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder};
+use ibc_testkit::testapp::ibc::core::types::{dummy_light_client, DefaultIbcStore};
 use ibc_testkit::utils::year_2023;
 use test_log::test;
 
@@ -237,10 +237,8 @@ fn test_tm_create_client_proof_verification_ok() {
         .latest_height(client_height)
         .build();
 
-    let ctx_mk = MockContext::default().with_light_client(
-        &client_id,
-        LightClientBuilder::init().context(&ctx_tm).build(),
-    );
+    let ctx_mk =
+        MockContext::default().with_light_client(&client_id, dummy_light_client(&ctx_tm).build());
 
     let client_validation_ctx_mk = ctx_mk.ibc_store().get_client_validation_context();
 

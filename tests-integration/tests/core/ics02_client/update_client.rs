@@ -41,7 +41,7 @@ use ibc_testkit::testapp::ibc::clients::mock::misbehaviour::Misbehaviour as Mock
 use ibc_testkit::testapp::ibc::clients::AnyConsensusState;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
 use ibc_testkit::testapp::ibc::core::types::{
-    DefaultIbcStore, LightClientBuilder, LightClientState, MockIbcStore,
+    dummy_light_client, DefaultIbcStore, LightClientState, MockIbcStore,
 };
 use rstest::*;
 use tendermint_testgen::Validator as TestgenValidator;
@@ -139,10 +139,7 @@ fn test_update_client_with_prev_header() {
         .build();
 
     let mut ctx = MockContext::default()
-        .with_light_client(
-            &client_id,
-            LightClientBuilder::init().context(&ctx_b).build(),
-        )
+        .with_light_client(&client_id, dummy_light_client(&ctx_b).build())
         .ibc_store;
 
     let mut router = MockRouter::new_with_transfer();
@@ -238,8 +235,7 @@ fn test_consensus_state_pruning() {
         .build()
         .with_light_client(
             &client_id,
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .params(
                     ClientStateConfig::builder()
                         .trusting_period(Duration::from_secs(3))
@@ -359,8 +355,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
         .build()
         .with_light_client(
             &client_id,
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
                 .build(),
         );
@@ -452,8 +447,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
                 .build(),
         );
@@ -551,8 +545,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
                 .build(),
         );
@@ -657,8 +650,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
                 .build(),
         );
@@ -751,8 +743,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
                 .build(),
         );
@@ -847,8 +838,7 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
                 .build(),
         );
@@ -902,8 +892,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
         .build()
         .with_light_client(
             &client_id,
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .consensus_heights([client_height.sub(1).expect("no error"), client_height])
                 .build(),
         );
@@ -962,8 +951,7 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
         .build()
         .with_light_client(
             &client_id,
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .consensus_heights([start_height])
                 .build(),
         );
@@ -1088,10 +1076,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
         )
         .latest_height(chain_start_height)
         .build()
-        .with_light_client(
-            &client_id,
-            LightClientBuilder::init().context(&ctx_b).build(),
-        );
+        .with_light_client(&client_id, dummy_light_client(&ctx_b).build());
 
     let router = MockRouter::new_with_transfer();
 
@@ -1261,8 +1246,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
         .build()
         .with_light_client(
             &client_id,
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
                 .build(),
         );
@@ -1332,10 +1316,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
         )
         .latest_height(Height::new(1, 1).unwrap())
         .build()
-        .with_light_client(
-            &client_id,
-            LightClientBuilder::init().context(&ctx_b).build(),
-        );
+        .with_light_client(&client_id, dummy_light_client(&ctx_b).build());
 
     let mut router_a = MockRouter::new_with_transfer();
 
@@ -1419,8 +1400,7 @@ fn test_expired_client() {
         .build()
         .with_light_client(
             &client_id,
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .params(
                     ClientStateConfig::builder()
                         .trusting_period(trusting_period)
@@ -1472,8 +1452,7 @@ fn test_client_update_max_clock_drift() {
         .build()
         .with_light_client(
             &client_id,
-            LightClientBuilder::init()
-                .context(&ctx_b)
+            dummy_light_client(&ctx_b)
                 .params(
                     ClientStateConfig::builder()
                         .max_clock_drift(max_clock_drift)
@@ -1590,16 +1569,14 @@ fn client_update_ping_pong() {
 
     ctx_a = ctx_a.with_light_client(
         &client_on_a_for_b,
-        LightClientBuilder::init()
-            .context(&ctx_b)
+        dummy_light_client(&ctx_b)
             .consensus_heights([client_on_a_for_b_height])
             .build(),
     );
 
     ctx_b = ctx_b.with_light_client(
         &client_on_b_for_a,
-        LightClientBuilder::init()
-            .context(&ctx_a)
+        dummy_light_client(&ctx_a)
             .consensus_heights([client_on_b_for_a_height])
             .build(),
     );

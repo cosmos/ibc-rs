@@ -6,7 +6,7 @@ use core::fmt::Debug;
 use basecoin_store::context::{ProvableStore, Store};
 use basecoin_store::impls::SharedStore;
 use basecoin_store::types::{BinStore, JsonStore, ProtobufStore, TypedSet, TypedStore};
-use bon::bon;
+use bon::builder;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::client::context::client_state::ClientStateValidation;
@@ -459,7 +459,7 @@ where
 {
     fn default() -> Self {
         let context = TestContext::<H>::default();
-        LightClientBuilder::init().context(&context).build()
+        dummy_light_client(&context).build()
     }
 }
 
@@ -472,28 +472,24 @@ where
         let context: TestContext<_> = dummy_store_generic_test_context()
             .latest_height(height)
             .build();
-        LightClientBuilder::init().context(&context).build()
+        dummy_light_client(&context).build()
     }
 }
 
-pub struct LightClientBuilder;
+#[builder(finish_fn = build)]
+pub fn dummy_light_client<H>(
+    #[builder(start_fn)] //
+    context: &TestContext<H>,
 
-#[bon]
-impl LightClientBuilder {
-    #[builder(finish_fn = build)]
-    pub fn init<H>(
-        context: &TestContext<H>,
+    #[builder(default, into)] //
+    consensus_heights: Vec<Height>,
 
-        #[builder(default, into)] //
-        consensus_heights: Vec<Height>,
-
-        #[builder(default)] //
-        params: H::LightClientParams,
-    ) -> LightClientState<H>
-    where
-        H: TestHost,
-        HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
-    {
-        context.generate_light_client(consensus_heights, &params)
-    }
+    #[builder(default)] //
+    params: H::LightClientParams,
+) -> LightClientState<H>
+where
+    H: TestHost,
+    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
+{
+    context.generate_light_client(consensus_heights, &params)
 }
