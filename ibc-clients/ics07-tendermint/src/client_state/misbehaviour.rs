@@ -122,8 +122,7 @@ where
             .as_str()
             .try_into()
             .map_err(|e| IdentifierError::FailedToParse {
-                value: chain_id.to_string(),
-                description: format!("{e:?}"),
+                description: format!("chain ID `{chain_id}`: {e:?}"),
             })?;
 
     let trusted_state =

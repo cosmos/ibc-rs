@@ -313,8 +313,7 @@ fn parse_chain_id_string(chain_id_str: &str) -> Result<(&str, u64), IdentifierEr
                 .map(|revision_number| (chain_name, revision_number))
         })
         .ok_or(IdentifierError::FailedToParse {
-            value: chain_id_str.to_string(),
-            description: "invalid revision number".to_string(),
+            description: format!("revision number for chain ID `{chain_id_str}`"),
         })
 }
 

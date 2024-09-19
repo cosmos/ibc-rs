@@ -1,6 +1,7 @@
 //! Foundational error types that are applicable across multiple ibc-rs workspaces.
 
 use alloc::string::{FromUtf8Error, String};
+use core::num::ParseIntError;
 use core::str::Utf8Error;
 
 use base64::DecodeError as Base64Error;
@@ -60,8 +61,10 @@ pub enum IdentifierError {
     InvalidCharacter(String),
     /// invalid prefix: `{0}`
     InvalidPrefix(String),
-    /// failed to parse `{value}`: `{description}`
-    FailedToParse { value: String, description: String },
+    /// failed to parse: `{description}`
+    FailedToParse { description: String },
+    /// mismatched event kind: expected {expected}, actual {actual}
+    MismatchedEventKind { expected: String, actual: String },
     /// overflowed revision number
     OverflowedRevisionNumber,
 }
@@ -78,6 +81,8 @@ pub enum DecodingError {
     StringUtf8(FromUtf8Error),
     /// utf-8 str decoding error: `{0}`
     StrUtf8(Utf8Error),
+    /// integer parsing error: `{0}`
+    ParseInt(ParseIntError),
     /// protobuf decoding error: `{0}`
     Protobuf(ProtoError),
     /// prost decoding error: `{0}`
@@ -137,6 +142,12 @@ impl From<FromUtf8Error> for DecodingError {
 impl From<Utf8Error> for DecodingError {
     fn from(e: Utf8Error) -> Self {
         Self::StrUtf8(e)
+    }
+}
+
+impl From<ParseIntError> for DecodingError {
+    fn from(e: ParseIntError) -> Self {
+        Self::ParseInt(e)
     }
 }
 

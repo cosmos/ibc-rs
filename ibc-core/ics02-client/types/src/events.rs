@@ -228,15 +228,9 @@ impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
             .map(|value| {
                 let consensus_heights: Vec<Height> = value
                     .split(',')
-                    .map(|height_str| {
-                        Height::from_str(height_str).map_err(|e| {
-                            DecodingError::Identifier(IdentifierError::FailedToParse {
-                                value: height_str.to_string(),
-                                description: e.to_string(),
-                            })
-                        })
-                    })
-                    .collect::<Result<Vec<Height>, DecodingError>>()?;
+                    .map(Height::from_str)
+                    .collect::<Result<Vec<Height>, DecodingError>>(
+                )?;
 
                 Ok(ConsensusHeightsAttribute { consensus_heights })
             })
@@ -520,9 +514,9 @@ impl TryFrom<abci::Event> for UpdateClient {
 
     fn try_from(value: abci::Event) -> Result<Self, Self::Error> {
         if value.kind != UPDATE_CLIENT_EVENT {
-            return Err(IdentifierError::FailedToParse {
-                value: value.kind,
-                description: "failed to parse UpdateClient event".to_string(),
+            return Err(IdentifierError::MismatchedEventKind {
+                expected: UPDATE_CLIENT_EVENT.to_string(),
+                actual: value.kind.to_string(),
             })?;
         }
 
@@ -541,7 +535,7 @@ impl TryFrom<abci::Event> for UpdateClient {
                 (None, None, None, None, None),
                 |acc: UpdateClientAttributes, attribute| {
                     let key = attribute.key_str().map_err(|e| {
-                        DecodingError::invalid_raw_data(format!("invalid attribute key: {e}"))
+                        DecodingError::invalid_raw_data(format!("attribute key: {e}"))
                     })?;
 
                     match key {
@@ -764,9 +758,9 @@ mod tests {
                 abci::EventAttribute::from(("consensus_height", "1-10")),
             ],
         },
-        Err(IdentifierError::FailedToParse {
-            value: "CreateClient".to_string(),
-            description: "failed to parse event".to_string()
+        Err(IdentifierError::MismatchedEventKind {
+            expected: "CreateClient".to_string(),
+            actual: "some_other_event".to_string(),
         }.into())
     )]
     #[case(
@@ -777,7 +771,7 @@ mod tests {
                 abci::EventAttribute::from(("consensus_height", "1-10")),
             ],
         },
-        Err(DecodingError::MissingRawData { description: "missing attribute key".to_string() }),
+        Err(DecodingError::missing_raw_data("attribute key")),
     )]
     fn test_create_client_try_from(
         #[case] event: abci::Event,
@@ -825,10 +819,10 @@ mod tests {
                 abci::EventAttribute::from(("header", "1234")),
             ],
         },
-        Err(DecodingError::Identifier(IdentifierError::FailedToParse {
-            value: "some_other_event".to_owned(),
-            description: "failed to parse UpdateClient event".to_string(),
-        })),
+        Err(IdentifierError::MismatchedEventKind {
+            expected: UPDATE_CLIENT_EVENT.to_string(),
+            actual: "some_other_event".to_owned(),
+        }.into()),
     )]
     #[case(
         abci::Event {

@@ -3,7 +3,6 @@ use alloc::string::{String, ToString};
 use displaydoc::Display;
 use ibc::core::channel::types::error::ChannelError;
 use ibc::core::client::types::error::ClientError;
-use ibc::core::client::types::HeightError;
 use ibc::core::connection::types::error::ConnectionError;
 use ibc::core::handler::types::error::HandlerError;
 use ibc::core::host::types::error::{DecodingError, HostError, IdentifierError};
@@ -14,8 +13,6 @@ use tonic::Status;
 /// ibc-query's codepaths.
 #[derive(Debug, Display)]
 pub enum QueryError {
-    /// height error: `{0}`
-    Height(HeightError),
     /// handler error: `{0}`
     Handler(HandlerError),
     /// host error: `{0}`
@@ -41,7 +38,6 @@ impl QueryError {
 impl From<QueryError> for Status {
     fn from(e: QueryError) -> Self {
         match e {
-            QueryError::Height(height_err) => Self::internal(height_err.to_string()),
             QueryError::Handler(ctx_err) => Self::internal(ctx_err.to_string()),
             QueryError::Host(host_err) => Self::internal(host_err.to_string()),
             QueryError::Decoding(de) => Self::internal(de.to_string()),
@@ -72,12 +68,6 @@ impl From<ChannelError> for QueryError {
 impl From<DecodingError> for QueryError {
     fn from(e: DecodingError) -> Self {
         Self::Decoding(e)
-    }
-}
-
-impl From<HeightError> for QueryError {
-    fn from(e: HeightError) -> Self {
-        Self::Height(e)
     }
 }
 
