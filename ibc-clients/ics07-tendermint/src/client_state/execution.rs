@@ -6,8 +6,9 @@ use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
 use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
+use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
-use ibc_primitives::{prelude::*, TimestampError};
+use ibc_primitives::TimestampError;
 
 use super::ClientState;
 
