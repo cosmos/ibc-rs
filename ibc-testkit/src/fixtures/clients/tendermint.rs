@@ -2,7 +2,7 @@ use core::str::FromStr;
 use core::time::Duration;
 
 use basecoin_store::avl::get_proof_spec as basecoin_proof_spec;
-use bon::{bon, builder};
+use bon::{bon, Builder};
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
 use ibc::clients::tendermint::types::error::{Error as ClientError, Error};
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
@@ -66,8 +66,7 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
     }
 }
 
-#[builder]
-#[derive(Debug)]
+#[derive(Debug, Builder)]
 pub struct ClientStateConfig {
     #[builder(default = TrustThreshold::ONE_THIRD)]
     pub trust_level: TrustThreshold,

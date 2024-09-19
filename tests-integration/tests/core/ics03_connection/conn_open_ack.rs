@@ -15,7 +15,7 @@ use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::ZERO_DURATION;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::core::connection::dummy_msg_conn_open_ack;
-use ibc_testkit::fixtures::core::context::TestContextConfig;
+use ibc_testkit::fixtures::core::context::dummy_store_generic_test_context;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::hosts::MockHost;
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
@@ -60,7 +60,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
     conn_end_open.set_state(State::Open); // incorrect field
 
     let ctx_default = MockContext::default();
-    let ctx_new = TestContextConfig::builder()
+    let ctx_new: MockContext = dummy_store_generic_test_context()
         .host(
             MockHost::builder()
                 .chain_id(
@@ -69,7 +69,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
                 .build(),
         )
         .latest_height(latest_height)
-        .build::<MockContext>();
+        .build();
     let ctx = match ctx {
         Ctx::New => ctx_new.ibc_store,
         Ctx::NewWithConnection => {

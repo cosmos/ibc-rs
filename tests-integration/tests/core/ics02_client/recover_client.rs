@@ -12,7 +12,7 @@ use ibc::core::host::ValidationContext;
 use ibc::core::primitives::Signer;
 use ibc_primitives::Timestamp;
 use ibc_testkit::context::{MockContext, TendermintContext};
-use ibc_testkit::fixtures::core::context::TestContextConfig;
+use ibc_testkit::fixtures::core::context::dummy_store_generic_test_context;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::hosts::{TestBlock, TestHost};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
@@ -45,12 +45,12 @@ fn setup_client_recovery_fixture(
 ) -> Fixture {
     let latest_timestamp = Timestamp::now();
 
-    let mut ctx_a: TendermintContext = TestContextConfig::builder()
+    let mut ctx_a: TendermintContext = dummy_store_generic_test_context()
         .latest_timestamp(latest_timestamp)
         .build();
 
     // create a ctx_b
-    let ctx_b: MockContext = TestContextConfig::builder()
+    let ctx_b: MockContext = dummy_store_generic_test_context()
         .latest_height(substitute_height)
         .latest_timestamp(latest_timestamp)
         .build();

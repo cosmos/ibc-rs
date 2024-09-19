@@ -1,6 +1,6 @@
 use core::str::FromStr;
 
-use bon::builder;
+use bon::Builder;
 use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState;
 use ibc::clients::tendermint::types::proto::v1::Header as RawHeader;
@@ -23,8 +23,7 @@ use crate::fixtures::clients::tendermint::ClientStateConfig;
 use crate::hosts::{TestBlock, TestHeader, TestHost};
 
 /// A host that produces Tendermint blocks and interfaces with Tendermint light clients.
-#[builder]
-#[derive(Debug)]
+#[derive(Debug, Builder)]
 pub struct TendermintHost {
     /// Unique identifier for the chain.
     #[builder(default = ChainId::new("mock-0").expect("Never fails"))]
@@ -131,8 +130,7 @@ impl TestBlock for TmLightBlock {
     }
 }
 
-#[builder]
-#[derive(Debug)]
+#[derive(Debug, Builder)]
 pub struct BlockParams {
     pub validators: Vec<TestgenValidator>,
     pub next_validators: Vec<TestgenValidator>,
