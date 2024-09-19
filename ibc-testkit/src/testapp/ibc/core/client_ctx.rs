@@ -106,7 +106,7 @@ where
                     .get(StoreHeight::Pending, &path)
                     .ok_or_else(|| {
                         HostError::failed_to_retrieve(format!(
-                            "consensus state for client `{}` at height `{}`",
+                            "missing consensus state for client {} at height {}",
                             client_id.clone(),
                             *height
                         ))
@@ -143,7 +143,7 @@ where
                     .get(StoreHeight::Pending, &path)
                     .ok_or_else(|| {
                         HostError::failed_to_retrieve(format!(
-                            "consensus state for client `{}` at height `{}`",
+                            "missing consensus state for client {} at height {}",
                             client_id.clone(),
                             *height
                         ))
@@ -185,7 +185,7 @@ where
             .consensus_state_store
             .get(StoreHeight::Pending, client_cons_state_path)
             .ok_or(HostError::failed_to_retrieve(format!(
-                "consensus state for client `{}` at height `{}`",
+                "missing consensus state for client {} at height {}",
                 client_cons_state_path.client_id.clone(),
                 height
             )))?;

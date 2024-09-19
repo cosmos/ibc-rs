@@ -54,7 +54,7 @@ where
     fn client_counter(&self) -> Result<u64, HostError> {
         self.client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
-            .ok_or(HostError::missing_state("client counter"))
+            .ok_or(HostError::missing_state("missing client counter"))
     }
 
     fn host_consensus_state(&self, height: &Height) -> Result<Self::HostConsensusState, HostError> {
@@ -85,7 +85,7 @@ where
                 .revision_number()
         {
             return Err(HostError::invalid_state(format!(
-                "client is not in the same revision as the chain; expected `{}`, actual `{}`",
+                "client is not in the same revision as the chain; expected {}, actual {}",
                 self_revision_number,
                 client_state_of_host_on_counterparty
                     .latest_height()
@@ -97,7 +97,7 @@ where
         if client_state_of_host_on_counterparty.latest_height() >= host_current_height {
             return Err(HostError::invalid_state(
                 format!(
-                    "counterparty client state: client latest height `{}` should be less than chain height `{}`",
+                    "invalid counterparty client state: client latest height {} should be less than chain height {}",
                     client_state_of_host_on_counterparty.latest_height(),
                     host_current_height
                 ),
@@ -111,7 +111,7 @@ where
         self.connection_end_store
             .get(StoreHeight::Pending, &ConnectionPath::new(conn_id))
             .ok_or(HostError::missing_state(format!(
-                "connection end for connection `{}`",
+                "missing connection end for connection {}",
                 conn_id.clone()
             )))
     }
@@ -125,14 +125,14 @@ where
     fn connection_counter(&self) -> Result<u64, HostError> {
         self.conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
-            .ok_or(HostError::missing_state("connection counter"))
+            .ok_or(HostError::missing_state("missing connection counter"))
     }
 
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HostError> {
         self.channel_end_store
             .get(StoreHeight::Pending, channel_end_path)
             .ok_or(HostError::missing_state(format!(
-                "channel `{}` in port `{}`",
+                "missing channel {} in port {}",
                 channel_end_path.1.clone(),
                 channel_end_path.0.clone()
             )))
@@ -141,19 +141,25 @@ where
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, HostError> {
         self.send_sequence_store
             .get(StoreHeight::Pending, seq_send_path)
-            .ok_or(HostError::failed_to_retrieve("send packet sequence"))
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve send packet sequence",
+            ))
     }
 
     fn get_next_sequence_recv(&self, seq_recv_path: &SeqRecvPath) -> Result<Sequence, HostError> {
         self.recv_sequence_store
             .get(StoreHeight::Pending, seq_recv_path)
-            .ok_or(HostError::failed_to_retrieve("recv packet sequence"))
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve recv packet sequence",
+            ))
     }
 
     fn get_next_sequence_ack(&self, seq_ack_path: &SeqAckPath) -> Result<Sequence, HostError> {
         self.ack_sequence_store
             .get(StoreHeight::Pending, seq_ack_path)
-            .ok_or(HostError::failed_to_retrieve("ack packet sequence"))
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve ack packet sequence",
+            ))
     }
 
     fn get_packet_commitment(
@@ -162,7 +168,9 @@ where
     ) -> Result<PacketCommitment, HostError> {
         self.packet_commitment_store
             .get(StoreHeight::Pending, commitment_path)
-            .ok_or(HostError::failed_to_retrieve("packet commitment"))
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve packet commitment",
+            ))
     }
 
     fn get_packet_receipt(&self, receipt_path: &ReceiptPath) -> Result<Receipt, HostError> {
@@ -183,7 +191,7 @@ where
         self.packet_ack_store
             .get(StoreHeight::Pending, ack_path)
             .ok_or(HostError::failed_to_retrieve(format!(
-                "packet acknowledgment `{}`",
+                "failed to retrieve packet acknowledgment {}",
                 ack_path.sequence
             )))
     }
@@ -194,7 +202,9 @@ where
     fn channel_counter(&self) -> Result<u64, HostError> {
         self.channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
-            .ok_or(HostError::failed_to_retrieve("channel counter"))
+            .ok_or(HostError::failed_to_retrieve(
+                "failed to retrieve channel counter",
+            ))
     }
 
     /// Returns the maximum expected time per block
@@ -261,7 +271,7 @@ where
                     .get(StoreHeight::Pending, &client_state_path)
                     .ok_or_else(|| {
                         HostError::failed_to_retrieve(format!(
-                            "client state from path `{}`",
+                            "failed to retrieve client state from path {}",
                             client_state_path.0.clone()
                         ))
                     })?;
@@ -297,7 +307,7 @@ where
                     .consensus_state_store
                     .get(StoreHeight::Pending, &consensus_path)
                     .ok_or(HostError::failed_to_retrieve(format!(
-                        "consensus state for client `{}` at height `{}`",
+                        "missing consensus state for client {} at height {}",
                         consensus_path.client_id, height,
                     )))?;
                 Ok((height, client_state))
@@ -349,7 +359,7 @@ where
                     .get(StoreHeight::Pending, &connection_path)
                     .ok_or_else(|| {
                         HostError::failed_to_retrieve(format!(
-                            "connection end `{}`",
+                            "missing connection {}",
                             connection_path.0.clone()
                         ))
                     })?;
@@ -391,7 +401,7 @@ where
                     .get(StoreHeight::Pending, &channel_path)
                     .ok_or_else(|| {
                         HostError::failed_to_retrieve(format!(
-                            "channel `{}` with port `{}`",
+                            "missing channel {} with port {}",
                             channel_path.1.clone(),
                             channel_path.0.clone()
                         ))
@@ -584,11 +594,13 @@ where
         let current_sequence = self
             .client_counter
             .get(StoreHeight::Pending, &NextClientSequencePath)
-            .ok_or(HostError::failed_to_retrieve("client counter"))?;
+            .ok_or(HostError::failed_to_retrieve("missing client counter"))?;
 
         self.client_counter
             .set(NextClientSequencePath, current_sequence + 1)
-            .map_err(|e| HostError::failed_to_store(format!("client counter: {e:?}")))?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to update client counter: {e:?}"))
+            })?;
 
         Ok(())
     }
@@ -601,7 +613,9 @@ where
     ) -> Result<(), HostError> {
         self.connection_end_store
             .set(connection_path.clone(), connection_end)
-            .map_err(|e| HostError::failed_to_store(format!("connection end: {e:?}")))?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to set connection end: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -618,7 +632,9 @@ where
         conn_ids.push(conn_id);
         self.connection_ids_store
             .set(client_connection_path.clone(), conn_ids)
-            .map_err(|e| HostError::failed_to_store(format!("connection IDs: {e:?}")))?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store connection IDs: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -628,11 +644,13 @@ where
         let current_sequence = self
             .conn_counter
             .get(StoreHeight::Pending, &NextConnectionSequencePath)
-            .ok_or(HostError::failed_to_retrieve("connection counter"))?;
+            .ok_or(HostError::failed_to_retrieve("missing connection counter"))?;
 
         self.conn_counter
             .set(NextConnectionSequencePath, current_sequence + 1)
-            .map_err(|e| HostError::failed_to_store(format!("connection counter: {e:?}")))?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to update connection counter: {e:?}"))
+            })?;
 
         Ok(())
     }
@@ -644,7 +662,9 @@ where
     ) -> Result<(), HostError> {
         self.packet_commitment_store
             .set(commitment_path.clone(), commitment)
-            .map_err(|e| HostError::failed_to_store(format!("packet commitment: {e:?}")))?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store packet commitment: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -663,7 +683,9 @@ where
     ) -> Result<(), HostError> {
         self.packet_receipt_store
             .set_path(receipt_path.clone())
-            .map_err(|e| HostError::failed_to_store(format!("packet receipt: {e:?}")))?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store packet receipt: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -674,7 +696,9 @@ where
     ) -> Result<(), HostError> {
         self.packet_ack_store
             .set(ack_path.clone(), ack_commitment)
-            .map_err(|e| HostError::failed_to_store(format!("packet acknowledgment: {e:?}")))?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store packet acknowledgment: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -690,7 +714,7 @@ where
     ) -> Result<(), HostError> {
         self.channel_end_store
             .set(channel_end_path.clone(), channel_end)
-            .map_err(|e| HostError::failed_to_store(format!("channel: {e:?}")))?;
+            .map_err(|e| HostError::failed_to_store(format!("failed to store channel: {e:?}")))?;
         Ok(())
     }
 
@@ -701,7 +725,9 @@ where
     ) -> Result<(), HostError> {
         self.send_sequence_store
             .set(seq_send_path.clone(), seq)
-            .map_err(|e| HostError::failed_to_store(format!("next send sequence: {e:?}")))?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store send sequence: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -712,7 +738,9 @@ where
     ) -> Result<(), HostError> {
         self.recv_sequence_store
             .set(seq_recv_path.clone(), seq)
-            .map_err(|e| HostError::failed_to_store(format!("next recv sequence: {e:?}")))?;
+            .map_err(|e| {
+                HostError::failed_to_store(format!("failed to store recv sequence: {e:?}"))
+            })?;
         Ok(())
     }
 
@@ -733,11 +761,11 @@ where
         let current_sequence = self
             .channel_counter
             .get(StoreHeight::Pending, &NextChannelSequencePath)
-            .ok_or(HostError::failed_to_retrieve("channel counter"))?;
+            .ok_or(HostError::failed_to_retrieve("missing counter"))?;
 
         self.channel_counter
             .set(NextChannelSequencePath, current_sequence + 1)
-            .map_err(|e| HostError::failed_to_store(format!("channel counter: {e:?}")))?;
+            .map_err(|e| HostError::failed_to_store(format!("failed to update counter: {e:?}")))?;
         Ok(())
     }
 
