@@ -31,9 +31,13 @@ host developers to decide whether these errors are relevant or not. In other wor
 distinction between host- and protocol-level errors is not reflected in ibc-rs's error
 handling methodology.
 
-### Proposal
+## Proposal
 
-#### Some changes to `ContextError`
+### Some Changes to `ContextError`
+
+ibc-rs's top-level error type, `ContextError`, will be renamed to `HandlerError` in an effort
+to improve the semantics of this error type. `HandlerError` will be returned only by the top-
+level handler entrypoints of ibc-rs, namely the [dispatch], [validate], and [execute] methods.
 
 ```diff
 - pub enum ContextError {
@@ -51,12 +55,22 @@ handling methodology.
 }
 ```
 
-#### The new `HostError` type
+In addition, the error variant that contained the `PacketError` type will be removed. This
+is because we're opting to move towards only having a single error type for each ICS module,
+removing the discrepancy that the ICS04 module exposes two distinct error types. The
+`PacketError` type will be merged into the `ChannelError` type.
 
-In light of the rationale stated above, we propose adding a new `HostError` type that makes
-clear that an error is originating from a host context, as opposed to originating from within
-the ibc-rs library. We introduce the following concrete `HostError` type in the ics24-host
-crate:
+### The New `HostError` Type
+
+In light of the stated rationale of making it clear when an error originates from host logic
+vs ibc-rs's internal logic, we propose adding a new `HostError` type that will live as a
+variant in each of the module-level error types, as well as in the application-level error
+types, `TokenTransferError` and `NftTransferError`. Initially, we had only a single 
+`Host(HostError)` variant that existed in the `HandlerError`type, but it became clear 
+that this wasn't the correct place in which to expose host-level errors. This is because 
+host errors can crop up within any of the core ibc-rs modules.
+
+We introduce the following concrete `HostError` type in the ics24-host crate:
 
 ```rust
 pub enum HostError {
@@ -83,23 +97,141 @@ variants to each of the module-level error types where appropriate: `ClientError
 variant is not being added to the `RouterError` type in ICS26 as it is not used by hosts, i.e.,
 it does not expose its own handlers. 
 
-[Add context here about some of the error calls that changed to `HostError`]
+The main areas where `HostError`s are now being returned are mainly in `ValidationContext` and
+`ExecutionContext` trait methods. These traits are the ones that hosts need to implement as
+part of the process of integrating ibc-rs.
 
-#### Defining a new `DecodingError` type
+As an example, consider the [consensus_state] method under the `ClientValidationContext` trait.
+This method used to return a `ContextError`. One place where it is called is in the 
+`upgrade_client` handler:
 
+```rust
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
+    ...
+    let old_consensus_state = client_val_ctx
+        .consensus_state(&old_cons_state_path)
+        .map_err(|_| ClientError::MissingConsensusState {
+            client_id,
+            height: old_client_state.latest_height(),
+        })?;
+```
+
+The `ContextError` of the `consensus_state` method was being mapped onto a `ClientError`, which
+was then mapped *back* into a `ContextError`; certainly an inefficient round-trip. In the case
+that an error did occur in the `consensus_state` method, it would not have been clear to the
+user that the error originated from a host context.
+
+This `validate` function will now be changed to return a `ClientError`. Coupled with the 
+`consensus_state` method now returning a `HostError`, this call can now be made much more
+cleanly:
+
+```rust
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ClientError>
+    ...
+    let old_consensus_state = client_val_ctx
+        .consensus_state(&old_cons_state_path)?;
+```
+
+`HostError`s cleanly map to `ClientError`s (along with any other of the module errors in
+ibc-core). In the same vein, `ClientError`s map cleanly to `HandlerError`s: with these changes,
+the granularity of where and how errors are defined in ibc-rs makes a lot more sense. Plus,
+the error will now carry the relevant host context!
+
+### Defining a New `DecodingError` Type
+
+Another significant change that will be made as part of refactoring ibc-rs's error handling
+is the introduction of a new `DecodingError` type. The purpose of this type is to serve as
+the single error type returned by every raw `TryFrom` conversion in ibc-rs. A major chunk
+of ibc-rs's logic deals with these sorts of conversions. As it stands, depending on what
+type was being converted into, different module-level errors were used as the error type.
+
+For example, a `TryFrom<Any> for AnyClientState` impl would return a `ClientError`, while
+a `TryFrom<Vec<RawProofSpec>> for ProofSpecs ` impl would return a `CommitmentError`. As
+a result, there were many conversion-related error variants scattered across all the
+different error types, which led to a lot of duplication and redundancy. In essence, these
+methods are all dealing with decoding and/or deserialization in some form or another.
+
+The introduction of the `DecodingError` type seeks to consolidate these duplications and
+redundancies:
+
+```rust
+pub enum DecodingError {
+    /// identifier error: `{0}`
+    Identifier(IdentifierError),
+    /// base64 decoding error: `{0}`
+    Base64(Base64Error),
+    /// utf-8 String decoding error: `{0}`
+    StringUtf8(FromUtf8Error),
+    /// utf-8 str decoding error: `{0}`
+    StrUtf8(Utf8Error),
+    /// protobuf decoding error: `{0}`
+    Protobuf(ProtoError),
+    /// prost decoding error: `{0}`
+    Prost(ProstError),
+    /// invalid hash bytes: `{description}`
+    InvalidHash { description: String },
+    /// invalid JSON data: `{description}`
+    InvalidJson { description: String },
+    /// invalid raw data: `{description}`
+    InvalidRawData { description: String },
+    /// missing raw data: `{description}`
+    MissingRawData { description: String },
+    /// mismatched type URLs: expected `{expected}`, actual `{actual}`
+    MismatchedTypeUrls { expected: String, actual: String },
+    /// unknown type URL: `{0}`
+    UnknownTypeUrl(String),
+}
+```
+
+This type captures most of external decoding- and parsing-related errors that crop up
+in ibc-rs, as well as variants for encoding internal decoding issues.
+
+Deploying this error type across all of ibc-rs's conversions will have a marked effect
+on the number of outstanding variants held by the module-level errors, allowing us to
+reduce a significant number of variants and reduce these module error to something much
+more akin to its essence.
 
 ### Positives
 
+The changes introduced in this ADR represent a clear net positive effect on the usability
+and maintainability of ibc-rs as a whole. The overall hierarchy and semantics of the error
+system make a lot more sense than its prior incarnation. Module-level errors are much more
+simplified and streamlined. Additionally, host contexts can be attached to ibc-core errors,
+making it much clearer where an error originated from.
+
 ### Negatives
 
+With all that said, these changes of course come with some downsides. A major one would be
+the generality of the error types that were introduced: it's not clear whether we captured
+the right level of granularity with them. Especially with the `HostError` type, it's not
+clear whether the way this type is laid out is sufficient for hosts, or whether they would
+prefer something more bespoke and tailored to their particular needs.
+
+Most of the new error variants introduced also require String allocations, which is ideal;
+this is a tradeoff between generality of error variants and specificity. Introducing more
+specific error variants would help cut down on the number of String allocations, but would
+contribute to bloating and redundancy within ibc-rs's error types.
+
+Lastly, the new error types and variants do not come with guard rails to help steer
+ibc-rs's contributors towards following the conventions laid out in their usage. It is very
+easy to abuse String-allocating variants for errors that they may not actually be appropriate
+for. The main guard against this comes in the form of PR review, which is not ideal.
+
+## Notes on Error Handling Conventions
+
+[TODO]
 
 ## Future Work
 
-A natural follow-up of this work would be to generalize ibc-rs's error handling architecture
-to allow hosts to introduce their own bespoke error types. This would allow host developers
-to define more precise error types and variants that can better signal what the root cause
-of an error might be. This would improve upon the rather generic error variants that are
-exposed through ibc-rs's own `HostError` definition. 
+In light of the stated downsides, a natural follow-up of this work would be to generalize
+ibc-rs's error handling architecture to allow hosts to introduce their own bespoke error
+types. This would allow host developers to define more precise error types and variants
+that can better signal what the root cause of an error might be. This would improve upon
+the rather generic error variants that are exposed through ibc-rs's own `HostError` definition.
 
 The downside is that this would add additional work on top of the already considerable amount 
 of work that it takes to integrate ibc-rs into host chains.
+
+[dispatch]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L35
+[validate]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L54
+[execute]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L130
