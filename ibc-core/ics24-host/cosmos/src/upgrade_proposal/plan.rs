@@ -1,6 +1,5 @@
 //! Definition of domain `Plan` type.
 
-use ibc_core_client_types::error::UpgradeClientError;
 use ibc_core_host_types::error::{DecodingError, IdentifierError};
 use ibc_primitives::prelude::*;
 use ibc_proto::cosmos::upgrade::v1beta1::Plan as RawPlan;
@@ -78,13 +77,11 @@ impl From<Plan> for RawPlan {
 impl Protobuf<Any> for Plan {}
 
 impl TryFrom<Any> for Plan {
-    type Error = UpgradeClientError;
+    type Error = DecodingError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
         match any.type_url.as_str() {
-            TYPE_URL => {
-                Ok(Protobuf::<RawPlan>::decode_vec(&any.value).map_err(DecodingError::Protobuf)?)
-            }
+            TYPE_URL => Ok(Protobuf::<RawPlan>::decode_vec(&any.value)?),
             _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: TYPE_URL.to_string(),
                 actual: any.type_url,

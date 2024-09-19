@@ -80,7 +80,7 @@ impl FromStr for Status {
             "EXPIRED" => Ok(Status::Expired),
             "UNAUTHORIZED" => Ok(Status::Unauthorized),
             _ => Err(DecodingError::invalid_raw_data(format!(
-                "invalid status: {s}",
+                "invalid status {s}",
             ))),
         }
     }

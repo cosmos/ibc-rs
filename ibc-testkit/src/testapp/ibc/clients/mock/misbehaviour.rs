@@ -1,4 +1,3 @@
-use ibc::core::client::types::error::ClientError;
 use ibc::core::host::types::error::DecodingError;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
@@ -20,22 +19,18 @@ pub struct Misbehaviour {
 impl Protobuf<RawMisbehaviour> for Misbehaviour {}
 
 impl TryFrom<RawMisbehaviour> for Misbehaviour {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
         Ok(Self {
             client_id: ClientId::new("07-tendermint", 0).expect("no error"),
             header1: raw
                 .header1
-                .ok_or(DecodingError::MissingRawData {
-                    description: "missing header1 in raw misbehaviour".into(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("misbehaviour header1"))?
                 .try_into()?,
             header2: raw
                 .header2
-                .ok_or(DecodingError::MissingRawData {
-                    description: "missing header2 in raw misbehaviour".into(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("misbehaviour header2"))?
                 .try_into()?,
         })
     }
@@ -54,17 +49,15 @@ impl From<Misbehaviour> for RawMisbehaviour {
 impl Protobuf<Any> for Misbehaviour {}
 
 impl TryFrom<Any> for Misbehaviour {
-    type Error = ClientError;
+    type Error = DecodingError;
 
-    fn try_from(raw: Any) -> Result<Self, ClientError> {
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, DecodingError> {
             let raw_misbehaviour = Protobuf::<RawMisbehaviour>::decode(value)?;
             Ok(raw_misbehaviour)
         }
         match raw.type_url.as_str() {
-            MOCK_MISBEHAVIOUR_TYPE_URL => {
-                decode_misbehaviour(&raw.value).map_err(ClientError::Decoding)
-            }
+            MOCK_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
             _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: MOCK_MISBEHAVIOUR_TYPE_URL.to_string(),
                 actual: raw.type_url,

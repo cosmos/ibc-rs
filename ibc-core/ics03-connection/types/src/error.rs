@@ -9,11 +9,11 @@ use ibc_primitives::{Timestamp, TimestampError};
 
 #[derive(Debug, Display)]
 pub enum ConnectionError {
-    /// client error: `{0}`
+    /// client error: {0}
     Client(ClientError),
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
-    /// host error: `{0}`
+    /// host error: {0}
     Host(HostError),
     /// invalid counterparty
     InvalidCounterparty,
@@ -42,7 +42,7 @@ pub enum ConnectionError {
         current_host_time: Timestamp,
         earliest_valid_time: Timestamp,
     },
-    /// overflowed timestamp: `{0}`
+    /// overflowed timestamp: {0}
     OverflowedTimestamp(TimestampError),
 }
 

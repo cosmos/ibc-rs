@@ -417,7 +417,7 @@ impl Display for Counterparty {
 impl Protobuf<RawCounterparty> for Counterparty {}
 
 impl TryFrom<RawCounterparty> for Counterparty {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(raw_counterparty: RawCounterparty) -> Result<Self, Self::Error> {
         let channel_id: Option<ChannelId> = if raw_counterparty.channel_id.is_empty() {

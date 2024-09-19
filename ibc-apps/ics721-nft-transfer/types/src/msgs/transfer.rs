@@ -8,7 +8,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::applications::nft_transfer::v1::MsgTransfer as RawMsgTransfer;
 use ibc_proto::Protobuf;
 
-use crate::error::NftTransferError;
 use crate::packet::PacketData;
 
 pub(crate) const TYPE_URL: &str = "/ibc.applications.nft_transfer.v1.MsgTransfer";
@@ -115,11 +114,11 @@ impl From<MsgTransfer> for RawMsgTransfer {
 impl Protobuf<RawMsgTransfer> for MsgTransfer {}
 
 impl TryFrom<Any> for MsgTransfer {
-    type Error = NftTransferError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
-            TYPE_URL => Ok(MsgTransfer::decode_vec(&raw.value).map_err(DecodingError::Protobuf)?),
+            TYPE_URL => Ok(MsgTransfer::decode_vec(&raw.value)?),
             _ => Err(DecodingError::MismatchedTypeUrls {
                 expected: TYPE_URL.to_string(),
                 actual: raw.type_url,

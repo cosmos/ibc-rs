@@ -56,7 +56,7 @@ impl IdentifiedConnectionEnd {
 impl Protobuf<RawIdentifiedConnection> for IdentifiedConnectionEnd {}
 
 impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(value: RawIdentifiedConnection) -> Result<Self, Self::Error> {
         let raw_connection_end = RawConnectionEnd {
@@ -195,21 +195,17 @@ mod sealed {
 impl Protobuf<RawConnectionEnd> for ConnectionEnd {}
 
 impl TryFrom<RawConnectionEnd> for ConnectionEnd {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(value: RawConnectionEnd) -> Result<Self, Self::Error> {
         let state = value.state.try_into()?;
 
         if value.client_id.is_empty() {
-            return Err(DecodingError::MissingRawData {
-                description: "connection end is empty".to_string(),
-            })?;
+            return Err(DecodingError::missing_raw_data("connection end client ID"))?;
         }
 
         if value.versions.is_empty() {
-            return Err(DecodingError::MissingRawData {
-                description: "empty connection versions".to_string(),
-            })?;
+            return Err(DecodingError::missing_raw_data("connection end  versions"))?;
         }
 
         Self::new(
@@ -217,9 +213,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
             value.client_id.parse()?,
             value
                 .counterparty
-                .ok_or(DecodingError::MissingRawData {
-                    description: "missing counterparty".to_string(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("counterparty"))?
                 .try_into()?,
             value
                 .versions
@@ -228,6 +222,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
                 .collect::<Result<Vec<_>, _>>()?,
             Duration::from_nanos(value.delay_period),
         )
+        .map_err(|_| DecodingError::invalid_raw_data("connection end"))
     }
 }
 
@@ -370,7 +365,7 @@ impl Protobuf<RawCounterparty> for Counterparty {}
 // Converts from the wire format RawCounterparty. Typically used from the relayer side
 // during queries for response validation and to extract the Counterparty structure.
 impl TryFrom<RawCounterparty> for Counterparty {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(raw_counterparty: RawCounterparty) -> Result<Self, Self::Error> {
         let connection_id: Option<ConnectionId> = if raw_counterparty.connection_id.is_empty() {
@@ -383,9 +378,7 @@ impl TryFrom<RawCounterparty> for Counterparty {
             connection_id,
             raw_counterparty
                 .prefix
-                .ok_or(DecodingError::MissingRawData {
-                    description: "counterparty prefix not set".to_string(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("counterparty prefix"))?
                 .key_prefix
                 .into(),
         ))
@@ -517,17 +510,18 @@ impl Display for State {
 }
 
 impl TryFrom<i32> for State {
-    type Error = ConnectionError;
+    type Error = DecodingError;
+
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::Uninitialized),
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(ConnectionError::MismatchedConnectionStates {
-                expected: "0, 1, 2, or 3".to_string(),
-                actual: value.to_string(),
-            }),
+            _ => Err(DecodingError::invalid_raw_data(format!(
+                "connection state expected to be 0, 1, 2, or 3, actual {}",
+                value
+            ))),
         }
     }
 }

@@ -10,7 +10,6 @@ use ibc_proto::Protobuf;
 use subtle_encoding::{Encoding, Hex};
 
 use super::merkle::MerkleProof;
-use crate::error::CommitmentError;
 
 /// Encodes a commitment root; most often a Merkle tree root hash.
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
@@ -91,13 +90,11 @@ impl fmt::Debug for CommitmentProofBytes {
 }
 
 impl TryFrom<Vec<u8>> for CommitmentProofBytes {
-    type Error = CommitmentError;
+    type Error = DecodingError;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         if bytes.is_empty() {
-            Err(DecodingError::MissingRawData {
-                description: "empty commitment proof bytes".to_string(),
-            })?
+            Err(DecodingError::missing_raw_data("commitment proof bytes"))?
         } else {
             Ok(Self { bytes })
         }
@@ -105,7 +102,7 @@ impl TryFrom<Vec<u8>> for CommitmentProofBytes {
 }
 
 impl TryFrom<RawMerkleProof> for CommitmentProofBytes {
-    type Error = CommitmentError;
+    type Error = DecodingError;
 
     fn try_from(proof: RawMerkleProof) -> Result<Self, Self::Error> {
         proof.to_vec().try_into()
@@ -113,7 +110,7 @@ impl TryFrom<RawMerkleProof> for CommitmentProofBytes {
 }
 
 impl TryFrom<MerkleProof> for CommitmentProofBytes {
-    type Error = CommitmentError;
+    type Error = DecodingError;
 
     fn try_from(value: MerkleProof) -> Result<Self, Self::Error> {
         Self::try_from(RawMerkleProof::from(value))
@@ -121,10 +118,10 @@ impl TryFrom<MerkleProof> for CommitmentProofBytes {
 }
 
 impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
-    type Error = CommitmentError;
+    type Error = DecodingError;
 
     fn try_from(value: &'a CommitmentProofBytes) -> Result<Self, Self::Error> {
-        Ok(Protobuf::<RawMerkleProof>::decode(value.as_ref()).map_err(DecodingError::Protobuf)?)
+        Ok(Protobuf::<RawMerkleProof>::decode(value.as_ref())?)
     }
 }
 

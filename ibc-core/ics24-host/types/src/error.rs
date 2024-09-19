@@ -59,7 +59,7 @@ pub enum IdentifierError {
     InvalidLength { actual: String, min: u64, max: u64 },
     /// id `{0}` can only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
     InvalidCharacter(String),
-    /// invalid prefix: `{0}`
+    /// invalid prefix `{0}`
     InvalidPrefix(String),
     /// failed to parse: `{description}`
     FailedToParse { description: String },
@@ -73,19 +73,19 @@ pub enum IdentifierError {
 /// and/or converting raw types into domain types.
 #[derive(Debug, Display)]
 pub enum DecodingError {
-    /// identifier error: `{0}`
+    /// identifier error: {0}
     Identifier(IdentifierError),
-    /// base64 decoding error: `{0}`
+    /// base64 decoding error: {0}
     Base64(Base64Error),
-    /// utf-8 String decoding error: `{0}`
+    /// utf-8 String decoding error: {0}
     StringUtf8(FromUtf8Error),
-    /// utf-8 str decoding error: `{0}`
+    /// utf-8 str decoding error: {0}
     StrUtf8(Utf8Error),
-    /// integer parsing error: `{0}`
+    /// integer parsing error: {0}
     ParseInt(ParseIntError),
-    /// protobuf decoding error: `{0}`
+    /// protobuf decoding error: {0}
     Protobuf(ProtoError),
-    /// prost decoding error: `{0}`
+    /// prost decoding error: {0}
     Prost(ProstError),
     /// invalid hash bytes: `{description}`
     InvalidHash { description: String },
@@ -97,7 +97,7 @@ pub enum DecodingError {
     MissingRawData { description: String },
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
-    /// unknown type URL: `{0}`
+    /// unknown type URL `{0}`
     UnknownTypeUrl(String),
 }
 

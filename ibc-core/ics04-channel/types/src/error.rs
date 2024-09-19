@@ -18,13 +18,13 @@ use crate::Version;
 /// Errors that arise from the ICS04 Channel module
 #[derive(Debug, Display, derive_more::From)]
 pub enum ChannelError {
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
-    /// host error: `{0}`
+    /// host error: {0}
     Host(HostError),
-    /// client error: `{0}`
+    /// client error: {0}
     Client(ClientError),
-    /// connection error: `{0}`
+    /// connection error: {0}
     Connection(ConnectionError),
     /// packet acknowledgment for sequence `{0}` already exists
     DuplicateAcknowledgment(Sequence),
@@ -39,7 +39,7 @@ pub enum ChannelError {
     InvalidState { expected: String, actual: String },
     /// invalid connection hops length: expected `{expected}`, actual `{actual}`
     InvalidConnectionHopsLength { expected: u64, actual: u64 },
-    /// invalid timeout timestamp: `{0}`
+    /// invalid timeout timestamp: {0}
     InvalidTimeoutTimestamp(TimestampError),
     /// missing acknowledgment status
     MissingAcknowledgmentStatus,

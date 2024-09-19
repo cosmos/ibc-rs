@@ -8,7 +8,6 @@ use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnect
 use ibc_proto::Protobuf;
 
 use crate::connection::Counterparty;
-use crate::error::ConnectionError;
 use crate::version::Version;
 
 pub const CONN_OPEN_INIT_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit";
@@ -85,17 +84,20 @@ mod borsh_impls {
 impl Protobuf<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {}
 
 impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(msg: RawMsgConnectionOpenInit) -> Result<Self, Self::Error> {
         let counterparty: Counterparty = msg
             .counterparty
-            .ok_or(DecodingError::MissingRawData {
-                description: "counterparty not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data("counterparty"))?
             .try_into()?;
 
-        counterparty.verify_empty_connection_id()?;
+        counterparty.verify_empty_connection_id().map_err(|_| {
+            DecodingError::invalid_raw_data(format!(
+                "expected connection ID to be empty, actual `{:?}`",
+                counterparty.connection_id
+            ))
+        })?;
 
         Ok(Self {
             client_id_on_a: msg.client_id.parse()?,

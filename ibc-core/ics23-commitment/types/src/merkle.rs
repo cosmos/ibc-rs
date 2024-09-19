@@ -1,5 +1,6 @@
 //! Merkle proof utilities
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::path::PathBytes;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
@@ -70,7 +71,7 @@ pub struct MerkleProof {
 impl Protobuf<RawMerkleProof> for MerkleProof {}
 
 impl TryFrom<RawMerkleProof> for MerkleProof {
-    type Error = CommitmentError;
+    type Error = DecodingError;
 
     fn try_from(proof: RawMerkleProof) -> Result<Self, Self::Error> {
         Ok(Self {

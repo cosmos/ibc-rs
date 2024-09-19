@@ -13,15 +13,15 @@ use crate::Status;
 /// Encodes all the possible client errors
 #[derive(Debug, Display)]
 pub enum ClientError {
-    /// host error : `{0}`
+    /// host error : {0}
     Host(HostError),
-    /// upgrade client error: `{0}`
+    /// upgrade client error: {0}
     Upgrade(UpgradeClientError),
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
-    /// invalid trust threshold: `{numerator}`/`{denominator}`
+    /// invalid trust threshold `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
-    /// invalid client state type: `{0}`
+    /// invalid client state type `{0}`
     InvalidClientStateType(String),
     /// invalid update client message
     InvalidUpdateClientMessage,
@@ -29,15 +29,15 @@ pub enum ClientError {
     InvalidHeight,
     /// invalid proof height; expected `{actual}` >= `{expected}`
     InvalidProofHeight { actual: Height, expected: Height },
-    /// invalid consensus state timestamp: `{0}`
+    /// invalid consensus state timestamp `{0}`
     InvalidConsensusStateTimestamp(Timestamp),
-    /// invalid header type: `{0}`
+    /// invalid header type `{0}`
     InvalidHeaderType(String),
     /// missing local consensus state at `{0}`
     MissingLocalConsensusState(Height),
-    /// unexpected status found: `{0}`
+    /// unexpected status `{0}`
     UnexpectedStatus(Status),
-    /// client state already exists: `{0}`
+    /// client state `{0}` already exists
     DuplicateClientState(ClientId),
     /// mismatched client recovery states
     MismatchedClientRecoveryStates,
@@ -46,7 +46,7 @@ pub enum ClientError {
         subject_height: Height,
         substitute_height: Height,
     },
-    /// failed ICS23 verification: `{0}`
+    /// failed ICS23 verification: {0}
     FailedICS23Verification(CommitmentError),
     /// failed header verification: `{description}`
     FailedHeaderVerification { description: String },

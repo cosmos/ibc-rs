@@ -269,9 +269,9 @@ impl scale_info::TypeInfo for Timestamp {
 
 #[derive(Debug, Display, derive_more::From)]
 pub enum TimestampError {
-    /// parsing u64 integer from string error: `{0}`
+    /// parsing u64 integer from string error: {0}
     ParseInt(ParseIntError),
-    /// error converting integer to `Timestamp`: `{0}`
+    /// error converting integer to `Timestamp`: {0}
     TryFromInt(TryFromIntError),
     /// date out of range
     DateOutOfRange,

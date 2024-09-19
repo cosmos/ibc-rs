@@ -1,9 +1,9 @@
 //! Defines events emitted during handling of IBC messages
 
-use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events as ChannelEvents;
 use ibc_core_client_types::events::{self as ClientEvents};
 use ibc_core_connection_types::events as ConnectionEvents;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_router_types::event::ModuleEvent;
 use ibc_primitives::prelude::*;
 use tendermint::abci;
@@ -55,7 +55,7 @@ pub enum IbcEvent {
 }
 
 impl TryFrom<IbcEvent> for abci::Event {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(event: IbcEvent) -> Result<Self, Self::Error> {
         Ok(match event {

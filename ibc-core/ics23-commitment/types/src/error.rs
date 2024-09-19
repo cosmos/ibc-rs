@@ -6,7 +6,7 @@ use ibc_primitives::prelude::*;
 
 #[derive(Debug, Display)]
 pub enum CommitmentError {
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
     /// missing commitment root
     MissingCommitmentRoot,
@@ -22,15 +22,15 @@ pub enum CommitmentError {
     MissingProofSpecs,
     /// mismatched number of proofs: expected `{expected}`, actual `{actual}`
     MismatchedNumberOfProofs { expected: usize, actual: usize },
-    /// invalid range: [`{min}`, `{max}`]
+    /// invalid range [`{min}`, `{max}`]
     InvalidRange { min: i32, max: i32 },
     /// invalid merkle proof
     InvalidMerkleProof,
-    /// invalid child size: `{0}`
+    /// invalid child size `{0}`
     InvalidChildSize(i32),
-    /// invalid hash operation: `{0}`
+    /// invalid hash operation `{0}`
     InvalidHashOp(i32),
-    /// invalid length operation: `{0}`
+    /// invalid length operation `{0}`
     InvalidLengthOp(i32),
     /// failed to verify membership
     FailedToVerifyMembership,

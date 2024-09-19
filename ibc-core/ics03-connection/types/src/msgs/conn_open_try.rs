@@ -11,7 +11,6 @@ use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenTry as RawMsgConnecti
 use ibc_proto::Protobuf;
 
 use crate::connection::Counterparty;
-use crate::error::ConnectionError;
 use crate::version::Version;
 
 pub const CONN_OPEN_TRY_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenTry";
@@ -145,7 +144,7 @@ mod borsh_impls {
 impl Protobuf<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {}
 
 impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(msg: RawMsgConnectionOpenTry) -> Result<Self, Self::Error> {
         let counterparty_versions = msg
@@ -155,9 +154,7 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
             .collect::<Result<Vec<_>, _>>()?;
 
         if counterparty_versions.is_empty() {
-            return Err(DecodingError::MissingRawData {
-                description: "connection versions not set".to_string(),
-            })?;
+            return Err(DecodingError::missing_raw_data("connection versions"));
         }
 
         // We set the deprecated `previous_connection_id` field so that we can
@@ -166,53 +163,31 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
         Ok(Self {
             previous_connection_id: msg.previous_connection_id,
             client_id_on_b: msg.client_id.parse()?,
-            client_state_of_b_on_a: msg.client_state.ok_or(DecodingError::MissingRawData {
-                description: "client state not set".to_string(),
-            })?,
+            client_state_of_b_on_a: msg
+                .client_state
+                .ok_or(DecodingError::missing_raw_data("client state"))?,
             counterparty: msg
                 .counterparty
-                .ok_or(DecodingError::MissingRawData {
-                    description: "counterparty not set".to_string(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("counterparty"))?
                 .try_into()?,
             versions_on_a: counterparty_versions,
-            proof_conn_end_on_a: msg.proof_init.try_into().map_err(|e| {
-                DecodingError::InvalidRawData {
-                    description: format!("failed to decode connection end proof: {e}"),
-                }
-            })?,
-            proof_client_state_of_b_on_a: msg.proof_client.try_into().map_err(|e| {
-                DecodingError::InvalidRawData {
-                    description: format!("failed to decode client state proof: {e}"),
-                }
-            })?,
-            proof_consensus_state_of_b_on_a: msg.proof_consensus.try_into().map_err(|e| {
-                DecodingError::InvalidRawData {
-                    description: format!("failed to decode consensus state proof: {e}"),
-                }
-            })?,
+            proof_conn_end_on_a: msg.proof_init.try_into()?,
+            proof_client_state_of_b_on_a: msg.proof_client.try_into()?,
+            proof_consensus_state_of_b_on_a: msg.proof_consensus.try_into()?,
             proofs_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::InvalidRawData {
-                    description: "failed to decode proof height".to_string(),
-                })?,
+                .ok_or(DecodingError::invalid_raw_data("proof height"))?,
             consensus_height_of_b_on_a: msg
                 .consensus_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::InvalidRawData {
-                    description: "failed to decode consensus height".to_string(),
-                })?,
+                .ok_or(DecodingError::invalid_raw_data("consensus height"))?,
             delay_period: Duration::from_nanos(msg.delay_period),
             signer: msg.signer.into(),
             proof_consensus_state_of_b: if msg.host_consensus_state_proof.is_empty() {
                 None
             } else {
-                Some(msg.host_consensus_state_proof.try_into().map_err(|e| {
-                    DecodingError::InvalidRawData {
-                        description: format!("failed to decode consensus state proof: {e}"),
-                    }
-                })?)
+                Some(msg.host_consensus_state_proof.try_into()?)
             },
         })
     }

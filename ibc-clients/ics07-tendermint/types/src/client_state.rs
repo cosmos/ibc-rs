@@ -4,7 +4,6 @@ use core::cmp::max;
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::proto::v1::Height as RawHeight;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::specs::ProofSpecs;
@@ -203,11 +202,7 @@ impl ClientState {
     /// Tendermint-specific light client verification.
     pub fn as_light_client_options(&self) -> Result<Options, TendermintClientError> {
         Ok(Options {
-            trust_threshold: self.trust_level.try_into().map_err(|e: ClientError| {
-                TendermintClientError::InvalidTrustThreshold {
-                    description: e.to_string(),
-                }
-            })?,
+            trust_threshold: self.trust_level.try_into()?,
             trusting_period: self.trusting_period,
             clock_drift: self.max_clock_drift,
         })

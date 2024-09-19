@@ -72,17 +72,15 @@ impl Version {
 impl Protobuf<RawVersion> for Version {}
 
 impl TryFrom<RawVersion> for Version {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(value: RawVersion) -> Result<Self, Self::Error> {
         if value.identifier.trim().is_empty() {
-            return Err(DecodingError::MissingRawData {
-                description: "version is empty".to_string(),
-            })?;
+            return Err(DecodingError::missing_raw_data("version identifier"));
         }
         for feature in value.features.iter() {
             if feature.trim().is_empty() {
-                return Err(ConnectionError::MissingFeatures);
+                return Err(DecodingError::missing_raw_data("version features"));
             }
         }
         Ok(Version {
