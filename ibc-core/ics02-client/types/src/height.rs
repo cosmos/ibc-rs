@@ -1,10 +1,8 @@
 //! Defines the core `Height` type used throughout the library
 
 use core::cmp::Ordering;
-use core::num::ParseIntError;
 use core::str::FromStr;
 
-use displaydoc::Display;
 use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
@@ -147,30 +145,6 @@ impl core::fmt::Debug for Height {
 impl core::fmt::Display for Height {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         write!(f, "{}-{}", self.revision_number, self.revision_height)
-    }
-}
-
-/// Encodes all errors related to chain heights
-#[derive(Debug, Display, PartialEq, Eq)]
-pub enum HeightError {
-    /// cannot convert into a `Height` type from string `{height}`
-    HeightConversion {
-        height: String,
-        error: ParseIntError,
-    },
-    /// attempted to parse an invalid zero height
-    ZeroHeight,
-    /// the height(`{raw_height}`) is not a valid format, this format must be used: \[revision_number\]-\[revision_height\]
-    InvalidFormat { raw_height: String },
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for HeightError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self {
-            HeightError::HeightConversion { error: e, .. } => Some(e),
-            HeightError::ZeroHeight | HeightError::InvalidFormat { .. } => None,
-        }
     }
 }
 
