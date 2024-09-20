@@ -2,7 +2,7 @@
 
 ## Changelog
 
-- 2024-**-**: Draft Proposed
+- 2024-09-20: Draft Proposed
 
 ## Status
 
