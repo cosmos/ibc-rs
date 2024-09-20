@@ -235,10 +235,10 @@ fn test_tm_create_client_proof_verification_ok() {
 
     let ctx_tm: TendermintContext = dummy_store_generic_test_context()
         .latest_height(client_height)
-        .build();
+        .call();
 
     let ctx_mk =
-        MockContext::default().with_light_client(&client_id, dummy_light_client(&ctx_tm).build());
+        MockContext::default().with_light_client(&client_id, dummy_light_client(&ctx_tm).call());
 
     let client_validation_ctx_mk = ctx_mk.ibc_store().get_client_validation_context();
 

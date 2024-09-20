@@ -7,7 +7,7 @@ use ibc::core::host::types::identifiers::{ChannelId, PortId, Sequence};
 use ibc::core::primitives::prelude::*;
 
 /// Returns a dummy [`Packet`], for testing purposes only!
-#[builder(finish_fn = build)]
+#[builder]
 pub fn dummy_packet(
     #[builder(default = Sequence::from(0))] seq_on_a: Sequence,
     #[builder(default = PortId::transfer())] port_id_on_a: PortId,

@@ -98,7 +98,7 @@ fn routing_module_and_keepers() {
                 .add(core::time::Duration::from_secs(4))
                 .unwrap(),
         )
-        .build();
+        .call();
 
     let mut router = MockRouter::new_with_transfer();
 
@@ -150,17 +150,17 @@ fn routing_module_and_keepers() {
         }
         .into(),
     )
-    .build();
+    .call();
 
     let msg_transfer = dummy_msg_transfer(packet_data.clone())
         .timeout_height_on_b(TimeoutHeight::At(Height::new(0, 35).unwrap()))
-        .build();
+        .call();
 
     let msg_transfer_two = dummy_msg_transfer(packet_data.clone())
         .timeout_height_on_b(TimeoutHeight::At(Height::new(0, 36).unwrap()))
-        .build();
+        .call();
 
-    let msg_transfer_no_timeout = dummy_msg_transfer(packet_data.clone()).build();
+    let msg_transfer_no_timeout = dummy_msg_transfer(packet_data.clone()).call();
 
     let mut msg_to_on_close =
         MsgTimeoutOnClose::try_from(dummy_raw_msg_timeout_on_close(36, 5)).unwrap();

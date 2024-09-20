@@ -10,7 +10,7 @@ use ibc::core::primitives::Signer;
 use crate::fixtures::core::signer::dummy_account_id;
 
 /// Returns a dummy [`MsgTransfer`], for testing purposes only!
-#[builder(finish_fn = build)]
+#[builder]
 pub fn dummy_msg_transfer(
     #[builder(start_fn)] packet_data: PacketData,
     #[builder(default = PortId::transfer())] port_id_on_a: PortId,
@@ -44,7 +44,7 @@ pub fn extract_transfer_packet(msg: &MsgTransfer, sequence: Sequence) -> Packet 
 }
 
 /// Returns a dummy [`PacketData`], for testing purposes only!
-#[builder(finish_fn = build)]
+#[builder]
 pub fn dummy_packet_data(
     #[builder(start_fn)] token: PrefixedCoin,
     #[builder(default = dummy_account_id())] sender: Signer,

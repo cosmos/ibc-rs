@@ -64,7 +64,7 @@ where
         ctx_b: &TestContext<B>,
         signer: Signer,
     ) -> ClientId {
-        let light_client_of_b = dummy_light_client(ctx_b).build();
+        let light_client_of_b = dummy_light_client(ctx_b).call();
 
         let msg_for_a = MsgEnvelope::Client(ClientMsg::CreateClient(MsgCreateClient {
             client_state: light_client_of_b.client_state.into(),

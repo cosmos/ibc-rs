@@ -69,7 +69,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
                 .build(),
         )
         .latest_height(latest_height)
-        .build();
+        .call();
     let ctx = match ctx {
         Ctx::New => ctx_new.ibc_store,
         Ctx::NewWithConnection => {

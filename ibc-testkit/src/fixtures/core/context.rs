@@ -15,7 +15,7 @@ use crate::testapp::ibc::core::types::{MockIbcStore, DEFAULT_BLOCK_TIME_SECS};
 use crate::utils::year_2023;
 
 /// Returns a dummy [`StoreGenericTestContext`], for testing purposes only!
-#[builder(finish_fn = build)]
+#[builder]
 pub fn dummy_store_generic_test_context<S, H>(
     #[builder(default)] host: H,
     #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))] block_time: Duration,

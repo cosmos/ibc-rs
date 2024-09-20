@@ -433,7 +433,7 @@ mod tests {
             let module_id = ModuleId::new(module_id.to_string());
             let m = router.get_route_mut(&module_id).expect("Never fails");
 
-            let packet = dummy_packet().build();
+            let packet = dummy_packet().call();
 
             let result = m.on_recv_packet_execute(&packet, &dummy_bech32_account().into());
             (module_id, result)
@@ -459,7 +459,7 @@ where
 {
     fn default() -> Self {
         let context = TestContext::<H>::default();
-        dummy_light_client(&context).build()
+        dummy_light_client(&context).call()
     }
 }
 
@@ -471,12 +471,12 @@ where
     pub fn with_latest_height(height: Height) -> Self {
         let context: TestContext<_> = dummy_store_generic_test_context()
             .latest_height(height)
-            .build();
-        dummy_light_client(&context).build()
+            .call();
+        dummy_light_client(&context).call()
     }
 }
 
-#[builder(finish_fn = build)]
+#[builder]
 pub fn dummy_light_client<H>(
     #[builder(start_fn)] context: &TestContext<H>,
     #[builder(default, into)] consensus_heights: Vec<Height>,

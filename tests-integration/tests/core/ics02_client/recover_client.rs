@@ -47,13 +47,13 @@ fn setup_client_recovery_fixture(
 
     let mut ctx_a: TendermintContext = dummy_store_generic_test_context()
         .latest_timestamp(latest_timestamp)
-        .build();
+        .call();
 
     // create a ctx_b
     let ctx_b: MockContext = dummy_store_generic_test_context()
         .latest_height(substitute_height)
         .latest_timestamp(latest_timestamp)
-        .build();
+        .call();
 
     let signer = dummy_account_id();
 

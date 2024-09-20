@@ -53,7 +53,7 @@ fn conn_open_try_fixture(ctx_variant: Ctx, msg_variant: Msg) -> Fixture<MsgConne
 
     let ctx_new: MockContext = dummy_store_generic_test_context()
         .latest_height(host_chain_height)
-        .build();
+        .call();
     let ctx = match ctx_variant {
         Ctx::Default => DefaultIbcStore::default(),
         Ctx::WithClient => {

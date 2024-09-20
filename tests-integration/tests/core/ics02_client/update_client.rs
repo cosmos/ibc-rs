@@ -136,10 +136,10 @@ fn test_update_client_with_prev_header() {
                 .build(),
         )
         .latest_height(latest_height)
-        .build();
+        .call();
 
     let mut ctx = MockContext::default()
-        .with_light_client(&client_id, dummy_light_client(&ctx_b).build())
+        .with_light_client(&client_id, dummy_light_client(&ctx_b).call())
         .ibc_store;
 
     let mut router = MockRouter::new_with_transfer();
@@ -226,13 +226,13 @@ fn test_consensus_state_pruning() {
     let ctx_b: TendermintContext = dummy_store_generic_test_context()
         .host(TendermintHost::builder().chain_id(chain_id.clone()).build())
         .latest_height(client_height)
-        .build();
+        .call();
 
     let mut ctx: TendermintContext = dummy_store_generic_test_context()
         .host(TendermintHost::builder().chain_id(chain_id).build())
         .latest_height(client_height)
         .latest_timestamp(Timestamp::now())
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             dummy_light_client(&ctx_b)
@@ -241,7 +241,7 @@ fn test_consensus_state_pruning() {
                         .trusting_period(Duration::from_secs(3))
                         .build(),
                 )
-                .build(),
+                .call(),
         );
 
     let mut router = MockRouter::new_with_transfer();
@@ -343,7 +343,7 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
     let ctx_b: TendermintContext = dummy_store_generic_test_context()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
-        .build();
+        .call();
 
     let mut ctx: MockContext = dummy_store_generic_test_context()
         .host(
@@ -352,12 +352,12 @@ fn test_update_synthetic_tendermint_client_adjacent_ok() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
-                .build(),
+                .call(),
         );
 
     let mut router = MockRouter::new_with_transfer();
@@ -434,7 +434,7 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build();
+        .call();
 
     let mut ctx_a: MockContext = dummy_store_generic_test_context()
         .host(
@@ -443,13 +443,13 @@ fn test_update_synthetic_tendermint_client_validator_change_ok() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
             dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
-                .build(),
+                .call(),
         );
 
     let mut router_a = MockRouter::new_with_transfer();
@@ -532,7 +532,7 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build();
+        .call();
 
     let ctx_a: MockContext = dummy_store_generic_test_context()
         .host(
@@ -541,13 +541,13 @@ fn test_update_synthetic_tendermint_client_wrong_trusted_validator_change_fail()
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
             dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
-                .build(),
+                .call(),
         );
 
     let router = MockRouter::new_with_transfer();
@@ -637,7 +637,7 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build();
+        .call();
 
     let ctx_a: MockContext = dummy_store_generic_test_context()
         .host(
@@ -646,13 +646,13 @@ fn test_update_synthetic_tendermint_client_validator_change_fail() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
             dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
-                .build(),
+                .call(),
         );
 
     let router_a = MockRouter::new_with_transfer();
@@ -730,7 +730,7 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build();
+        .call();
 
     let mut ctx_a: MockContext = dummy_store_generic_test_context()
         .host(
@@ -739,13 +739,13 @@ fn test_update_synthetic_tendermint_client_malicious_validator_change_pass() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
             dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
-                .build(),
+                .call(),
         );
 
     let mut router_a = MockRouter::new_with_transfer();
@@ -825,7 +825,7 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
         .block_params_history(block_params)
-        .build();
+        .call();
 
     let ctx_a: MockContext = dummy_store_generic_test_context()
         .host(
@@ -834,13 +834,13 @@ fn test_update_synthetic_tendermint_client_adjacent_malicious_validator_change_f
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             // remote light client initialized with client_height
             dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
-                .build(),
+                .call(),
         );
 
     let router_a = MockRouter::new_with_transfer();
@@ -880,7 +880,7 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
     let ctx_b: TendermintContext = dummy_store_generic_test_context()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(update_height)
-        .build();
+        .call();
 
     let mut ctx: MockContext = dummy_store_generic_test_context()
         .host(
@@ -889,12 +889,12 @@ fn test_update_synthetic_tendermint_client_non_adjacent_ok() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             dummy_light_client(&ctx_b)
                 .consensus_heights([client_height.sub(1).expect("no error"), client_height])
-                .build(),
+                .call(),
         );
 
     let mut router = MockRouter::new_with_transfer();
@@ -943,17 +943,17 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
     let ctx_b: TendermintContext = dummy_store_generic_test_context()
         .host(TendermintHost::builder().chain_id(ctx_b_chain_id).build())
         .latest_height(client_height)
-        .build();
+        .call();
 
     let mut ctx_a: MockContext = dummy_store_generic_test_context()
         .host(MockHost::builder().chain_id(ctx_a_chain_id).build())
         .latest_height(start_height)
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             dummy_light_client(&ctx_b)
                 .consensus_heights([start_height])
-                .build(),
+                .call(),
         );
 
     let mut router_a = MockRouter::new_with_transfer();
@@ -1066,7 +1066,7 @@ fn test_update_synthetic_tendermint_client_lower_height() {
                 .build(),
         )
         .latest_height(client_height)
-        .build();
+        .call();
 
     let ctx: MockContext = dummy_store_generic_test_context()
         .host(
@@ -1075,8 +1075,8 @@ fn test_update_synthetic_tendermint_client_lower_height() {
                 .build(),
         )
         .latest_height(chain_start_height)
-        .build()
-        .with_light_client(&client_id, dummy_light_client(&ctx_b).build());
+        .call()
+        .with_light_client(&client_id, dummy_light_client(&ctx_b).call());
 
     let router = MockRouter::new_with_transfer();
 
@@ -1233,7 +1233,7 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
                 .build(),
         )
         .latest_height(misbehaviour_height)
-        .build();
+        .call();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
     let mut ctx_a: MockContext = dummy_store_generic_test_context()
@@ -1243,12 +1243,12 @@ fn test_misbehaviour_synthetic_tendermint_equivocation() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             dummy_light_client(&ctx_b)
                 .consensus_heights([client_height])
-                .build(),
+                .call(),
         );
 
     let mut router_a = MockRouter::new_with_transfer();
@@ -1305,7 +1305,7 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
                 .build(),
         )
         .latest_height(client_height)
-        .build();
+        .call();
 
     // Create a mock context for chain-A with a synthetic tendermint light client for chain-B
     let mut ctx_a: MockContext = dummy_store_generic_test_context()
@@ -1315,8 +1315,8 @@ fn test_misbehaviour_synthetic_tendermint_bft_time() {
                 .build(),
         )
         .latest_height(Height::new(1, 1).unwrap())
-        .build()
-        .with_light_client(&client_id, dummy_light_client(&ctx_b).build());
+        .call()
+        .with_light_client(&client_id, dummy_light_client(&ctx_b).call());
 
     let mut router_a = MockRouter::new_with_transfer();
 
@@ -1387,7 +1387,7 @@ fn test_expired_client() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(client_height)
         .latest_timestamp(timestamp)
-        .build();
+        .call();
 
     let mut ctx: MockContext = dummy_store_generic_test_context()
         .host(
@@ -1397,7 +1397,7 @@ fn test_expired_client() {
         )
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             dummy_light_client(&ctx_b)
@@ -1406,7 +1406,7 @@ fn test_expired_client() {
                         .trusting_period(trusting_period)
                         .build(),
                 )
-                .build(),
+                .call(),
         );
 
     while ctx.ibc_store.host_timestamp().expect("no error")
@@ -1439,7 +1439,7 @@ fn test_client_update_max_clock_drift() {
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(client_height)
         .latest_timestamp(timestamp)
-        .build();
+        .call();
 
     let ctx_a: MockContext = dummy_store_generic_test_context()
         .host(
@@ -1449,7 +1449,7 @@ fn test_client_update_max_clock_drift() {
         )
         .latest_height(Height::new(1, 1).unwrap())
         .latest_timestamp(timestamp)
-        .build()
+        .call()
         .with_light_client(
             &client_id,
             dummy_light_client(&ctx_b)
@@ -1458,7 +1458,7 @@ fn test_client_update_max_clock_drift() {
                         .max_clock_drift(max_clock_drift)
                         .build(),
                 )
-                .build(),
+                .call(),
         );
 
     let router_a = MockRouter::new_with_transfer();
@@ -1559,26 +1559,26 @@ fn client_update_ping_pong() {
     let mut ctx_a: MockContext = dummy_store_generic_test_context()
         .host(MockHost::builder().chain_id(chain_id_a).build())
         .latest_height(chain_a_start_height)
-        .build();
+        .call();
 
     let mut ctx_b: TendermintContext = dummy_store_generic_test_context()
         .host(TendermintHost::builder().chain_id(chain_id_b).build())
         .latest_height(chain_b_start_height)
         .latest_timestamp(ctx_a.timestamp_at(chain_a_start_height.decrement().unwrap())) // chain B is running slower than chain A
-        .build();
+        .call();
 
     ctx_a = ctx_a.with_light_client(
         &client_on_a_for_b,
         dummy_light_client(&ctx_b)
             .consensus_heights([client_on_a_for_b_height])
-            .build(),
+            .call(),
     );
 
     ctx_b = ctx_b.with_light_client(
         &client_on_b_for_a,
         dummy_light_client(&ctx_a)
             .consensus_heights([client_on_b_for_a_height])
-            .build(),
+            .call(),
     );
 
     for _i in 0..num_iterations {

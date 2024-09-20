@@ -71,7 +71,7 @@ where
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     fn default() -> Self {
-        dummy_store_generic_test_context().build()
+        dummy_store_generic_test_context().call()
     }
 }
 
@@ -532,25 +532,25 @@ mod tests {
                     name: "Empty history, small pruning window".to_string(),
                     ctx: dummy_store_generic_test_context()
                         .latest_height(Height::new(cv, 1).expect("Never fails"))
-                        .build(),
+                        .call(),
                 },
                 Test {
                     name: "Large pruning window".to_string(),
                     ctx: dummy_store_generic_test_context()
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
-                        .build(),
+                        .call(),
                 },
                 Test {
                     name: "Small pruning window".to_string(),
                     ctx: dummy_store_generic_test_context()
                         .latest_height(Height::new(cv, 30).expect("Never fails"))
-                        .build(),
+                        .call(),
                 },
                 Test {
                     name: "Small pruning window, small starting height".to_string(),
                     ctx: dummy_store_generic_test_context()
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
-                        .build(),
+                        .call(),
                 },
                 // This is disabled, as now we generate all the blocks till latest_height
                 // Generating 2000 Tendermint blocks is slow.
@@ -558,7 +558,7 @@ mod tests {
                 //     name: "Large pruning window, large starting height".to_string(),
                 //     ctx: dummy_store_generic_test_context()
                 //         .latest_height(Height::new(cv, 2000).expect("Never fails"))
-                //         .build(),
+                //         .call(),
                 // },
             ];
 
