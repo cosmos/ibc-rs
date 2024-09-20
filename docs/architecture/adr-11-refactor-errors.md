@@ -42,15 +42,15 @@ level handler entrypoints of ibc-rs, namely the [dispatch], [validate], and [exe
 ```diff
 - pub enum ContextError {
 + pub enum HandlerError {
-    /// ICS02 Client error: `{0}`
+    /// ICS02 Client error: {0}
     Client(ClientError),
-    /// ICS03 Connection error: `{0}`
+    /// ICS03 Connection error: {0}
     Connection(ConnectionError),
-    /// ICS04 Channel error: `{0}`
+    /// ICS04 Channel error: {0}
     Channel(ChannelError),
--   /// ICS04 Packet error: `{0}`
+-   /// ICS04 Packet error: {0}
 -   Packet(PacketError),
-    /// ICS26 Router error: `{0}`
+    /// ICS26 Router error: {0}
     Router(RouterError),
 }
 ```
@@ -70,19 +70,19 @@ types, `TokenTransferError` and `NftTransferError`. Initially, we had only a sin
 that this wasn't the correct place in which to expose host-level errors. This is because 
 host errors can crop up within any of the core ibc-rs modules.
 
-We introduce the following concrete `HostError` type in the ics24-host crate:
+We introduce the following concrete `HostError` type in the `ics24-host` crate:
 
 ```rust
 pub enum HostError {
-    /// invalid state: `{description}`
+    /// invalid state: {description}
     InvalidState { description: String },
-    /// missing state: `{description}`
+    /// missing state: {description}
     MissingState { description: String },
-    /// failed to update store: `{description}`
+    /// failed to update store: {description}
     FailedToStore { description: String },
-    /// failed to retrieve from store: `{description}`
+    /// failed to retrieve from store: {description}
     FailedToRetrieve { description: String },
-    /// other error: `{description}`
+    /// other error: {description}
     Other { description: String },
 }
 ```
@@ -146,7 +146,7 @@ of ibc-rs's logic deals with these sorts of conversions. As it stands, depending
 type was being converted into, different module-level errors were used as the error type.
 
 For example, a `TryFrom<Any> for AnyClientState` impl would return a `ClientError`, while
-a `TryFrom<Vec<RawProofSpec>> for ProofSpecs ` impl would return a `CommitmentError`. As
+a `TryFrom<Vec<RawProofSpec>> for ProofSpecs` impl would return a `CommitmentError`. As
 a result, there were many conversion-related error variants scattered across all the
 different error types, which led to a lot of duplication and redundancy. In essence, these
 methods are all dealing with decoding and/or deserialization in some form or another.
@@ -156,29 +156,29 @@ redundancies:
 
 ```rust
 pub enum DecodingError {
-    /// identifier error: `{0}`
+    /// identifier error: {0}
     Identifier(IdentifierError),
-    /// base64 decoding error: `{0}`
+    /// base64 decoding error: {0}
     Base64(Base64Error),
-    /// utf-8 String decoding error: `{0}`
+    /// utf-8 String decoding error: {0}
     StringUtf8(FromUtf8Error),
-    /// utf-8 str decoding error: `{0}`
+    /// utf-8 str decoding error: {0}
     StrUtf8(Utf8Error),
-    /// protobuf decoding error: `{0}`
+    /// protobuf decoding error: {0}
     Protobuf(ProtoError),
-    /// prost decoding error: `{0}`
+    /// prost decoding error: {0}
     Prost(ProstError),
-    /// invalid hash bytes: `{description}`
+    /// invalid hash bytes: {description}
     InvalidHash { description: String },
-    /// invalid JSON data: `{description}`
+    /// invalid JSON data: {description}
     InvalidJson { description: String },
-    /// invalid raw data: `{description}`
+    /// invalid raw data: {description}
     InvalidRawData { description: String },
-    /// missing raw data: `{description}`
+    /// missing raw data: {description}
     MissingRawData { description: String },
     /// mismatched type URLs: expected `{expected}`, actual `{actual}`
     MismatchedTypeUrls { expected: String, actual: String },
-    /// unknown type URL: `{0}`
+    /// unknown type URL `{0}`
     UnknownTypeUrl(String),
 }
 ```
@@ -287,10 +287,10 @@ surrounded by backticks.
 The `Mismatched` classification is used for situations where an expected instance of a type
 is known, along with the instance that was actually found. These are both included in the
 error under the `expected` and `actual` fields. The error message for this class should
-always include "expected `{expected}`, actual `{actual}`"; this statement should be precluded
+always include "expected \`{expected}\`, actual \`{actual}\`"; this statement should be precluded
 by "mismatched [TYPE]:". The type should be spelled in the singular and followed by a colon.
 The `expected` and `actual` interpolated values in the error message should be surrounded by
-"`{}`", backticks and then braces.
+"\`{}\`", backticks and then braces.
 
 The rest of the error classes are a bit more freeform in how they are structured. They could
 take the form of unit structs that do not contain any values, serving mainly to surface a
