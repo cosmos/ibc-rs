@@ -340,7 +340,7 @@ types. This would allow host developers to define more precise error types and v
 that can better signal what the root cause of an error might be. This would improve upon
 the rather generic error variants that are exposed through ibc-rs's own `HostError` definition.
 
-The downside is that this would add additional work on top of the already considerable amount 
+The downside is that this would add additional work on top of the already considerable amount
 of work that it takes to integrate ibc-rs into host chains.
 
 [dispatch]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L35
