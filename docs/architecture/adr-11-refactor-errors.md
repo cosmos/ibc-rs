@@ -209,7 +209,7 @@ prefer something more bespoke and tailored to their particular needs.
 
 Most of the new error variants introduced also require `String` allocations, which is ideal;
 this is a tradeoff between generality of error variants and specificity. Introducing more
-specific error variants would help cut down on the number of String allocations, but would
+specific error variants would help cut down on the number of `String` allocations, but would
 contribute to bloating and redundancy within ibc-rs's error types.
 
 Lastly, the new error types and variants do not come with guard rails to help steer
