@@ -26,12 +26,6 @@ pub enum CommitmentError {
     InvalidRange { min: i32, max: i32 },
     /// invalid merkle proof
     InvalidMerkleProof,
-    /// invalid child size `{0}`
-    InvalidChildSize(i32),
-    /// invalid hash operation `{0}`
-    InvalidHashOp(i32),
-    /// invalid length operation `{0}`
-    InvalidLengthOp(i32),
     /// failed to verify membership
     FailedToVerifyMembership,
 }
