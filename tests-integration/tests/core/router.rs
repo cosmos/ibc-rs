@@ -143,29 +143,24 @@ fn routing_module_and_keepers() {
     let msg_chan_close_confirm =
         MsgChannelCloseConfirm::try_from(dummy_raw_msg_chan_close_confirm(client_height)).unwrap();
 
-    let packet_data = dummy_packet_data()
-        .token(
-            BaseCoin {
-                denom: "uatom".parse().expect("parse denom"),
-                amount: U256::from(10).into(),
-            }
-            .into(),
-        )
-        .build();
+    let packet_data = dummy_packet_data(
+        BaseCoin {
+            denom: "uatom".parse().expect("parse denom"),
+            amount: U256::from(10).into(),
+        }
+        .into(),
+    )
+    .build();
 
-    let msg_transfer = dummy_msg_transfer()
-        .packet_data(packet_data.clone())
+    let msg_transfer = dummy_msg_transfer(packet_data.clone())
         .timeout_height_on_b(TimeoutHeight::At(Height::new(0, 35).unwrap()))
         .build();
 
-    let msg_transfer_two = dummy_msg_transfer()
-        .packet_data(packet_data.clone())
+    let msg_transfer_two = dummy_msg_transfer(packet_data.clone())
         .timeout_height_on_b(TimeoutHeight::At(Height::new(0, 36).unwrap()))
         .build();
 
-    let msg_transfer_no_timeout = dummy_msg_transfer()
-        .packet_data(packet_data.clone())
-        .build();
+    let msg_transfer_no_timeout = dummy_msg_transfer(packet_data.clone()).build();
 
     let mut msg_to_on_close =
         MsgTimeoutOnClose::try_from(dummy_raw_msg_timeout_on_close(36, 5)).unwrap();

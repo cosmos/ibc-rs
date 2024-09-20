@@ -12,9 +12,9 @@ use crate::fixtures::core::signer::dummy_account_id;
 /// Returns a dummy [`MsgTransfer`], for testing purposes only!
 #[builder(finish_fn = build)]
 pub fn dummy_msg_transfer(
+    #[builder(start_fn)] packet_data: PacketData,
     #[builder(default = PortId::transfer())] port_id_on_a: PortId,
     #[builder(default = ChannelId::zero())] chan_id_on_a: ChannelId,
-    packet_data: PacketData,
     #[builder(default = TimeoutHeight::Never)] timeout_height_on_b: TimeoutHeight,
     #[builder(default = TimeoutTimestamp::Never)] timeout_timestamp_on_b: TimeoutTimestamp,
 ) -> MsgTransfer {
@@ -46,7 +46,7 @@ pub fn extract_transfer_packet(msg: &MsgTransfer, sequence: Sequence) -> Packet 
 /// Returns a dummy [`PacketData`], for testing purposes only!
 #[builder(finish_fn = build)]
 pub fn dummy_packet_data(
-    token: PrefixedCoin,
+    #[builder(start_fn)] token: PrefixedCoin,
     #[builder(default = dummy_account_id())] sender: Signer,
     #[builder(default = dummy_account_id())] receiver: Signer,
     #[builder(default = "".into())] memo: Memo,
