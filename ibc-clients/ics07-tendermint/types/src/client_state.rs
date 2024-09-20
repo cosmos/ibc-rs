@@ -354,7 +354,7 @@ impl TryFrom<Any> for ClientState {
 
         match raw.type_url.as_str() {
             TENDERMINT_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
             })?,

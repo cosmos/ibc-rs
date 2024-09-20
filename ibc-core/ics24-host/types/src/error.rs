@@ -63,8 +63,6 @@ pub enum IdentifierError {
     InvalidPrefix(String),
     /// failed to parse: `{description}`
     FailedToParse { description: String },
-    /// mismatched event kind: expected {expected}, actual {actual}
-    MismatchedEventKind { expected: String, actual: String },
     /// overflowed revision number
     OverflowedRevisionNumber,
 }
@@ -95,8 +93,8 @@ pub enum DecodingError {
     InvalidRawData { description: String },
     /// missing raw data: `{description}`
     MissingRawData { description: String },
-    /// mismatched type URLs: expected `{expected}`, actual `{actual}`
-    MismatchedTypeUrls { expected: String, actual: String },
+    /// mismatched resource name: expected `{expected}`, actual `{actual}`
+    MismatchedResourceName { expected: String, actual: String },
     /// unknown type URL `{0}`
     UnknownTypeUrl(String),
 }

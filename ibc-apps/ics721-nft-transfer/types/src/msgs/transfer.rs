@@ -119,7 +119,7 @@ impl TryFrom<Any> for MsgTransfer {
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         match raw.type_url.as_str() {
             TYPE_URL => Ok(MsgTransfer::decode_vec(&raw.value)?),
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: TYPE_URL.to_string(),
                 actual: raw.type_url,
             })?,

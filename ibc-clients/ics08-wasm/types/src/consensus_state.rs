@@ -63,7 +63,7 @@ impl TryFrom<Any> for ConsensusState {
         }
         match any.type_url.as_str() {
             WASM_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&any.value),
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: WASM_CONSENSUS_STATE_TYPE_URL.to_string(),
                 actual: any.type_url.to_string(),
             })?,

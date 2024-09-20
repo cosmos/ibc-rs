@@ -117,7 +117,7 @@ impl TryFrom<Any> for Misbehaviour {
         }
         match raw.type_url.as_str() {
             TENDERMINT_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: TENDERMINT_MISBEHAVIOUR_TYPE_URL.to_string(),
                 actual: raw.type_url,
             })?,

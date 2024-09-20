@@ -109,7 +109,7 @@ impl TryFrom<Any> for ConsensusState {
 
         match raw.type_url.as_str() {
             TENDERMINT_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
             })?,

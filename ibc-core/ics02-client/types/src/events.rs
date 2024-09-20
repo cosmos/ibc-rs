@@ -1,7 +1,7 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the client module.
 
 use derive_more::From;
-use ibc_core_host_types::error::{DecodingError, IdentifierError};
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ClientId, ClientType};
 use ibc_primitives::prelude::*;
 use subtle_encoding::hex;
@@ -60,10 +60,10 @@ impl TryFrom<abci::EventAttribute> for ClientIdAttribute {
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != CLIENT_ID_ATTRIBUTE_KEY {
-                return Err(IdentifierError::MismatchedEventKind {
+                return Err(DecodingError::MismatchedResourceName {
                     expected: CLIENT_ID_ATTRIBUTE_KEY.to_string(),
                     actual: key_str.to_string(),
-                })?;
+                });
             }
         } else {
             return Err(DecodingError::missing_raw_data("attribute key"));
@@ -109,7 +109,7 @@ impl TryFrom<abci::EventAttribute> for ClientTypeAttribute {
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != CLIENT_TYPE_ATTRIBUTE_KEY {
-                return Err(IdentifierError::MismatchedEventKind {
+                return Err(DecodingError::MismatchedResourceName {
                     expected: CLIENT_TYPE_ATTRIBUTE_KEY.to_string(),
                     actual: key_str.to_string(),
                 })?;
@@ -160,7 +160,7 @@ impl TryFrom<abci::EventAttribute> for ConsensusHeightAttribute {
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != CONSENSUS_HEIGHT_ATTRIBUTE_KEY {
-                return Err(IdentifierError::MismatchedEventKind {
+                return Err(DecodingError::MismatchedResourceName {
                     expected: CONSENSUS_HEIGHT_ATTRIBUTE_KEY.to_string(),
                     actual: key_str.to_string(),
                 })?;
@@ -218,7 +218,7 @@ impl TryFrom<abci::EventAttribute> for ConsensusHeightsAttribute {
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != CONSENSUS_HEIGHTS_ATTRIBUTE_KEY {
-                return Err(IdentifierError::MismatchedEventKind {
+                return Err(DecodingError::MismatchedResourceName {
                     expected: CONSENSUS_HEIGHTS_ATTRIBUTE_KEY.to_string(),
                     actual: key_str.to_string(),
                 })?;
@@ -282,7 +282,7 @@ impl TryFrom<abci::EventAttribute> for HeaderAttribute {
     fn try_from(value: abci::EventAttribute) -> Result<Self, Self::Error> {
         if let Ok(key_str) = value.key_str() {
             if key_str != HEADER_ATTRIBUTE_KEY {
-                return Err(IdentifierError::MismatchedEventKind {
+                return Err(DecodingError::MismatchedResourceName {
                     expected: HEADER_ATTRIBUTE_KEY.to_string(),
                     actual: key_str.to_string(),
                 })?;
@@ -369,7 +369,7 @@ impl TryFrom<abci::Event> for CreateClient {
 
     fn try_from(value: abci::Event) -> Result<Self, Self::Error> {
         if value.kind != CREATE_CLIENT_EVENT {
-            return Err(IdentifierError::MismatchedEventKind {
+            return Err(DecodingError::MismatchedResourceName {
                 expected: CREATE_CLIENT_EVENT.to_string(),
                 actual: value.kind,
             })?;
@@ -521,7 +521,7 @@ impl TryFrom<abci::Event> for UpdateClient {
 
     fn try_from(value: abci::Event) -> Result<Self, Self::Error> {
         if value.kind != UPDATE_CLIENT_EVENT {
-            return Err(IdentifierError::MismatchedEventKind {
+            return Err(DecodingError::MismatchedResourceName {
                 expected: UPDATE_CLIENT_EVENT.to_string(),
                 actual: value.kind.to_string(),
             })?;
@@ -731,12 +731,9 @@ impl From<UpgradeClient> for abci::Event {
 
 #[cfg(test)]
 mod tests {
-    use core::any::Any;
-
-    use ibc_core_host_types::error::IdentifierError;
-    use rstest::*;
-
     use super::*;
+    use core::any::Any;
+    use rstest::*;
 
     #[rstest]
     #[case(
@@ -763,10 +760,10 @@ mod tests {
                 abci::EventAttribute::from(("consensus_height", "1-10")),
             ],
         },
-        Err(IdentifierError::MismatchedEventKind {
+        Err(DecodingError::MismatchedResourceName {
             expected: "CreateClient".to_string(),
             actual: "some_other_event".to_string(),
-        }.into())
+        })
     )]
     #[case(
         abci::Event {
@@ -824,10 +821,10 @@ mod tests {
                 abci::EventAttribute::from(("header", "1234")),
             ],
         },
-        Err(IdentifierError::MismatchedEventKind {
+        Err(DecodingError::MismatchedResourceName {
             expected: UPDATE_CLIENT_EVENT.to_string(),
             actual: "some_other_event".to_owned(),
-        }.into()),
+        }),
     )]
     #[case(
         abci::Event {
