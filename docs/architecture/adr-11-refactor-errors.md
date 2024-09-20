@@ -89,7 +89,7 @@ pub enum HostError {
 
 This initial definition offers fairly generic error variants that nonetheless aim to capture
 most of the error use-cases faced by hosts. One such notable use-case is fetching/retrieving
-data from the host's storage. 
+data from the host's storage.
 
 Host errors can occur within any of the core ibc-rs modules. Thus, we'll be adding `HostError`
 variants to each of the module-level error types where appropriate: `ClientError` in ICS02, 
