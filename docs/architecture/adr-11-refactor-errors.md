@@ -1,4 +1,4 @@
-# ADR 11: Refactor `ibc-rs`'s Error Handling Architecture
+# ADR 11: Refactoring `ibc-rs`'s Error Handling Architecture
 
 ## Changelog
 
