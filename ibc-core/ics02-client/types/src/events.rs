@@ -731,9 +731,11 @@ impl From<UpgradeClient> for abci::Event {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use core::any::Any;
+
     use rstest::*;
+
+    use super::*;
 
     #[rstest]
     #[case(
