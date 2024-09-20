@@ -343,6 +343,11 @@ the rather generic error variants that are exposed through ibc-rs's own `HostErr
 The downside is that this would add additional work on top of the already considerable amount 
 of work that it takes to integrate ibc-rs into host chains.
 
+## References
+
+- [Tracking issue][tracking-issue]
+
 [dispatch]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L35
 [validate]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L54
 [execute]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L130
+[tracking-issue]: https://github.com/cosmos/ibc-rs/issues/1310
