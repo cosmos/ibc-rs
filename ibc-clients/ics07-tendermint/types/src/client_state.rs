@@ -186,7 +186,7 @@ impl ClientState {
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty
         for key in self.upgrade_path.iter() {
             if key.trim().is_empty() {
-                return Err(TendermintClientError::EmptyUpgradePathKey);
+                return Err(TendermintClientError::MissingUpgradePathKey);
             }
         }
 

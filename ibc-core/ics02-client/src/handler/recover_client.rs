@@ -29,7 +29,7 @@ where
     let substitute_height = substitute_client_state.latest_height();
 
     if subject_height >= substitute_height {
-        return Err(ClientError::NotAllowedClientRecoveryHeights {
+        return Err(ClientError::InvalidClientRecoveryHeights {
             subject_height,
             substitute_height,
         });

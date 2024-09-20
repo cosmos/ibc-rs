@@ -19,7 +19,7 @@ pub enum ConnectionError {
     Timestamp(TimestampError),
     /// invalid counterparty
     InvalidCounterparty,
-    /// invalid connection state: `{description}`
+    /// invalid connection state: {description}
     InvalidState { description: String },
     /// mismatched connection states: expected `{expected}`, actual `{actual}`
     MismatchedConnectionStates { expected: String, actual: String },

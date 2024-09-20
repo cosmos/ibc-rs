@@ -63,7 +63,7 @@ where
                     .trusted_height
                     .revision_height()
                     .try_into()
-                    .map_err(|_| ClientError::FailedHeaderVerification {
+                    .map_err(|_| ClientError::FailedToVerifyHeader {
                         description: TendermintClientError::InvalidHeaderHeight(
                             header.trusted_height.revision_height(),
                         )

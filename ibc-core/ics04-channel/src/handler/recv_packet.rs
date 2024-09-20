@@ -173,7 +173,7 @@ where
         .timeout_timestamp_on_b
         .has_expired(&latest_timestamp)
     {
-        return Err(ChannelError::InsufficientPacketTimestamp);
+        return Err(ChannelError::ExpiredPacketTimestamp);
     }
 
     // Verify proofs
@@ -226,7 +226,7 @@ where
                 SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
             let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
             if msg.packet.seq_on_a > next_seq_recv {
-                return Err(ChannelError::MismatchedPacketSequences {
+                return Err(ChannelError::MismatchedPacketSequence {
                     actual: msg.packet.seq_on_a,
                     expected: next_seq_recv,
                 });

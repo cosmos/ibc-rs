@@ -29,32 +29,32 @@ pub enum ClientError {
     InvalidUpdateClientMessage,
     /// invalid height; cannot be zero or negative
     InvalidHeight,
-    /// invalid proof height; expected `{actual}` >= `{expected}`
-    InvalidProofHeight { actual: Height, expected: Height },
+    /// invalid status `{0}`
+    InvalidStatus(Status),
     /// invalid consensus state timestamp `{0}`
     InvalidConsensusStateTimestamp(Timestamp),
     /// invalid header type `{0}`
     InvalidHeaderType(String),
-    /// missing local consensus state at `{0}`
-    MissingLocalConsensusState(Height),
-    /// unexpected status `{0}`
-    UnexpectedStatus(Status),
-    /// client state `{0}` already exists
-    DuplicateClientState(ClientId),
-    /// mismatched client recovery states
-    MismatchedClientRecoveryStates,
-    /// client recovery heights not allowed: expected substitute client height `{substitute_height}` > subject client height `{subject_height}`
-    NotAllowedClientRecoveryHeights {
+    /// invalid client recovery heights: expected substitute client height `{substitute_height}` > subject client height `{subject_height}`
+    InvalidClientRecoveryHeights {
         subject_height: Height,
         substitute_height: Height,
     },
+    /// insufficient proof height; expected `{actual}` >= `{expected}`
+    InsufficientProofHeight { expected: Height, actual: Height },
+    /// missing local consensus state at `{0}`
+    MissingLocalConsensusState(Height),
+    /// duplicate client state `{0}`
+    DuplicateClientState(ClientId),
+    /// failed to verify client recovery states
+    FailedToVerifyClientRecoveryStates,
     /// failed ICS23 verification: {0}
     FailedICS23Verification(CommitmentError),
-    /// failed header verification: `{description}`
-    FailedHeaderVerification { description: String },
-    /// failed misbehaviour handling: `{description}`
-    FailedMisbehaviourHandling { description: String },
-    /// client-specific error: `{description}`
+    /// failed to verify header: {description}
+    FailedToVerifyHeader { description: String },
+    /// failed to handle misbehaviour: {description}
+    FailedToHandleMisbehaviour { description: String },
+    /// client-specific error: {description}
     ClientSpecific { description: String },
 }
 

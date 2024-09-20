@@ -47,7 +47,7 @@ impl Timestamp {
 
     pub fn from_unix_timestamp(secs: u64, nanos: u32) -> Result<Self, TimestampError> {
         if nanos > 999_999_999 {
-            return Err(TimestampError::DateOutOfRange);
+            return Err(TimestampError::InvalidDate);
         }
 
         let total_nanos = secs as i128 * 1_000_000_000 + nanos as i128;
@@ -66,7 +66,7 @@ impl Timestamp {
             1970..=9999 => Ok(Self {
                 time: PrimitiveDateTime::new(t.date(), t.time()),
             }),
-            _ => Err(TimestampError::DateOutOfRange),
+            _ => Err(TimestampError::InvalidDate),
         }
     }
 
@@ -168,11 +168,11 @@ impl Add<Duration> for Timestamp {
     type Output = Result<Self, TimestampError>;
 
     fn add(self, rhs: Duration) -> Self::Output {
-        let duration = rhs.try_into().map_err(|_| TimestampError::DateOutOfRange)?;
+        let duration = rhs.try_into().map_err(|_| TimestampError::InvalidDate)?;
         let t = self
             .time
             .checked_add(duration)
-            .ok_or(TimestampError::DateOutOfRange)?;
+            .ok_or(TimestampError::InvalidDate)?;
         Self::from_utc(t.assume_utc())
     }
 }
@@ -181,11 +181,11 @@ impl Sub<Duration> for Timestamp {
     type Output = Result<Self, TimestampError>;
 
     fn sub(self, rhs: Duration) -> Self::Output {
-        let duration = rhs.try_into().map_err(|_| TimestampError::DateOutOfRange)?;
+        let duration = rhs.try_into().map_err(|_| TimestampError::InvalidDate)?;
         let t = self
             .time
             .checked_sub(duration)
-            .ok_or(TimestampError::DateOutOfRange)?;
+            .ok_or(TimestampError::InvalidDate)?;
         Self::from_utc(t.assume_utc())
     }
 }
@@ -271,13 +271,13 @@ impl scale_info::TypeInfo for Timestamp {
 pub enum TimestampError {
     /// parsing u64 integer from string error: {0}
     ParseInt(ParseIntError),
-    /// error converting integer to `Timestamp`: {0}
+    /// try from u64 to `Timestamp` error: {0}
     TryFromInt(TryFromIntError),
-    /// date out of range
-    DateOutOfRange,
-    /// Timestamp overflow when modifying with duration
-    TimestampOverflow,
-    /// Timestamp is not set
+    /// invalid date: out of range
+    InvalidDate,
+    /// overflowed timestamp  when modifying with duration
+    OverflowedTimestamp,
+    /// timestamp is not set
     Conversion(ComponentRange),
 }
 

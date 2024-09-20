@@ -167,7 +167,7 @@ impl ClientStateCommon for MockClientState {
         if consensus_state_status(&mock_consensus_state, host_timestamp, self.trusting_period)?
             .is_expired()
         {
-            return Err(ClientError::UnexpectedStatus(Status::Expired));
+            return Err(ClientError::InvalidStatus(Status::Expired));
         }
 
         Ok(())
@@ -183,7 +183,7 @@ impl ClientStateCommon for MockClientState {
 
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
         if self.latest_height() < proof_height {
-            return Err(ClientError::InvalidProofHeight {
+            return Err(ClientError::InsufficientProofHeight {
                 actual: self.latest_height(),
                 expected: proof_height,
             });
