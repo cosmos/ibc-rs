@@ -219,7 +219,116 @@ for. The main guard against this comes in the form of PR review, which is not id
 
 ## Notes on Error Handling Conventions
 
-[TODO]
+### Error Classifications
+
+This section details the conventions surrounding how error types, their variants, and the
+error messages contained within variants, are formatted and structured. It serves as a
+guide for how to parse and read ibc-rs's error messages.
+
+The naming convention of variants follows a few distinct classifications, illustrated by
+the following example code snippet:
+
+```rust
+/// The possible classes of errors that error variants can encapsulate
+enum ErrorClassifications {
+    /// nested error: {0}
+    NestedError(SomeError),
+    /// something is missing
+    Missing,
+    /// already exists
+    Duplicate,
+    /// something is invalid
+    Invalid,
+    /// mismatched thing: expected `{expected}`, actual `{actual}`
+    Mismatched { expected: String, actual: String },
+    /// failed to do something
+    FailedTo,
+    /// unknown resource
+    Unknown,
+}
+```
+
+A few exceptions to these classifications exist, but these classifications capture almost
+all of the error variants that exist within ibc-rs. New error variants defined going
+forward should fall into one of the above classifications.
+
+### Structuring Variants and Error Messages
+
+We'll start with conventions that apply to all variants, regardless of their classification.
+Error variants themselves should start with a capital letter, while error messages should
+all start with a lower-case letter. String-interpolated values within error messages
+should all be surrounded by backticks, in order to signify that it is an interpolated value.
+The exception to this is nested errors that are appended to the end of an error message: these
+interpolated values are __not__ surrounded by backticks. Instead, they should all follow
+a colon in the error message itself; thus, colons indicate that the following is a nested 
+error message. Lastly, error messages should all start with the classification of its
+respective error variant, i.e., an error message for an `Invalid` error class should start
+with "invalid...", while an error message for a `Missing` error class should start with
+"missing...", etc.
+
+When it comes to the `NestedError` and `Mismatched` classifications, the structure and
+formatting do not deviate. `NestedError`s are always newtype wrappers around a contained
+error. The sole purpose of these variants is to provide a means of converting the contained
+error to the containing error type. Thus, every `NestedError` variant should be
+accompanied by a `From<SomeError> for ContainingError` impl. The naming scheme for
+`NestedError` variants should  include the name of the contained error, minus the word
+"Error" itself. The error message then should clearly delineate the type of the contained
+error, the fact that the message is referring to a lower-level error, and the contents
+of the lower-level error. An example looks like this:
+
+```rust
+    /// timestamp error: {0}
+    Timestamp(TimestampError),
+```
+
+Note the colon followed by the interpolation of the nested error: it should __not__ be
+surrounded by backticks.
+
+The `Mismatched` classification is used for situations where an expected instance of a type
+is known, along with the instance that was actually found. These are both included in the
+error under the `expected` and `actual` fields. The error message for this class should
+always include "expected `{expected}`, actual `{actual}`"; this statement should be precluded
+by "mismatched [TYPE]:". The type should be spelled in the singular and followed by a colon.
+The `expected` and `actual` interpolated values in the error message should be surrounded by
+"`{}`", backticks and then braces.
+
+The rest of the error classes are a bit more freeform in how they are structured. They could
+take the form of unit structs that do not contain any values, serving mainly to surface a
+specific error message and nothing more.
+
+```rust
+    /// missing attribute key
+    MissingAttributeKey,
+    /// missing attribute value
+    MissingAttributeValue,
+```
+
+These two variants each highlight the fact that a very particular resource is missing.
+
+Single-element unit structs are used primarily to surface an invalid or duplicate type,
+opting to not provide any additional context other than what the error message itself
+provides.
+
+```rust
+    /// invalid status `{0}`
+    InvalidStatus(Status),
+    /// duplicate client state `{0}`
+    DuplicateClientState(ClientId),
+```
+
+The most common form of variant is a one-element struct with a `description` field. This
+serves to allow injecting more context at the call site of the error in the form of a
+String. This is the most general variant: care should be taken to not allow these sorts
+of variants to be abused for unintended purposes. Note that, like variants that contain
+nested errors, descriptions should be interpolated in the error message without enclosing
+backticks.
+
+```rust
+    /// failed to verify header: {description}
+    FailedToVerifyHeader { description: String },
+    /// invalid hash: {description}
+    InvalidHash { description: String },
+```
 
 ## Future Work
 
