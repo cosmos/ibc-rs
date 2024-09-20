@@ -12,18 +12,18 @@ use crate::fixtures::core::signer::dummy_account_id;
 /// Returns a dummy [`MsgTransfer`], for testing purposes only!
 #[builder(finish_fn = build)]
 pub fn dummy_msg_transfer(
-    port_id_on_a: Option<PortId>,
-    chan_id_on_a: Option<ChannelId>,
+    #[builder(default = PortId::transfer())] port_id_on_a: PortId,
+    #[builder(default = ChannelId::zero())] chan_id_on_a: ChannelId,
     packet_data: PacketData,
-    timeout_height_on_b: Option<TimeoutHeight>,
-    timeout_timestamp_on_b: Option<TimeoutTimestamp>,
+    #[builder(default = TimeoutHeight::Never)] timeout_height_on_b: TimeoutHeight,
+    #[builder(default = TimeoutTimestamp::Never)] timeout_timestamp_on_b: TimeoutTimestamp,
 ) -> MsgTransfer {
     MsgTransfer {
-        port_id_on_a: port_id_on_a.unwrap_or_else(PortId::transfer),
-        chan_id_on_a: chan_id_on_a.unwrap_or_else(ChannelId::zero),
+        port_id_on_a,
+        chan_id_on_a,
         packet_data,
-        timeout_height_on_b: timeout_height_on_b.unwrap_or(TimeoutHeight::Never),
-        timeout_timestamp_on_b: timeout_timestamp_on_b.unwrap_or(TimeoutTimestamp::Never),
+        timeout_height_on_b,
+        timeout_timestamp_on_b,
     }
 }
 
@@ -47,14 +47,14 @@ pub fn extract_transfer_packet(msg: &MsgTransfer, sequence: Sequence) -> Packet 
 #[builder(finish_fn = build)]
 pub fn dummy_packet_data(
     token: PrefixedCoin,
-    sender: Option<Signer>,
-    receiver: Option<Signer>,
-    memo: Option<Memo>,
+    #[builder(default = dummy_account_id())] sender: Signer,
+    #[builder(default = dummy_account_id())] receiver: Signer,
+    #[builder(default = "".into())] memo: Memo,
 ) -> PacketData {
     PacketData {
         token,
-        sender: sender.unwrap_or_else(dummy_account_id),
-        receiver: receiver.unwrap_or_else(dummy_account_id),
-        memo: memo.unwrap_or_else(|| "".into()),
+        sender,
+        receiver,
+        memo,
     }
 }

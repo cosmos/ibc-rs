@@ -17,23 +17,17 @@ use crate::utils::year_2023;
 /// Returns a dummy [`StoreGenericTestContext`], for testing purposes only!
 #[builder(finish_fn = build)]
 pub fn dummy_store_generic_test_context<S, H>(
-    host: Option<H>,
-    block_time: Option<Duration>,
-    latest_timestamp: Option<Timestamp>,
-    block_params_history: Option<Vec<H::BlockParams>>,
-    latest_height: Option<Height>,
+    #[builder(default)] host: H,
+    #[builder(default = Duration::from_secs(DEFAULT_BLOCK_TIME_SECS))] block_time: Duration,
+    #[builder(default = year_2023())] latest_timestamp: Timestamp,
+    #[builder(default)] block_params_history: Vec<H::BlockParams>,
+    #[builder(default = Height::new(0, 5).expect("Never fails"))] latest_height: Height,
 ) -> StoreGenericTestContext<S, H>
 where
     S: ProvableStore + Debug + Default,
     H: TestHost,
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
-    let host = host.unwrap_or_default();
-    let block_time = block_time.unwrap_or_else(|| Duration::from_secs(DEFAULT_BLOCK_TIME_SECS));
-    let latest_timestamp = latest_timestamp.unwrap_or_else(year_2023);
-    let block_params_history = block_params_history.unwrap_or_default();
-    let latest_height = latest_height.unwrap_or_else(|| Height::new(0, 5).expect("Never fails"));
-
     assert_ne!(
         latest_height.revision_height(),
         0,

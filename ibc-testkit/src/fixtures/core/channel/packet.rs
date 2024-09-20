@@ -9,24 +9,24 @@ use ibc::core::primitives::prelude::*;
 /// Returns a dummy [`Packet`], for testing purposes only!
 #[builder(finish_fn = build)]
 pub fn dummy_packet(
-    seq_on_a: Option<Sequence>,
-    port_id_on_a: Option<PortId>,
-    chan_id_on_a: Option<ChannelId>,
-    port_id_on_b: Option<PortId>,
-    chan_id_on_b: Option<ChannelId>,
-    data: Option<Vec<u8>>,
-    timeout_height_on_b: Option<TimeoutHeight>,
-    timeout_timestamp_on_b: Option<TimeoutTimestamp>,
+    #[builder(default = Sequence::from(0))] seq_on_a: Sequence,
+    #[builder(default = PortId::transfer())] port_id_on_a: PortId,
+    #[builder(default = ChannelId::zero())] chan_id_on_a: ChannelId,
+    #[builder(default = PortId::transfer())] port_id_on_b: PortId,
+    #[builder(default = ChannelId::zero())] chan_id_on_b: ChannelId,
+    #[builder(default)] data: Vec<u8>,
+    #[builder(default = TimeoutHeight::Never)] timeout_height_on_b: TimeoutHeight,
+    #[builder(default = TimeoutTimestamp::Never)] timeout_timestamp_on_b: TimeoutTimestamp,
 ) -> Packet {
     Packet {
-        seq_on_a: seq_on_a.unwrap_or(Sequence::from(0)),
-        port_id_on_a: port_id_on_a.unwrap_or_else(PortId::transfer),
-        chan_id_on_a: chan_id_on_a.unwrap_or_else(ChannelId::zero),
-        port_id_on_b: port_id_on_b.unwrap_or_else(PortId::transfer),
-        chan_id_on_b: chan_id_on_b.unwrap_or_else(ChannelId::zero),
-        data: data.unwrap_or_default(),
-        timeout_height_on_b: timeout_height_on_b.unwrap_or(TimeoutHeight::Never),
-        timeout_timestamp_on_b: timeout_timestamp_on_b.unwrap_or(TimeoutTimestamp::Never),
+        seq_on_a,
+        port_id_on_a,
+        chan_id_on_a,
+        port_id_on_b,
+        chan_id_on_b,
+        data,
+        timeout_height_on_b,
+        timeout_timestamp_on_b,
     }
 }
 
