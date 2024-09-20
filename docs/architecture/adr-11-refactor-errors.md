@@ -102,7 +102,7 @@ The main areas where `HostError`s are now being returned are mainly in `Validati
 part of the process of integrating ibc-rs.
 
 As an example, consider the [consensus_state] method under the `ClientValidationContext` trait.
-This method used to return a `ContextError`. One place where it is called is in the 
+This method used to return a `ContextError`. One place where it is called is in the
 `upgrade_client` handler:
 
 ```rust
