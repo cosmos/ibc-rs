@@ -95,7 +95,7 @@ Host errors can occur within any of the core ibc-rs modules. Thus, we'll be addi
 variants to each of the module-level error types where appropriate: `ClientError` in ICS02, 
 `ConnectionError` in ICS03, and `ChannelError` in ICS04. Note that as of now a `HostError`
 variant is not being added to the `RouterError` type in ICS26 as it is not used by hosts, i.e.,
-it does not expose its own handlers. 
+it does not expose its own handlers.
 
 The main areas where `HostError`s are now being returned are mainly in `ValidationContext` and
 `ExecutionContext` trait methods. These traits are the ones that hosts need to implement as
@@ -176,8 +176,8 @@ pub enum DecodingError {
     InvalidRawData { description: String },
     /// missing raw data: {description}
     MissingRawData { description: String },
-    /// mismatched type URLs: expected `{expected}`, actual `{actual}`
-    MismatchedTypeUrls { expected: String, actual: String },
+    /// mismatched resource name: expected `{expected}`, actual `{actual}`
+    MismatchedResourceName { expected: String, actual: String },
     /// unknown type URL `{0}`
     UnknownTypeUrl(String),
 }
