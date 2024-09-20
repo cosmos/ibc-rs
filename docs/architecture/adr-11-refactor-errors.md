@@ -245,6 +245,8 @@ enum ErrorClassifications {
     FailedTo,
     /// unknown resource
     Unknown,
+    /// insufficient value
+    Insufficient,
 }
 ```
 
