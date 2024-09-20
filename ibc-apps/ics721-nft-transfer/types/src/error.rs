@@ -10,19 +10,19 @@ use ibc_core::primitives::prelude::*;
 
 #[derive(Display, Debug, From)]
 pub enum NftTransferError {
-    /// host error: `{0}`
+    /// host error: {0}
     Host(HostError),
-    /// channel error: `{0}`
+    /// channel error: {0}
     Channel(ChannelError),
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
     /// missing destination channel `{channel_id}` on port `{port_id}`
     MissingDestinationChannel {
         port_id: PortId,
         channel_id: ChannelId,
     },
-    /// empty token ID
-    EmptyTokenId,
+    /// missing token ID
+    MissingTokenId,
     /// mismatched number of token IDs: expected `{expected}`, actual `{actual}`
     MismatchedNumberOfTokenIds { expected: usize, actual: usize },
     /// mismatched channel orders: expected `{expected}`, actual `{actual}`
@@ -35,8 +35,8 @@ pub enum NftTransferError {
     FailedToDeserializeAck,
     /// failed to parse account ID
     FailedToParseAccount,
-    /// channel cannot be closed
-    UnsupportedClosedChannel,
+    /// invalid channel state: cannot be closed
+    InvalidClosedChannel,
 }
 
 #[cfg(feature = "std")]

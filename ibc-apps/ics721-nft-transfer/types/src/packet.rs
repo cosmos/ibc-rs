@@ -92,7 +92,7 @@ impl PacketData {
     /// Performs the basic validation of the packet data fields.
     pub fn validate_basic(&self) -> Result<(), NftTransferError> {
         if self.token_ids.0.is_empty() {
-            return Err(NftTransferError::EmptyTokenId);
+            return Err(NftTransferError::MissingTokenId);
         }
         let num = self.token_ids.0.len();
         let num_uri = self

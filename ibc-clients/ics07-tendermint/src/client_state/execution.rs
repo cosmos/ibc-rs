@@ -342,7 +342,7 @@ where
         let tm_consensus_state_timestamp = tm_consensus_state.timestamp();
         let tm_consensus_state_expiry = (tm_consensus_state_timestamp
             + client_state.trusting_period)
-            .map_err(|_| TimestampError::TimestampOverflow)?;
+            .map_err(|_| TimestampError::OverflowedTimestamp)?;
 
         if tm_consensus_state_expiry > host_timestamp {
             break;

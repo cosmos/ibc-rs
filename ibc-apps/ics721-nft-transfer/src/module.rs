@@ -132,7 +132,7 @@ pub fn on_chan_close_init_validate(
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<(), NftTransferError> {
-    Err(NftTransferError::UnsupportedClosedChannel)
+    Err(NftTransferError::InvalidClosedChannel)
 }
 
 pub fn on_chan_close_init_execute(
@@ -140,7 +140,7 @@ pub fn on_chan_close_init_execute(
     _port_id: &PortId,
     _channel_id: &ChannelId,
 ) -> Result<ModuleExtras, NftTransferError> {
-    Err(NftTransferError::UnsupportedClosedChannel)
+    Err(NftTransferError::InvalidClosedChannel)
 }
 
 pub fn on_chan_close_confirm_validate(
