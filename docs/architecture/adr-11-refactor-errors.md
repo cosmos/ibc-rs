@@ -92,7 +92,7 @@ most of the error use-cases faced by hosts. One such notable use-case is fetchin
 data from the host's storage.
 
 Host errors can occur within any of the core ibc-rs modules. Thus, we'll be adding `HostError`
-variants to each of the module-level error types where appropriate: `ClientError` in ICS02, 
+variants to each of the module-level error types where appropriate: `ClientError` in ICS02,
 `ConnectionError` in ICS03, and `ChannelError` in ICS04. Note that as of now a `HostError`
 variant is not being added to the `RouterError` type in ICS26 as it is not used by hosts, i.e.,
 it does not expose its own handlers. 
