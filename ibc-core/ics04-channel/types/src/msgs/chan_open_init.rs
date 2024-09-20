@@ -43,17 +43,28 @@ impl MsgChannelOpenInit {
 impl Protobuf<RawMsgChannelOpenInit> for MsgChannelOpenInit {}
 
 impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgChannelOpenInit) -> Result<Self, Self::Error> {
         let chan_end_on_a: ChannelEnd = raw_msg
             .channel
-            .ok_or(DecodingError::MissingRawData {
-                description: "channel end not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data("channel end"))?
             .try_into()?;
-        chan_end_on_a.verify_state_matches(&State::Init)?;
-        chan_end_on_a.counterparty().verify_empty_channel_id()?;
+
+        chan_end_on_a
+            .verify_state_matches(&State::Init)
+            .map_err(|_| {
+                DecodingError::invalid_raw_data(format!(
+                    "expected channel end to be in `Init` state but it is in `{}` instead",
+                    chan_end_on_a.state
+                ))
+            })?;
+
+        if let Some(cid) = chan_end_on_a.counterparty().channel_id() {
+            return Err(DecodingError::invalid_raw_data(format!(
+                "expected counterparty channel ID to be empty, actual `{cid}`",
+            )));
+        }
 
         Ok(MsgChannelOpenInit {
             port_id_on_a: raw_msg.port_id.parse()?,

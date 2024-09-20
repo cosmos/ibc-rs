@@ -3,6 +3,7 @@ use ibc_client_tendermint_types::{ConsensusState as ConsensusStateType, Header a
 use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
+use ibc_core_host::types::error::IdentifierError;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
@@ -52,18 +53,17 @@ where
             )?;
 
             TrustedBlockState {
-                chain_id: &chain_id
-                    .as_str()
-                    .try_into()
-                    .map_err(|e| ClientError::Other {
-                        description: format!("failed to parse chain id: {}", e),
-                    })?,
+                chain_id: &chain_id.as_str().try_into().map_err(|e| {
+                    IdentifierError::FailedToParse {
+                        description: format!("chain ID `{chain_id}`: {e:?}"),
+                    }
+                })?,
                 header_time: trusted_consensus_state.timestamp(),
                 height: header
                     .trusted_height
                     .revision_height()
                     .try_into()
-                    .map_err(|_| ClientError::FailedHeaderVerification {
+                    .map_err(|_| ClientError::FailedToVerifyHeader {
                         description: TendermintClientError::InvalidHeaderHeight(
                             header.trusted_height.revision_height(),
                         )

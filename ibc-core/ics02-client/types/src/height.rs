@@ -1,10 +1,8 @@
 //! Defines the core `Height` type used throughout the library
 
 use core::cmp::Ordering;
-use core::num::ParseIntError;
 use core::str::FromStr;
 
-use displaydoc::Display;
 use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
@@ -121,7 +119,7 @@ impl TryFrom<RawHeight> for Height {
 
     fn try_from(raw_height: RawHeight) -> Result<Self, Self::Error> {
         Height::new(raw_height.revision_number, raw_height.revision_height)
-            .map_err(DecodingError::invalid_raw_data)
+            .map_err(|_| DecodingError::invalid_raw_data("height of 0 not allowed"))
     }
 }
 
@@ -150,58 +148,19 @@ impl core::fmt::Display for Height {
     }
 }
 
-/// Encodes all errors related to chain heights
-#[derive(Debug, Display, PartialEq, Eq)]
-pub enum HeightError {
-    /// cannot convert into a `Height` type from string `{height}`
-    HeightConversion {
-        height: String,
-        error: ParseIntError,
-    },
-    /// attempted to parse an invalid zero height
-    ZeroHeight,
-    /// the height(`{raw_height}`) is not a valid format, this format must be used: \[revision_number\]-\[revision_height\]
-    InvalidFormat { raw_height: String },
-}
-
-#[cfg(feature = "std")]
-impl std::error::Error for HeightError {
-    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
-        match &self {
-            HeightError::HeightConversion { error: e, .. } => Some(e),
-            HeightError::ZeroHeight | HeightError::InvalidFormat { .. } => None,
-        }
-    }
-}
-
 impl TryFrom<&str> for Height {
-    type Error = HeightError;
+    type Error = DecodingError;
 
     fn try_from(value: &str) -> Result<Self, Self::Error> {
-        let (rev_number_str, rev_height_str) =
-            value
-                .split_once('-')
-                .ok_or_else(|| HeightError::InvalidFormat {
-                    raw_height: value.to_owned(),
-                })?;
+        let (rev_number_str, rev_height_str) = value.split_once('-').ok_or_else(|| {
+            DecodingError::invalid_raw_data(format!("height `{value}` not properly formatted"))
+        })?;
 
-        let revision_number =
-            rev_number_str
-                .parse::<u64>()
-                .map_err(|e| HeightError::HeightConversion {
-                    height: value.to_owned(),
-                    error: e,
-                })?;
+        let revision_number = rev_number_str.parse::<u64>()?;
+        let revision_height = rev_height_str.parse::<u64>()?;
 
-        let revision_height =
-            rev_height_str
-                .parse::<u64>()
-                .map_err(|e| HeightError::HeightConversion {
-                    height: value.to_owned(),
-                    error: e,
-                })?;
-
-        Height::new(revision_number, revision_height).map_err(|_| HeightError::ZeroHeight)
+        Height::new(revision_number, revision_height)
+            .map_err(|_| DecodingError::invalid_raw_data("height of 0 not allowed"))
     }
 }
 
@@ -212,7 +171,7 @@ impl From<Height> for String {
 }
 
 impl FromStr for Height {
-    type Err = HeightError;
+    type Err = DecodingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Height::try_from(s)
@@ -222,41 +181,34 @@ impl FromStr for Height {
 #[test]
 fn test_valid_height() {
     assert_eq!(
-        "1-1".parse::<Height>(),
-        Ok(Height {
+        "1-1".parse::<Height>().unwrap(),
+        Height {
             revision_number: 1,
             revision_height: 1
-        })
+        }
     );
     assert_eq!(
-        "1-10".parse::<Height>(),
-        Ok(Height {
+        "1-10".parse::<Height>().unwrap(),
+        Height {
             revision_number: 1,
             revision_height: 10
-        })
+        }
     );
 }
 
 #[test]
 fn test_invalid_height() {
-    assert_eq!(
-        HeightError::ZeroHeight,
-        "0-0".parse::<Height>().unwrap_err()
-    );
+    assert!("0-0".parse::<Height>().is_err());
     assert!("0-".parse::<Height>().is_err());
     assert!("-0".parse::<Height>().is_err());
     assert!("-".parse::<Height>().is_err());
     assert!("1-1-1".parse::<Height>().is_err());
-    assert_eq!(
-        "1".parse::<Height>(),
-        Err(HeightError::InvalidFormat {
-            raw_height: "1".to_owned()
-        })
-    );
-    assert_eq!(
-        "".parse::<Height>(),
-        Err(HeightError::InvalidFormat {
-            raw_height: "".to_owned()
-        })
-    );
+
+    let decoding_err = "1".parse::<Height>().unwrap_err();
+    let decoding_err = decoding_err.to_string();
+    assert!(decoding_err.contains("height `1` not properly formatted"));
+
+    let decoding_err = "".parse::<Height>().unwrap_err();
+    let decoding_err = decoding_err.to_string();
+    assert!(decoding_err.contains("height `` not properly formatted"));
 }

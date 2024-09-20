@@ -1,5 +1,6 @@
 //! Defines proof specs, which encode the structure of proofs
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::ics23::{InnerSpec as RawInnerSpec, LeafOp as RawLeafOp, ProofSpec as RawProofSpec};
 use ics23::{HashOp, LengthOp};
@@ -30,7 +31,7 @@ impl ProofSpecs {
 
     pub fn validate(&self) -> Result<(), CommitmentError> {
         if self.is_empty() {
-            return Err(CommitmentError::EmptyProofSpecs);
+            return Err(CommitmentError::MissingProofSpecs);
         }
         for proof_spec in &self.0 {
             // A non-positive `min_depth` or `max_depth` indicates no limit on the respective bound.
@@ -54,11 +55,12 @@ impl ProofSpecs {
 }
 
 impl TryFrom<Vec<RawProofSpec>> for ProofSpecs {
-    type Error = CommitmentError;
-    fn try_from(ics23_specs: Vec<RawProofSpec>) -> Result<Self, CommitmentError> {
+    type Error = DecodingError;
+
+    fn try_from(ics23_specs: Vec<RawProofSpec>) -> Result<Self, Self::Error> {
         // no proof specs provided
         if ics23_specs.is_empty() {
-            return Err(CommitmentError::EmptyProofSpecs);
+            return Err(DecodingError::missing_raw_data("proof specs"));
         }
 
         ics23_specs
@@ -80,8 +82,9 @@ impl From<ProofSpecs> for Vec<RawProofSpec> {
 struct ProofSpec(RawProofSpec);
 
 impl TryFrom<RawProofSpec> for ProofSpec {
-    type Error = CommitmentError;
-    fn try_from(spec: RawProofSpec) -> Result<Self, CommitmentError> {
+    type Error = DecodingError;
+
+    fn try_from(spec: RawProofSpec) -> Result<Self, Self::Error> {
         // A non-positive `min_depth` or `max_depth` indicates no limit on the respective bound.
         // For simplicity, negative values for `min_depth` and `max_depth` are not allowed
         // and only `0` is used to indicate no limit. When `min_depth` and `max_depth` are both positive,
@@ -90,10 +93,10 @@ impl TryFrom<RawProofSpec> for ProofSpec {
             || spec.min_depth < 0
             || (0 < spec.min_depth && 0 < spec.max_depth && spec.max_depth < spec.min_depth)
         {
-            return Err(CommitmentError::InvalidRange {
-                min: spec.min_depth,
-                max: spec.max_depth,
-            });
+            return Err(DecodingError::invalid_raw_data(format!(
+                "proof spec range [`{}`, `{}`]",
+                spec.min_depth, spec.max_depth
+            )));
         }
 
         let leaf_spec = spec
@@ -128,17 +131,17 @@ impl From<ProofSpec> for RawProofSpec {
 struct LeafOp(RawLeafOp);
 
 impl TryFrom<RawLeafOp> for LeafOp {
-    type Error = CommitmentError;
+    type Error = DecodingError;
 
     fn try_from(leaf_op: RawLeafOp) -> Result<Self, Self::Error> {
         let _ = HashOp::try_from(leaf_op.hash)
-            .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.hash))?;
+            .map_err(|_| DecodingError::invalid_raw_data("leaf op hash"))?;
         let _ = HashOp::try_from(leaf_op.prehash_key)
-            .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.prehash_key))?;
+            .map_err(|_| DecodingError::invalid_raw_data("leaf op prehash key"))?;
         let _ = HashOp::try_from(leaf_op.prehash_value)
-            .map_err(|_| CommitmentError::InvalidHashOp(leaf_op.prehash_value))?;
+            .map_err(|_| DecodingError::invalid_raw_data("leaf op prehash value"))?;
         let _ = LengthOp::try_from(leaf_op.length)
-            .map_err(|_| CommitmentError::InvalidLengthOp(leaf_op.length))?;
+            .map_err(|_| DecodingError::invalid_raw_data("leaf op length"))?;
 
         Ok(Self(leaf_op))
     }
@@ -155,11 +158,11 @@ impl From<LeafOp> for RawLeafOp {
 struct InnerSpec(RawInnerSpec);
 
 impl TryFrom<RawInnerSpec> for InnerSpec {
-    type Error = CommitmentError;
+    type Error = DecodingError;
 
-    fn try_from(inner_spec: RawInnerSpec) -> Result<Self, CommitmentError> {
+    fn try_from(inner_spec: RawInnerSpec) -> Result<Self, Self::Error> {
         if inner_spec.child_size <= 0 {
-            return Err(CommitmentError::InvalidChildSize(inner_spec.child_size));
+            return Err(DecodingError::invalid_raw_data("inner spec child size"));
         }
 
         // Negative prefix lengths are not allowed and the maximum prefix length must
@@ -168,10 +171,10 @@ impl TryFrom<RawInnerSpec> for InnerSpec {
             || inner_spec.max_prefix_length < 0
             || inner_spec.max_prefix_length < inner_spec.min_prefix_length
         {
-            return Err(CommitmentError::InvalidRange {
-                min: inner_spec.min_prefix_length,
-                max: inner_spec.max_prefix_length,
-            });
+            return Err(DecodingError::invalid_raw_data(format!(
+                "inner spec range: [`{}`, `{}`]",
+                inner_spec.min_prefix_length, inner_spec.max_prefix_length
+            )));
         }
 
         Ok(Self(RawInnerSpec {
@@ -202,15 +205,15 @@ mod tests {
     #[case(0, 0)]
     #[case(2, 2)]
     #[case(5, 6)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(-3,3)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(2,-6)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(-2,-6)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(-6,-2)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(5, 3)]
     fn test_proof_specs_try_from(#[case] min_depth: i32, #[case] max_depth: i32) {
         let raw_proof_spec = RawProofSpec {
@@ -227,15 +230,15 @@ mod tests {
     #[case(0, 0)]
     #[case(1, 2)]
     #[case(2, 2)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(2, 1)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(-2,1)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(2,-1)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(-2,-1)]
-    #[should_panic(expected = "InvalidRange")]
+    #[should_panic(expected = "InvalidRawData")]
     #[case(-1,-2)]
     fn test_inner_specs_try_from(#[case] min_prefix_length: i32, #[case] max_prefix_length: i32) {
         let raw_inner_spec = RawInnerSpec {
@@ -252,21 +255,21 @@ mod tests {
     #[rstest]
     #[case(0, 0, 0, 0)]
     #[case(9, 9, 9, 8)]
-    #[should_panic(expected = "InvalidHashOp")]
+    #[should_panic(expected = "leaf op hash")]
     #[case(-1, 4, 4, 4)]
-    #[should_panic(expected = "InvalidHashOp")]
+    #[should_panic(expected = "leaf op hash")]
     #[case(10, 4, 4, 4)]
-    #[should_panic(expected = "InvalidHashOp")]
+    #[should_panic(expected = "leaf op prehash key")]
     #[case(4, -1, 4, 4)]
-    #[should_panic(expected = "InvalidHashOp")]
+    #[should_panic(expected = "leaf op prehash key")]
     #[case(4, 10, 4, 4)]
-    #[should_panic(expected = "InvalidHashOp")]
+    #[should_panic(expected = "leaf op prehash value")]
     #[case(4, 4, -1, 4)]
-    #[should_panic(expected = "InvalidHashOp")]
+    #[should_panic(expected = "leaf op prehash value")]
     #[case(4, 4, 10, 4)]
-    #[should_panic(expected = "InvalidLengthOp")]
+    #[should_panic(expected = "leaf op length")]
     #[case(4, 4, 4, -1)]
-    #[should_panic(expected = "InvalidLengthOp")]
+    #[should_panic(expected = "leaf op length")]
     #[case(4, 4, 4, 9)]
     fn test_leaf_op_try_from(
         #[case] hash: i32,

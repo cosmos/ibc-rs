@@ -9,11 +9,11 @@ use ibc_core::primitives::prelude::*;
 
 #[derive(Display, Debug, derive_more::From)]
 pub enum TokenTransferError {
-    /// host error: `{0}`
+    /// host error: {0}
     Host(HostError),
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
-    /// channel error: `{0}`
+    /// channel error: {0}
     Channel(ChannelError),
     /// missing destination channel `{channel_id}` on port `{port_id}`
     MissingDestinationChannel {
@@ -24,8 +24,8 @@ pub enum TokenTransferError {
     MismatchedChannelOrders { expected: Order, actual: Order },
     /// mismatched port IDs: expected `{expected}`, actual `{actual}`
     MismatchedPortIds { expected: PortId, actual: PortId },
-    /// channel cannot be closed
-    UnsupportedClosedChannel,
+    /// invalid channel state: cannot be closed
+    InvalidClosedChannel,
     /// failed to deserialize packet data
     FailedToDeserializePacketData,
     /// failed to deserialize acknowledgement

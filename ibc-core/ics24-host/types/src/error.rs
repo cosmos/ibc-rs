@@ -1,6 +1,7 @@
 //! Foundational error types that are applicable across multiple ibc-rs workspaces.
 
 use alloc::string::{FromUtf8Error, String};
+use core::num::{ParseIntError, TryFromIntError};
 use core::str::Utf8Error;
 
 use base64::DecodeError as Base64Error;
@@ -58,10 +59,10 @@ pub enum IdentifierError {
     InvalidLength { actual: String, min: u64, max: u64 },
     /// id `{0}` can only contain alphanumeric characters or `.`, `_`, `+`, `-`, `#`, - `[`, `]`, `<`, `>`
     InvalidCharacter(String),
-    /// invalid prefix: `{0}`
+    /// invalid prefix `{0}`
     InvalidPrefix(String),
-    /// failed to parse `{value}`: `{description}`
-    FailedToParse { value: String, description: String },
+    /// failed to parse: `{description}`
+    FailedToParse { description: String },
     /// overflowed revision number
     OverflowedRevisionNumber,
 }
@@ -70,29 +71,31 @@ pub enum IdentifierError {
 /// and/or converting raw types into domain types.
 #[derive(Debug, Display)]
 pub enum DecodingError {
-    /// identifier error: `{0}`
+    /// identifier error: {0}
     Identifier(IdentifierError),
-    /// base64 decoding error: `{0}`
+    /// base64 decoding error: {0}
     Base64(Base64Error),
-    /// utf-8 String decoding error: `{0}`
+    /// utf-8 String decoding error: {0}
     StringUtf8(FromUtf8Error),
-    /// utf-8 str decoding error: `{0}`
+    /// utf-8 str decoding error: {0}
     StrUtf8(Utf8Error),
-    /// protobuf decoding error: `{0}`
+    /// integer parsing error: {0}
+    ParseInt(ParseIntError),
+    /// integer TryFrom error: {0}
+    TryFromInt(TryFromIntError),
+    /// protobuf decoding error: {0}
     Protobuf(ProtoError),
-    /// prost decoding error: `{0}`
+    /// prost decoding error: {0}
     Prost(ProstError),
-    /// invalid hash bytes: `{description}`
-    InvalidHash { description: String },
     /// invalid JSON data: `{description}`
     InvalidJson { description: String },
     /// invalid raw data: `{description}`
     InvalidRawData { description: String },
     /// missing raw data: `{description}`
     MissingRawData { description: String },
-    /// mismatched type URLs: expected `{expected}`, actual `{actual}`
-    MismatchedTypeUrls { expected: String, actual: String },
-    /// unknown type URL: `{0}`
+    /// mismatched resource name: expected `{expected}`, actual `{actual}`
+    MismatchedResourceName { expected: String, actual: String },
+    /// unknown type URL `{0}`
     UnknownTypeUrl(String),
 }
 
@@ -137,6 +140,18 @@ impl From<FromUtf8Error> for DecodingError {
 impl From<Utf8Error> for DecodingError {
     fn from(e: Utf8Error) -> Self {
         Self::StrUtf8(e)
+    }
+}
+
+impl From<ParseIntError> for DecodingError {
+    fn from(e: ParseIntError) -> Self {
+        Self::ParseInt(e)
+    }
+}
+
+impl From<TryFromIntError> for DecodingError {
+    fn from(e: TryFromIntError) -> Self {
+        Self::TryFromInt(e)
     }
 }
 

@@ -18,14 +18,16 @@ use crate::Version;
 /// Errors that arise from the ICS04 Channel module
 #[derive(Debug, Display, derive_more::From)]
 pub enum ChannelError {
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
-    /// host error: `{0}`
+    /// host error: {0}
     Host(HostError),
-    /// client error: `{0}`
+    /// client error: {0}
     Client(ClientError),
-    /// connection error: `{0}`
+    /// connection error: {0}
     Connection(ConnectionError),
+    /// timestamp error: {0}
+    Timestamp(TimestampError),
     /// packet acknowledgment for sequence `{0}` already exists
     DuplicateAcknowledgment(Sequence),
     /// insufficient packet timeout height: should have `{timeout_height}` > `{chain_height}`
@@ -33,14 +35,19 @@ pub enum ChannelError {
         chain_height: Height,
         timeout_height: TimeoutHeight,
     },
-    /// insufficient packet timestamp: should be greater than chain block timestamp
-    InsufficientPacketTimestamp,
+    /// expired packet timestamp: should be greater than chain block timestamp
+    ExpiredPacketTimestamp,
+    /// packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
+    InsufficientPacketTimeout {
+        timeout_height: TimeoutHeight,
+        chain_height: Height,
+        timeout_timestamp: TimeoutTimestamp,
+        chain_timestamp: Timestamp,
+    },
     /// invalid channel state: expected `{expected}`, actual `{actual}`
     InvalidState { expected: String, actual: String },
     /// invalid connection hops length: expected `{expected}`, actual `{actual}`
     InvalidConnectionHopsLength { expected: u64, actual: u64 },
-    /// invalid timeout timestamp: `{0}`
-    InvalidTimeoutTimestamp(TimestampError),
     /// missing acknowledgment status
     MissingAcknowledgmentStatus,
     /// missing counterparty
@@ -52,25 +59,16 @@ pub enum ChannelError {
         expected: Counterparty,
         actual: Counterparty,
     },
-    /// mismatched packet sequences: expected `{expected}`, actual `{actual}`
-    MismatchedPacketSequences {
+    /// mismatched packet sequence: expected `{expected}`, actual `{actual}`
+    MismatchedPacketSequence {
         expected: Sequence,
         actual: Sequence,
     },
     /// mismatched packet commitments: expected `{expected:?}`, actual `{actual:?}`
-    MismatchedPacketCommitments {
+    MismatchedPacketCommitment {
         expected: PacketCommitment,
         actual: PacketCommitment,
     },
-    /// packet timeout height `{timeout_height}` > chain height `{chain_height} and timeout timestamp `{timeout_timestamp}` > chain timestamp `{chain_timestamp}`
-    PacketTimeoutNotReached {
-        timeout_height: TimeoutHeight,
-        chain_height: Height,
-        timeout_timestamp: TimeoutTimestamp,
-        chain_timestamp: Timestamp,
-    },
-    /// unexpected channel ID: expected to be empty
-    UnexpectedChannelId,
     /// unsupported version: expected `{expected}`, actual `{actual}`
     UnsupportedVersion { expected: Version, actual: Version },
     /// application specific error: `{description}`
@@ -91,7 +89,7 @@ impl std::error::Error for ChannelError {
             Self::Client(e) => Some(e),
             Self::Connection(e) => Some(e),
             Self::Host(e) => Some(e),
-            Self::InvalidTimeoutTimestamp(e) => Some(e),
+            Self::Timestamp(e) => Some(e),
             _ => None,
         }
     }

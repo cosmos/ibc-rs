@@ -26,8 +26,7 @@ impl core::str::FromStr for Sequence {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         Ok(Self::from(s.parse::<u64>().map_err(|e| {
             IdentifierError::FailedToParse {
-                value: s.to_string(),
-                description: e.to_string(),
+                description: format!("sequence `{s}`: {e}"),
             }
         })?))
     }

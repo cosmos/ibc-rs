@@ -7,8 +7,6 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::MsgCreateClient as RawMsgCreateClient;
 use ibc_proto::Protobuf;
 
-use crate::error::ClientError;
-
 pub const CREATE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgCreateClient";
 
 /// A type of message that triggers the creation of a new on-chain (IBC) client.
@@ -37,16 +35,16 @@ impl MsgCreateClient {
 impl Protobuf<RawMsgCreateClient> for MsgCreateClient {}
 
 impl TryFrom<RawMsgCreateClient> for MsgCreateClient {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMsgCreateClient) -> Result<Self, Self::Error> {
-        let raw_client_state = raw.client_state.ok_or(DecodingError::MissingRawData {
-            description: "no raw client state set".to_string(),
-        })?;
+        let raw_client_state = raw
+            .client_state
+            .ok_or(DecodingError::missing_raw_data("client state"))?;
 
-        let raw_consensus_state = raw.consensus_state.ok_or(DecodingError::MissingRawData {
-            description: "no raw consensus state set".to_string(),
-        })?;
+        let raw_consensus_state = raw
+            .consensus_state
+            .ok_or(DecodingError::missing_raw_data("consensus state"))?;
 
         Ok(MsgCreateClient::new(
             raw_client_state,

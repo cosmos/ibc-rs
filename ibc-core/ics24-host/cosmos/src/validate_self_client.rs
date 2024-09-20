@@ -22,7 +22,7 @@ pub trait ValidateSelfClientContext {
             .validate()
             .map_err(|e| {
                 HostError::invalid_state(format!(
-                    "invalid counterparty client state that could not be validated: {e}"
+                    "counterparty client state could not be validated: {e}"
                 ))
             })?;
 
@@ -34,7 +34,7 @@ pub trait ValidateSelfClientContext {
 
         if self_chain_id != &client_state_of_host_on_counterparty.chain_id {
             return Err(HostError::invalid_state(format!(
-                "invalid chain ID: expected {}, actual {}",
+                "chain ID: expected `{}`, actual `{}`",
                 self_chain_id, client_state_of_host_on_counterparty.chain_id
             )));
         }
@@ -44,7 +44,7 @@ pub trait ValidateSelfClientContext {
 
         if self_revision_number != latest_height.revision_number() {
             return Err(HostError::invalid_state(format!(
-                "mismatched client revision numbers; expected {}, actual {}",
+                "mismatched client revision numbers; expected `{}`, actual `{}`",
                 self_revision_number,
                 latest_height.revision_number()
             )));
@@ -52,7 +52,7 @@ pub trait ValidateSelfClientContext {
 
         if latest_height >= self.host_current_height() {
             return Err(HostError::invalid_state(format!(
-                "client latest height {} should be less than chain height {}",
+                "client latest height `{}` should be less than chain height `{}`",
                 latest_height,
                 self.host_current_height()
             )));
@@ -60,7 +60,7 @@ pub trait ValidateSelfClientContext {
 
         if self.proof_specs() != &client_state_of_host_on_counterparty.proof_specs {
             return Err(HostError::invalid_state(format!(
-                "invalid client proof specs; expected {:?}, actual {:?}",
+                "client proof specs; expected `{:?}`, actual `{:?}`",
                 self.proof_specs(),
                 client_state_of_host_on_counterparty.proof_specs
             )));
@@ -78,7 +78,7 @@ pub trait ValidateSelfClientContext {
 
         if self.unbonding_period() != client_state_of_host_on_counterparty.unbonding_period {
             return Err(HostError::invalid_state(format!(
-                "invalid unbonding period; expected {:?}, actual {:?}",
+                "unbonding period; expected `{:?}`, actual `{:?}`",
                 self.unbonding_period(),
                 client_state_of_host_on_counterparty.unbonding_period,
             )));
@@ -88,7 +88,7 @@ pub trait ValidateSelfClientContext {
             < client_state_of_host_on_counterparty.trusting_period
         {
             return Err(HostError::invalid_state(format!(
-                "invalid counterparty client state: unbonding period must be greater than trusting period; unbonding period ({:?}) < trusting period ({:?})",
+                "counterparty client state: unbonding period must be greater than trusting period; unbonding period ({:?}) < trusting period ({:?})",
                 client_state_of_host_on_counterparty.unbonding_period,
                 client_state_of_host_on_counterparty.trusting_period
             )));
@@ -98,7 +98,7 @@ pub trait ValidateSelfClientContext {
             && self.upgrade_path() != client_state_of_host_on_counterparty.upgrade_path
         {
             return Err(HostError::invalid_state(format!(
-                "invalid upgrade path; expected {:?}, actual {:?}",
+                "upgrade path; expected `{:?}`, actual `{:?}`",
                 self.upgrade_path(),
                 client_state_of_host_on_counterparty.upgrade_path
             )));

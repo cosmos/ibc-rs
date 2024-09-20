@@ -1,5 +1,6 @@
 //! Merkle proof utilities
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::path::PathBytes;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
@@ -70,7 +71,7 @@ pub struct MerkleProof {
 impl Protobuf<RawMerkleProof> for MerkleProof {}
 
 impl TryFrom<RawMerkleProof> for MerkleProof {
-    type Error = CommitmentError;
+    type Error = DecodingError;
 
     fn try_from(proof: RawMerkleProof) -> Result<Self, Self::Error> {
         Ok(Self {
@@ -98,10 +99,10 @@ impl MerkleProof {
     ) -> Result<(), CommitmentError> {
         // validate arguments
         if self.proofs.is_empty() {
-            return Err(CommitmentError::EmptyMerkleProof);
+            return Err(CommitmentError::MissingMerkleProof);
         }
         if root.hash.is_empty() {
-            return Err(CommitmentError::EmptyMerkleRoot);
+            return Err(CommitmentError::MissingMerkleRoot);
         }
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());
@@ -118,7 +119,7 @@ impl MerkleProof {
             });
         }
         if value.is_empty() {
-            return Err(CommitmentError::EmptyVerifiedValue);
+            return Err(CommitmentError::MissingVerifiedValue);
         }
 
         let mut subroot = value.clone();
@@ -164,10 +165,10 @@ impl MerkleProof {
     ) -> Result<(), CommitmentError> {
         // validate arguments
         if self.proofs.is_empty() {
-            return Err(CommitmentError::EmptyMerkleProof);
+            return Err(CommitmentError::MissingMerkleProof);
         }
         if root.hash.is_empty() {
-            return Err(CommitmentError::EmptyMerkleRoot);
+            return Err(CommitmentError::MissingMerkleRoot);
         }
         let num = self.proofs.len();
         let ics23_specs = Vec::<ics23::ProofSpec>::from(specs.clone());

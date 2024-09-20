@@ -1,5 +1,4 @@
 use ibc::core::client::context::consensus_state::ConsensusState;
-use ibc::core::client::types::error::ClientError;
 use ibc::core::commitment_types::commitment::CommitmentRoot;
 use ibc::core::host::types::error::DecodingError;
 use ibc::core::primitives::prelude::*;
@@ -39,12 +38,12 @@ impl MockConsensusState {
 impl Protobuf<RawMockConsensusState> for MockConsensusState {}
 
 impl TryFrom<RawMockConsensusState> for MockConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMockConsensusState) -> Result<Self, Self::Error> {
-        let raw_header = raw.header.ok_or(DecodingError::MissingRawData {
-            description: "no raw header set".to_string(),
-        })?;
+        let raw_header = raw.header.ok_or(DecodingError::missing_raw_data(
+            "mock consensus state header",
+        ))?;
 
         Ok(Self {
             header: raw_header.try_into()?,
@@ -64,7 +63,7 @@ impl From<MockConsensusState> for RawMockConsensusState {
 impl Protobuf<Any> for MockConsensusState {}
 
 impl TryFrom<Any> for MockConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_consensus_state(value: &[u8]) -> Result<MockConsensusState, DecodingError> {
@@ -72,10 +71,8 @@ impl TryFrom<Any> for MockConsensusState {
             Ok(mock_consensus_state)
         }
         match raw.type_url.as_str() {
-            MOCK_CONSENSUS_STATE_TYPE_URL => {
-                decode_consensus_state(&raw.value).map_err(ClientError::Decoding)
-            }
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            MOCK_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: MOCK_CONSENSUS_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
             })?,

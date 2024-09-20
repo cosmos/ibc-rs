@@ -50,7 +50,7 @@ where
         &packet.timeout_timestamp_on_b,
     );
     if commitment_on_a != expected_commitment_on_a {
-        return Err(ChannelError::MismatchedPacketCommitments {
+        return Err(ChannelError::MismatchedPacketCommitment {
             expected: expected_commitment_on_a,
             actual: commitment_on_a,
         });
@@ -118,7 +118,7 @@ where
         let next_seq_recv_verification_result = match chan_end_on_a.ordering {
             Order::Ordered => {
                 if packet.seq_on_a < msg.next_seq_recv_on_b {
-                    return Err(ChannelError::MismatchedPacketSequences {
+                    return Err(ChannelError::MismatchedPacketSequence {
                         actual: packet.seq_on_a,
                         expected: msg.next_seq_recv_on_b,
                     });

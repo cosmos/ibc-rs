@@ -39,22 +39,18 @@ impl TryFrom<RawMsgAcknowledgement> for MsgAcknowledgement {
         Ok(MsgAcknowledgement {
             packet: raw_msg
                 .packet
-                .ok_or(DecodingError::MissingRawData {
-                    description: "packet data not set".to_string(),
-                })?
+                .ok_or(DecodingError::missing_raw_data(
+                    "msg acknowledgement packet data",
+                ))?
                 .try_into()?,
             acknowledgement: raw_msg.acknowledgement.try_into()?,
-            proof_acked_on_b: raw_msg.proof_acked.try_into().map_err(|e| {
-                DecodingError::InvalidRawData {
-                    description: format!("failed to decode proof: {e}"),
-                }
-            })?,
+            proof_acked_on_b: raw_msg.proof_acked.try_into()?,
             proof_height_on_b: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::InvalidRawData {
-                    description: "failed to decode proof height".to_string(),
-                })?,
+                .ok_or(DecodingError::invalid_raw_data(
+                    "msg acknowledgement proof height",
+                ))?,
             signer: raw_msg.signer.into(),
         })
     }

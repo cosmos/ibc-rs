@@ -167,7 +167,7 @@ where
     );
 
     if commitment_on_a != expected_commitment_on_a {
-        return Err(ChannelError::MismatchedPacketCommitments {
+        return Err(ChannelError::MismatchedPacketCommitment {
             expected: expected_commitment_on_a,
             actual: commitment_on_a,
         });
@@ -196,7 +196,7 @@ where
         let timestamp_of_b = consensus_state_of_b_on_a.timestamp();
 
         if !msg.packet.timed_out(&timestamp_of_b, msg.proof_height_on_b) {
-            return Err(ChannelError::PacketTimeoutNotReached {
+            return Err(ChannelError::InsufficientPacketTimeout {
                 timeout_height: msg.packet.timeout_height_on_b,
                 chain_height: msg.proof_height_on_b,
                 timeout_timestamp: msg.packet.timeout_timestamp_on_b,
@@ -209,7 +209,7 @@ where
         let next_seq_recv_verification_result = match chan_end_on_a.ordering {
             Order::Ordered => {
                 if msg.packet.seq_on_a < msg.next_seq_recv_on_b {
-                    return Err(ChannelError::MismatchedPacketSequences {
+                    return Err(ChannelError::MismatchedPacketSequence {
                         actual: msg.packet.seq_on_a,
                         expected: msg.next_seq_recv_on_b,
                     });

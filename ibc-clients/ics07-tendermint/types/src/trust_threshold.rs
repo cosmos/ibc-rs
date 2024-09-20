@@ -5,6 +5,7 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use ibc_core_client_types::error::ClientError;
+use ibc_core_host_types::error::DecodingError;
 use ibc_proto::ibc::lightclients::tendermint::v1::Fraction;
 use ibc_proto::Protobuf;
 use tendermint::trust_threshold::TrustThresholdFraction;
@@ -103,13 +104,11 @@ impl From<TrustThresholdFraction> for TrustThreshold {
 /// Conversion from IBC domain type into
 /// Tendermint domain type.
 impl TryFrom<TrustThreshold> for TrustThresholdFraction {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(t: TrustThreshold) -> Result<TrustThresholdFraction, Self::Error> {
-        Self::new(t.numerator, t.denominator).map_err(|_| ClientError::InvalidTrustThreshold {
-            numerator: t.numerator,
-            denominator: t.denominator,
-        })
+        Self::new(t.numerator, t.denominator)
+            .map_err(|_| DecodingError::invalid_raw_data("trust threshold"))
     }
 }
 
@@ -125,10 +124,11 @@ impl From<TrustThreshold> for Fraction {
 }
 
 impl TryFrom<Fraction> for TrustThreshold {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(value: Fraction) -> Result<Self, Self::Error> {
         Self::new(value.numerator, value.denominator)
+            .map_err(|_| DecodingError::invalid_raw_data("trust threshold"))
     }
 }
 

@@ -57,28 +57,17 @@ impl TryFrom<RawMsgUpgradeClient> for MsgUpgradeClient {
     fn try_from(proto_msg: RawMsgUpgradeClient) -> Result<Self, Self::Error> {
         let raw_client_state = proto_msg
             .client_state
-            .ok_or(DecodingError::MissingRawData {
-                description: "client state not set".to_string(),
-            })?;
+            .ok_or(DecodingError::missing_raw_data("msg upgrade client state"))?;
 
         let raw_consensus_state =
             proto_msg
                 .consensus_state
-                .ok_or(DecodingError::MissingRawData {
-                    description: "consensus state not set".to_string(),
-                })?;
+                .ok_or(DecodingError::missing_raw_data(
+                    "msg upgrade client consensus state",
+                ))?;
 
-        let c_bytes =
-            CommitmentProofBytes::try_from(proto_msg.proof_upgrade_client).map_err(|e| {
-                DecodingError::InvalidRawData {
-                    description: format!("invalid upgrade client state proof: {e}"),
-                }
-            })?;
-
-        let cs_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_consensus_state)
-            .map_err(|e| DecodingError::InvalidRawData {
-                description: format!("invalid upgrade consensus state proof: {e}"),
-            })?;
+        let c_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_client)?;
+        let cs_bytes = CommitmentProofBytes::try_from(proto_msg.proof_upgrade_consensus_state)?;
 
         Ok(MsgUpgradeClient {
             client_id: ClientId::from_str(&proto_msg.client_id)?,

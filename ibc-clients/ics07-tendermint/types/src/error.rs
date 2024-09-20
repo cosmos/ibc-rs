@@ -17,17 +17,17 @@ use tendermint_light_client_verifier::Verdict;
 /// The main error type for the Tendermint light client
 #[derive(Debug, Display)]
 pub enum TendermintClientError {
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
-    /// invalid client state trust threshold: `{description}`
+    /// invalid client state trust threshold: {description}
     InvalidTrustThreshold { description: String },
-    /// invalid clock drift; must be greater than 0
+    /// invalid max clock drift; must be greater than 0
     InvalidMaxClockDrift,
-    /// invalid client proof specs: `{0}`
+    /// invalid client proof specs `{0}`
     InvalidProofSpec(CommitmentError),
-    /// invalid header timestamp: `{0}`
-    InvalidHeaderTimestamp(TimestampError),
-    /// invalid header height: `{0}`
+    /// invalid timestamp `{0}`
+    InvalidTimestamp(TimestampError),
+    /// invalid header height `{0}`
     InvalidHeaderHeight(u64),
     /// mismatched revision heights: expected `{expected}`, actual `{actual}`
     MismatchedRevisionHeights { expected: u64, actual: u64 },
@@ -35,11 +35,11 @@ pub enum TendermintClientError {
     MismatchedHeaderChainIds { expected: String, actual: String },
     /// mismatched validator hashes: expected `{expected}`, actual `{actual}`
     MismatchedValidatorHashes { expected: Hash, actual: Hash },
-    /// empty client state upgrade-path key
-    EmptyUpgradePathKey,
-    /// failed to verify header: `{0}`
+    /// missing client state upgrade-path key
+    MissingUpgradePathKey,
+    /// failed to verify header: {0}
     FailedToVerifyHeader(Box<LightClientErrorDetail>),
-    /// insufficient validator overlap: `{0}`
+    /// insufficient validator overlap `{0}`
     InsufficientValidatorOverlap(VotingPowerTally),
     /// insufficient trusting period `{trusting_period:?}`; should be > consensus state timestamp `{duration_since_consensus_state:?}`
     InsufficientTrustingPeriod {
@@ -55,13 +55,13 @@ impl std::error::Error for TendermintClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
             Self::Decoding(e) => Some(e),
+            Self::InvalidTimestamp(e) => Some(e),
+            Self::InvalidProofSpec(e) => Some(e),
             _ => None,
         }
     }
 }
 
-// TODO(seanchen1991): Should this impl be deprecated in favor of a
-// From<ClientError> for TendermintClientError impl?
 impl From<TendermintClientError> for ClientError {
     fn from(e: TendermintClientError) -> Self {
         Self::ClientSpecific {
@@ -85,6 +85,12 @@ impl From<CommitmentError> for TendermintClientError {
 impl From<DecodingError> for TendermintClientError {
     fn from(e: DecodingError) -> Self {
         Self::Decoding(e)
+    }
+}
+
+impl From<TimestampError> for TendermintClientError {
+    fn from(e: TimestampError) -> Self {
+        Self::InvalidTimestamp(e)
     }
 }
 

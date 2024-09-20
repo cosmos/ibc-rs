@@ -53,7 +53,7 @@ impl Header {
             .header
             .time
             .try_into()
-            .map_err(TendermintClientError::InvalidHeaderTimestamp)
+            .map_err(TendermintClientError::InvalidTimestamp)
     }
 
     pub fn height(&self) -> Height {
@@ -120,10 +120,9 @@ impl Header {
         if &self.trusted_next_validator_set.hash_with::<H>() == trusted_next_validator_hash {
             Ok(())
         } else {
-            Err(ClientError::FailedHeaderVerification {
-                description:
-                    "header trusted next validator set hash does not match hash stored on chain"
-                        .to_string(),
+            Err(ClientError::FailedToVerifyHeader {
+                description: "trusted next validator set hash does not match hash stored on chain"
+                    .to_string(),
             })
         }
     }
@@ -165,42 +164,32 @@ impl Header {
 impl Protobuf<RawHeader> for Header {}
 
 impl TryFrom<RawHeader> for Header {
-    type Error = TendermintClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawHeader) -> Result<Self, Self::Error> {
         let header = Self {
             signed_header: raw
                 .signed_header
-                .ok_or(DecodingError::MissingRawData {
-                    description: "signed header not set".to_string(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("signed header"))?
                 .try_into()
-                .map_err(|e| DecodingError::InvalidRawData {
-                    description: format!("failed to decode signed header: {e:?}"),
-                })?,
+                .map_err(|e| DecodingError::invalid_raw_data(format!("signed header: {e:?}")))?,
             validator_set: raw
                 .validator_set
-                .ok_or(DecodingError::MissingRawData {
-                    description: "validator set not set".to_string(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("validator set"))?
                 .try_into()
-                .map_err(|e| DecodingError::InvalidRawData {
-                    description: format!("failed to decode validator set: {e:?}"),
-                })?,
+                .map_err(|e| DecodingError::invalid_raw_data(format!("validator set: {e:?}")))?,
             trusted_height: raw
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::MissingRawData {
-                    description: "trusted height not set".to_string(),
-                })?,
+                .ok_or(DecodingError::missing_raw_data("trusted height"))?,
             trusted_next_validator_set: raw
                 .trusted_validators
-                .ok_or(DecodingError::MissingRawData {
-                    description: "trusted next validator set not set".to_string(),
-                })?
+                .ok_or(DecodingError::missing_raw_data(
+                    "trusted next validator set",
+                ))?
                 .try_into()
-                .map_err(|e| DecodingError::InvalidRawData {
-                    description: format!("failed to decode trusted next validator set: {e:?}"),
+                .map_err(|e| {
+                    DecodingError::invalid_raw_data(format!("trusted next validator set: {e:?}"))
                 })?,
         };
 
@@ -211,7 +200,7 @@ impl TryFrom<RawHeader> for Header {
 impl Protobuf<Any> for Header {}
 
 impl TryFrom<Any> for Header {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_header(value: &[u8]) -> Result<Header, DecodingError> {
@@ -219,8 +208,8 @@ impl TryFrom<Any> for Header {
             Ok(header)
         }
         match raw.type_url.as_str() {
-            TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value).map_err(ClientError::Decoding),
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value),
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: TENDERMINT_HEADER_TYPE_URL.to_string(),
                 actual: raw.type_url,
             })?,

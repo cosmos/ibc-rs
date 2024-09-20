@@ -4,7 +4,6 @@ use core::cmp::max;
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::proto::v1::Height as RawHeight;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::specs::ProofSpecs;
@@ -187,7 +186,7 @@ impl ClientState {
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty
         for key in self.upgrade_path.iter() {
             if key.trim().is_empty() {
-                return Err(TendermintClientError::EmptyUpgradePathKey);
+                return Err(TendermintClientError::MissingUpgradePathKey);
             }
         }
 
@@ -203,11 +202,7 @@ impl ClientState {
     /// Tendermint-specific light client verification.
     pub fn as_light_client_options(&self) -> Result<Options, TendermintClientError> {
         Ok(Options {
-            trust_threshold: self.trust_level.try_into().map_err(|e: ClientError| {
-                TendermintClientError::InvalidTrustThreshold {
-                    description: e.to_string(),
-                }
-            })?,
+            trust_threshold: self.trust_level.try_into()?,
             trusting_period: self.trusting_period,
             clock_drift: self.max_clock_drift,
         })
@@ -235,70 +230,64 @@ impl ClientState {
 impl Protobuf<RawTmClientState> for ClientState {}
 
 impl TryFrom<RawTmClientState> for ClientState {
-    type Error = TendermintClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
         let chain_id = ChainId::from_str(raw.chain_id.as_str())?;
 
         let trust_level = {
-            let trust_level = raw.trust_level.ok_or(DecodingError::MissingRawData {
-                description: "trust level not set".to_string(),
-            })?;
-            trust_level
-                .try_into()
-                .map_err(|e| DecodingError::InvalidRawData {
-                    description: format!("failed to decoding trust threshold: {e}"),
-                })?
+            let trust_level = raw.trust_level.ok_or(DecodingError::missing_raw_data(
+                "tm client state trust level",
+            ))?;
+            trust_level.try_into()?
         };
 
         let trusting_period = raw
             .trusting_period
-            .ok_or(DecodingError::MissingRawData {
-                description: "trusting period not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data(
+                "tm client state trusting period",
+            ))?
             .try_into()
-            .map_err(|_| DecodingError::InvalidRawData {
-                description: "failed to decode trusting period".to_string(),
+            .map_err(|d| {
+                DecodingError::invalid_raw_data(format!("tm client state trusting period: {d:?}"))
             })?;
 
         let unbonding_period = raw
             .unbonding_period
-            .ok_or(DecodingError::MissingRawData {
-                description: "unbonding period not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data(
+                "tm client state unbonding period",
+            ))?
             .try_into()
-            .map_err(|_| DecodingError::InvalidRawData {
-                description: "failed to decode unbonding period".to_string(),
+            .map_err(|d| {
+                DecodingError::invalid_raw_data(format!("tm client state unbonding period: {d:?}"))
             })?;
 
         let max_clock_drift = raw
             .max_clock_drift
-            .ok_or(DecodingError::MissingRawData {
-                description: "max clock drift not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data(
+                "tm client state max clock drift",
+            ))?
             .try_into()
-            .map_err(|_| DecodingError::InvalidRawData {
-                description: "failed to decode max clock drift".to_string(),
+            .map_err(|d| {
+                DecodingError::invalid_raw_data(format!("tm client state max clock drift: {d:?}"))
             })?;
 
         let latest_height = raw
             .latest_height
-            .ok_or(DecodingError::MissingRawData {
-                description: "latest height not set".to_string(),
-            })?
-            .try_into()
-            .map_err(|e| DecodingError::InvalidRawData {
-                description: format!("failed to decode latest height: {e}"),
-            })?;
+            .ok_or(DecodingError::missing_raw_data(
+                "tm client state latest height",
+            ))?
+            .try_into()?;
+
+        let proof_specs = raw.proof_specs.try_into()?;
 
         // NOTE: In `RawClientState`, a `frozen_height` of `0` means "not
         // frozen". See:
         // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-        let frozen_height =
-            Height::try_from(raw.frozen_height.ok_or(DecodingError::MissingRawData {
-                description: "frozen height not set".to_string(),
-            })?)
-            .ok();
+        let frozen_height = Height::try_from(raw.frozen_height.ok_or(
+            DecodingError::missing_raw_data("tm client state frozen height"),
+        )?)
+        .ok();
 
         // We use set this deprecated field just so that we can properly convert
         // it back in its raw form
@@ -315,7 +304,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             unbonding_period,
             max_clock_drift,
             latest_height,
-            raw.proof_specs.try_into()?,
+            proof_specs,
             raw.upgrade_path,
             frozen_height,
             allow_update,
@@ -355,20 +344,17 @@ impl From<ClientState> for RawTmClientState {
 impl Protobuf<Any> for ClientState {}
 
 impl TryFrom<Any> for ClientState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_client_state(value: &[u8]) -> Result<ClientState, DecodingError> {
-            let client_state =
-                Protobuf::<RawTmClientState>::decode(value).map_err(DecodingError::Protobuf)?;
+            let client_state = Protobuf::<RawTmClientState>::decode(value)?;
             Ok(client_state)
         }
 
         match raw.type_url.as_str() {
-            TENDERMINT_CLIENT_STATE_TYPE_URL => {
-                decode_client_state(&raw.value).map_err(ClientError::Decoding)
-            }
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            TENDERMINT_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
             })?,

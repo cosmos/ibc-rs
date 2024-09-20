@@ -37,22 +37,20 @@ impl TryFrom<RawMsgTimeout> for MsgTimeout {
     fn try_from(raw_msg: RawMsgTimeout) -> Result<Self, Self::Error> {
         if raw_msg.next_sequence_recv == 0 {
             return Err(DecodingError::invalid_raw_data(
-                "packet sequence cannot be 0",
+                "msg timeout packet sequence cannot be 0",
             ));
         }
         Ok(MsgTimeout {
             packet: raw_msg
                 .packet
-                .ok_or(DecodingError::missing_raw_data("packet data not set"))?
+                .ok_or(DecodingError::missing_raw_data("msg timeout packet data"))?
                 .try_into()?,
             next_seq_recv_on_b: Sequence::from(raw_msg.next_sequence_recv),
-            proof_unreceived_on_b: raw_msg.proof_unreceived.try_into().map_err(|e| {
-                DecodingError::invalid_raw_data(format!("failed to decode proof: {e}"))
-            })?,
+            proof_unreceived_on_b: raw_msg.proof_unreceived.try_into()?,
             proof_height_on_b: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::missing_raw_data("proof height not set"))?,
+                .ok_or(DecodingError::missing_raw_data("msg timeout proof height"))?,
             signer: raw_msg.signer.into(),
         })
     }

@@ -1,6 +1,5 @@
 //! Defines the consensus state type for the ICS-08 Wasm light client.
 
-use ibc_core_client::types::error::ClientError;
 use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
@@ -36,7 +35,7 @@ impl From<ConsensusState> for RawConsensusState {
 }
 
 impl TryFrom<RawConsensusState> for ConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(value: RawConsensusState) -> Result<Self, Self::Error> {
         Ok(Self { data: value.data })
@@ -55,7 +54,7 @@ impl From<ConsensusState> for Any {
 }
 
 impl TryFrom<Any> for ConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
         fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, DecodingError> {
@@ -63,10 +62,8 @@ impl TryFrom<Any> for ConsensusState {
             Ok(consensus_state)
         }
         match any.type_url.as_str() {
-            WASM_CONSENSUS_STATE_TYPE_URL => {
-                decode_consensus_state(&any.value).map_err(ClientError::Decoding)
-            }
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            WASM_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&any.value),
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: WASM_CONSENSUS_STATE_TYPE_URL.to_string(),
                 actual: any.type_url.to_string(),
             })?,

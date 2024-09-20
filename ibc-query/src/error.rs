@@ -47,12 +47,6 @@ impl From<QueryError> for Status {
     }
 }
 
-impl From<HandlerError> for QueryError {
-    fn from(e: HandlerError) -> Self {
-        Self::Handler(e)
-    }
-}
-
 impl From<ClientError> for QueryError {
     fn from(e: ClientError) -> Self {
         Self::Handler(HandlerError::Client(e))

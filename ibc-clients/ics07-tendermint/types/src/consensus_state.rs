@@ -1,6 +1,5 @@
 //! Defines Tendermint's `ConsensusState` type
 
-use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
@@ -52,27 +51,24 @@ impl TryFrom<RawConsensusState> for ConsensusState {
     fn try_from(raw: RawConsensusState) -> Result<Self, Self::Error> {
         let proto_root = raw
             .root
-            .ok_or(DecodingError::MissingRawData {
-                description: "no commitment root set".into(),
-            })?
+            .ok_or(DecodingError::missing_raw_data(
+                "consensus state commitment root",
+            ))?
             .hash;
 
-        let ibc_proto::google::protobuf::Timestamp { seconds, nanos } =
-            raw.timestamp.ok_or(DecodingError::MissingRawData {
-                description: "no timestamp set".into(),
-            })?;
+        let ibc_proto::google::protobuf::Timestamp { seconds, nanos } = raw
+            .timestamp
+            .ok_or(DecodingError::missing_raw_data("consensus state timestamp"))?;
         // FIXME: shunts like this are necessary due to
         // https://github.com/informalsystems/tendermint-rs/issues/1053
         let proto_timestamp = tpb::Timestamp { seconds, nanos };
         let timestamp = proto_timestamp
             .try_into()
-            .map_err(|e| DecodingError::InvalidRawData {
-                description: format!("invalid timestamp: {e}"),
-            })?;
+            .map_err(|e| DecodingError::invalid_raw_data(format!("timestamp: {e}")))?;
 
         let next_validators_hash = Hash::from_bytes(Algorithm::Sha256, &raw.next_validators_hash)
-            .map_err(|e| DecodingError::InvalidHash {
-            description: e.to_string(),
+            .map_err(|e| {
+            DecodingError::invalid_raw_data(format!("next validators hash: {e}"))
         })?;
 
         Ok(Self {
@@ -103,7 +99,7 @@ impl From<ConsensusState> for RawConsensusState {
 impl Protobuf<Any> for ConsensusState {}
 
 impl TryFrom<Any> for ConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, DecodingError> {
@@ -112,10 +108,8 @@ impl TryFrom<Any> for ConsensusState {
         }
 
         match raw.type_url.as_str() {
-            TENDERMINT_CONSENSUS_STATE_TYPE_URL => {
-                decode_consensus_state(&raw.value).map_err(ClientError::Decoding)
-            }
-            _ => Err(DecodingError::MismatchedTypeUrls {
+            TENDERMINT_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
+            _ => Err(DecodingError::MismatchedResourceName {
                 expected: TENDERMINT_CONSENSUS_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
             })?,

@@ -9,15 +9,17 @@ use ibc_primitives::{Timestamp, TimestampError};
 
 #[derive(Debug, Display)]
 pub enum ConnectionError {
-    /// client error: `{0}`
+    /// client error: {0}
     Client(ClientError),
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
-    /// host error: `{0}`
+    /// host error: {0}
     Host(HostError),
+    /// timestamp error: {0}
+    Timestamp(TimestampError),
     /// invalid counterparty
     InvalidCounterparty,
-    /// invalid connection state: `{description}`
+    /// invalid connection state: {description}
     InvalidState { description: String },
     /// mismatched connection states: expected `{expected}`, actual `{actual}`
     MismatchedConnectionStates { expected: String, actual: String },
@@ -42,8 +44,6 @@ pub enum ConnectionError {
         current_host_time: Timestamp,
         earliest_valid_time: Timestamp,
     },
-    /// overflowed timestamp: `{0}`
-    OverflowedTimestamp(TimestampError),
 }
 
 impl From<DecodingError> for ConnectionError {
@@ -55,6 +55,12 @@ impl From<DecodingError> for ConnectionError {
 impl From<IdentifierError> for ConnectionError {
     fn from(e: IdentifierError) -> Self {
         Self::Decoding(DecodingError::Identifier(e))
+    }
+}
+
+impl From<TimestampError> for ConnectionError {
+    fn from(e: TimestampError) -> Self {
+        Self::Timestamp(e)
     }
 }
 
@@ -77,6 +83,7 @@ impl std::error::Error for ConnectionError {
             Self::Host(e) => Some(e),
             Self::Client(e) => Some(e),
             Self::Decoding(e) => Some(e),
+            Self::Timestamp(e) => Some(e),
             _ => None,
         }
     }

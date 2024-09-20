@@ -138,19 +138,15 @@ impl TryFrom<RawChannel> for ChannelEnd {
 
     fn try_from(value: RawChannel) -> Result<Self, Self::Error> {
         let chan_state: State = State::from_i32(value.state)
-            .map_err(|e| DecodingError::invalid_raw_data(format!("invalid channel state: {e}")))?;
+            .map_err(|e| DecodingError::invalid_raw_data(format!("channel state: {e}")))?;
 
-        let chan_ordering = Order::from_i32(value.ordering).map_err(|e| {
-            DecodingError::invalid_raw_data(format!("invalid channel ordering: {e}"))
-        })?;
+        let chan_ordering = Order::from_i32(value.ordering)
+            .map_err(|e| DecodingError::invalid_raw_data(format!("channel ordering: {e}")))?;
         // Assemble the 'remote' attribute of the Channel, which represents the Counterparty.
         let remote = value
             .counterparty
-            .ok_or(DecodingError::missing_raw_data("missing counterparty"))?
-            .try_into()
-            .map_err(|e| {
-                DecodingError::invalid_raw_data(format!("failed to convert raw counterparty: {e}"))
-            })?;
+            .ok_or(DecodingError::missing_raw_data("channel counterparty"))?
+            .try_into()?;
 
         // Parse each item in connection_hops into a ConnectionId.
         let connection_hops = value
@@ -162,9 +158,7 @@ impl TryFrom<RawChannel> for ChannelEnd {
         let version = value.version.into();
 
         let channel = ChannelEnd::new(chan_state, chan_ordering, remote, connection_hops, version)
-            .map_err(|e| {
-                DecodingError::invalid_raw_data(format!("failed to create new channel: {e}"))
-            })?;
+            .map_err(|e| DecodingError::invalid_raw_data(format!("channel end: {e}")))?;
 
         Ok(channel)
     }
@@ -386,15 +380,6 @@ impl Counterparty {
     pub fn channel_id(&self) -> Option<&ChannelId> {
         self.channel_id.as_ref()
     }
-
-    /// Called upon initiating a channel handshake on the host chain to verify
-    /// that the counterparty channel id has not been set.
-    pub(crate) fn verify_empty_channel_id(&self) -> Result<(), ChannelError> {
-        if self.channel_id().is_some() {
-            return Err(ChannelError::UnexpectedChannelId);
-        }
-        Ok(())
-    }
 }
 
 impl Display for Counterparty {
@@ -417,7 +402,7 @@ impl Display for Counterparty {
 impl Protobuf<RawCounterparty> for Counterparty {}
 
 impl TryFrom<RawCounterparty> for Counterparty {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(raw_counterparty: RawCounterparty) -> Result<Self, Self::Error> {
         let channel_id: Option<ChannelId> = if raw_counterparty.channel_id.is_empty() {

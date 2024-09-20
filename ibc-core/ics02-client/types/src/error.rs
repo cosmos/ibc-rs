@@ -2,10 +2,10 @@
 
 use displaydoc::Display;
 use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::{DecodingError, HostError};
+use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::Timestamp;
+use ibc_primitives::{Timestamp, TimestampError};
 
 use crate::height::Height;
 use crate::Status;
@@ -13,69 +13,49 @@ use crate::Status;
 /// Encodes all the possible client errors
 #[derive(Debug, Display)]
 pub enum ClientError {
-    /// host error : `{0}`
+    /// host error : {0}
     Host(HostError),
-    /// upgrade client error: `{0}`
+    /// upgrade client error: {0}
     Upgrade(UpgradeClientError),
-    /// decoding error: `{0}`
+    /// decoding error: {0}
     Decoding(DecodingError),
-    /// invalid trust threshold: `{numerator}`/`{denominator}`
+    /// timestamp error: {0}
+    Timestamp(TimestampError),
+    /// invalid trust threshold `{numerator}`/`{denominator}`
     InvalidTrustThreshold { numerator: u64, denominator: u64 },
-    /// invalid client state type: `{0}`
+    /// invalid client state type `{0}`
     InvalidClientStateType(String),
     /// invalid update client message
     InvalidUpdateClientMessage,
     /// invalid height; cannot be zero or negative
     InvalidHeight,
-    /// invalid proof height; expected `{actual}` >= `{expected}`
-    InvalidProofHeight { actual: Height, expected: Height },
-    /// invalid consensus state timestamp: `{0}`
+    /// invalid status `{0}`
+    InvalidStatus(Status),
+    /// invalid consensus state timestamp `{0}`
     InvalidConsensusStateTimestamp(Timestamp),
-    /// invalid attribute key: `{0}`
-    InvalidAttributeKey(String),
-    /// invalid attribute value: `{0}`
-    InvalidAttributeValue(String),
-    /// invalid status: `{0}`
-    InvalidStatus(String),
-    /// invalid header type: `{0}`
+    /// invalid header type `{0}`
     InvalidHeaderType(String),
-    /// missing local consensus state at `{0}`
-    MissingLocalConsensusState(Height),
-    /// missing attribute key
-    MissingAttributeKey,
-    /// missing attribute value
-    MissingAttributeValue,
-    /// unexpected status found: `{0}`
-    UnexpectedStatus(Status),
-    /// client state already exists: `{0}`
-    DuplicateClientState(ClientId),
-    /// mismatched client recovery states
-    MismatchedClientRecoveryStates,
-    /// client recovery heights not allowed: expected substitute client height `{substitute_height}` > subject client height `{subject_height}`
-    NotAllowedClientRecoveryHeights {
+    /// invalid client recovery heights: expected substitute client height `{substitute_height}` > subject client height `{subject_height}`
+    InvalidClientRecoveryHeights {
         subject_height: Height,
         substitute_height: Height,
     },
-    /// failed ICS23 verification: `{0}`
+    /// insufficient proof height; expected `{actual}` >= `{expected}`
+    InsufficientProofHeight { expected: Height, actual: Height },
+    /// missing local consensus state at `{0}`
+    MissingLocalConsensusState(Height),
+    /// duplicate client state `{0}`
+    DuplicateClientState(ClientId),
+    /// failed to verify client recovery states
+    FailedToVerifyClientRecoveryStates,
+    /// failed ICS23 verification: {0}
     FailedICS23Verification(CommitmentError),
-    /// failed header verification: `{description}`
-    FailedHeaderVerification { description: String },
-    /// failed misbehaviour handling: `{description}`
-    FailedMisbehaviourHandling { description: String },
-
-    // TODO(seanchen1991): Incorporate this error into its own variants
-    /// client-specific error: `{description}`
+    /// failed to verify header: {description}
+    FailedToVerifyHeader { description: String },
+    /// failed to handle misbehaviour: {description}
+    FailedToHandleMisbehaviour { description: String },
+    /// client-specific error: {description}
     ClientSpecific { description: String },
-    /// other error: `{description}`
-    Other { description: String },
-}
-
-impl From<&'static str> for ClientError {
-    fn from(s: &'static str) -> Self {
-        Self::Other {
-            description: s.to_string(),
-        }
-    }
 }
 
 impl From<CommitmentError> for ClientError {
@@ -96,6 +76,18 @@ impl From<HostError> for ClientError {
     }
 }
 
+impl From<IdentifierError> for ClientError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
+    }
+}
+
+impl From<TimestampError> for ClientError {
+    fn from(e: TimestampError) -> Self {
+        Self::Timestamp(e)
+    }
+}
+
 #[cfg(feature = "std")]
 impl std::error::Error for ClientError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
@@ -104,6 +96,7 @@ impl std::error::Error for ClientError {
             Self::Decoding(e) => Some(e),
             Self::Upgrade(e) => Some(e),
             Self::Host(e) => Some(e),
+            Self::Timestamp(e) => Some(e),
             _ => None,
         }
     }

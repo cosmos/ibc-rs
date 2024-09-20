@@ -75,9 +75,8 @@ pub fn validate_named_u64_index(id: &str, name: &str) -> Result<(), Error> {
         return Err(Error::InvalidPrefix(id.into()));
     }
 
-    _ = number_s.parse::<u64>().map_err(|_| Error::FailedToParse {
-        value: id.into(),
-        description: "invalid prefix".to_string(),
+    _ = number_s.parse::<u64>().map_err(|e| Error::FailedToParse {
+        description: format!("named index `{id}`: {e}"),
     })?;
 
     Ok(())

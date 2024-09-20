@@ -8,7 +8,6 @@ use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnect
 use ibc_proto::Protobuf;
 
 use crate::connection::Counterparty;
-use crate::error::ConnectionError;
 use crate::version::Version;
 
 pub const CONN_OPEN_INIT_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenInit";
@@ -51,7 +50,10 @@ mod borsh_impls {
                 self.delay_period.as_nanos().try_into().map_err(|_| {
                     io::Error::new(
                         io::ErrorKind::Other,
-                        format!("Duration too long: {} nanos", self.delay_period.as_nanos()),
+                        format!(
+                            "Duration too long: `{}` nanos",
+                            self.delay_period.as_nanos()
+                        ),
                     )
                 })?;
 
@@ -85,17 +87,21 @@ mod borsh_impls {
 impl Protobuf<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {}
 
 impl TryFrom<RawMsgConnectionOpenInit> for MsgConnectionOpenInit {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(msg: RawMsgConnectionOpenInit) -> Result<Self, Self::Error> {
         let counterparty: Counterparty = msg
             .counterparty
-            .ok_or(DecodingError::MissingRawData {
-                description: "counterparty not set".to_string(),
-            })?
+            .ok_or(DecodingError::missing_raw_data(
+                "msg conn open init counterparty",
+            ))?
             .try_into()?;
 
-        counterparty.verify_empty_connection_id()?;
+        if let Some(cid) = counterparty.connection_id() {
+            return Err(DecodingError::invalid_raw_data(format!(
+                "expected msg conn open init connection ID to be empty, actual `{cid}`",
+            )));
+        }
 
         Ok(Self {
             client_id_on_a: msg.client_id.parse()?,

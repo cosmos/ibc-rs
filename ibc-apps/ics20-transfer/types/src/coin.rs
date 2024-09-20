@@ -77,7 +77,7 @@ where
                     .all(|x| x.is_alphanumeric() || VALID_DENOM_CHARACTERS.contains(x))
             })
             .ok_or(DecodingError::invalid_raw_data(format!(
-                "invalid coin: {coin_str}"
+                "coin str: {coin_str}"
             )))?;
 
         Ok(Coin {

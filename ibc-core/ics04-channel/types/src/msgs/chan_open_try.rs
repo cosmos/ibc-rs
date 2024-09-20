@@ -61,11 +61,16 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
 
         chan_end_on_b
             .verify_state_matches(&State::TryOpen)
-            .map_err(|e| DecodingError::invalid_raw_data(format!("invalid channel state: {e}")))?;
+            .map_err(|_| {
+                DecodingError::invalid_raw_data(format!(
+                    "channel state expected to be in `TryOpen` state, actual `{}`",
+                    chan_end_on_b.state()
+                ))
+            })?;
 
         #[allow(deprecated)]
         if !raw_msg.previous_channel_id.is_empty() {
-            return Err(DecodingError::invalid_raw_data("previous channel id must be empty. It has been deprecated as crossing hellos are no longer supported"))?;
+            return Err(DecodingError::invalid_raw_data("previous channel id must be empty; it has been deprecated as crossing hellos are no longer supported"))?;
         }
 
         #[allow(deprecated)]
@@ -75,16 +80,16 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
             connection_hops_on_b: chan_end_on_b.connection_hops,
             port_id_on_a: chan_end_on_b.remote.port_id,
             chan_id_on_a: chan_end_on_b.remote.channel_id.ok_or(
-                DecodingError::missing_raw_data("missing counterparty channel ID"),
+                DecodingError::missing_raw_data("msg channel open try counterparty channel ID"),
             )?,
             version_supported_on_a: raw_msg.counterparty_version.into(),
-            proof_chan_end_on_a: raw_msg.proof_init.try_into().map_err(|e| {
-                DecodingError::invalid_raw_data(format!("invalid commitment proof bytes: {e}"))
-            })?,
+            proof_chan_end_on_a: raw_msg.proof_init.try_into()?,
             proof_height_on_a: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::invalid_raw_data("invalid proof height"))?,
+                .ok_or(DecodingError::invalid_raw_data(
+                    "msg channel open try proof height",
+                ))?,
             signer: raw_msg.signer.into(),
             version_proposal: chan_end_on_b.version,
         };

@@ -35,7 +35,7 @@ where
     let status = client_state.status(client_val_ctx, &client_id)?;
 
     if status.is_frozen() {
-        return Err(ClientError::UnexpectedStatus(Status::Frozen));
+        return Err(ClientError::InvalidStatus(Status::Frozen));
     };
 
     let host_timestamp = ctx.host_timestamp()?;

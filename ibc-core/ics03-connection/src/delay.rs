@@ -27,8 +27,7 @@ where
     let conn_delay_height_period = ctx.block_delay(&conn_delay_time_period);
 
     // Verify that the current host chain time is later than the last client update time
-    let earliest_valid_time = (last_client_update.0 + conn_delay_time_period)
-        .map_err(ConnectionError::OverflowedTimestamp)?;
+    let earliest_valid_time = (last_client_update.0 + conn_delay_time_period)?;
     if current_host_time < earliest_valid_time {
         return Err(ConnectionError::InsufficientTimeElapsed {
             current_host_time,
