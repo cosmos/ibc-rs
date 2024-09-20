@@ -20,7 +20,6 @@ all-features = true
 [dependencies]
 ibc-core-client           = { workspace = true }
 ibc-core-connection       = { workspace = true }
-ibc-core-connection-types = { workspace = true }
 ibc-core-channel-types    = { workspace = true }
 ibc-core-commitment-types = { workspace = true }
 ibc-core-host             = { workspace = true }

@@ -852,7 +852,6 @@ dependencies = [
  "ibc-core-client",
  "ibc-core-commitment-types",
  "ibc-core-connection",
- "ibc-core-connection-types",
  "ibc-core-handler-types",
  "ibc-core-host",
  "ibc-core-router",
