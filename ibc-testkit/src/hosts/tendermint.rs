@@ -85,14 +85,12 @@ impl TestHost for TendermintHost {
             .unbonding_period(params.unbonding_period)
             .proof_specs(params.proof_specs.clone())
             .build()
-            .into_client_state()
-            .chain_id(self.chain_id.clone())
-            .latest_height(
+            .into_client_state(
+                self.chain_id.clone(),
                 self.get_block(latest_height)
                     .expect("block exists")
                     .height(),
             )
-            .call()
             .expect("never fails");
 
         client_state.inner().validate().expect("never fails");
