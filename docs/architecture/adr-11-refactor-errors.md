@@ -65,9 +65,9 @@ removing the discrepancy that the ICS04 module exposes two distinct error types.
 In light of the stated rationale of making it clear when an error originates from host logic
 vs ibc-rs's internal logic, we propose adding a new `HostError` type that will live as a
 variant in each of the module-level error types, as well as in the application-level error
-types, `TokenTransferError` and `NftTransferError`. Initially, we had only a single 
-`Host(HostError)` variant that existed in the `HandlerError`type, but it became clear 
-that this wasn't the correct place in which to expose host-level errors. This is because 
+types, `TokenTransferError` and `NftTransferError`. Initially, we had only a single
+`Host(HostError)` variant that existed in the `HandlerError`type, but it became clear
+that this wasn't the correct place in which to expose host-level errors. This is because
 host errors can crop up within any of the core ibc-rs modules.
 
 We introduce the following concrete `HostError` type in the `ics24-host` crate:
