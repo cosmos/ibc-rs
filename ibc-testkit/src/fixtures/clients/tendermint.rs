@@ -70,22 +70,16 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
 pub struct ClientStateConfig {
     #[builder(default = TrustThreshold::ONE_THIRD)]
     pub trust_level: TrustThreshold,
-
     #[builder(default = Duration::from_secs(64000))]
     pub trusting_period: Duration,
-
     #[builder(default = Duration::from_secs(128_000))]
     pub unbonding_period: Duration,
-
     #[builder(default = Duration::from_millis(3000))]
     pub max_clock_drift: Duration,
-
     #[builder(default = vec![basecoin_proof_spec(); 2].try_into().expect("no error"))]
     pub proof_specs: ProofSpecs,
-
     #[builder(default)]
     pub upgrade_path: Vec<String>,
-
     #[builder(default = AllowUpdate { after_expiry: false, after_misbehaviour: false })]
     allow_update: AllowUpdate,
 }
