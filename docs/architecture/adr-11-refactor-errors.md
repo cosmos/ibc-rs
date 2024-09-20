@@ -290,7 +290,7 @@ error under the `expected` and `actual` fields. The error message for this class
 always include "expected ``{expected}``, actual ``{actual}``"; this statement should be precluded
 by "mismatched [TYPE]:". The type should be spelled in the singular and followed by a colon.
 The `expected` and `actual` interpolated values in the error message should be surrounded by
-"``{}``", backticks and then braces.
+``{}``, backticks and then braces.
 
 The rest of the error classes are a bit more freeform in how they are structured. They could
 take the form of unit structs that do not contain any values, serving mainly to surface a
