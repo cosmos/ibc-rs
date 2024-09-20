@@ -273,7 +273,7 @@ formatting do not deviate. `NestedError`s are always newtype wrappers around a c
 error. The sole purpose of these variants is to provide a means of converting the contained
 error to the containing error type. Thus, every `NestedError` variant should be
 accompanied by a `From<SomeError> for ContainingError` impl. The naming scheme for
-`NestedError` variants should  include the name of the contained error, minus the word
+`NestedError` variants should include the name of the contained error, minus the word
 "Error" itself. The error message then should clearly delineate the type of the contained
 error, the fact that the message is referring to a lower-level error, and the contents
 of the lower-level error. An example looks like this:
