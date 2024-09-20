@@ -286,7 +286,7 @@ impl std::error::Error for TimestampError {
         match &self {
             Self::ParseInt(e) => Some(e),
             Self::TryFromInt(e) => Some(e),
-            // Self::Conversion(e) => Some(e),
+            Self::Conversion(e) => Some(e),
             _ => None,
         }
     }
