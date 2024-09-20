@@ -13,7 +13,6 @@ use ibc_proto::Protobuf;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use tendermint::Time;
-use time::error::ComponentRange;
 use time::macros::offset;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
@@ -269,16 +268,16 @@ impl scale_info::TypeInfo for Timestamp {
 
 #[derive(Debug, Display, derive_more::From)]
 pub enum TimestampError {
-    /// parsing u64 integer from string error: {0}
+    /// parse int error: {0}
     ParseInt(ParseIntError),
-    /// try from u64 to `Timestamp` error: {0}
+    /// try from int error: {0}
     TryFromInt(TryFromIntError),
+    /// failed to convert timestamp: {0}
+    Conversion(time::error::ComponentRange),
     /// invalid date: out of range
     InvalidDate,
-    /// overflowed timestamp  when modifying with duration
+    /// overflowed timestamp
     OverflowedTimestamp,
-    /// timestamp is not set
-    Conversion(ComponentRange),
 }
 
 #[cfg(feature = "std")]
@@ -287,7 +286,7 @@ impl std::error::Error for TimestampError {
         match &self {
             Self::ParseInt(e) => Some(e),
             Self::TryFromInt(e) => Some(e),
-            Self::Conversion(e) => Some(e),
+            // Self::Conversion(e) => Some(e),
             _ => None,
         }
     }
