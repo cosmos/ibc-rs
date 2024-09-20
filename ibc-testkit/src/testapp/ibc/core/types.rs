@@ -478,14 +478,9 @@ where
 
 #[builder(finish_fn = build)]
 pub fn dummy_light_client<H>(
-    #[builder(start_fn)] //
-    context: &TestContext<H>,
-
-    #[builder(default, into)] //
-    consensus_heights: Vec<Height>,
-
-    #[builder(default)] //
-    params: H::LightClientParams,
+    #[builder(start_fn)] context: &TestContext<H>,
+    #[builder(default, into)] consensus_heights: Vec<Height>,
+    #[builder(default)] params: H::LightClientParams,
 ) -> LightClientState<H>
 where
     H: TestHost,
