@@ -262,7 +262,7 @@ all start with a lower-case letter. String-interpolated values within error mess
 should all be surrounded by backticks, in order to signify that it is an interpolated value.
 The exception to this is nested errors that are appended to the end of an error message: these
 interpolated values are __not__ surrounded by backticks. Instead, they should all follow
-a colon in the error message itself; thus, colons indicate that the following is a nested 
+a colon in the error message itself; thus, colons indicate that the following is a nested
 error message. Lastly, error messages should all start with the classification of its
 respective error variant, i.e., an error message for an `Invalid` error class should start
 with "invalid...", while an error message for a `Missing` error class should start with
