@@ -320,7 +320,7 @@ provides.
 
 The most common form of variant is a one-element struct with a `description` field. This
 serves to allow injecting more context at the call site of the error in the form of a
-String. This is the most general variant: care should be taken to not allow these sorts
+`String`. This is the most general variant: care should be taken to not allow these sorts
 of variants to be abused for unintended purposes. Note that, like variants that contain
 nested errors, descriptions should be interpolated in the error message without enclosing
 backticks.
