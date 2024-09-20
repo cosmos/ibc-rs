@@ -121,7 +121,7 @@ was then mapped *back* into a `ContextError`; certainly an inefficient round-tri
 that an error did occur in the `consensus_state` method, it would not have been clear to the
 user that the error originated from a host context.
 
-This `validate` function will now be changed to return a `ClientError`. Coupled with the 
+This `validate` function will now be changed to return a `ClientError`. Coupled with the
 `consensus_state` method now returning a `HostError`, this call can now be made much more
 cleanly:
 
