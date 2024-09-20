@@ -254,7 +254,7 @@ impl ConnectionEnd {
         // + Init: contains the set of compatible versions,
         // + TryOpen/Open: contains the single version chosen by the handshake protocol.
         if state != State::Init && versions.len() != 1 {
-            return Err(ConnectionError::InvalidState { description: "invalid state for initializing new ConnectionEnd; expected `Init` connection state and a single version".to_string() });
+            return Err(ConnectionError::InvalidState { description: "failed to initialize new ConnectionEnd; expected `Init` connection state and a single version".to_string() });
         }
 
         Ok(Self {
@@ -425,15 +425,6 @@ impl Counterparty {
     pub fn prefix(&self) -> &CommitmentPrefix {
         &self.prefix
     }
-
-    /// Called upon initiating a connection handshake on the host chain to verify
-    /// that the counterparty connection id has not been set.
-    pub(crate) fn verify_empty_connection_id(&self) -> Result<(), ConnectionError> {
-        if self.connection_id().is_some() {
-            return Err(ConnectionError::InvalidCounterparty);
-        }
-        Ok(())
-    }
 }
 
 #[cfg_attr(
@@ -519,8 +510,7 @@ impl TryFrom<i32> for State {
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
             _ => Err(DecodingError::invalid_raw_data(format!(
-                "connection state expected to be 0, 1, 2, or 3, actual {}",
-                value
+                "connection state expected to be 0, 1, 2, or 3, actual {value}",
             ))),
         }
     }

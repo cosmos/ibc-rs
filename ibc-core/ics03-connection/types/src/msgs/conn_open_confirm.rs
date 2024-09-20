@@ -39,7 +39,9 @@ impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
             proof_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::invalid_raw_data("proof height"))?,
+                .ok_or(DecodingError::invalid_raw_data(
+                    "msg conn open confirm proof height",
+                ))?,
             signer: msg.signer.into(),
         })
     }

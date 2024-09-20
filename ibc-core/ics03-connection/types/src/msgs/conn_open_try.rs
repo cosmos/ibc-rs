@@ -154,7 +154,9 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
             .collect::<Result<Vec<_>, _>>()?;
 
         if counterparty_versions.is_empty() {
-            return Err(DecodingError::missing_raw_data("connection versions"));
+            return Err(DecodingError::missing_raw_data(
+                "msg conn open try connection versions",
+            ));
         }
 
         // We set the deprecated `previous_connection_id` field so that we can
@@ -163,12 +165,14 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
         Ok(Self {
             previous_connection_id: msg.previous_connection_id,
             client_id_on_b: msg.client_id.parse()?,
-            client_state_of_b_on_a: msg
-                .client_state
-                .ok_or(DecodingError::missing_raw_data("client state"))?,
+            client_state_of_b_on_a: msg.client_state.ok_or(DecodingError::missing_raw_data(
+                "msg conn open try client state",
+            ))?,
             counterparty: msg
                 .counterparty
-                .ok_or(DecodingError::missing_raw_data("counterparty"))?
+                .ok_or(DecodingError::missing_raw_data(
+                    "msg conn open try counterparty",
+                ))?
                 .try_into()?,
             versions_on_a: counterparty_versions,
             proof_conn_end_on_a: msg.proof_init.try_into()?,
@@ -177,11 +181,15 @@ impl TryFrom<RawMsgConnectionOpenTry> for MsgConnectionOpenTry {
             proofs_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::invalid_raw_data("proof height"))?,
+                .ok_or(DecodingError::invalid_raw_data(
+                    "msg conn open try proof height",
+                ))?,
             consensus_height_of_b_on_a: msg
                 .consensus_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(DecodingError::invalid_raw_data("consensus height"))?,
+                .ok_or(DecodingError::invalid_raw_data(
+                    "msg conn open try consensus height",
+                ))?,
             delay_period: Duration::from_nanos(msg.delay_period),
             signer: msg.signer.into(),
             proof_consensus_state_of_b: if msg.host_consensus_state_proof.is_empty() {

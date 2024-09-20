@@ -380,15 +380,6 @@ impl Counterparty {
     pub fn channel_id(&self) -> Option<&ChannelId> {
         self.channel_id.as_ref()
     }
-
-    /// Called upon initiating a channel handshake on the host chain to verify
-    /// that the counterparty channel id has not been set.
-    pub(crate) fn verify_empty_channel_id(&self) -> Result<(), ChannelError> {
-        if self.channel_id().is_some() {
-            return Err(ChannelError::UnexpectedChannelId);
-        }
-        Ok(())
-    }
 }
 
 impl Display for Counterparty {

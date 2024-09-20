@@ -69,8 +69,6 @@ pub enum ChannelError {
         timeout_timestamp: TimeoutTimestamp,
         chain_timestamp: Timestamp,
     },
-    /// unexpected channel ID: expected to be empty
-    UnexpectedChannelId,
     /// unsupported version: expected `{expected}`, actual `{actual}`
     UnsupportedVersion { expected: Version, actual: Version },
     /// application specific error: `{description}`

@@ -50,6 +50,7 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
             .channel
             .ok_or(DecodingError::missing_raw_data("channel end"))?
             .try_into()?;
+
         chan_end_on_a
             .verify_state_matches(&State::Init)
             .map_err(|_| {
@@ -58,15 +59,12 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
                     chan_end_on_a.state
                 ))
             })?;
-        chan_end_on_a
-            .counterparty()
-            .verify_empty_channel_id()
-            .map_err(|_| {
-                DecodingError::invalid_raw_data(format!(
-                    "expected counterparty channel ID to be empty, found `{:?}` instead",
-                    chan_end_on_a.counterparty().channel_id
-                ))
-            })?;
+
+        if let Some(cid) = chan_end_on_a.counterparty().channel_id() {
+            return Err(DecodingError::invalid_raw_data(format!(
+                "expected counterparty channel ID to be empty, actual `{cid}`",
+            )));
+        }
 
         Ok(MsgChannelOpenInit {
             port_id_on_a: raw_msg.port_id.parse()?,
