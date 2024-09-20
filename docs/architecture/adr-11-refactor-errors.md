@@ -65,9 +65,9 @@ removing the discrepancy that the ICS04 module exposes two distinct error types.
 In light of the stated rationale of making it clear when an error originates from host logic
 vs ibc-rs's internal logic, we propose adding a new `HostError` type that will live as a
 variant in each of the module-level error types, as well as in the application-level error
-types, `TokenTransferError` and `NftTransferError`. Initially, we had only a single 
-`Host(HostError)` variant that existed in the `HandlerError`type, but it became clear 
-that this wasn't the correct place in which to expose host-level errors. This is because 
+types, `TokenTransferError` and `NftTransferError`. Initially, we had only a single
+`Host(HostError)` variant that existed in the `HandlerError`type, but it became clear
+that this wasn't the correct place in which to expose host-level errors. This is because
 host errors can crop up within any of the core ibc-rs modules.
 
 We introduce the following concrete `HostError` type in the `ics24-host` crate:
@@ -89,10 +89,10 @@ pub enum HostError {
 
 This initial definition offers fairly generic error variants that nonetheless aim to capture
 most of the error use-cases faced by hosts. One such notable use-case is fetching/retrieving
-data from the host's storage. 
+data from the host's storage.
 
 Host errors can occur within any of the core ibc-rs modules. Thus, we'll be adding `HostError`
-variants to each of the module-level error types where appropriate: `ClientError` in ICS02, 
+variants to each of the module-level error types where appropriate: `ClientError` in ICS02,
 `ConnectionError` in ICS03, and `ChannelError` in ICS04. Note that as of now a `HostError`
 variant is not being added to the `RouterError` type in ICS26 as it is not used by hosts, i.e.,
 it does not expose its own handlers. 
@@ -102,7 +102,7 @@ The main areas where `HostError`s are now being returned are mainly in `Validati
 part of the process of integrating ibc-rs.
 
 As an example, consider the [consensus_state] method under the `ClientValidationContext` trait.
-This method used to return a `ContextError`. One place where it is called is in the 
+This method used to return a `ContextError`. One place where it is called is in the
 `upgrade_client` handler:
 
 ```rust
@@ -121,7 +121,7 @@ was then mapped *back* into a `ContextError`; certainly an inefficient round-tri
 that an error did occur in the `consensus_state` method, it would not have been clear to the
 user that the error originated from a host context.
 
-This `validate` function will now be changed to return a `ClientError`. Coupled with the 
+This `validate` function will now be changed to return a `ClientError`. Coupled with the
 `consensus_state` method now returning a `HostError`, this call can now be made much more
 cleanly:
 
@@ -207,9 +207,9 @@ the right level of granularity with them. Especially with the `HostError` type, 
 clear whether the way this type is laid out is sufficient for hosts, or whether they would
 prefer something more bespoke and tailored to their particular needs.
 
-Most of the new error variants introduced also require String allocations, which is ideal;
+Most of the new error variants introduced also require `String` allocations, which is ideal;
 this is a tradeoff between generality of error variants and specificity. Introducing more
-specific error variants would help cut down on the number of String allocations, but would
+specific error variants would help cut down on the number of `String` allocations, but would
 contribute to bloating and redundancy within ibc-rs's error types.
 
 Lastly, the new error types and variants do not come with guard rails to help steer
@@ -262,7 +262,7 @@ all start with a lower-case letter. String-interpolated values within error mess
 should all be surrounded by backticks, in order to signify that it is an interpolated value.
 The exception to this is nested errors that are appended to the end of an error message: these
 interpolated values are __not__ surrounded by backticks. Instead, they should all follow
-a colon in the error message itself; thus, colons indicate that the following is a nested 
+a colon in the error message itself; thus, colons indicate that the following is a nested
 error message. Lastly, error messages should all start with the classification of its
 respective error variant, i.e., an error message for an `Invalid` error class should start
 with "invalid...", while an error message for a `Missing` error class should start with
@@ -273,7 +273,7 @@ formatting do not deviate. `NestedError`s are always newtype wrappers around a c
 error. The sole purpose of these variants is to provide a means of converting the contained
 error to the containing error type. Thus, every `NestedError` variant should be
 accompanied by a `From<SomeError> for ContainingError` impl. The naming scheme for
-`NestedError` variants should  include the name of the contained error, minus the word
+`NestedError` variants should include the name of the contained error, minus the word
 "Error" itself. The error message then should clearly delineate the type of the contained
 error, the fact that the message is referring to a lower-level error, and the contents
 of the lower-level error. An example looks like this:
@@ -320,7 +320,7 @@ provides.
 
 The most common form of variant is a one-element struct with a `description` field. This
 serves to allow injecting more context at the call site of the error in the form of a
-String. This is the most general variant: care should be taken to not allow these sorts
+`String`. This is the most general variant: care should be taken to not allow these sorts
 of variants to be abused for unintended purposes. Note that, like variants that contain
 nested errors, descriptions should be interpolated in the error message without enclosing
 backticks.
@@ -340,7 +340,7 @@ types. This would allow host developers to define more precise error types and v
 that can better signal what the root cause of an error might be. This would improve upon
 the rather generic error variants that are exposed through ibc-rs's own `HostError` definition.
 
-The downside is that this would add additional work on top of the already considerable amount 
+The downside is that this would add additional work on top of the already considerable amount
 of work that it takes to integrate ibc-rs into host chains.
 
 ## References
