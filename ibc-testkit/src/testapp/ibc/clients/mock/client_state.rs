@@ -125,16 +125,13 @@ impl TryFrom<Any> for MockClientState {
     type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_client_state(value: &[u8]) -> Result<MockClientState, DecodingError> {
-            let client_state = Protobuf::<RawMockClientState>::decode(value)?;
-            Ok(client_state)
-        }
-        match raw.type_url.as_str() {
-            MOCK_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let MOCK_CLIENT_STATE_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawMockClientState>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: MOCK_CLIENT_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })?,
+            })
         }
     }
 }

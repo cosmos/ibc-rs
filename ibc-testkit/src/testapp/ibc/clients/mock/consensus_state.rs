@@ -66,16 +66,13 @@ impl TryFrom<Any> for MockConsensusState {
     type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_consensus_state(value: &[u8]) -> Result<MockConsensusState, DecodingError> {
-            let mock_consensus_state = Protobuf::<RawMockConsensusState>::decode(value)?;
-            Ok(mock_consensus_state)
-        }
-        match raw.type_url.as_str() {
-            MOCK_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let MOCK_CONSENSUS_STATE_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawMockConsensusState>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: MOCK_CONSENSUS_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })?,
+            })
         }
     }
 }

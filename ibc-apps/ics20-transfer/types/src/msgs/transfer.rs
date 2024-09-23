@@ -98,12 +98,13 @@ impl TryFrom<Any> for MsgTransfer {
     type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        match raw.type_url.as_str() {
-            TYPE_URL => Ok(MsgTransfer::decode_vec(&raw.value)?),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let TYPE_URL = raw.type_url.as_str() {
+            MsgTransfer::decode_vec(&raw.value).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })?,
+            })
         }
     }
 }

@@ -111,16 +111,13 @@ impl TryFrom<Any> for Misbehaviour {
     type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, DecodingError> {
-            let misbehaviour = Protobuf::<RawMisbehaviour>::decode(value)?;
-            Ok(misbehaviour)
-        }
-        match raw.type_url.as_str() {
-            TENDERMINT_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let TENDERMINT_MISBEHAVIOUR_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawMisbehaviour>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: TENDERMINT_MISBEHAVIOUR_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })?,
+            })
         }
     }
 }

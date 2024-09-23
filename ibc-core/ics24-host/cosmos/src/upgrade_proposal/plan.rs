@@ -76,12 +76,13 @@ impl TryFrom<Any> for Plan {
     type Error = DecodingError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
-        match any.type_url.as_str() {
-            TYPE_URL => Ok(Protobuf::<RawPlan>::decode_vec(&any.value)?),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let TYPE_URL = any.type_url.as_str() {
+            Protobuf::<RawPlan>::decode_vec(&any.value).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: TYPE_URL.to_string(),
                 actual: any.type_url,
-            })?,
+            })
         }
     }
 }

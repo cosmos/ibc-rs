@@ -92,12 +92,13 @@ impl TryFrom<Any> for MockHeader {
     type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        match raw.type_url.as_str() {
-            MOCK_HEADER_TYPE_URL => Ok(Protobuf::<RawMockHeader>::decode_vec(&raw.value)?),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let MOCK_HEADER_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawMockHeader>::decode_vec(&raw.value).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: MOCK_HEADER_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })?,
+            })
         }
     }
 }

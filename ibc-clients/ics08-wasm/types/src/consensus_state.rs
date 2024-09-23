@@ -57,16 +57,13 @@ impl TryFrom<Any> for ConsensusState {
     type Error = DecodingError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
-        fn decode_consensus_state(value: &[u8]) -> Result<ConsensusState, DecodingError> {
-            let consensus_state = Protobuf::<RawConsensusState>::decode(value)?;
-            Ok(consensus_state)
-        }
-        match any.type_url.as_str() {
-            WASM_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&any.value),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let WASM_CONSENSUS_STATE_TYPE_URL = any.type_url.as_str() {
+            Protobuf::<RawConsensusState>::decode(any.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: WASM_CONSENSUS_STATE_TYPE_URL.to_string(),
-                actual: any.type_url.to_string(),
-            })?,
+                actual: any.type_url,
+            })
         }
     }
 }

@@ -203,16 +203,13 @@ impl TryFrom<Any> for Header {
     type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_header(value: &[u8]) -> Result<Header, DecodingError> {
-            let header = Protobuf::<RawHeader>::decode(value)?;
-            Ok(header)
-        }
-        match raw.type_url.as_str() {
-            TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let TENDERMINT_HEADER_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawHeader>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: TENDERMINT_HEADER_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })?,
+            })
         }
     }
 }

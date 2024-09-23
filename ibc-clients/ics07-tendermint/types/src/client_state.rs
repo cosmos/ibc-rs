@@ -347,17 +347,13 @@ impl TryFrom<Any> for ClientState {
     type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_client_state(value: &[u8]) -> Result<ClientState, DecodingError> {
-            let client_state = Protobuf::<RawTmClientState>::decode(value)?;
-            Ok(client_state)
-        }
-
-        match raw.type_url.as_str() {
-            TENDERMINT_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let TENDERMINT_CLIENT_STATE_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawTmClientState>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
                 actual: raw.type_url,
-            })?,
+            })
         }
     }
 }

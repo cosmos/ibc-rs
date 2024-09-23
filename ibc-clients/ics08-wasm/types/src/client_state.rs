@@ -70,17 +70,13 @@ impl TryFrom<Any> for ClientState {
     type Error = DecodingError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
-        fn decode_client_state(value: &[u8]) -> Result<ClientState, DecodingError> {
-            let client_state = Protobuf::<RawClientState>::decode(value)?;
-            Ok(client_state)
-        }
-
-        match any.type_url.as_str() {
-            WASM_CLIENT_STATE_TYPE_URL => decode_client_state(&any.value),
-            _ => Err(DecodingError::MismatchedResourceName {
+        if let WASM_CLIENT_STATE_TYPE_URL = any.type_url.as_str() {
+            Protobuf::<RawClientState>::decode(any.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
                 expected: WASM_CLIENT_STATE_TYPE_URL.to_string(),
                 actual: any.type_url,
-            })?,
+            })
         }
     }
 }
