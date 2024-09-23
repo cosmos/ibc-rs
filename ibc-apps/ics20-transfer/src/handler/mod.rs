@@ -57,13 +57,15 @@ pub fn refund_packet_token_validate(
         packet.chan_id_on_a.clone(),
         &data.token.denom,
     ) {
-        Ok(ctx_a.unescrow_coins_validate(
+        ctx_a.unescrow_coins_validate(
             &sender,
             &packet.port_id_on_a,
             &packet.chan_id_on_a,
             &data.token,
-        )?)
+        )?;
     } else {
-        Ok(ctx_a.mint_coins_validate(&sender, &data.token)?)
+        ctx_a.mint_coins_validate(&sender, &data.token)?;
     }
+
+    Ok(())
 }

@@ -46,8 +46,7 @@ pub fn refund_packet_nft_execute(
             let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
             let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
 
-            let _ =
-                ctx_a.mint_nft_execute(&sender, &data.class_id, token_id, token_uri, token_data);
+            ctx_a.mint_nft_execute(&sender, &data.class_id, token_id, token_uri, token_data)?;
         }
 
         Ok(())
@@ -86,8 +85,7 @@ pub fn refund_packet_nft_validate(
             let token_uri = data.token_uris.as_ref().and_then(|uris| uris.get(i));
             let token_data = data.token_data.as_ref().and_then(|data| data.get(i));
 
-            let _ =
-                ctx_a.mint_nft_validate(&sender, &data.class_id, token_id, token_uri, token_data);
+            ctx_a.mint_nft_validate(&sender, &data.class_id, token_id, token_uri, token_data)?;
         }
 
         Ok(())
