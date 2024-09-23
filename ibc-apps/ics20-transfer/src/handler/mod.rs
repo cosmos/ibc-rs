@@ -28,17 +28,19 @@ pub fn refund_packet_token_execute(
         packet.chan_id_on_a.clone(),
         &data.token.denom,
     ) {
-        Ok(ctx_a.unescrow_coins_execute(
+        ctx_a.unescrow_coins_execute(
             &sender,
             &packet.port_id_on_a,
             &packet.chan_id_on_a,
             &data.token,
-        )?)
+        )?;
     }
     // mint vouchers back to sender
     else {
-        Ok(ctx_a.mint_coins_execute(&sender, &data.token)?)
+        ctx_a.mint_coins_execute(&sender, &data.token)?;
     }
+
+    Ok(())
 }
 
 pub fn refund_packet_token_validate(
