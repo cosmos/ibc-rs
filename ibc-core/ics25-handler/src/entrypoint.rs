@@ -6,7 +6,6 @@ use ibc_core_channel::handler::{
     chan_open_try_execute, chan_open_try_validate, recv_packet_execute, recv_packet_validate,
     timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
 };
-use ibc_core_channel::types::error::ChannelError;
 use ibc_core_channel::types::msgs::{
     channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
 };
@@ -80,8 +79,8 @@ where
         },
         MsgEnvelope::Channel(msg) => {
             let port_id = channel_msg_to_port_id(&msg);
-            let module_id = router.lookup_module(port_id).ok_or(ChannelError::Host(
-                HostError::missing_state(format!("failed to look up port {}", port_id.clone())),
+            let module_id = router.lookup_module(port_id).ok_or(RouterError::Host(
+                HostError::missing_state(format!("missing module ID for port {}", port_id.clone())),
             ))?;
             let module = router
                 .get_route(&module_id)
@@ -98,8 +97,8 @@ where
         }
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);
-            let module_id = router.lookup_module(port_id).ok_or(ChannelError::Host(
-                HostError::missing_state(format!("failed to look up port {}", port_id.clone())),
+            let module_id = router.lookup_module(port_id).ok_or(RouterError::Host(
+                HostError::missing_state(format!("missing module ID for port {}", port_id.clone())),
             ))?;
             let module = router
                 .get_route(&module_id)
@@ -154,8 +153,8 @@ where
         },
         MsgEnvelope::Channel(msg) => {
             let port_id = channel_msg_to_port_id(&msg);
-            let module_id = router.lookup_module(port_id).ok_or(ChannelError::Host(
-                HostError::missing_state(format!("failed to look up port {}", port_id.clone())),
+            let module_id = router.lookup_module(port_id).ok_or(RouterError::Host(
+                HostError::missing_state(format!("missing module ID for port {}", port_id.clone())),
             ))?;
             let module = router
                 .get_route_mut(&module_id)
@@ -172,8 +171,8 @@ where
         }
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);
-            let module_id = router.lookup_module(port_id).ok_or(ChannelError::Host(
-                HostError::missing_state(format!("failed to look up port {}", port_id.clone())),
+            let module_id = router.lookup_module(port_id).ok_or(RouterError::Host(
+                HostError::missing_state(format!("missing module ID for port {}", port_id.clone())),
             ))?;
             let module = router
                 .get_route_mut(&module_id)
