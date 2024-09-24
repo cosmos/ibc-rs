@@ -25,6 +25,5 @@ Please avoid or refrain from the following:
 - Exploit the vulnerability to cause any damage or disruption to production
   systems or destruction of production data.
 
-
 [ibc-rs-security]: https://github.com/cosmos/ibc-rs/security
 [gh-vulnerability]: https://docs.github.com/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability
