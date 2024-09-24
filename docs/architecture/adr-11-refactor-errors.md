@@ -16,8 +16,8 @@ following goals:
 
 1. Empower host developers to respond to ibc-rs-originating errors that affect
    host logic.
-2. Assist ibc-rs core developers' debugging efforts by providing detailed, human-readable
-   error reports and/or stack traces.
+2. Assist ibc-rs core developers' debugging efforts by providing detailed,
+   human-readable error reports and/or stack traces.
 
 These two aims highlight the need to clearly distinguish between *host*-level
 errors and *protocol*-level errors. Developers working at the host level often
@@ -302,8 +302,8 @@ the lower-level error. An example looks like this:
     Timestamp(TimestampError),
 ```
 
-Note the colon followed by the interpolation of the nested error: it should __not__ be
-surrounded by backticks.
+Note the colon followed by the interpolation of the nested error: it should
+__not__ be surrounded by backticks.
 
 The `Mismatched` classification is used for situations where an expected
 instance of a type is known, along with the instance that was actually found.
@@ -362,20 +362,24 @@ precise error types and variants that can better signal what the root cause of
 an error might be. This would improve upon the rather generic error variants
 that are exposed through ibc-rs's own `HostError` definition.
 
-The downside is that this would add additional work on top of the already considerable amount
-of work that it takes to integrate ibc-rs into host chains.
+The downside is that this would add additional work on top of the already
+considerable amount of work that it takes to integrate ibc-rs into host chains.
 
 ## References
 
-- [#1319][issue-1319]: Consolidating duplicated error variants into the `DecodingError` type
+- [#1319][issue-1319]: Consolidating duplicated error variants into the
+      `DecodingError` type
 - [#1320][issue-1320]: Defining the `HostError` type
 - [#1339][issue-1339]: Merging `PacketError` into `ChannelError`
 - [#1340][issue-1340]: Adding `HostError` variants to each module-level error
 - [#1346][issue-1346]: Cleaning up generic `String` error variants
 
-[dispatch]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L35
-[validate]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L54
-[execute]: https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L130
+[dispatch]:
+    https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L35
+[validate]:
+    https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L54
+[execute]:
+    https://github.com/cosmos/ibc-rs/blob/4aecaece9bda3c0f4a3b6a8379d73bd7eddc2cc4/ibc-core/ics25-handler/src/entrypoint.rs#L130
 [issue-1319]: https://github.com/cosmos/ibc-rs/issues/1319
 [issue-1320]: https://github.com/cosmos/ibc-rs/issues/1320
 [issue-1339]: https://github.com/cosmos/ibc-rs/issues/1339
