@@ -8,7 +8,7 @@ use ibc_core_host::types::error::IdentifierError;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
-use ibc_primitives::Timestamp;
+use ibc_primitives::{IntoHostTime, IntoTimestamp, Timestamp};
 use tendermint::crypto::Sha256;
 use tendermint::merkle::MerkleHash;
 use tendermint::{Hash, Time};
@@ -98,7 +98,7 @@ where
 
     // ensure trusted consensus state is within trusting period
     {
-        let trusted_timestamp = trusted_time.try_into().expect("time conversion failed");
+        let trusted_timestamp = trusted_time.into_timestamp()?;
 
         let duration_since_consensus_state =
             current_timestamp.duration_since(&trusted_timestamp).ok_or(
@@ -128,7 +128,7 @@ where
     let trusted_state =
         header.as_trusted_block_state(tm_chain_id, trusted_time, trusted_next_validator_hash)?;
 
-    let current_timestamp = current_timestamp.into_tm_time();
+    let current_timestamp = current_timestamp.into_host_time()?;
 
     verifier
         .verify_misbehaviour_header(untrusted_state, trusted_state, options, current_timestamp)

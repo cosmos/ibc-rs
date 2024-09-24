@@ -8,7 +8,7 @@ use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
-use ibc_primitives::TimestampError;
+use ibc_primitives::{IntoHostTime, TimestampError};
 
 use super::ClientState;
 
@@ -337,7 +337,7 @@ where
         let tm_consensus_state: ConsensusStateType =
             consensus_state.try_into().map_err(Into::into)?;
 
-        let host_timestamp = ctx.host_timestamp()?.into_tm_time();
+        let host_timestamp = ctx.host_timestamp()?.into_host_time()?;
 
         let tm_consensus_state_timestamp = tm_consensus_state.timestamp();
         let tm_consensus_state_expiry = (tm_consensus_state_timestamp

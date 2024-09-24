@@ -12,7 +12,6 @@ use ibc_proto::google::protobuf::Timestamp as RawTimestamp;
 use ibc_proto::Protobuf;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-use tendermint::Time;
 use time::macros::offset;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
@@ -104,11 +103,6 @@ impl Timestamp {
         s.try_into()
             .expect("Fails UNIX timestamp is negative, but we don't allow that to be constructed")
     }
-
-    pub fn into_tm_time(self) -> Time {
-        Time::try_from(self.time.assume_offset(offset!(UTC)))
-            .expect("Timestamp is in the range of 0..=9999 years")
-    }
 }
 
 impl Protobuf<RawTimestamp> for Timestamp {}
@@ -189,12 +183,35 @@ impl Sub<Duration> for Timestamp {
     }
 }
 
-impl TryFrom<Time> for Timestamp {
-    type Error = TimestampError;
+/// Utility trait for converting a `Timestamp` into a host-specific time format.
+pub trait IntoHostTime<T: Sized> {
+    /// Converts a `Timestamp` into another time representation of type `T`.
+    ///
+    /// This method adapts the `Timestamp` to a domain-specific format, which
+    /// could represent a custom timestamp used by a light client, or any
+    /// hosting environment that requires its own time format.
+    fn into_host_time(self) -> Result<T, TimestampError>;
+}
 
-    fn try_from(tm_time: Time) -> Result<Self, Self::Error> {
-        let odt: OffsetDateTime = tm_time.into();
-        odt.try_into()
+/// Utility trait for converting an arbitrary host-specific time format into a
+/// `Timestamp`.
+pub trait IntoTimestamp {
+    /// Converts a time representation of type `T` back into a `Timestamp`.
+    ///
+    /// This can be used to convert from custom light client or host time
+    /// formats back into the standard `Timestamp` format.
+    fn into_timestamp(self) -> Result<Timestamp, TimestampError>;
+}
+
+impl<T: TryFrom<OffsetDateTime>> IntoHostTime<T> for Timestamp {
+    fn into_host_time(self) -> Result<T, TimestampError> {
+        T::try_from(self.into()).map_err(|_| TimestampError::InvalidDate)
+    }
+}
+
+impl<T: Into<OffsetDateTime>> IntoTimestamp for T {
+    fn into_timestamp(self) -> Result<Timestamp, TimestampError> {
+        Timestamp::try_from(self.into())
     }
 }
 

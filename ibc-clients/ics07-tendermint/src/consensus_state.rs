@@ -13,7 +13,7 @@ use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_core_host::types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
-use ibc_primitives::Timestamp;
+use ibc_primitives::{IntoTimestamp, Timestamp};
 use tendermint::{Hash, Time};
 
 /// Newtype wrapper around the `ConsensusState` type imported from the
@@ -94,7 +94,7 @@ impl ConsensusStateTrait for ConsensusState {
     fn timestamp(&self) -> Timestamp {
         self.0
             .timestamp
-            .try_into()
+            .into_timestamp()
             .expect("UNIX Timestamp can't be negative")
     }
 }
