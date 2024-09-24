@@ -48,7 +48,12 @@ where
     fn host_timestamp(&self) -> Result<Timestamp, HostError> {
         let host_height = self.host_height()?;
         let host_cons_state = self.host_consensus_state(&host_height)?;
-        Ok(host_cons_state.timestamp())
+        let timestamp = host_cons_state
+            .timestamp()
+            .map_err(|e| HostError::InvalidState {
+                description: e.to_string(),
+            })?;
+        Ok(timestamp)
     }
 
     fn client_counter(&self) -> Result<u64, HostError> {

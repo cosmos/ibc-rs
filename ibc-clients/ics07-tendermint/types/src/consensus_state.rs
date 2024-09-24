@@ -35,6 +35,7 @@ impl ConsensusState {
         }
     }
 
+    /// Returns the timestamp of the consensus state as a `tendermint::Time`.
     pub fn timestamp(&self) -> Time {
         self.timestamp
     }

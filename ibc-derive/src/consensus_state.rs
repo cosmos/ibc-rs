@@ -24,6 +24,7 @@ pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> Token
     let CommitmentRoot = imports.commitment_root();
     let ConsensusState = imports.consensus_state();
     let Timestamp = imports.timestamp();
+    let ClientError = imports.client_error();
 
     quote! {
         impl #ConsensusState for #enum_name {
@@ -33,7 +34,7 @@ pub fn consensus_state_derive_impl(ast: DeriveInput, imports: &Imports) -> Token
                 }
             }
 
-            fn timestamp(&self) -> #Timestamp {
+            fn timestamp(&self) -> core::result::Result<#Timestamp, #ClientError> {
                 match self {
                     #(#timestamp_impl),*
                 }

@@ -180,7 +180,7 @@ pub fn consensus_state_status<CS: ConsensusState>(
     // consensus state is in the future, then we don't consider the client
     // to be expired.
     if let Some(elapsed_since_latest_consensus_state) =
-        host_timestamp.duration_since(&consensus_state.timestamp())
+        host_timestamp.duration_since(&consensus_state.timestamp()?)
     {
         // Note: The equality is considered as expired to stay consistent with
         // the check in tendermint-rs, where a header at `trusted_header_time +

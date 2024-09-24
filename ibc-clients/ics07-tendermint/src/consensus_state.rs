@@ -9,6 +9,7 @@
 use ibc_client_tendermint_types::proto::v1::ConsensusState as RawTmConsensusState;
 use ibc_client_tendermint_types::ConsensusState as ConsensusStateType;
 use ibc_core_client::context::consensus_state::ConsensusState as ConsensusStateTrait;
+use ibc_core_client::types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_core_host::types::error::DecodingError;
 use ibc_primitives::prelude::*;
@@ -91,10 +92,7 @@ impl ConsensusStateTrait for ConsensusState {
         &self.0.root
     }
 
-    fn timestamp(&self) -> Timestamp {
-        self.0
-            .timestamp
-            .into_timestamp()
-            .expect("UNIX Timestamp can't be negative")
+    fn timestamp(&self) -> Result<Timestamp, ClientError> {
+        self.0.timestamp.into_timestamp().map_err(Into::into)
     }
 }
