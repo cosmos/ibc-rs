@@ -14,20 +14,17 @@ privately report it via the project's [**Security** tab][ibc-rs-security] using
 
 Please respect the following when reporting a security vulnerability:
 
-- Submit only one unique advisory per vulnerability.
-- Explain the vulnerability with examples of exploits.
-- Include a severity rating.
-- Reply to the opened advisory for any additional information.
+- Submit only one unique report per vulnerability.
+- Explain the vulnerability in detail and add any known exploits.
+- Leave an e-mail address for further follow-up questions.
 
 Please avoid or refrain from the following:
 
 - Share the vulnerability details publicly until the issue is resolved.
-- Post personal data or any sensitive information in the advisory.
+- Post personal data or any sensitive information in the report.
 - Exploit the vulnerability to cause any damage or disruption to production
   systems or destruction of production data.
 
-If the guidelines are followed, the maintainers will understand, resolve and
-disclose the vulnerability in a timely manner.
 
 [ibc-rs-security]: https://github.com/cosmos/ibc-rs/security
 [gh-vulnerability]: https://docs.github.com/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability
