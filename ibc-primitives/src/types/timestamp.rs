@@ -36,8 +36,8 @@ pub struct Timestamp {
 
 impl Timestamp {
     pub fn from_nanoseconds(nanoseconds: u64) -> Self {
-        // As the `u64` representation can only represent times up to about year
-        // 2554, there is no risk of overflowing `Time` or `OffsetDateTime`.
+        // As the `u64` can only represent times up to about year 2554, there is
+        // no risk of overflowing `Time` or `OffsetDateTime`.
         let odt = OffsetDateTime::from_unix_timestamp_nanos(nanoseconds.into())
             .expect("nanoseconds as u64 is in the range");
         Self::from_utc(odt).expect("nanoseconds as u64 is in the range")
@@ -285,12 +285,12 @@ impl scale_info::TypeInfo for Timestamp {
 
 #[derive(Debug, Display, derive_more::From)]
 pub enum TimestampError {
-    /// parse int error: {0}
-    ParseInt(ParseIntError),
-    /// try from int error: {0}
-    TryFromInt(TryFromIntError),
-    /// failed to convert timestamp: {0}
-    Conversion(time::error::ComponentRange),
+    /// failed to parse integer error: {0}
+    FailedToParseInt(ParseIntError),
+    /// failed try from integer error: {0}
+    FailedTryFromInt(TryFromIntError),
+    /// failed to convert offset date: {0}
+    FailedToConvert(time::error::ComponentRange),
     /// invalid date: out of range
     InvalidDate,
     /// overflowed timestamp
@@ -301,9 +301,8 @@ pub enum TimestampError {
 impl std::error::Error for TimestampError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::ParseInt(e) => Some(e),
-            Self::TryFromInt(e) => Some(e),
-            Self::Conversion(e) => Some(e),
+            Self::FailedToParseInt(e) => Some(e),
+            Self::FailedTryFromInt(e) => Some(e),
             _ => None,
         }
     }
