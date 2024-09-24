@@ -1092,7 +1092,6 @@ dependencies = [
  "scale-info",
  "schemars",
  "serde",
- "tendermint",
  "time",
 ]
 
