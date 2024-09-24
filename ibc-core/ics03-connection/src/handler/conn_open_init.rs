@@ -1,16 +1,16 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
 use ibc_core_client::context::prelude::*;
+use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenInit;
 use ibc_core_connection_types::msgs::MsgConnectionOpenInit;
 use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
-use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ConnectionId;
 use ibc_core_host::types::path::{ClientConnectionPath, ConnectionPath};
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 
-pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
+pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
 {
@@ -32,7 +32,7 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ContextError>
+pub fn execute<Ctx>(ctx_a: &mut Ctx, msg: MsgConnectionOpenInit) -> Result<(), ConnectionError>
 where
     Ctx: ExecutionContext,
 {

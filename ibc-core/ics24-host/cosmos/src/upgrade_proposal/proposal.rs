@@ -1,6 +1,6 @@
 //! Definition of domain `UpgradeProposal` type for handling upgrade client proposal
 
-use ibc_core_client_types::error::UpgradeClientError;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::UpgradeProposal as RawUpgradeProposal;
@@ -28,33 +28,27 @@ pub struct UpgradeProposal {
 impl Protobuf<RawUpgradeProposal> for UpgradeProposal {}
 
 impl TryFrom<RawUpgradeProposal> for UpgradeProposal {
-    type Error = UpgradeClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawUpgradeProposal) -> Result<Self, Self::Error> {
         if raw.title.is_empty() {
-            return Err(UpgradeClientError::InvalidUpgradeProposal {
-                reason: "title field cannot be empty".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("upgrade proposal title"));
         }
 
         if raw.description.is_empty() {
-            return Err(UpgradeClientError::InvalidUpgradeProposal {
-                reason: "description field cannot be empty".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data(
+                "upgrade proposal description",
+            ));
         }
 
         let plan = if let Some(plan) = raw.plan {
             plan.try_into()?
         } else {
-            return Err(UpgradeClientError::InvalidUpgradeProposal {
-                reason: "plan field cannot be empty".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("upgrade proposal plan"));
         };
 
         let upgraded_client_state = raw.upgraded_client_state.ok_or_else(|| {
-            UpgradeClientError::InvalidUpgradeProposal {
-                reason: "upgraded client state cannot be empty".to_string(),
-            }
+            DecodingError::missing_raw_data("upgrade proposal upgraded client state")
         })?;
 
         Ok(Self {

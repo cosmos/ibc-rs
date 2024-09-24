@@ -2,14 +2,13 @@ use ibc_core_client::context::ClientValidationContext;
 use ibc_core_client::types::Height;
 use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::ConnectionEnd;
-use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::ValidationContext;
 
 pub fn verify_conn_delay_passed<Ctx>(
     ctx: &Ctx,
     packet_proof_height: Height,
     connection_end: &ConnectionEnd,
-) -> Result<(), ContextError>
+) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
 {
@@ -28,26 +27,21 @@ where
     let conn_delay_height_period = ctx.block_delay(&conn_delay_time_period);
 
     // Verify that the current host chain time is later than the last client update time
-    let earliest_valid_time = (last_client_update.0 + conn_delay_time_period)
-        .map_err(ConnectionError::TimestampOverflow)?;
+    let earliest_valid_time = (last_client_update.0 + conn_delay_time_period)?;
     if current_host_time < earliest_valid_time {
-        return Err(ContextError::ConnectionError(
-            ConnectionError::NotEnoughTimeElapsed {
-                current_host_time,
-                earliest_valid_time,
-            },
-        ));
+        return Err(ConnectionError::InsufficientTimeElapsed {
+            current_host_time,
+            earliest_valid_time,
+        });
     }
 
     // Verify that the current host chain height is later than the last client update height
     let earliest_valid_height = last_client_update.1.add(conn_delay_height_period);
     if current_host_height < earliest_valid_height {
-        return Err(ContextError::ConnectionError(
-            ConnectionError::NotEnoughBlocksElapsed {
-                current_host_height,
-                earliest_valid_height,
-            },
-        ));
+        return Err(ConnectionError::InsufficientBlocksElapsed {
+            current_host_height,
+            earliest_valid_height,
+        });
     };
 
     Ok(())

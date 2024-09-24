@@ -1,12 +1,12 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::Sequence;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgTimeoutOnClose as RawMsgTimeoutOnClose;
 use ibc_proto::Protobuf;
 
-use crate::error::{ChannelError, PacketError};
 use crate::packet::Packet;
 
 pub const TIMEOUT_ON_CLOSE_TYPE_URL: &str = "/ibc.core.channel.v1.MsgTimeoutOnClose";
@@ -32,37 +32,31 @@ pub struct MsgTimeoutOnClose {
 impl Protobuf<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {}
 
 impl TryFrom<RawMsgTimeoutOnClose> for MsgTimeoutOnClose {
-    type Error = PacketError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgTimeoutOnClose) -> Result<Self, Self::Error> {
         if raw_msg.next_sequence_recv == 0 {
-            return Err(PacketError::ZeroPacketSequence);
+            return Err(DecodingError::invalid_raw_data(
+                "packet sequence cannot be 0",
+            ));
         }
 
         if raw_msg.counterparty_upgrade_sequence != 0 {
-            return Err(PacketError::Channel(
-                ChannelError::UnsupportedChannelUpgradeSequence,
-            ));
+            return Err(DecodingError::invalid_raw_data("channel upgrade sequence"));
         }
 
         Ok(MsgTimeoutOnClose {
             packet: raw_msg
                 .packet
-                .ok_or(PacketError::MissingPacket)?
+                .ok_or(DecodingError::missing_raw_data("msg timeout packet data"))?
                 .try_into()?,
             next_seq_recv_on_b: Sequence::from(raw_msg.next_sequence_recv),
-            proof_unreceived_on_b: raw_msg
-                .proof_unreceived
-                .try_into()
-                .map_err(|_| PacketError::InvalidProof)?,
-            proof_close_on_b: raw_msg
-                .proof_close
-                .try_into()
-                .map_err(|_| PacketError::InvalidProof)?,
+            proof_unreceived_on_b: raw_msg.proof_unreceived.try_into()?,
+            proof_close_on_b: raw_msg.proof_close.try_into()?,
             proof_height_on_b: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(PacketError::MissingHeight)?,
+                .ok_or(DecodingError::invalid_raw_data("msg timeout proof height"))?,
             signer: raw_msg.signer.into(),
         })
     }

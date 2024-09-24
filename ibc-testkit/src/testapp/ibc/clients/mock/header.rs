@@ -1,8 +1,8 @@
 use alloc::string::ToString;
 use core::fmt::{Display, Error as FmtError, Formatter};
 
-use ibc::core::client::types::error::ClientError;
 use ibc::core::client::types::Height;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
 
@@ -40,15 +40,13 @@ impl Display for MockHeader {
 impl Protobuf<RawMockHeader> for MockHeader {}
 
 impl TryFrom<RawMockHeader> for MockHeader {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMockHeader) -> Result<Self, Self::Error> {
         Ok(Self {
             height: raw
                 .height
-                .ok_or(ClientError::Other {
-                    description: "missing height".into(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("mock header height"))?
                 .try_into()?,
             timestamp: Timestamp::from_nanoseconds(raw.timestamp),
         })
@@ -91,18 +89,16 @@ impl MockHeader {
 impl Protobuf<Any> for MockHeader {}
 
 impl TryFrom<Any> for MockHeader {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        match raw.type_url.as_str() {
-            MOCK_HEADER_TYPE_URL => Ok(Protobuf::<RawMockHeader>::decode_vec(&raw.value).map_err(
-                |e| ClientError::InvalidRawHeader {
-                    reason: e.to_string(),
-                },
-            )?),
-            _ => Err(ClientError::UnknownHeaderType {
-                header_type: raw.type_url,
-            }),
+        if let MOCK_HEADER_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawMockHeader>::decode_vec(&raw.value).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
+                expected: MOCK_HEADER_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })
         }
     }
 }

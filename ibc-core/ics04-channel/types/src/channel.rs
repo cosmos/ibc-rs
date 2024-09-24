@@ -3,6 +3,7 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::utils::PrettySlice;
@@ -50,11 +51,13 @@ impl IdentifiedChannelEnd {
 impl Protobuf<RawIdentifiedChannel> for IdentifiedChannelEnd {}
 
 impl TryFrom<RawIdentifiedChannel> for IdentifiedChannelEnd {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(value: RawIdentifiedChannel) -> Result<Self, Self::Error> {
         if value.upgrade_sequence != 0 {
-            return Err(ChannelError::UnsupportedChannelUpgradeSequence);
+            return Err(DecodingError::invalid_raw_data(
+                "channel upgrade sequence expected to be 0",
+            ));
         }
 
         let raw_channel_end = RawChannel {
@@ -131,17 +134,18 @@ impl Display for ChannelEnd {
 impl Protobuf<RawChannel> for ChannelEnd {}
 
 impl TryFrom<RawChannel> for ChannelEnd {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(value: RawChannel) -> Result<Self, Self::Error> {
-        let chan_state: State = State::from_i32(value.state)?;
+        let chan_state: State = State::from_i32(value.state)
+            .map_err(|e| DecodingError::invalid_raw_data(format!("channel state: {e}")))?;
 
-        let chan_ordering = Order::from_i32(value.ordering)?;
-
+        let chan_ordering = Order::from_i32(value.ordering)
+            .map_err(|e| DecodingError::invalid_raw_data(format!("channel ordering: {e}")))?;
         // Assemble the 'remote' attribute of the Channel, which represents the Counterparty.
         let remote = value
             .counterparty
-            .ok_or(ChannelError::MissingCounterparty)?
+            .ok_or(DecodingError::missing_raw_data("channel counterparty"))?
             .try_into()?;
 
         // Parse each item in connection_hops into a ConnectionId.
@@ -153,7 +157,10 @@ impl TryFrom<RawChannel> for ChannelEnd {
 
         let version = value.version.into();
 
-        ChannelEnd::new(chan_state, chan_ordering, remote, connection_hops, version)
+        let channel = ChannelEnd::new(chan_state, chan_ordering, remote, connection_hops, version)
+            .map_err(|e| DecodingError::invalid_raw_data(format!("channel end: {e}")))?;
+
+        Ok(channel)
     }
 }
 
@@ -251,14 +258,14 @@ impl ChannelEnd {
     pub fn validate_basic(&self) -> Result<(), ChannelError> {
         if self.state == State::Uninitialized {
             return Err(ChannelError::InvalidState {
-                expected: "Channel state cannot be Uninitialized".to_string(),
+                expected: "Channel state to not be Uninitialized".to_string(),
                 actual: self.state.to_string(),
             });
         }
 
         if self.ordering == Order::None {
-            return Err(ChannelError::InvalidOrderType {
-                expected: "Channel ordering cannot be None".to_string(),
+            return Err(ChannelError::InvalidState {
+                expected: "Channel ordering to not be None".to_string(),
                 actual: self.ordering.to_string(),
             });
         }
@@ -281,7 +288,7 @@ impl ChannelEnd {
     pub fn verify_not_closed(&self) -> Result<(), ChannelError> {
         if self.state.eq(&State::Closed) {
             return Err(ChannelError::InvalidState {
-                expected: "Channel state cannot be Closed".to_string(),
+                expected: "Channel state to not be Closed".to_string(),
                 actual: self.state.to_string(),
             });
         }
@@ -304,7 +311,7 @@ impl ChannelEnd {
     /// Checks if the counterparty of this channel end matches with an expected counterparty.
     pub fn verify_counterparty_matches(&self, expected: &Counterparty) -> Result<(), ChannelError> {
         if !self.counterparty().eq(expected) {
-            return Err(ChannelError::InvalidCounterparty {
+            return Err(ChannelError::MismatchedCounterparty {
                 expected: expected.clone(),
                 actual: self.counterparty().clone(),
             });
@@ -373,18 +380,6 @@ impl Counterparty {
     pub fn channel_id(&self) -> Option<&ChannelId> {
         self.channel_id.as_ref()
     }
-
-    /// Called upon initiating a channel handshake on the host chain to verify
-    /// that the counterparty channel id has not been set.
-    pub(crate) fn verify_empty_channel_id(&self) -> Result<(), ChannelError> {
-        if self.channel_id().is_some() {
-            return Err(ChannelError::InvalidChannelId {
-                expected: "Counterparty channel id must be empty".to_string(),
-                actual: format!("{:?}", self.channel_id),
-            });
-        }
-        Ok(())
-    }
 }
 
 impl Display for Counterparty {
@@ -407,7 +402,7 @@ impl Display for Counterparty {
 impl Protobuf<RawCounterparty> for Counterparty {}
 
 impl TryFrom<RawCounterparty> for Counterparty {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(raw_counterparty: RawCounterparty) -> Result<Self, Self::Error> {
         let channel_id: Option<ChannelId> = if raw_counterparty.channel_id.is_empty() {
@@ -480,8 +475,8 @@ impl Order {
             0 => Ok(Self::None),
             1 => Ok(Self::Unordered),
             2 => Ok(Self::Ordered),
-            _ => Err(ChannelError::InvalidOrderType {
-                expected: "Must be one of 0, 1, 2".to_string(),
+            _ => Err(ChannelError::InvalidState {
+                expected: "to be one of 0, 1, 2".to_string(),
                 actual: nr.to_string(),
             }),
         }
@@ -496,8 +491,8 @@ impl FromStr for Order {
             "uninitialized" => Ok(Self::None),
             "unordered" => Ok(Self::Unordered),
             "ordered" => Ok(Self::Ordered),
-            _ => Err(ChannelError::InvalidOrderType {
-                expected: "Must be one of 'uninitialized', 'unordered', 'ordered'".to_string(),
+            _ => Err(ChannelError::InvalidState {
+                expected: "to be one of 'uninitialized', 'unordered', 'ordered'".to_string(),
                 actual: s.to_string(),
             }),
         }
@@ -550,7 +545,7 @@ impl State {
             3 => Ok(Self::Open),
             4 => Ok(Self::Closed),
             _ => Err(ChannelError::InvalidState {
-                expected: "Must be one of: 0, 1, 2, 3, 4".to_string(),
+                expected: "to be one of: 0, 1, 2, 3, 4".to_string(),
                 actual: s.to_string(),
             }),
         }

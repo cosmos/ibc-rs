@@ -119,7 +119,7 @@ supported by `IBC-rs`:
    negotiated on connection handshake.
 10. (U) Changing parameters that are customizable by relayers like `TrustLevel`
     and `TrustingPeriod`, `max_clock_drift`
-  
+
 #### Upgrade Process Step-by-step
 
 An IBC-connected Tendermint chain will take the following steps to completely
@@ -250,7 +250,7 @@ previous section as mentioned:
 
 1. ```rust
    if old_client_state.is_frozen() {
-      return Err(ContextError::ClientError(ClientError::ClientFrozen {
+      return Err(HandlerError::Client(ClientError::ClientFrozen {
          client_id,
       }));
    }

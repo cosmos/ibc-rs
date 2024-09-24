@@ -1,13 +1,12 @@
 //! Definition of domain type message `MsgSubmitMisbehaviour`.
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::google::protobuf::Any as ProtoAny;
 use ibc_proto::ibc::core::client::v1::MsgSubmitMisbehaviour as RawMsgSubmitMisbehaviour;
 use ibc_proto::Protobuf;
-
-use crate::error::ClientError;
 
 pub const SUBMIT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMisbehaviour";
 
@@ -37,18 +36,15 @@ pub struct MsgSubmitMisbehaviour {
 impl Protobuf<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {}
 
 impl TryFrom<RawMsgSubmitMisbehaviour> for MsgSubmitMisbehaviour {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMsgSubmitMisbehaviour) -> Result<Self, Self::Error> {
         let raw_misbehaviour = raw
             .misbehaviour
-            .ok_or(ClientError::MissingRawMisbehaviour)?;
+            .ok_or(DecodingError::missing_raw_data("msg submit misbehaviour"))?;
 
         Ok(MsgSubmitMisbehaviour {
-            client_id: raw
-                .client_id
-                .parse()
-                .map_err(ClientError::InvalidRawMisbehaviour)?,
+            client_id: raw.client_id.parse()?,
             misbehaviour: raw_misbehaviour,
             signer: raw.signer.into(),
         })

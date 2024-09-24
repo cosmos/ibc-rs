@@ -4,8 +4,8 @@ use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::OpenAck;
 use ibc_core_channel_types::msgs::MsgChannelOpenAck;
 use ibc_core_client::context::prelude::*;
+use ibc_core_connection::types::error::ConnectionError;
 use ibc_core_connection::types::State as ConnectionState;
-use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
 use ibc_core_host::{ExecutionContext, ValidationContext};
@@ -17,7 +17,7 @@ pub fn chan_open_ack_validate<ValCtx>(
     ctx_a: &ValCtx,
     module: &dyn Module,
     msg: MsgChannelOpenAck,
-) -> Result<(), ContextError>
+) -> Result<(), ChannelError>
 where
     ValCtx: ValidationContext,
 {
@@ -32,7 +32,7 @@ pub fn chan_open_ack_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgChannelOpenAck,
-) -> Result<(), ContextError>
+) -> Result<(), ChannelError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -86,7 +86,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgChannelOpenAck) -> Result<(), ChannelError>
 where
     Ctx: ValidationContext,
 {
@@ -114,6 +114,7 @@ where
         client_state_of_b_on_a
             .status(ctx_a.get_client_validation_context(), client_id_on_a)?
             .verify_is_active()?;
+
         client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
@@ -125,11 +126,10 @@ where
             client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = &chan_end_on_a.counterparty().port_id;
-        let conn_id_on_b = conn_end_on_a.counterparty().connection_id().ok_or(
-            ChannelError::UndefinedConnectionCounterparty {
-                connection_id: chan_end_on_a.connection_hops()[0].clone(),
-            },
-        )?;
+        let conn_id_on_b = conn_end_on_a
+            .counterparty()
+            .connection_id()
+            .ok_or(ConnectionError::MissingCounterparty)?;
 
         let expected_chan_end_on_b = ChannelEnd::new(
             ChannelState::TryOpen,
@@ -144,15 +144,13 @@ where
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
-        client_state_of_b_on_a
-            .verify_membership(
-                prefix_on_b,
-                &msg.proof_chan_end_on_b,
-                consensus_state_of_b_on_a.root(),
-                Path::ChannelEnd(chan_end_path_on_b),
-                expected_chan_end_on_b.encode_vec(),
-            )
-            .map_err(ChannelError::VerifyChannelFailed)?;
+        client_state_of_b_on_a.verify_membership(
+            prefix_on_b,
+            &msg.proof_chan_end_on_b,
+            consensus_state_of_b_on_a.root(),
+            Path::ChannelEnd(chan_end_path_on_b),
+            expected_chan_end_on_b.encode_vec(),
+        )?;
     }
 
     Ok(())

@@ -1,10 +1,10 @@
 use ibc::apps::nft_transfer::context::{
     NftClassContext, NftContext, NftTransferExecutionContext, NftTransferValidationContext,
 };
-use ibc::apps::nft_transfer::types::error::NftTransferError;
 use ibc::apps::nft_transfer::types::{
     ClassData, ClassId, ClassUri, Memo, PrefixedClassId, TokenData, TokenId, TokenUri,
 };
+use ibc::core::host::types::error::HostError;
 use ibc::core::host::types::identifiers::{ChannelId, PortId};
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Signer;
@@ -48,15 +48,15 @@ impl NftTransferValidationContext for DummyNftTransferModule {
     type Nft = DummyNft;
     type NftClass = DummyNftClass;
 
-    fn get_port(&self) -> Result<PortId, NftTransferError> {
+    fn get_port(&self) -> Result<PortId, HostError> {
         Ok(PortId::transfer())
     }
 
-    fn can_send_nft(&self) -> Result<(), NftTransferError> {
+    fn can_send_nft(&self) -> Result<(), HostError> {
         Ok(())
     }
 
-    fn can_receive_nft(&self) -> Result<(), NftTransferError> {
+    fn can_receive_nft(&self) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -65,7 +65,7 @@ impl NftTransferValidationContext for DummyNftTransferModule {
         _class_id: &PrefixedClassId,
         _class_uri: Option<&ClassUri>,
         _class_data: Option<&ClassData>,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -77,7 +77,7 @@ impl NftTransferValidationContext for DummyNftTransferModule {
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
         _memo: &Memo,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -88,7 +88,7 @@ impl NftTransferValidationContext for DummyNftTransferModule {
         _channel_id: &ChannelId,
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -99,7 +99,7 @@ impl NftTransferValidationContext for DummyNftTransferModule {
         _token_id: &TokenId,
         _token_uri: Option<&TokenUri>,
         _token_data: Option<&TokenData>,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -109,7 +109,7 @@ impl NftTransferValidationContext for DummyNftTransferModule {
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
         _memo: &Memo,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -117,14 +117,11 @@ impl NftTransferValidationContext for DummyNftTransferModule {
         &self,
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
-    ) -> Result<Self::Nft, NftTransferError> {
+    ) -> Result<Self::Nft, HostError> {
         Ok(DummyNft::default())
     }
 
-    fn get_nft_class(
-        &self,
-        _class_id: &PrefixedClassId,
-    ) -> Result<Self::NftClass, NftTransferError> {
+    fn get_nft_class(&self, _class_id: &PrefixedClassId) -> Result<Self::NftClass, HostError> {
         Ok(DummyNftClass::default())
     }
 }
@@ -135,7 +132,7 @@ impl NftTransferExecutionContext for DummyNftTransferModule {
         _class_id: &PrefixedClassId,
         _class_uri: Option<&ClassUri>,
         _class_data: Option<&ClassData>,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -147,7 +144,7 @@ impl NftTransferExecutionContext for DummyNftTransferModule {
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
         _memo: &Memo,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -158,7 +155,7 @@ impl NftTransferExecutionContext for DummyNftTransferModule {
         _channel_id: &ChannelId,
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -169,7 +166,7 @@ impl NftTransferExecutionContext for DummyNftTransferModule {
         _token_id: &TokenId,
         _token_uri: Option<&TokenUri>,
         _token_data: Option<&TokenData>,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -179,7 +176,7 @@ impl NftTransferExecutionContext for DummyNftTransferModule {
         _class_id: &PrefixedClassId,
         _token_id: &TokenId,
         _memo: &Memo,
-    ) -> Result<(), NftTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 }

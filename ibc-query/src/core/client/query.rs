@@ -50,7 +50,7 @@ where
             &Path::ClientState(ClientStatePath::new(client_id.clone())),
         )
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for client state path: {client_id:?}"
             ))
         })?;
@@ -109,7 +109,7 @@ where
             .into_iter()
             .max_by_key(|&(h, _)| h)
             .ok_or_else(|| {
-                QueryError::proof_not_found(format!(
+                QueryError::missing_proof(format!(
                     "No consensus state found for client: {client_id:?}"
                 ))
             })?
@@ -130,7 +130,7 @@ where
             )),
         )
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for consensus state path: {client_id:?}"
             ))
         })?;
@@ -242,7 +242,7 @@ where
             &Path::UpgradeClientState(upgraded_client_state_path),
         )
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for upgraded client state at: {proof_height:?}"
             ))
         })?;
@@ -301,7 +301,7 @@ where
             &Path::UpgradeConsensusState(upgraded_consensus_state_path),
         )
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for upgraded consensus state at: {proof_height:?}"
             ))
         })?;

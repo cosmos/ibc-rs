@@ -3,12 +3,12 @@ use core::fmt::{self, Display};
 use core::str::FromStr;
 
 use http::Uri;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
 
 use crate::data::Data;
-use crate::error::NftTransferError;
 
 /// Token ID for an NFT
 #[cfg_attr(
@@ -41,11 +41,11 @@ impl Display for TokenId {
 }
 
 impl FromStr for TokenId {
-    type Err = NftTransferError;
+    type Err = DecodingError;
 
     fn from_str(token_id: &str) -> Result<Self, Self::Err> {
         if token_id.trim().is_empty() {
-            Err(NftTransferError::InvalidTokenId)
+            Err(DecodingError::missing_raw_data("empty token ID"))
         } else {
             Ok(Self(token_id.to_string()))
         }
@@ -90,19 +90,27 @@ impl Display for TokenIds {
 }
 
 impl TryFrom<Vec<String>> for TokenIds {
-    type Error = NftTransferError;
+    type Error = DecodingError;
 
     fn try_from(token_ids: Vec<String>) -> Result<Self, Self::Error> {
         if token_ids.is_empty() {
-            return Err(NftTransferError::NoTokenId);
+            return Err(DecodingError::missing_raw_data("empty token IDs"));
         }
+
         let ids: Result<Vec<TokenId>, _> = token_ids.iter().map(|t| t.parse()).collect();
         let mut ids = ids?;
+
         ids.sort();
         ids.dedup();
+
         if ids.len() != token_ids.len() {
-            return Err(NftTransferError::DuplicatedTokenIds);
+            return Err(DecodingError::invalid_raw_data(format!(
+                "mismatched number of token IDs: expected {}, actual {}",
+                token_ids.len(),
+                ids.len()
+            )));
         }
+
         Ok(Self(ids))
     }
 }
@@ -170,16 +178,11 @@ impl Display for TokenUri {
 }
 
 impl FromStr for TokenUri {
-    type Err = NftTransferError;
+    type Err = DecodingError;
 
     fn from_str(token_uri: &str) -> Result<Self, Self::Err> {
-        match Uri::from_str(token_uri) {
-            Ok(uri) => Ok(Self(uri)),
-            Err(err) => Err(NftTransferError::InvalidUri {
-                uri: token_uri.to_string(),
-                validation_error: err,
-            }),
-        }
+        let token_uri = Uri::from_str(token_uri).map_err(DecodingError::invalid_raw_data)?;
+        Ok(Self(token_uri))
     }
 }
 
@@ -208,7 +211,7 @@ impl Display for TokenData {
 }
 
 impl FromStr for TokenData {
-    type Err = NftTransferError;
+    type Err = DecodingError;
 
     fn from_str(token_data: &str) -> Result<Self, Self::Err> {
         let data = Data::from_str(token_data)?;

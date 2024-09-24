@@ -51,7 +51,7 @@ impl Version {
 
     pub fn verify_is_expected(&self, expected: Version) -> Result<(), ChannelError> {
         if self != &expected {
-            return Err(ChannelError::VersionNotSupported {
+            return Err(ChannelError::UnsupportedVersion {
                 expected,
                 actual: self.clone(),
             });

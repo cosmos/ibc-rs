@@ -1,11 +1,10 @@
 use ibc_core_channel_types::channel::{Counterparty, Order, State};
 use ibc_core_channel_types::commitment::compute_packet_commitment;
-use ibc_core_channel_types::error::{ChannelError, PacketError};
+use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::{ChannelClosed, TimeoutPacket};
 use ibc_core_channel_types::msgs::{MsgTimeout, MsgTimeoutOnClose};
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
-use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
@@ -25,7 +24,7 @@ pub fn timeout_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
     module: &dyn Module,
     timeout_msg_type: TimeoutMsgType,
-) -> Result<(), ContextError>
+) -> Result<(), ChannelError>
 where
     ValCtx: ValidationContext,
 {
@@ -39,16 +38,14 @@ where
         TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
     };
 
-    module
-        .on_timeout_packet_validate(&packet, &signer)
-        .map_err(ContextError::PacketError)
+    module.on_timeout_packet_validate(&packet, &signer)
 }
 
 pub fn timeout_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
     module: &mut dyn Module,
     timeout_msg_type: TimeoutMsgType,
-) -> Result<(), ContextError>
+) -> Result<(), ChannelError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -126,7 +123,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeout) -> Result<(), ChannelError>
 where
     Ctx: ValidationContext,
 {
@@ -168,11 +165,12 @@ where
         &msg.packet.timeout_height_on_b,
         &msg.packet.timeout_timestamp_on_b,
     );
+
     if commitment_on_a != expected_commitment_on_a {
-        return Err(PacketError::IncorrectPacketCommitment {
-            sequence: msg.packet.seq_on_a,
-        }
-        .into());
+        return Err(ChannelError::MismatchedPacketCommitment {
+            expected: expected_commitment_on_a,
+            actual: commitment_on_a,
+        });
     }
 
     // Verify proofs
@@ -198,13 +196,12 @@ where
         let timestamp_of_b = consensus_state_of_b_on_a.timestamp();
 
         if !msg.packet.timed_out(&timestamp_of_b, msg.proof_height_on_b) {
-            return Err(PacketError::PacketTimeoutNotReached {
+            return Err(ChannelError::InsufficientPacketTimeout {
                 timeout_height: msg.packet.timeout_height_on_b,
                 chain_height: msg.proof_height_on_b,
                 timeout_timestamp: msg.packet.timeout_timestamp_on_b,
                 chain_timestamp: timestamp_of_b,
-            }
-            .into());
+            });
         }
 
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
@@ -212,11 +209,10 @@ where
         let next_seq_recv_verification_result = match chan_end_on_a.ordering {
             Order::Ordered => {
                 if msg.packet.seq_on_a < msg.next_seq_recv_on_b {
-                    return Err(PacketError::InvalidPacketSequence {
-                        given_sequence: msg.packet.seq_on_a,
-                        next_sequence: msg.next_seq_recv_on_b,
-                    }
-                    .into());
+                    return Err(ChannelError::MismatchedPacketSequence {
+                        actual: msg.packet.seq_on_a,
+                        expected: msg.next_seq_recv_on_b,
+                    });
                 }
                 let seq_recv_path_on_b =
                     SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
@@ -244,19 +240,14 @@ where
                 )
             }
             Order::None => {
-                return Err(ContextError::ChannelError(ChannelError::InvalidOrderType {
-                    expected: "Channel ordering cannot be None".to_string(),
+                return Err(ChannelError::InvalidState {
+                    expected: "Channel ordering to not be None".to_string(),
                     actual: chan_end_on_a.ordering.to_string(),
-                }))
+                })
             }
         };
 
-        next_seq_recv_verification_result
-            .map_err(|e| ChannelError::PacketVerificationFailed {
-                sequence: msg.next_seq_recv_on_b,
-                client_error: e,
-            })
-            .map_err(PacketError::Channel)?;
+        next_seq_recv_verification_result?;
     }
 
     Ok(())

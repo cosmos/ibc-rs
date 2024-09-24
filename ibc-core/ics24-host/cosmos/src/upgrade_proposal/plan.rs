@@ -1,6 +1,6 @@
 //! Definition of domain `Plan` type.
 
-use ibc_core_client_types::error::UpgradeClientError;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::cosmos::upgrade::v1beta1::Plan as RawPlan;
 use ibc_proto::google::protobuf::Any;
@@ -28,36 +28,30 @@ pub struct Plan {
 impl Protobuf<RawPlan> for Plan {}
 
 impl TryFrom<RawPlan> for Plan {
-    type Error = UpgradeClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawPlan) -> Result<Self, Self::Error> {
         if raw.name.is_empty() {
-            return Err(UpgradeClientError::InvalidUpgradePlan {
-                reason: "name field cannot be empty".to_string(),
-            });
+            return Err(DecodingError::missing_raw_data("upgrade plan name"));
         }
 
         #[allow(deprecated)]
         if raw.time.is_some() {
-            return Err(UpgradeClientError::InvalidUpgradePlan {
-                reason: "time field must be empty".to_string(),
-            });
+            return Err(DecodingError::invalid_raw_data(
+                "upgrade plan time must be empty",
+            ));
         }
 
         #[allow(deprecated)]
         if raw.upgraded_client_state.is_some() {
-            return Err(UpgradeClientError::InvalidUpgradePlan {
-                reason: "upgraded_client_state field must be empty".to_string(),
-            });
+            return Err(DecodingError::invalid_raw_data(
+                "upgrade plan `upgraded_client_state` field must be empty",
+            ));
         }
 
         Ok(Self {
             name: raw.name,
-            height: u64::try_from(raw.height).map_err(|_| {
-                UpgradeClientError::InvalidUpgradePlan {
-                    reason: "height plan overflow".to_string(),
-                }
-            })?,
+            height: u64::try_from(raw.height)?,
             info: raw.info,
         })
     }
@@ -79,25 +73,17 @@ impl From<Plan> for RawPlan {
 impl Protobuf<Any> for Plan {}
 
 impl TryFrom<Any> for Plan {
-    type Error = UpgradeClientError;
+    type Error = DecodingError;
 
     fn try_from(any: Any) -> Result<Self, Self::Error> {
-        if any.type_url != TYPE_URL {
-            return Err(UpgradeClientError::InvalidUpgradePlan {
-                reason: format!(
-                    "type_url do not match: expected {}, got {}",
-                    TYPE_URL, any.type_url
-                ),
-            });
+        if let TYPE_URL = any.type_url.as_str() {
+            Protobuf::<RawPlan>::decode_vec(&any.value).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
+                expected: TYPE_URL.to_string(),
+                actual: any.type_url,
+            })
         }
-
-        let plan = Protobuf::<RawPlan>::decode_vec(&any.value).map_err(|e| {
-            UpgradeClientError::InvalidUpgradePlan {
-                reason: format!("raw plan decode error: {}", e),
-            }
-        })?;
-
-        Ok(plan)
     }
 }
 

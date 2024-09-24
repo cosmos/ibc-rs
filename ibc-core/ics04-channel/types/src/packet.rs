@@ -1,12 +1,12 @@
 //! Defines the packet type
 use ibc_core_client_types::Height;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 use ibc_proto::ibc::core::channel::v1::{Packet as RawPacket, PacketState as RawPacketState};
 
 use super::timeout::TimeoutHeight;
-use crate::error::PacketError;
 use crate::timeout::TimeoutTimestamp;
 
 /// Enumeration of proof carrying ICS4 message, helper for relayer.
@@ -179,15 +179,17 @@ impl core::fmt::Display for Packet {
 }
 
 impl TryFrom<RawPacket> for Packet {
-    type Error = PacketError;
+    type Error = DecodingError;
 
     fn try_from(raw_pkt: RawPacket) -> Result<Self, Self::Error> {
         if Sequence::from(raw_pkt.sequence).is_zero() {
-            return Err(PacketError::ZeroPacketSequence);
+            return Err(DecodingError::invalid_raw_data(
+                "packet sequence cannot be 0",
+            ));
         }
 
         if raw_pkt.data.is_empty() {
-            return Err(PacketError::ZeroPacketData);
+            return Err(DecodingError::missing_raw_data("packet data is not set"))?;
         }
 
         // Note: ibc-go currently (July 2022) incorrectly treats the timeout
@@ -204,7 +206,9 @@ impl TryFrom<RawPacket> for Packet {
 
         // Packet timeout height and packet timeout timestamp cannot both be unset.
         if !packet_timeout_height.is_set() && !timeout_timestamp_on_b.is_set() {
-            return Err(PacketError::MissingTimeout);
+            return Err(DecodingError::missing_raw_data(
+                "missing one of packet timeout height or timeout timestamp",
+            ));
         }
 
         Ok(Packet {
@@ -289,15 +293,17 @@ impl core::fmt::Display for PacketState {
 }
 
 impl TryFrom<RawPacketState> for PacketState {
-    type Error = PacketError;
+    type Error = DecodingError;
 
     fn try_from(raw_pkt: RawPacketState) -> Result<Self, Self::Error> {
         if Sequence::from(raw_pkt.sequence).is_zero() {
-            return Err(PacketError::ZeroPacketSequence);
+            return Err(DecodingError::invalid_raw_data(
+                "packet sequence cannot be 0",
+            ));
         }
 
         if raw_pkt.data.is_empty() {
-            return Err(PacketError::ZeroPacketData);
+            return Err(DecodingError::missing_raw_data("packet data not set"))?;
         }
 
         Ok(PacketState {

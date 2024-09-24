@@ -41,7 +41,7 @@ where
             &Path::Connection(ConnectionPath::new(&request.connection_id)),
         )
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for connection path: {:?}",
                 request.connection_id
             ))
@@ -92,7 +92,7 @@ where
             &Path::ClientConnection(ClientConnectionPath::new(request.client_id.clone())),
         )
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for client connection path: {:?}",
                 request.client_id
             ))
@@ -130,7 +130,7 @@ where
             &Path::ClientState(ClientStatePath::new(connection_end.client_id().clone())),
         )
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for client state path: {:?}",
                 connection_end.client_id()
             ))
@@ -172,7 +172,7 @@ where
     let proof = ibc_ctx
         .get_proof(proof_height, &Path::ClientConsensusState(consensus_path))
         .ok_or_else(|| {
-            QueryError::proof_not_found(format!(
+            QueryError::missing_proof(format!(
                 "Proof not found for consensus state path: {:?}",
                 connection_end.client_id()
             ))

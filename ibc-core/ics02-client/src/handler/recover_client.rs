@@ -3,7 +3,6 @@
 use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::msgs::MsgRecoverClient;
-use ibc_core_handler_types::error::ContextError;
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 
@@ -11,7 +10,7 @@ use ibc_core_host::{ExecutionContext, ValidationContext};
 /// includes validating that the parameters of the subject and substitute clients match,
 /// as well as validating that the substitute client *is* active and that the subject
 /// client is *not* active.
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgRecoverClient) -> Result<(), ContextError>
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgRecoverClient) -> Result<(), ClientError>
 where
     Ctx: ValidationContext,
 {
@@ -30,11 +29,10 @@ where
     let substitute_height = substitute_client_state.latest_height();
 
     if subject_height >= substitute_height {
-        return Err(ClientError::ClientRecoveryHeightMismatch {
+        return Err(ClientError::InvalidClientRecoveryHeights {
             subject_height,
             substitute_height,
-        }
-        .into());
+        });
     }
 
     substitute_client_state
@@ -62,7 +60,7 @@ where
 ///  - copying the substitute client's consensus state as the subject's consensus state
 ///  - setting the subject client's processed height and processed time values to match the substitute client's
 ///  - setting the subject client's latest height, trusting period, and chain ID values to match the substitute client's
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgRecoverClient) -> Result<(), ContextError>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgRecoverClient) -> Result<(), ClientError>
 where
     Ctx: ExecutionContext,
 {

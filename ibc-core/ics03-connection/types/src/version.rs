@@ -2,6 +2,7 @@
 
 use core::fmt::Display;
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::utils::PrettySlice;
 use ibc_proto::ibc::core::connection::v1::Version as RawVersion;
@@ -42,7 +43,7 @@ impl Version {
         let maybe_supported_version = find_supported_version(self, supported_versions)?;
 
         if self.features.is_empty() {
-            return Err(ConnectionError::EmptyFeatures);
+            return Err(ConnectionError::MissingFeatures);
         }
 
         for feature in self.features.iter() {
@@ -54,7 +55,7 @@ impl Version {
     /// Checks whether the given feature is supported in this version
     pub fn verify_feature_supported(&self, feature: String) -> Result<(), ConnectionError> {
         if !self.features.contains(&feature) {
-            return Err(ConnectionError::FeatureNotSupported { feature });
+            return Err(ConnectionError::MissingFeatures);
         }
         Ok(())
     }
@@ -71,14 +72,15 @@ impl Version {
 impl Protobuf<RawVersion> for Version {}
 
 impl TryFrom<RawVersion> for Version {
-    type Error = ConnectionError;
+    type Error = DecodingError;
+
     fn try_from(value: RawVersion) -> Result<Self, Self::Error> {
         if value.identifier.trim().is_empty() {
-            return Err(ConnectionError::EmptyVersions);
+            return Err(DecodingError::missing_raw_data("version identifier"));
         }
         for feature in value.features.iter() {
             if feature.trim().is_empty() {
-                return Err(ConnectionError::EmptyFeatures);
+                return Err(DecodingError::missing_raw_data("version features"));
             }
         }
         Ok(Version {
@@ -116,12 +118,13 @@ impl Display for Version {
 /// compatible version continues. This function is called in the `conn_open_try`
 /// handshake procedure.
 ///
-/// NOTE: Empty feature set is not currently allowed for a chosen version.
+/// NOTE: Empty feature sets are not currently allowed for a chosen version.
 pub fn pick_version(
     supported_versions: &[Version],
     counterparty_versions: &[Version],
 ) -> Result<Version, ConnectionError> {
     let mut intersection: Vec<Version> = Vec::new();
+
     for sv in supported_versions.iter() {
         if let Ok(cv) = find_supported_version(sv, counterparty_versions) {
             if let Ok(feature_set) = get_feature_set_intersection(&sv.features, &cv.features) {
@@ -134,10 +137,11 @@ pub fn pick_version(
     }
 
     if intersection.is_empty() {
-        return Err(ConnectionError::NoCommonVersion);
+        return Err(ConnectionError::MissingCommonVersion);
     }
 
     intersection.sort_by(|a, b| a.identifier.cmp(&b.identifier));
+
     Ok(intersection[0].clone())
 }
 
@@ -150,9 +154,7 @@ fn find_supported_version(
     supported_versions
         .iter()
         .find(|sv| sv.identifier == version.identifier)
-        .ok_or(ConnectionError::VersionNotSupported {
-            version: version.clone(),
-        })
+        .ok_or(ConnectionError::MissingCommonVersion)
         .cloned()
 }
 
@@ -171,7 +173,7 @@ fn get_feature_set_intersection(
         .collect();
 
     if feature_set_intersection.is_empty() {
-        return Err(ConnectionError::NoCommonFeatures);
+        return Err(ConnectionError::MissingFeatures);
     }
 
     Ok(feature_set_intersection)
@@ -368,7 +370,7 @@ mod tests {
                 name: "Disjoint versions".to_string(),
                 supported: disjoint().0,
                 counterparty: disjoint().1,
-                picked: Err(ConnectionError::NoCommonVersion),
+                picked: Err(ConnectionError::MissingCommonVersion),
                 want_pass: false,
             },
         ];

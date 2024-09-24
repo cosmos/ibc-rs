@@ -4,6 +4,7 @@
 use core::str;
 
 use derive_more::From;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use subtle_encoding::hex;
@@ -11,7 +12,6 @@ use tendermint::abci;
 
 use crate::acknowledgement::Acknowledgement;
 use crate::channel::Order;
-use crate::error::ChannelError;
 use crate::timeout::{TimeoutHeight, TimeoutTimestamp};
 
 const PKT_SEQ_ATTRIBUTE_KEY: &str = "packet_sequence";
@@ -47,15 +47,11 @@ pub struct PacketDataAttribute {
 }
 
 impl TryFrom<PacketDataAttribute> for Vec<abci::EventAttribute> {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(attr: PacketDataAttribute) -> Result<Self, Self::Error> {
         let tags = vec![
-            (
-                PKT_DATA_ATTRIBUTE_KEY,
-                str::from_utf8(&attr.packet_data).map_err(|_| ChannelError::NonUtf8PacketData)?,
-            )
-                .into(),
+            (PKT_DATA_ATTRIBUTE_KEY, str::from_utf8(&attr.packet_data)?).into(),
             (
                 PKT_DATA_HEX_ATTRIBUTE_KEY,
                 str::from_utf8(&hex::encode(attr.packet_data))
@@ -312,7 +308,7 @@ pub struct AcknowledgementAttribute {
 }
 
 impl TryFrom<AcknowledgementAttribute> for Vec<abci::EventAttribute> {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(attr: AcknowledgementAttribute) -> Result<Self, Self::Error> {
         let tags = vec![
@@ -322,8 +318,7 @@ impl TryFrom<AcknowledgementAttribute> for Vec<abci::EventAttribute> {
                 // is valid UTF-8, even though the standard doesn't require
                 // it. It has been deprecated in ibc-go. It will be removed
                 // in the future.
-                str::from_utf8(attr.acknowledgement.as_bytes())
-                    .map_err(|_| ChannelError::NonUtf8PacketData)?,
+                str::from_utf8(attr.acknowledgement.as_bytes())?,
             )
                 .into(),
             (

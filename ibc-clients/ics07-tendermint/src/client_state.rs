@@ -8,10 +8,9 @@
 //! Rust). As such, this module also includes some trait implementations that
 //! serve to pass through traits implemented on the wrapped `ClientState` type.
 
-use ibc_client_tendermint_types::error::Error;
 use ibc_client_tendermint_types::proto::v1::ClientState as RawTmClientState;
 use ibc_client_tendermint_types::ClientState as ClientStateType;
-use ibc_core_client::types::error::ClientError;
+use ibc_core_host::types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 
@@ -44,7 +43,7 @@ impl ClientState {
 impl Protobuf<RawTmClientState> for ClientState {}
 
 impl TryFrom<RawTmClientState> for ClientState {
-    type Error = Error;
+    type Error = DecodingError;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
         Ok(Self(ClientStateType::try_from(raw)?))
@@ -60,7 +59,7 @@ impl From<ClientState> for RawTmClientState {
 impl Protobuf<Any> for ClientState {}
 
 impl TryFrom<Any> for ClientState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
         Ok(Self(ClientStateType::try_from(raw)?))
