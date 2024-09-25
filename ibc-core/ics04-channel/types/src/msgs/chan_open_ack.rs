@@ -1,12 +1,12 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenAck as RawMsgChannelOpenAck;
 use ibc_proto::Protobuf;
 
-use crate::error::ChannelError;
 use crate::Version;
 
 pub const CHAN_OPEN_ACK_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenAck";
@@ -33,7 +33,7 @@ pub struct MsgChannelOpenAck {
 impl Protobuf<RawMsgChannelOpenAck> for MsgChannelOpenAck {}
 
 impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgChannelOpenAck) -> Result<Self, Self::Error> {
         Ok(MsgChannelOpenAck {
@@ -41,14 +41,11 @@ impl TryFrom<RawMsgChannelOpenAck> for MsgChannelOpenAck {
             chan_id_on_a: raw_msg.channel_id.parse()?,
             chan_id_on_b: raw_msg.counterparty_channel_id.parse()?,
             version_on_b: raw_msg.counterparty_version.into(),
-            proof_chan_end_on_b: raw_msg
-                .proof_try
-                .try_into()
-                .map_err(|_| ChannelError::InvalidProof)?,
+            proof_chan_end_on_b: raw_msg.proof_try.try_into()?,
             proof_height_on_b: raw_msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(ChannelError::MissingHeight)?,
+                .ok_or(DecodingError::missing_raw_data("proof height"))?,
             signer: raw_msg.signer.into(),
         })
     }

@@ -21,12 +21,12 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
 ) -> Result<ModuleExtras, (ModuleExtras, TokenTransferError)> {
     ctx_b
         .can_receive_coins()
-        .map_err(|err| (ModuleExtras::empty(), err))?;
+        .map_err(|err| (ModuleExtras::empty(), err.into()))?;
 
     let receiver_account = data.receiver.clone().try_into().map_err(|_| {
         (
             ModuleExtras::empty(),
-            TokenTransferError::ParseAccountFailure,
+            TokenTransferError::FailedToParseAccount,
         )
     })?;
 
@@ -60,7 +60,7 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
                 &packet.chan_id_on_b,
                 &coin,
             )
-            .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
+            .map_err(|err| (ModuleExtras::empty(), err.into()))?;
         ctx_b
             .unescrow_coins_execute(
                 &receiver_account,
@@ -68,7 +68,7 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
                 &packet.chan_id_on_b,
                 &coin,
             )
-            .map_err(|token_err| (ModuleExtras::empty(), token_err))?;
+            .map_err(|err| (ModuleExtras::empty(), err.into()))?;
 
         ModuleExtras::empty()
     } else {
@@ -103,11 +103,11 @@ pub fn process_recv_packet_execute<Ctx: TokenTransferExecutionContext>(
         // can be refunded.
         ctx_b
             .mint_coins_validate(&receiver_account, &coin)
-            .map_err(|token_err| (extras.clone(), token_err))?;
+            .map_err(|err| (extras.clone(), err.into()))?;
 
         ctx_b
             .mint_coins_execute(&receiver_account, &coin)
-            .map_err(|token_err| (extras.clone(), token_err))?;
+            .map_err(|err| (extras.clone(), err.into()))?;
 
         extras
     };

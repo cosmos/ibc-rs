@@ -1,9 +1,10 @@
-use ibc_client_tendermint_types::error::{Error, IntoResult};
+use ibc_client_tendermint_types::error::{IntoResult, TendermintClientError};
 use ibc_client_tendermint_types::{
     ConsensusState as ConsensusStateType, Header as TmHeader, Misbehaviour as TmMisbehaviour,
 };
 use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
+use ibc_core_host::types::error::IdentifierError;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
@@ -101,14 +102,11 @@ where
 
         let duration_since_consensus_state =
             current_timestamp.duration_since(&trusted_timestamp).ok_or(
-                ClientError::InvalidConsensusStateTimestamp {
-                    time1: trusted_timestamp,
-                    time2: current_timestamp,
-                },
+                ClientError::InvalidConsensusStateTimestamp(trusted_timestamp),
             )?;
 
         if duration_since_consensus_state >= options.trusting_period {
-            return Err(Error::ConsensusStateTimestampGteTrustingPeriod {
+            return Err(TendermintClientError::InsufficientTrustingPeriod {
                 duration_since_consensus_state,
                 trusting_period: options.trusting_period,
             }
@@ -119,12 +117,13 @@ where
     // main header verification, delegated to the tendermint-light-client crate.
     let untrusted_state = header.as_untrusted_block_state();
 
-    let tm_chain_id = &chain_id
-        .as_str()
-        .try_into()
-        .map_err(|e| ClientError::Other {
-            description: format!("failed to parse chain id: {e}"),
-        })?;
+    let tm_chain_id =
+        &chain_id
+            .as_str()
+            .try_into()
+            .map_err(|e| IdentifierError::FailedToParse {
+                description: format!("chain ID `{chain_id}`: {e:?}"),
+            })?;
 
     let trusted_state =
         header.as_trusted_block_state(tm_chain_id, trusted_time, trusted_next_validator_hash)?;

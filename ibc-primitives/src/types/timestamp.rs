@@ -13,7 +13,6 @@ use ibc_proto::Protobuf;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 use tendermint::Time;
-use time::error::ComponentRange;
 use time::macros::offset;
 use time::{OffsetDateTime, PrimitiveDateTime};
 
@@ -47,7 +46,7 @@ impl Timestamp {
 
     pub fn from_unix_timestamp(secs: u64, nanos: u32) -> Result<Self, TimestampError> {
         if nanos > 999_999_999 {
-            return Err(TimestampError::DateOutOfRange);
+            return Err(TimestampError::InvalidDate);
         }
 
         let total_nanos = secs as i128 * 1_000_000_000 + nanos as i128;
@@ -66,7 +65,7 @@ impl Timestamp {
             1970..=9999 => Ok(Self {
                 time: PrimitiveDateTime::new(t.date(), t.time()),
             }),
-            _ => Err(TimestampError::DateOutOfRange),
+            _ => Err(TimestampError::InvalidDate),
         }
     }
 
@@ -168,11 +167,11 @@ impl Add<Duration> for Timestamp {
     type Output = Result<Self, TimestampError>;
 
     fn add(self, rhs: Duration) -> Self::Output {
-        let duration = rhs.try_into().map_err(|_| TimestampError::DateOutOfRange)?;
+        let duration = rhs.try_into().map_err(|_| TimestampError::InvalidDate)?;
         let t = self
             .time
             .checked_add(duration)
-            .ok_or(TimestampError::DateOutOfRange)?;
+            .ok_or(TimestampError::InvalidDate)?;
         Self::from_utc(t.assume_utc())
     }
 }
@@ -181,11 +180,11 @@ impl Sub<Duration> for Timestamp {
     type Output = Result<Self, TimestampError>;
 
     fn sub(self, rhs: Duration) -> Self::Output {
-        let duration = rhs.try_into().map_err(|_| TimestampError::DateOutOfRange)?;
+        let duration = rhs.try_into().map_err(|_| TimestampError::InvalidDate)?;
         let t = self
             .time
             .checked_sub(duration)
-            .ok_or(TimestampError::DateOutOfRange)?;
+            .ok_or(TimestampError::InvalidDate)?;
         Self::from_utc(t.assume_utc())
     }
 }
@@ -269,16 +268,16 @@ impl scale_info::TypeInfo for Timestamp {
 
 #[derive(Debug, Display, derive_more::From)]
 pub enum TimestampError {
-    /// parsing u64 integer from string error: `{0}`
+    /// parse int error: {0}
     ParseInt(ParseIntError),
-    /// error converting integer to `Timestamp`: `{0}`
+    /// try from int error: {0}
     TryFromInt(TryFromIntError),
-    /// date out of range
-    DateOutOfRange,
-    /// Timestamp overflow when modifying with duration
-    TimestampOverflow,
-    /// Timestamp is not set
-    Conversion(ComponentRange),
+    /// failed to convert timestamp: {0}
+    Conversion(time::error::ComponentRange),
+    /// invalid date: out of range
+    InvalidDate,
+    /// overflowed timestamp
+    OverflowedTimestamp,
 }
 
 #[cfg(feature = "std")]

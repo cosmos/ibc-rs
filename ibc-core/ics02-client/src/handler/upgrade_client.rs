@@ -4,13 +4,12 @@ use ibc_core_client_context::prelude::*;
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::events::UpgradeClient;
 use ibc_core_client_types::msgs::MsgUpgradeClient;
-use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 
-pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
+pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ClientError>
 where
     Ctx: ValidationContext,
 {
@@ -36,12 +35,7 @@ where
         old_client_state.latest_height().revision_number(),
         old_client_state.latest_height().revision_height(),
     );
-    let old_consensus_state = client_val_ctx
-        .consensus_state(&old_client_cons_state_path)
-        .map_err(|_| ClientError::ConsensusStateNotFound {
-            client_id,
-            height: old_client_state.latest_height(),
-        })?;
+    let old_consensus_state = client_val_ctx.consensus_state(&old_client_cons_state_path)?;
 
     // Validate the upgraded client state and consensus state and verify proofs against the root
     old_client_state.verify_upgrade_client(
@@ -55,7 +49,7 @@ where
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ContextError>
+pub fn execute<Ctx>(ctx: &mut Ctx, msg: MsgUpgradeClient) -> Result<(), ClientError>
 where
     Ctx: ExecutionContext,
 {

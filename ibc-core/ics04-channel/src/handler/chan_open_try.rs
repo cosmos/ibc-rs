@@ -5,8 +5,8 @@ use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::events::OpenTry;
 use ibc_core_channel_types::msgs::MsgChannelOpenTry;
 use ibc_core_client::context::prelude::*;
+use ibc_core_connection::types::error::ConnectionError;
 use ibc_core_connection::types::State as ConnectionState;
-use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::ChannelId;
 use ibc_core_host::types::path::{
@@ -21,7 +21,7 @@ pub fn chan_open_try_validate<ValCtx>(
     ctx_b: &ValCtx,
     module: &dyn Module,
     msg: MsgChannelOpenTry,
-) -> Result<(), ContextError>
+) -> Result<(), ChannelError>
 where
     ValCtx: ValidationContext,
 {
@@ -45,7 +45,7 @@ pub fn chan_open_try_execute<ExecCtx>(
     ctx_b: &mut ExecCtx,
     module: &mut dyn Module,
     msg: MsgChannelOpenTry,
-) -> Result<(), ContextError>
+) -> Result<(), ChannelError>
 where
     ExecCtx: ExecutionContext,
 {
@@ -115,7 +115,7 @@ where
     Ok(())
 }
 
-fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ContextError>
+fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgChannelOpenTry) -> Result<(), ChannelError>
 where
     Ctx: ValidationContext,
 {
@@ -153,11 +153,10 @@ where
         let prefix_on_a = conn_end_on_b.counterparty().prefix();
         let port_id_on_a = msg.port_id_on_a.clone();
         let chan_id_on_a = msg.chan_id_on_a.clone();
-        let conn_id_on_a = conn_end_on_b.counterparty().connection_id().ok_or(
-            ChannelError::UndefinedConnectionCounterparty {
-                connection_id: msg.connection_hops_on_b[0].clone(),
-            },
-        )?;
+        let conn_id_on_a = conn_end_on_b
+            .counterparty()
+            .connection_id()
+            .ok_or(ConnectionError::MissingCounterparty)?;
 
         let expected_chan_end_on_a = ChannelEnd::new(
             ChannelState::Init,
@@ -170,15 +169,13 @@ where
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
-        client_state_of_a_on_b
-            .verify_membership(
-                prefix_on_a,
-                &msg.proof_chan_end_on_a,
-                consensus_state_of_a_on_b.root(),
-                Path::ChannelEnd(chan_end_path_on_a),
-                expected_chan_end_on_a.encode_vec(),
-            )
-            .map_err(ChannelError::VerifyChannelFailed)?;
+        client_state_of_a_on_b.verify_membership(
+            prefix_on_a,
+            &msg.proof_chan_end_on_a,
+            consensus_state_of_a_on_b.root(),
+            Path::ChannelEnd(chan_end_path_on_a),
+            expected_chan_end_on_a.encode_vec(),
+        )?;
     }
 
     Ok(())

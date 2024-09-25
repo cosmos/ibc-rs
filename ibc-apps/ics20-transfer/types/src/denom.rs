@@ -3,13 +3,12 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use derive_more::{Display, From};
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
 use ibc_proto::ibc::applications::transfer::v1::DenomTrace as RawDenomTrace;
-
-use super::error::TokenTransferError;
 
 /// The "base" of a denomination.
 ///
@@ -40,11 +39,11 @@ impl BaseDenom {
 }
 
 impl FromStr for BaseDenom {
-    type Err = TokenTransferError;
+    type Err = DecodingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.trim().is_empty() {
-            Err(TokenTransferError::EmptyBaseDenom)
+            Err(DecodingError::missing_raw_data("empty base denom"))
         } else {
             Ok(BaseDenom(s.to_owned()))
         }
@@ -208,7 +207,7 @@ impl TracePath {
 }
 
 impl FromStr for TracePath {
-    type Err = TokenTransferError;
+    type Err = DecodingError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.is_empty() {
@@ -219,7 +218,7 @@ impl FromStr for TracePath {
         remaining_parts
             .is_none()
             .then_some(trace_path)
-            .ok_or_else(|| TokenTransferError::MalformedTrace(s.to_string()))
+            .ok_or(DecodingError::invalid_raw_data(format!("trace path: {s}")))
     }
 }
 
@@ -323,7 +322,7 @@ pub fn is_receiver_chain_source(
 }
 
 impl FromStr for PrefixedDenom {
-    type Err = TokenTransferError;
+    type Err = DecodingError;
 
     /// Initializes a [`PrefixedDenom`] from a string that adheres to the format
     /// `{nth-port-id/channel-<index>}/{(n-1)th-port-id/channel-<index>}/.../{1st-port-id/channel-<index>}/<base_denom>`.
@@ -361,7 +360,7 @@ impl FromStr for PrefixedDenom {
 }
 
 impl TryFrom<RawDenomTrace> for PrefixedDenom {
-    type Error = TokenTransferError;
+    type Error = DecodingError;
 
     fn try_from(value: RawDenomTrace) -> Result<Self, Self::Error> {
         let base_denom = BaseDenom::from_str(&value.base_denom)?;
@@ -483,7 +482,7 @@ mod tests {
     fn test_strange_but_accepted_prefixed_denom(
         #[case] prefix: &str,
         #[case] denom: &str,
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), DecodingError> {
         let pd_s = if prefix.is_empty() {
             denom.to_owned()
         } else {
@@ -505,9 +504,9 @@ mod tests {
     #[case("transfer/channel-1/transfer/channel-2/")]
     #[case("transfer/channel-21/transfer/channel-23/  ")]
     #[case("transfer/channel-0/")]
-    #[should_panic(expected = "EmptyBaseDenom")]
     fn test_prefixed_empty_base_denom(#[case] pd_s: &str) {
-        PrefixedDenom::from_str(pd_s).expect("error");
+        PrefixedDenom::from_str(pd_s)
+            .expect_err("error: MissingRawData { description: \"empty base denom\" }");
     }
 
     #[rstest]
@@ -617,7 +616,7 @@ mod tests {
     }
 
     #[test]
-    fn test_trace_path() -> Result<(), TokenTransferError> {
+    fn test_trace_path() -> Result<(), DecodingError> {
         assert!(TracePath::from_str("").is_ok(), "empty trace path");
         assert!(
             TracePath::from_str("transfer/uatom").is_err(),

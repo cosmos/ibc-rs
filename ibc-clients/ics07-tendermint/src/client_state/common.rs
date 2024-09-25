@@ -66,10 +66,7 @@ impl ClientStateCommon for ClientState {
         let upgrade_path = &self.inner().upgrade_path;
         let (upgrade_path_prefix, upgrade_path) = match upgrade_path.len() {
             0 => {
-                return Err(UpgradeClientError::InvalidUpgradePath {
-                    reason: "no upgrade path has been set".to_string(),
-                }
-                .into());
+                return Err(UpgradeClientError::MissingUpgradePath.into());
             }
             1 => (CommitmentPrefix::empty(), upgrade_path[0].clone()),
             2 => (
@@ -78,7 +75,7 @@ impl ClientStateCommon for ClientState {
             ),
             _ => {
                 return Err(UpgradeClientError::InvalidUpgradePath {
-                    reason: "upgrade path is too long".to_string(),
+                    description: "upgrade path is too long".to_string(),
                 }
                 .into());
             }
@@ -162,15 +159,11 @@ pub fn verify_consensus_state(
     let tm_consensus_state = TmConsensusState::try_from(consensus_state)?;
 
     if tm_consensus_state.root().is_empty() {
-        return Err(ClientError::Other {
-            description: "empty commitment root".into(),
-        });
+        Err(CommitmentError::MissingCommitmentRoot)?;
     };
 
     if consensus_state_status(&tm_consensus_state, host_timestamp, trusting_period)?.is_expired() {
-        return Err(ClientError::ClientNotActive {
-            status: Status::Expired,
-        });
+        return Err(ClientError::InvalidStatus(Status::Expired));
     }
 
     Ok(())
@@ -213,9 +206,9 @@ pub fn validate_proof_height(
     let latest_height = client_state.latest_height;
 
     if latest_height < proof_height {
-        return Err(ClientError::InvalidProofHeight {
-            latest_height,
-            proof_height,
+        return Err(ClientError::InsufficientProofHeight {
+            actual: latest_height,
+            expected: proof_height,
         });
     }
 
@@ -258,7 +251,7 @@ pub fn verify_upgrade_client<H: HostFunctionsProvider>(
     // the upgrade height This condition checks both the revision number and
     // the height
     if latest_height >= upgraded_tm_client_state_height {
-        Err(UpgradeClientError::LowUpgradeHeight {
+        Err(UpgradeClientError::InsufficientUpgradeHeight {
             upgraded_height: upgraded_tm_client_state_height,
             client_height: latest_height,
         })?
@@ -301,17 +294,16 @@ pub fn verify_membership<H: HostFunctionsProvider>(
     value: Vec<u8>,
 ) -> Result<(), ClientError> {
     if prefix.is_empty() {
-        return Err(ClientError::Ics23Verification(
-            CommitmentError::EmptyCommitmentPrefix,
-        ));
+        Err(CommitmentError::MissingCommitmentPrefix)?;
     }
 
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
-    let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
-    merkle_proof
-        .verify_membership::<H>(proof_specs, root.clone().into(), merkle_path, value, 0)
-        .map_err(ClientError::Ics23Verification)
+    let merkle_proof = MerkleProof::try_from(proof)?;
+
+    merkle_proof.verify_membership::<H>(proof_specs, root.clone().into(), merkle_path, value, 0)?;
+
+    Ok(())
 }
 
 /// Verify that the given value does not belong in the client's merkle proof.
@@ -327,9 +319,10 @@ pub fn verify_non_membership<H: HostFunctionsProvider>(
     path: PathBytes,
 ) -> Result<(), ClientError> {
     let merkle_path = MerklePath::new(vec![prefix.as_bytes().to_vec().into(), path]);
-    let merkle_proof = MerkleProof::try_from(proof).map_err(ClientError::InvalidCommitmentProof)?;
 
-    merkle_proof
-        .verify_non_membership::<H>(proof_specs, root.clone().into(), merkle_path)
-        .map_err(ClientError::Ics23Verification)
+    let merkle_proof = MerkleProof::try_from(proof)?;
+
+    merkle_proof.verify_non_membership::<H>(proof_specs, root.clone().into(), merkle_path)?;
+
+    Ok(())
 }

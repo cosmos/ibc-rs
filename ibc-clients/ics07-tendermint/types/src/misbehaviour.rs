@@ -1,6 +1,6 @@
 //! Defines the misbehaviour type for the tendermint light client
 
-use ibc_core_client_types::error::ClientError;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
@@ -9,7 +9,7 @@ use ibc_proto::Protobuf;
 use tendermint::crypto::Sha256;
 use tendermint::merkle::MerkleHash;
 
-use crate::error::Error;
+use crate::error::TendermintClientError;
 use crate::header::Header;
 
 pub const TENDERMINT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Misbehaviour";
@@ -44,25 +44,27 @@ impl Misbehaviour {
         &self.header2
     }
 
-    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(&self) -> Result<(), Error> {
+    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(
+        &self,
+    ) -> Result<(), TendermintClientError> {
         self.header1.validate_basic::<H>()?;
         self.header2.validate_basic::<H>()?;
 
         if self.header1.signed_header.header.chain_id != self.header2.signed_header.header.chain_id
         {
-            return Err(Error::InvalidRawMisbehaviour {
-                reason: "headers must have identical chain_ids".to_owned(),
+            return Err(TendermintClientError::MismatchedHeaderChainIds {
+                expected: self.header1.signed_header.header.chain_id.to_string(),
+                actual: self.header2.signed_header.header.chain_id.to_string(),
             });
         }
 
         if self.header1.height() < self.header2.height() {
-            return Err(Error::InvalidRawMisbehaviour {
-                reason: format!(
-                    "header1 height is less than header2 height ({} < {})",
-                    self.header1.height(),
-                    self.header2.height()
-                ),
-            });
+            return Err(
+                TendermintClientError::InsufficientMisbehaviourHeaderHeight {
+                    height_1: self.header1.height(),
+                    height_2: self.header2.height(),
+                },
+            );
         }
 
         Ok(())
@@ -72,23 +74,20 @@ impl Misbehaviour {
 impl Protobuf<RawMisbehaviour> for Misbehaviour {}
 
 impl TryFrom<RawMisbehaviour> for Misbehaviour {
-    type Error = Error;
+    type Error = DecodingError;
+
     #[allow(deprecated)]
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
         let client_id = raw.client_id.parse()?;
 
         let header1: Header = raw
             .header_1
-            .ok_or_else(|| Error::InvalidRawMisbehaviour {
-                reason: "missing header1".into(),
-            })?
+            .ok_or_else(|| DecodingError::missing_raw_data("misbehaviour header1"))?
             .try_into()?;
 
         let header2: Header = raw
             .header_2
-            .ok_or_else(|| Error::InvalidRawMisbehaviour {
-                reason: "missing header2".into(),
-            })?
+            .ok_or_else(|| DecodingError::missing_raw_data("misbehaviour header2"))?
             .try_into()?;
 
         Ok(Self::new(client_id, header1, header2))
@@ -109,21 +108,16 @@ impl From<Misbehaviour> for RawMisbehaviour {
 impl Protobuf<Any> for Misbehaviour {}
 
 impl TryFrom<Any> for Misbehaviour {
-    type Error = ClientError;
+    type Error = DecodingError;
 
-    fn try_from(raw: Any) -> Result<Self, ClientError> {
-        fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, ClientError> {
-            let misbehaviour =
-                Protobuf::<RawMisbehaviour>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
-            Ok(misbehaviour)
-        }
-        match raw.type_url.as_str() {
-            TENDERMINT_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
-            _ => Err(ClientError::UnknownMisbehaviourType {
-                misbehaviour_type: raw.type_url,
-            }),
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
+        if let TENDERMINT_MISBEHAVIOUR_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawMisbehaviour>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
+                expected: TENDERMINT_MISBEHAVIOUR_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })
         }
     }
 }

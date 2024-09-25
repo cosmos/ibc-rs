@@ -29,7 +29,7 @@ where
     let mut client_state =
         TmClientState::try_from(proposal.upgraded_client_state).map_err(|e| {
             UpgradeClientError::InvalidUpgradeProposal {
-                reason: e.to_string(),
+                description: e.to_string(),
             }
         })?;
 

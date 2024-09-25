@@ -5,7 +5,6 @@ use ibc_core_connection_types::error::ConnectionError;
 use ibc_core_connection_types::events::OpenConfirm;
 use ibc_core_connection_types::msgs::MsgConnectionOpenConfirm;
 use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
-use ibc_core_handler_types::error::ContextError;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::identifiers::{ClientId, ConnectionId};
 use ibc_core_host::types::path::{ClientConsensusStatePath, ConnectionPath, Path};
@@ -13,7 +12,7 @@ use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
 
-pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
+pub fn validate<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
 {
@@ -25,7 +24,7 @@ fn validate_impl<Ctx>(
     ctx_b: &Ctx,
     msg: &MsgConnectionOpenConfirm,
     vars: &LocalVars,
-) -> Result<(), ContextError>
+) -> Result<(), ConnectionError>
 where
     Ctx: ValidationContext,
 {
@@ -48,6 +47,7 @@ where
         client_state_of_a_on_b
             .status(client_val_ctx_b, client_id_on_b)?
             .verify_is_active()?;
+
         client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b = ClientConsensusStatePath::new(
@@ -73,21 +73,19 @@ where
             conn_end_on_b.delay_period(),
         )?;
 
-        client_state_of_a_on_b
-            .verify_membership(
-                prefix_on_a,
-                &msg.proof_conn_end_on_a,
-                consensus_state_of_a_on_b.root(),
-                Path::Connection(ConnectionPath::new(conn_id_on_a)),
-                expected_conn_end_on_a.encode_vec(),
-            )
-            .map_err(ConnectionError::VerifyConnectionState)?;
+        client_state_of_a_on_b.verify_membership(
+            prefix_on_a,
+            &msg.proof_conn_end_on_a,
+            consensus_state_of_a_on_b.root(),
+            Path::Connection(ConnectionPath::new(conn_id_on_a)),
+            expected_conn_end_on_a.encode_vec(),
+        )?;
     }
 
     Ok(())
 }
 
-pub fn execute<Ctx>(ctx_b: &mut Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ContextError>
+pub fn execute<Ctx>(ctx_b: &mut Ctx, msg: &MsgConnectionOpenConfirm) -> Result<(), ConnectionError>
 where
     Ctx: ExecutionContext,
 {
@@ -99,7 +97,7 @@ fn execute_impl<Ctx>(
     ctx_b: &mut Ctx,
     msg: &MsgConnectionOpenConfirm,
     vars: LocalVars,
-) -> Result<(), ContextError>
+) -> Result<(), ConnectionError>
 where
     Ctx: ExecutionContext,
 {
@@ -136,7 +134,7 @@ struct LocalVars {
 }
 
 impl LocalVars {
-    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, ContextError>
+    fn new<Ctx>(ctx_b: &Ctx, msg: &MsgConnectionOpenConfirm) -> Result<Self, ConnectionError>
     where
         Ctx: ValidationContext,
     {

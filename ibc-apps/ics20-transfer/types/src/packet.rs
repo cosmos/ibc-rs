@@ -2,11 +2,11 @@
 
 use core::str::FromStr;
 
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
 use ibc_proto::ibc::applications::transfer::v2::FungibleTokenPacketData as RawPacketData;
 
-use super::error::TokenTransferError;
 use super::{Amount, Memo, PrefixedCoin, PrefixedDenom};
 
 /// Defines the structure of token transfers' packet bytes
@@ -33,7 +33,7 @@ pub struct PacketData {
 }
 
 impl TryFrom<RawPacketData> for PacketData {
-    type Error = TokenTransferError;
+    type Error = DecodingError;
 
     fn try_from(raw_pkt_data: RawPacketData) -> Result<Self, Self::Error> {
         // This denom may be prefixed or unprefixed.

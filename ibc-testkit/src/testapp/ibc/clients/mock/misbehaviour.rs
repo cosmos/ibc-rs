@@ -1,4 +1,4 @@
-use ibc::core::client::types::error::ClientError;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::primitives::prelude::*;
 use ibc::primitives::proto::{Any, Protobuf};
@@ -19,18 +19,18 @@ pub struct Misbehaviour {
 impl Protobuf<RawMisbehaviour> for Misbehaviour {}
 
 impl TryFrom<RawMisbehaviour> for Misbehaviour {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMisbehaviour) -> Result<Self, Self::Error> {
         Ok(Self {
             client_id: ClientId::new("07-tendermint", 0).expect("no error"),
             header1: raw
                 .header1
-                .ok_or(ClientError::MissingRawMisbehaviour)?
+                .ok_or(DecodingError::missing_raw_data("misbehaviour header1"))?
                 .try_into()?,
             header2: raw
                 .header2
-                .ok_or(ClientError::MissingRawMisbehaviour)?
+                .ok_or(DecodingError::missing_raw_data("misbehaviour header2"))?
                 .try_into()?,
         })
     }
@@ -49,21 +49,16 @@ impl From<Misbehaviour> for RawMisbehaviour {
 impl Protobuf<Any> for Misbehaviour {}
 
 impl TryFrom<Any> for Misbehaviour {
-    type Error = ClientError;
+    type Error = DecodingError;
 
-    fn try_from(raw: Any) -> Result<Self, ClientError> {
-        fn decode_misbehaviour(value: &[u8]) -> Result<Misbehaviour, ClientError> {
-            let raw_misbehaviour =
-                Protobuf::<RawMisbehaviour>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
-            Ok(raw_misbehaviour)
-        }
-        match raw.type_url.as_str() {
-            MOCK_MISBEHAVIOUR_TYPE_URL => decode_misbehaviour(&raw.value),
-            _ => Err(ClientError::UnknownMisbehaviourType {
-                misbehaviour_type: raw.type_url,
-            }),
+    fn try_from(raw: Any) -> Result<Self, Self::Error> {
+        if let MOCK_MISBEHAVIOUR_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawMisbehaviour>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
+                expected: MOCK_MISBEHAVIOUR_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })
         }
     }
 }

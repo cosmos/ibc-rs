@@ -4,10 +4,11 @@ use ibc::core::client::types::error::{ClientError, UpgradeClientError};
 use ibc::core::client::types::msgs::{ClientMsg, MsgUpgradeClient};
 use ibc::core::client::types::Height;
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::HandlerError;
 use ibc::core::handler::types::events::{IbcEvent, MessageEvent};
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::path::ClientConsensusStatePath;
+use ibc_core_host_types::error::HostError;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_tm_client_state_from_header, dummy_valid_tendermint_header,
@@ -142,9 +143,11 @@ fn msg_upgrade_client_healthy() {
 #[test]
 fn upgrade_client_fail_nonexisting_client() {
     let fxt = msg_upgrade_client_fixture(Ctx::Default, Msg::Default);
-    let expected_err = ContextError::ClientError(ClientError::ClientStateNotFound {
-        client_id: fxt.msg.client_id.clone(),
-    });
+    let expected_err: HandlerError = ClientError::Host(HostError::missing_state(format!(
+        "missing client state for client {}",
+        fxt.msg.client_id.clone()
+    )))
+    .into();
     upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
 }
 
@@ -152,22 +155,22 @@ fn upgrade_client_fail_nonexisting_client() {
 fn upgrade_client_fail_low_upgrade_height() {
     let fxt: Fixture<MsgUpgradeClient> =
         msg_upgrade_client_fixture(Ctx::WithClient, Msg::LowUpgradeHeight);
-    let expected_err: ClientError = UpgradeClientError::LowUpgradeHeight {
+    let expected_err: ClientError = UpgradeClientError::InsufficientUpgradeHeight {
         upgraded_height: Height::new(0, 26).unwrap(),
         client_height: fxt.ctx.host_height().unwrap(),
     }
     .into();
     upgrade_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::from(expected_err))),
+        Expect::Failure(Some(HandlerError::from(expected_err))),
     );
 }
 
 #[test]
 fn upgrade_client_fail_unknown_upgraded_client_state() {
     let fxt = msg_upgrade_client_fixture(Ctx::WithClient, Msg::UnknownUpgradedClientStateType);
-    let expected_err = ContextError::ClientError(ClientError::UnknownClientStateType {
-        client_state_type: client_type().to_string(),
-    });
+    let expected_err = HandlerError::Client(ClientError::InvalidClientStateType(
+        client_type().to_string(),
+    ));
     upgrade_client_validate(&fxt, Expect::Failure(Some(expected_err)));
 }

@@ -8,6 +8,7 @@ use ibc_core_host::types::identifiers::ClientId;
 use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
+use ibc_primitives::TimestampError;
 
 use super::ClientState;
 
@@ -341,11 +342,7 @@ where
         let tm_consensus_state_timestamp = tm_consensus_state.timestamp();
         let tm_consensus_state_expiry = (tm_consensus_state_timestamp
             + client_state.trusting_period)
-            .map_err(|_| ClientError::Other {
-                description: String::from(
-                    "Timestamp overflow error occurred while attempting to parse TmConsensusState",
-                ),
-            })?;
+            .map_err(|_| TimestampError::OverflowedTimestamp)?;
 
         if tm_consensus_state_expiry > host_timestamp {
             break;

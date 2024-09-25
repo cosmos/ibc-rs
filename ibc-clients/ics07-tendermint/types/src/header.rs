@@ -5,6 +5,7 @@ use core::str::FromStr;
 
 use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::Height;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
@@ -20,7 +21,7 @@ use tendermint::validator::Set as ValidatorSet;
 use tendermint::{Hash, Time};
 use tendermint_light_client_verifier::types::{TrustedBlockState, UntrustedBlockState};
 
-use crate::error::Error;
+use crate::error::TendermintClientError;
 
 pub const TENDERMINT_HEADER_TYPE_URL: &str = "/ibc.lightclients.tendermint.v1.Header";
 
@@ -47,12 +48,12 @@ impl Display for Header {
 }
 
 impl Header {
-    pub fn timestamp(&self) -> Result<Timestamp, Error> {
+    pub fn timestamp(&self) -> Result<Timestamp, TendermintClientError> {
         self.signed_header
             .header
             .time
             .try_into()
-            .map_err(Error::InvalidHeaderTimestamp)
+            .map_err(TendermintClientError::InvalidTimestamp)
     }
 
     pub fn height(&self) -> Height {
@@ -78,7 +79,7 @@ impl Header {
         chain_id: &'a TmChainId,
         header_time: Time,
         next_validators_hash: Hash,
-    ) -> Result<TrustedBlockState<'a>, Error> {
+    ) -> Result<TrustedBlockState<'a>, TendermintClientError> {
         Ok(TrustedBlockState {
             chain_id,
             header_time,
@@ -86,18 +87,23 @@ impl Header {
                 .trusted_height
                 .revision_height()
                 .try_into()
-                .map_err(|_| Error::InvalidHeaderHeight {
-                    height: self.trusted_height.revision_height(),
+                .map_err(|_| {
+                    TendermintClientError::InvalidHeaderHeight(
+                        self.trusted_height.revision_height(),
+                    )
                 })?,
             next_validators: &self.trusted_next_validator_set,
             next_validators_hash,
         })
     }
 
-    pub fn verify_chain_id_version_matches_height(&self, chain_id: &ChainId) -> Result<(), Error> {
+    pub fn verify_chain_id_version_matches_height(
+        &self,
+        chain_id: &ChainId,
+    ) -> Result<(), TendermintClientError> {
         if self.height().revision_number() != chain_id.revision_number() {
-            return Err(Error::MismatchHeaderChainId {
-                given: self.signed_header.header.chain_id.to_string(),
+            return Err(TendermintClientError::MismatchedHeaderChainIds {
+                actual: self.signed_header.header.chain_id.to_string(),
                 expected: chain_id.to_string(),
             });
         }
@@ -114,20 +120,21 @@ impl Header {
         if &self.trusted_next_validator_set.hash_with::<H>() == trusted_next_validator_hash {
             Ok(())
         } else {
-            Err(ClientError::HeaderVerificationFailure {
-                reason:
-                    "header trusted next validator set hash does not match hash stored on chain"
-                        .to_string(),
+            Err(ClientError::FailedToVerifyHeader {
+                description: "trusted next validator set hash does not match hash stored on chain"
+                    .to_string(),
             })
         }
     }
 
     /// Checks if the fields of a given header are consistent with the trusted fields of this header.
-    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(&self) -> Result<(), Error> {
+    pub fn validate_basic<H: MerkleHash + Sha256 + Default>(
+        &self,
+    ) -> Result<(), TendermintClientError> {
         if self.height().revision_number() != self.trusted_height.revision_number() {
-            return Err(Error::MismatchHeightRevisions {
-                trusted_revision: self.trusted_height.revision_number(),
-                header_revision: self.height().revision_number(),
+            return Err(TendermintClientError::MismatchedRevisionHeights {
+                expected: self.trusted_height.revision_number(),
+                actual: self.height().revision_number(),
             });
         }
 
@@ -136,17 +143,17 @@ impl Header {
         // based on) must be smaller than height of the new header that we're
         // installing.
         if self.trusted_height >= self.height() {
-            return Err(Error::InvalidHeaderHeight {
-                height: self.height().revision_height(),
-            });
+            return Err(TendermintClientError::InvalidHeaderHeight(
+                self.height().revision_height(),
+            ));
         }
 
         let validators_hash = self.validator_set.hash_with::<H>();
 
         if validators_hash != self.signed_header.header.validators_hash {
-            return Err(Error::MismatchValidatorsHashes {
-                signed_header_validators_hash: self.signed_header.header.validators_hash,
-                validators_hash,
+            return Err(TendermintClientError::MismatchedValidatorHashes {
+                expected: self.signed_header.header.validators_hash,
+                actual: validators_hash,
             });
         }
 
@@ -157,32 +164,33 @@ impl Header {
 impl Protobuf<RawHeader> for Header {}
 
 impl TryFrom<RawHeader> for Header {
-    type Error = Error;
+    type Error = DecodingError;
 
     fn try_from(raw: RawHeader) -> Result<Self, Self::Error> {
         let header = Self {
             signed_header: raw
                 .signed_header
-                .ok_or(Error::MissingSignedHeader)?
+                .ok_or(DecodingError::missing_raw_data("signed header"))?
                 .try_into()
-                .map_err(|e| Error::InvalidHeader {
-                    reason: "signed header conversion".to_string(),
-                    error: e,
-                })?,
+                .map_err(|e| DecodingError::invalid_raw_data(format!("signed header: {e:?}")))?,
             validator_set: raw
                 .validator_set
-                .ok_or(Error::MissingValidatorSet)?
+                .ok_or(DecodingError::missing_raw_data("validator set"))?
                 .try_into()
-                .map_err(Error::InvalidRawHeader)?,
+                .map_err(|e| DecodingError::invalid_raw_data(format!("validator set: {e:?}")))?,
             trusted_height: raw
                 .trusted_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(Error::MissingTrustedHeight)?,
+                .ok_or(DecodingError::missing_raw_data("trusted height"))?,
             trusted_next_validator_set: raw
                 .trusted_validators
-                .ok_or(Error::MissingTrustedNextValidatorSet)?
+                .ok_or(DecodingError::missing_raw_data(
+                    "trusted next validator set",
+                ))?
                 .try_into()
-                .map_err(Error::InvalidRawHeader)?,
+                .map_err(|e| {
+                    DecodingError::invalid_raw_data(format!("trusted next validator set: {e:?}"))
+                })?,
         };
 
         Ok(header)
@@ -192,20 +200,16 @@ impl TryFrom<RawHeader> for Header {
 impl Protobuf<Any> for Header {}
 
 impl TryFrom<Any> for Header {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_header(value: &[u8]) -> Result<Header, ClientError> {
-            let header = Protobuf::<RawHeader>::decode(value).map_err(|e| ClientError::Other {
-                description: e.to_string(),
-            })?;
-            Ok(header)
-        }
-        match raw.type_url.as_str() {
-            TENDERMINT_HEADER_TYPE_URL => decode_header(&raw.value),
-            _ => Err(ClientError::UnknownHeaderType {
-                header_type: raw.type_url,
-            }),
+        if let TENDERMINT_HEADER_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawHeader>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
+                expected: TENDERMINT_HEADER_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })
         }
     }
 }

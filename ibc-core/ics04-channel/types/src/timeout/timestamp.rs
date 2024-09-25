@@ -5,7 +5,7 @@ use core::time::Duration;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 
-use crate::error::PacketError;
+use crate::error::ChannelError;
 
 /// Indicates a timestamp on the destination chain after which the packet will
 /// no longer be processed, and will instead count as having timed-out.
@@ -101,7 +101,7 @@ impl Display for TimeoutTimestamp {
 }
 
 impl Add<Duration> for TimeoutTimestamp {
-    type Output = Result<Self, PacketError>;
+    type Output = Result<Self, ChannelError>;
 
     fn add(self, rhs: Duration) -> Self::Output {
         match self {
@@ -109,13 +109,13 @@ impl Add<Duration> for TimeoutTimestamp {
                 let new_timestamp = timestamp.add(rhs)?;
                 Ok(TimeoutTimestamp::At(new_timestamp))
             }
-            TimeoutTimestamp::Never => Err(PacketError::MissingTimeout),
+            TimeoutTimestamp::Never => Err(ChannelError::MissingTimeout),
         }
     }
 }
 
 impl Sub<Duration> for TimeoutTimestamp {
-    type Output = Result<Self, PacketError>;
+    type Output = Result<Self, ChannelError>;
 
     fn sub(self, rhs: Duration) -> Self::Output {
         match self {
@@ -123,7 +123,7 @@ impl Sub<Duration> for TimeoutTimestamp {
                 let new_timestamp = timestamp.sub(rhs)?;
                 Ok(TimeoutTimestamp::At(new_timestamp))
             }
-            TimeoutTimestamp::Never => Err(PacketError::MissingTimeout),
+            TimeoutTimestamp::Never => Err(ChannelError::MissingTimeout),
         }
     }
 }

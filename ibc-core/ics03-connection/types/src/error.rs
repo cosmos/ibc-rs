@@ -1,106 +1,89 @@
 //! Defines the connection error type
 
 use displaydoc::Display;
-use ibc_core_client_types::{error as client_error, Height};
-use ibc_core_host_types::error::IdentifierError;
-use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
+use ibc_core_client_types::error::ClientError;
+use ibc_core_client_types::Height;
+use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
 
-use crate::version::Version;
-
 #[derive(Debug, Display)]
 pub enum ConnectionError {
-    /// client error: `{0}`
-    Client(client_error::ClientError),
-    /// invalid connection state: expected `{expected}`, actual `{actual}`
-    InvalidState { expected: String, actual: String },
-    /// consensus height claimed by the client on the other party is too advanced: `{target_height}` (host chain current height: `{current_height}`)
-    InvalidConsensusHeight {
+    /// client error: {0}
+    Client(ClientError),
+    /// decoding error: {0}
+    Decoding(DecodingError),
+    /// host error: {0}
+    Host(HostError),
+    /// timestamp error: {0}
+    Timestamp(TimestampError),
+    /// invalid counterparty
+    InvalidCounterparty,
+    /// invalid connection state: {description}
+    InvalidState { description: String },
+    /// mismatched connection states: expected `{expected}`, actual `{actual}`
+    MismatchedConnectionStates { expected: String, actual: String },
+    /// missing supported features
+    MissingFeatures,
+    /// missing common version
+    MissingCommonVersion,
+    /// missing counterparty
+    MissingCounterparty,
+    /// insufficient consensus height `{current_height}` for host chain; needs to meet counterparty's height `{target_height}`
+    InsufficientConsensusHeight {
         target_height: Height,
         current_height: Height,
     },
-    /// identifier error: `{0}`
-    InvalidIdentifier(IdentifierError),
-    /// ConnectionEnd domain object could not be constructed out of empty proto object
-    EmptyProtoConnectionEnd,
-    /// empty supported versions
-    EmptyVersions,
-    /// single version must be negotiated on connection before opening channel
-    InvalidVersionLength,
-    /// version \"`{version}`\" not supported
-    VersionNotSupported { version: Version },
-    /// no common version
-    NoCommonVersion,
-    /// empty supported features
-    EmptyFeatures,
-    /// feature \"`{feature}`\" not supported
-    FeatureNotSupported { feature: String },
-    /// no common features
-    NoCommonFeatures,
-    /// missing proof height
-    MissingProofHeight,
-    /// missing consensus height
-    MissingConsensusHeight,
-    /// invalid connection proof error
-    InvalidProof,
-    /// verifying connection state error: `{0}`
-    VerifyConnectionState(client_error::ClientError),
-    /// invalid signer error: `{reason}`
-    InvalidSigner { reason: String },
-    /// no connection was found for the previous connection id provided `{connection_id}`
-    ConnectionNotFound { connection_id: ConnectionId },
-    /// invalid counterparty
-    InvalidCounterparty,
-    /// missing counterparty
-    MissingCounterparty,
-    /// missing client state
-    MissingClientState,
-    /// the consensus proof verification failed (height: `{height}`), client error: `{client_error}`
-    ConsensusStateVerificationFailure {
-        height: Height,
-        client_error: client_error::ClientError,
-    },
-    /// the client state proof verification failed for client id `{client_id}`, client error: `{client_error}`
-    ClientStateVerificationFailure {
-        // TODO: use more specific error source
-        client_id: ClientId,
-        client_error: client_error::ClientError,
-    },
-    /// invalid client state: `{reason}`
-    InvalidClientState { reason: String },
-    /// not enough blocks elapsed, current height `{current_host_height}` is still less than the earliest acceptable height `{earliest_valid_height}`
-    NotEnoughBlocksElapsed {
+    /// insufficient blocks elapsed: current height `{current_host_height}` needs to meet `{earliest_valid_height}`
+    InsufficientBlocksElapsed {
         current_host_height: Height,
         earliest_valid_height: Height,
     },
-    /// not enough time elapsed, current timestamp `{current_host_time}` is still less than the earliest acceptable timestamp `{earliest_valid_time}`
-    NotEnoughTimeElapsed {
+    /// insufficient time elapsed: current timestamp `{current_host_time}` needs to meet `{earliest_valid_time}`
+    InsufficientTimeElapsed {
         current_host_time: Timestamp,
         earliest_valid_time: Timestamp,
     },
-    /// timestamp overflowed error: `{0}`
-    TimestampOverflow(TimestampError),
-    /// connection counter overflow error
-    CounterOverflow,
-    /// other error: `{description}`
-    Other { description: String },
+}
+
+impl From<DecodingError> for ConnectionError {
+    fn from(e: DecodingError) -> Self {
+        Self::Decoding(e)
+    }
+}
+
+impl From<IdentifierError> for ConnectionError {
+    fn from(e: IdentifierError) -> Self {
+        Self::Decoding(DecodingError::Identifier(e))
+    }
+}
+
+impl From<TimestampError> for ConnectionError {
+    fn from(e: TimestampError) -> Self {
+        Self::Timestamp(e)
+    }
+}
+
+impl From<ClientError> for ConnectionError {
+    fn from(e: ClientError) -> Self {
+        Self::Client(e)
+    }
+}
+
+impl From<HostError> for ConnectionError {
+    fn from(e: HostError) -> Self {
+        Self::Host(e)
+    }
 }
 
 #[cfg(feature = "std")]
 impl std::error::Error for ConnectionError {
     fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
         match &self {
-            Self::Client(e)
-            | Self::VerifyConnectionState(e)
-            | Self::ConsensusStateVerificationFailure {
-                client_error: e, ..
-            }
-            | Self::ClientStateVerificationFailure {
-                client_error: e, ..
-            } => Some(e),
-            Self::InvalidIdentifier(e) => Some(e),
-            Self::TimestampOverflow(e) => Some(e),
+            Self::Host(e) => Some(e),
+            Self::Client(e) => Some(e),
+            Self::Decoding(e) => Some(e),
+            Self::Timestamp(e) => Some(e),
             _ => None,
         }
     }

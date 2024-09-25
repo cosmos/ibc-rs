@@ -1,10 +1,9 @@
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelCloseInit as RawMsgChannelCloseInit;
 use ibc_proto::Protobuf;
-
-use crate::error::ChannelError;
 
 pub const CHAN_CLOSE_INIT_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCloseInit";
 
@@ -27,7 +26,7 @@ pub struct MsgChannelCloseInit {
 impl Protobuf<RawMsgChannelCloseInit> for MsgChannelCloseInit {}
 
 impl TryFrom<RawMsgChannelCloseInit> for MsgChannelCloseInit {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(raw_msg: RawMsgChannelCloseInit) -> Result<Self, Self::Error> {
         Ok(MsgChannelCloseInit {

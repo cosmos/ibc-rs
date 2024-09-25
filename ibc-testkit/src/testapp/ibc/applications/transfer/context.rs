@@ -1,6 +1,6 @@
 use ibc::apps::transfer::context::{TokenTransferExecutionContext, TokenTransferValidationContext};
-use ibc::apps::transfer::types::error::TokenTransferError;
 use ibc::apps::transfer::types::{Memo, PrefixedCoin};
+use ibc::core::host::types::error::HostError;
 use ibc::core::host::types::identifiers::{ChannelId, PortId};
 use ibc::core::primitives::Signer;
 
@@ -9,15 +9,15 @@ use super::types::DummyTransferModule;
 impl TokenTransferValidationContext for DummyTransferModule {
     type AccountId = Signer;
 
-    fn get_port(&self) -> Result<PortId, TokenTransferError> {
+    fn get_port(&self) -> Result<PortId, HostError> {
         Ok(PortId::transfer())
     }
 
-    fn can_send_coins(&self) -> Result<(), TokenTransferError> {
+    fn can_send_coins(&self) -> Result<(), HostError> {
         Ok(())
     }
 
-    fn can_receive_coins(&self) -> Result<(), TokenTransferError> {
+    fn can_receive_coins(&self) -> Result<(), HostError> {
         Ok(())
     }
     fn escrow_coins_validate(
@@ -27,7 +27,7 @@ impl TokenTransferValidationContext for DummyTransferModule {
         _channel_id: &ChannelId,
         _coin: &PrefixedCoin,
         _memo: &Memo,
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -37,7 +37,7 @@ impl TokenTransferValidationContext for DummyTransferModule {
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -45,7 +45,7 @@ impl TokenTransferValidationContext for DummyTransferModule {
         &self,
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -54,7 +54,7 @@ impl TokenTransferValidationContext for DummyTransferModule {
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
         _memo: &Memo,
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 }
@@ -67,7 +67,7 @@ impl TokenTransferExecutionContext for DummyTransferModule {
         _channel_id: &ChannelId,
         _coin: &PrefixedCoin,
         _memo: &Memo,
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -77,7 +77,7 @@ impl TokenTransferExecutionContext for DummyTransferModule {
         _port_id: &PortId,
         _channel_id: &ChannelId,
         _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -85,7 +85,7 @@ impl TokenTransferExecutionContext for DummyTransferModule {
         &mut self,
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 
@@ -94,7 +94,7 @@ impl TokenTransferExecutionContext for DummyTransferModule {
         _account: &Self::AccountId,
         _coin: &PrefixedCoin,
         _memo: &Memo,
-    ) -> Result<(), TokenTransferError> {
+    ) -> Result<(), HostError> {
         Ok(())
     }
 }
