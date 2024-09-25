@@ -23,7 +23,7 @@ use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc_testkit::context::MockContext;
 use ibc_testkit::fixtures::applications::transfer::{
-    extract_transfer_packet, MsgTransferConfig, PacketDataConfig,
+    dummy_msg_transfer, dummy_packet_data, extract_transfer_packet,
 };
 use ibc_testkit::fixtures::core::channel::{
     dummy_raw_msg_ack_with_packet, dummy_raw_msg_chan_close_confirm, dummy_raw_msg_chan_close_init,
@@ -35,7 +35,7 @@ use ibc_testkit::fixtures::core::connection::{
     dummy_msg_conn_open_ack, dummy_msg_conn_open_init, dummy_msg_conn_open_init_with_client_id,
     dummy_msg_conn_open_try, msg_conn_open_try_with_client_id,
 };
-use ibc_testkit::fixtures::core::context::TestContextConfig;
+use ibc_testkit::fixtures::core::context::dummy_store_generic_test_context;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::testapp::ibc::applications::transfer::types::DummyTransferModule;
 use ibc_testkit::testapp::ibc::clients::mock::client_state::MockClientState;
@@ -89,7 +89,7 @@ fn routing_module_and_keepers() {
     let upgrade_client_height_second = Height::new(1, 1).unwrap();
 
     // We reuse this same context across all tests. Nothing in particular needs parametrizing.
-    let mut ctx = TestContextConfig::builder()
+    let mut ctx: MockContext = dummy_store_generic_test_context()
         // a future timestamp, so that submitted packets are considered from past
         // not more than 5 secs, as later dummy_raw_msg_timeout_on_close(*, 5) is used
         .latest_timestamp(
@@ -97,7 +97,7 @@ fn routing_module_and_keepers() {
                 .add(core::time::Duration::from_secs(4))
                 .unwrap(),
         )
-        .build::<MockContext>();
+        .call();
 
     let mut router = MockRouter::new_with_transfer();
 
@@ -142,29 +142,24 @@ fn routing_module_and_keepers() {
     let msg_chan_close_confirm =
         MsgChannelCloseConfirm::try_from(dummy_raw_msg_chan_close_confirm(client_height)).unwrap();
 
-    let packet_data = PacketDataConfig::builder()
-        .token(
-            BaseCoin {
-                denom: "uatom".parse().expect("parse denom"),
-                amount: U256::from(10).into(),
-            }
-            .into(),
-        )
-        .build();
+    let packet_data = dummy_packet_data(
+        BaseCoin {
+            denom: "uatom".parse().expect("parse denom"),
+            amount: U256::from(10).into(),
+        }
+        .into(),
+    )
+    .call();
 
-    let msg_transfer = MsgTransferConfig::builder()
-        .packet_data(packet_data.clone())
+    let msg_transfer = dummy_msg_transfer(packet_data.clone())
         .timeout_height_on_b(TimeoutHeight::At(Height::new(0, 35).unwrap()))
-        .build();
+        .call();
 
-    let msg_transfer_two = MsgTransferConfig::builder()
-        .packet_data(packet_data.clone())
+    let msg_transfer_two = dummy_msg_transfer(packet_data.clone())
         .timeout_height_on_b(TimeoutHeight::At(Height::new(0, 36).unwrap()))
-        .build();
+        .call();
 
-    let msg_transfer_no_timeout = MsgTransferConfig::builder()
-        .packet_data(packet_data.clone())
-        .build();
+    let msg_transfer_no_timeout = dummy_msg_transfer(packet_data.clone()).call();
 
     let mut msg_to_on_close =
         MsgTimeoutOnClose::try_from(dummy_raw_msg_timeout_on_close(36, 5)).unwrap();

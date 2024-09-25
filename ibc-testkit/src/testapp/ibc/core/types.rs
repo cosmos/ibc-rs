@@ -6,6 +6,7 @@ use core::fmt::Debug;
 use basecoin_store::context::{ProvableStore, Store};
 use basecoin_store::impls::SharedStore;
 use basecoin_store::types::{BinStore, JsonStore, ProtobufStore, TypedSet, TypedStore};
+use bon::builder;
 use ibc::core::channel::types::channel::ChannelEnd;
 use ibc::core::channel::types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc::core::client::context::client_state::ClientStateValidation;
@@ -27,10 +28,9 @@ use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::ibc::core::connection::v1::ConnectionEnd as RawConnectionEnd;
 use ibc_proto::ics23::CommitmentProof;
 use parking_lot::Mutex;
-use typed_builder::TypedBuilder;
 
 use crate::context::{MockStore, TestContext};
-use crate::fixtures::core::context::TestContextConfig;
+use crate::fixtures::core::context::dummy_store_generic_test_context;
 use crate::hosts::{HostClientState, TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
@@ -215,7 +215,7 @@ mod tests {
     use ibc::core::router::types::module::{ModuleExtras, ModuleId};
 
     use super::*;
-    use crate::fixtures::core::channel::PacketConfig;
+    use crate::fixtures::core::channel::dummy_packet;
     use crate::fixtures::core::signer::dummy_bech32_account;
     use crate::testapp::ibc::core::router::MockRouter;
 
@@ -433,7 +433,7 @@ mod tests {
             let module_id = ModuleId::new(module_id.to_string());
             let m = router.get_route_mut(&module_id).expect("Never fails");
 
-            let packet = PacketConfig::builder().build();
+            let packet = dummy_packet().call();
 
             let result = m.on_recv_packet_execute(&packet, &dummy_bech32_account().into());
             (module_id, result)
@@ -459,7 +459,7 @@ where
 {
     fn default() -> Self {
         let context = TestContext::<H>::default();
-        LightClientBuilder::init().context(&context).build()
+        dummy_light_client(&context).call()
     }
 }
 
@@ -469,39 +469,22 @@ where
     HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
     pub fn with_latest_height(height: Height) -> Self {
-        let context = TestContextConfig::builder()
+        let context: TestContext<_> = dummy_store_generic_test_context()
             .latest_height(height)
-            .build::<TestContext<_>>();
-        LightClientBuilder::init().context(&context).build()
+            .call();
+        dummy_light_client(&context).call()
     }
 }
 
-#[derive(TypedBuilder)]
-#[builder(builder_method(name = init), build_method(into))]
-pub struct LightClientBuilder<'a, H>
+#[builder]
+pub fn dummy_light_client<H>(
+    #[builder(start_fn)] context: &TestContext<H>,
+    #[builder(default, into)] consensus_heights: Vec<Height>,
+    #[builder(default)] params: H::LightClientParams,
+) -> LightClientState<H>
 where
     H: TestHost,
     HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
 {
-    context: &'a TestContext<H>,
-    #[builder(default, setter(into))]
-    consensus_heights: Vec<Height>,
-    #[builder(default)]
-    params: H::LightClientParams,
-}
-
-impl<'a, H> From<LightClientBuilder<'a, H>> for LightClientState<H>
-where
-    H: TestHost,
-    HostClientState<H>: ClientStateValidation<DefaultIbcStore>,
-{
-    fn from(builder: LightClientBuilder<'a, H>) -> Self {
-        let LightClientBuilder {
-            context,
-            consensus_heights,
-            params,
-        } = builder;
-
-        context.generate_light_client(consensus_heights, &params)
-    }
+    context.generate_light_client(consensus_heights, &params)
 }

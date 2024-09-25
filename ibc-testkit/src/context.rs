@@ -23,7 +23,7 @@ use ibc::primitives::prelude::*;
 use ibc::primitives::Timestamp;
 
 use super::testapp::ibc::core::types::{LightClientState, MockIbcStore};
-use crate::fixtures::core::context::TestContextConfig;
+use crate::fixtures::core::context::dummy_store_generic_test_context;
 use crate::hosts::{HostClientState, MockHost, TendermintHost, TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use crate::testapp::ibc::core::router::MockRouter;
@@ -70,7 +70,7 @@ where
     HostClientState<H>: ClientStateValidation<MockIbcStore<S>>,
 {
     fn default() -> Self {
-        TestContextConfig::builder().build()
+        dummy_store_generic_test_context().call()
     }
 }
 
@@ -529,35 +529,35 @@ mod tests {
             let tests: Vec<Test<H>> = vec![
                 Test {
                     name: "Empty history, small pruning window".to_string(),
-                    ctx: TestContextConfig::builder()
+                    ctx: dummy_store_generic_test_context()
                         .latest_height(Height::new(cv, 1).expect("Never fails"))
-                        .build(),
+                        .call(),
                 },
                 Test {
                     name: "Large pruning window".to_string(),
-                    ctx: TestContextConfig::builder()
+                    ctx: dummy_store_generic_test_context()
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
-                        .build(),
+                        .call(),
                 },
                 Test {
                     name: "Small pruning window".to_string(),
-                    ctx: TestContextConfig::builder()
+                    ctx: dummy_store_generic_test_context()
                         .latest_height(Height::new(cv, 30).expect("Never fails"))
-                        .build(),
+                        .call(),
                 },
                 Test {
                     name: "Small pruning window, small starting height".to_string(),
-                    ctx: TestContextConfig::builder()
+                    ctx: dummy_store_generic_test_context()
                         .latest_height(Height::new(cv, 2).expect("Never fails"))
-                        .build(),
+                        .call(),
                 },
                 // This is disabled, as now we generate all the blocks till latest_height
                 // Generating 2000 Tendermint blocks is slow.
                 // Test {
                 //     name: "Large pruning window, large starting height".to_string(),
-                //     ctx: TestContextConfig::builder()
+                //     ctx: dummy_store_generic_test_context()
                 //         .latest_height(Height::new(cv, 2000).expect("Never fails"))
-                //         .build(),
+                //         .call(),
                 // },
             ];
 

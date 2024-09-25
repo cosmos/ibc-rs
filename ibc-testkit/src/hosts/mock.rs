@@ -1,16 +1,16 @@
 use alloc::vec::Vec;
 
+use bon::Builder;
 use ibc::core::client::types::Height;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::Timestamp;
-use typed_builder::TypedBuilder;
 
 use super::{TestBlock, TestHeader, TestHost};
 use crate::testapp::ibc::clients::mock::client_state::MockClientState;
 use crate::testapp::ibc::clients::mock::consensus_state::MockConsensusState;
 use crate::testapp::ibc::clients::mock::header::MockHeader;
 
-#[derive(TypedBuilder, Debug)]
+#[derive(Debug, Builder)]
 pub struct MockHost {
     /// Unique identifier for the chain.
     #[builder(default = ChainId::new("mock-0").expect("Never fails"))]

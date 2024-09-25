@@ -9,7 +9,7 @@ use serde::{de::DeserializeOwned, Serialize};
 /// If two [`StoreGenericTestContext`](crate::context::StoreGenericTestContext)
 /// are initialized using [`Timestamp::now()`], the second one will have a greater timestamp than the first one.
 /// So, the latest header of the second context cannot be submitted to first one.
-/// We can still set a custom timestamp via [`TestContextConfig`](crate::fixtures::core::context::TestContextConfig).
+/// We can still set a custom timestamp via [`dummy_store_generic_test_context`](crate::fixtures::core::context::dummy_store_generic_test_context).
 pub fn year_2023() -> Timestamp {
     // Sun Jan 01 2023 00:00:00 GMT+0000
     Timestamp::from_unix_timestamp(1_672_531_200, 0).expect("should be a valid time")
