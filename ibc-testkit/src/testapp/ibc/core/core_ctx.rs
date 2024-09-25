@@ -50,9 +50,7 @@ where
         let host_cons_state = self.host_consensus_state(&host_height)?;
         let timestamp = host_cons_state
             .timestamp()
-            .map_err(|e| HostError::InvalidState {
-                description: e.to_string(),
-            })?;
+            .map_err(HostError::invalid_state)?;
         Ok(timestamp)
     }
 

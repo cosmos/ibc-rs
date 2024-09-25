@@ -285,9 +285,9 @@ impl scale_info::TypeInfo for Timestamp {
 
 #[derive(Debug, Display, derive_more::From)]
 pub enum TimestampError {
-    /// failed to parse integer error: {0}
+    /// failed to parse integer: {0}
     FailedToParseInt(ParseIntError),
-    /// failed try from integer error: {0}
+    /// failed try_from on integer: {0}
     FailedTryFromInt(TryFromIntError),
     /// failed to convert offset date: {0}
     FailedToConvert(time::error::ComponentRange),
@@ -303,6 +303,7 @@ impl std::error::Error for TimestampError {
         match &self {
             Self::FailedToParseInt(e) => Some(e),
             Self::FailedTryFromInt(e) => Some(e),
+            Self::FailedToConvert(e) => Some(e),
             _ => None,
         }
     }
