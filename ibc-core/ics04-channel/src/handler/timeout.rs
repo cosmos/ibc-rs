@@ -193,7 +193,7 @@ where
         );
         let consensus_state_of_b_on_a =
             client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
-        let timestamp_of_b = consensus_state_of_b_on_a.timestamp();
+        let timestamp_of_b = consensus_state_of_b_on_a.timestamp()?;
 
         if !msg.packet.timed_out(&timestamp_of_b, msg.proof_height_on_b) {
             return Err(ChannelError::InsufficientPacketTimeout {

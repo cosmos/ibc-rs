@@ -3,6 +3,7 @@
 use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
+use ibc_primitives::{IntoHostTime, Timestamp};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::ConsensusState as RawConsensusState;
 use ibc_proto::Protobuf;
@@ -34,6 +35,7 @@ impl ConsensusState {
         }
     }
 
+    /// Returns the timestamp of the consensus state as a `tendermint::Time`.
     pub fn timestamp(&self) -> Time {
         self.timestamp
     }
@@ -56,15 +58,15 @@ impl TryFrom<RawConsensusState> for ConsensusState {
             ))?
             .hash;
 
-        let ibc_proto::google::protobuf::Timestamp { seconds, nanos } = raw
+        let timestamp: Timestamp = raw
             .timestamp
-            .ok_or(DecodingError::missing_raw_data("consensus state timestamp"))?;
-        // FIXME: shunts like this are necessary due to
-        // https://github.com/informalsystems/tendermint-rs/issues/1053
-        let proto_timestamp = tpb::Timestamp { seconds, nanos };
-        let timestamp = proto_timestamp
+            .ok_or(DecodingError::missing_raw_data("consensus state timestamp"))?
             .try_into()
-            .map_err(|e| DecodingError::invalid_raw_data(format!("timestamp: {e}")))?;
+            .map_err(DecodingError::invalid_raw_data)?;
+
+        let timestamp = timestamp
+            .into_host_time()
+            .map_err(DecodingError::invalid_raw_data)?;
 
         let next_validators_hash = Hash::from_bytes(Algorithm::Sha256, &raw.next_validators_hash)
             .map_err(|e| {

@@ -76,7 +76,7 @@ pub fn send_packet_validate(
     );
     let consensus_state_of_b_on_a =
         client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
-    let latest_timestamp = consensus_state_of_b_on_a.timestamp();
+    let latest_timestamp = consensus_state_of_b_on_a.timestamp()?;
     let packet_timestamp = packet.timeout_timestamp_on_b;
     if packet_timestamp.has_expired(&latest_timestamp) {
         return Err(ChannelError::ExpiredPacketTimestamp);

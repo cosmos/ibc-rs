@@ -1,4 +1,5 @@
 use ibc::core::client::context::consensus_state::ConsensusState;
+use ibc::core::client::types::error::ClientError;
 use ibc::core::commitment_types::commitment::CommitmentRoot;
 use ibc::core::host::types::error::DecodingError;
 use ibc::core::primitives::prelude::*;
@@ -91,7 +92,7 @@ impl ConsensusState for MockConsensusState {
         &self.root
     }
 
-    fn timestamp(&self) -> Timestamp {
-        self.header.timestamp
+    fn timestamp(&self) -> Result<Timestamp, ClientError> {
+        Ok(self.header.timestamp)
     }
 }

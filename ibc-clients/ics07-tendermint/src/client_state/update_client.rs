@@ -7,6 +7,7 @@ use ibc_core_host::types::error::IdentifierError;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
+use ibc_primitives::IntoHostTime;
 use tendermint::crypto::Sha256;
 use tendermint::merkle::MerkleHash;
 use tendermint_light_client_verifier::options::Options;
@@ -83,7 +84,7 @@ where
             next_validators: None,
         };
 
-        let now = ctx.host_timestamp()?.into_tm_time();
+        let now = ctx.host_timestamp()?.into_host_time()?;
 
         // main header verification, delegated to the tendermint-light-client crate.
         verifier

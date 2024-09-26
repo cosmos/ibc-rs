@@ -1,5 +1,6 @@
 //! Defines the trait to be implemented by all concrete consensus state types
 
+use ibc_core_client_types::error::ClientError;
 use ibc_core_commitment_types::commitment::CommitmentRoot;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
@@ -16,5 +17,5 @@ pub trait ConsensusState: Send + Sync + Convertible<Any> {
     fn root(&self) -> &CommitmentRoot;
 
     /// The timestamp of the consensus state
-    fn timestamp(&self) -> Timestamp;
+    fn timestamp(&self) -> Result<Timestamp, ClientError>;
 }

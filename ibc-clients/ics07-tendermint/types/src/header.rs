@@ -8,7 +8,7 @@ use ibc_core_client_types::Height;
 use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
-use ibc_primitives::Timestamp;
+use ibc_primitives::{IntoTimestamp, Timestamp};
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::lightclients::tendermint::v1::Header as RawHeader;
 use ibc_proto::Protobuf;
@@ -52,8 +52,8 @@ impl Header {
         self.signed_header
             .header
             .time
-            .try_into()
-            .map_err(TendermintClientError::InvalidTimestamp)
+            .into_timestamp()
+            .map_err(Into::into)
     }
 
     pub fn height(&self) -> Height {
