@@ -1,6 +1,6 @@
 [package]
 name        = "ibc-derive"
-version     = "0.8.0"
+version     = "0.9.0"
 license     = { workspace = true }
 repository  = { workspace = true }
 edition     = { workspace = true }
