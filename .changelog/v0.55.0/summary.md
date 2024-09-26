@@ -11,11 +11,10 @@ Additionally, error definitions within `ibc-rs` have been unified, reducing the
 granularity of error variants. For more details, please refer to
 [ADR-011](./docs/architecture/adr-11-refactor-errors.md).
 
-In addition, this release also brings various fixes and enhancements. Notably,
-helper traits with default implementations have been added to simplify the
-conversion between host time types and `Timestamp`. Consequently, the
-`ibc-primitives` crate has been fully decoupled from the `tendermint`
-dependency.
+In addition, it introduces various fixes and enhancements. Notably, helper
+traits with default implementations have been added to simplify the conversion
+between host time types and `Timestamp`. Consequently, the `ibc-primitives`
+crate has been fully decoupled from the `tendermint` dependency.
 
 It’s also worth noting that the `cosmwasm` workspace has been relocated to its
 own repository, now available under
