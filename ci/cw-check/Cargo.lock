@@ -788,7 +788,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-app-transfer"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "ibc-app-transfer-types",
  "ibc-core",
@@ -797,7 +797,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-app-transfer-types"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -812,14 +812,14 @@ dependencies = [
 
 [[package]]
 name = "ibc-apps"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "ibc-app-transfer",
 ]
 
 [[package]]
 name = "ibc-client-wasm-types"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "base64 0.22.1",
  "displaydoc",
@@ -831,7 +831,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "ibc-core-channel",
  "ibc-core-client",
@@ -846,7 +846,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-channel"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "ibc-core-channel-types",
  "ibc-core-client",
@@ -860,7 +860,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-channel-types"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -881,7 +881,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "ibc-core-client-context",
  "ibc-core-client-types",
@@ -893,7 +893,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client-context"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -908,7 +908,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-client-types"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -926,7 +926,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-commitment-types"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -943,7 +943,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-connection"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "ibc-client-wasm-types",
  "ibc-core-client",
@@ -956,7 +956,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-connection-types"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -975,7 +975,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-handler"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "ibc-core-channel",
  "ibc-core-client",
@@ -989,7 +989,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-handler-types"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -1011,7 +1011,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-host"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -1028,7 +1028,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-host-types"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "base64 0.22.1",
  "derive_more 0.99.18",
@@ -1043,7 +1043,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-router"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -1056,7 +1056,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-core-router-types"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
@@ -1073,7 +1073,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-derive"
-version = "0.8.0"
+version = "0.9.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1082,7 +1082,7 @@ dependencies = [
 
 [[package]]
 name = "ibc-primitives"
-version = "0.54.0"
+version = "0.55.0"
 dependencies = [
  "derive_more 0.99.18",
  "displaydoc",
