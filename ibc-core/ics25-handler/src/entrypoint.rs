@@ -70,6 +70,10 @@ where
                 // Recover client messages are not dispatched by ibc-rs as they can only be
                 // authorized via a passing governance proposal
             }
+            ClientMsg::ProvideCounterParty(_msg) => {
+                // Provide counter party messages are not dispatched by ibc-rs as they can only be
+                // authorized via a passing governance proposal
+            }
         },
         MsgEnvelope::Connection(msg) => match msg {
             ConnectionMsg::OpenInit(msg) => conn_open_init::validate(ctx, msg)?,
@@ -142,6 +146,10 @@ where
             ClientMsg::UpgradeClient(msg) => upgrade_client::execute(ctx, msg)?,
             ClientMsg::RecoverClient(_msg) => {
                 // Recover client messages are not dispatched by ibc-rs as they can only be
+                // authorized via a passing governance proposal
+            }
+            ClientMsg::ProvideCounterParty(_msg) => {
+                // Provide counter party messages are not dispatched by ibc-rs as they can only be
                 // authorized via a passing governance proposal
             }
         },
