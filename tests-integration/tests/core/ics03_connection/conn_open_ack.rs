@@ -34,7 +34,7 @@ fn conn_open_ack_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenAck> {
     let msg = dummy_msg_conn_open_ack(10, 10);
 
     // Client parameters -- identifier and correct height (matching the proof height)
-    let client_id = ClientId::from_str("mock_clientid").unwrap();
+    let client_id = ClientId::from_str("mock_clientid-0").unwrap();
     let proof_height = msg.proofs_height_on_b;
     let conn_id = msg.conn_id_on_a.clone();
 

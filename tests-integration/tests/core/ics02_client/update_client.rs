@@ -320,7 +320,7 @@ fn test_update_nonexisting_client(fixture: Fixture) {
     let signer = dummy_account_id();
 
     let msg = MsgUpdateClient {
-        client_id: ClientId::from_str("nonexistingclient").unwrap(),
+        client_id: ClientId::from_str("nonexistingclient-0").unwrap(),
         client_message: MockHeader::new(Height::new(0, 46).unwrap()).into(),
         signer,
     };
@@ -1187,9 +1187,9 @@ fn test_misbehaviour_client_ok(fixture: Fixture) {
 fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
     let Fixture { router, .. } = fixture;
 
-    let client_id = ClientId::from_str("mockclient1").unwrap();
+    let client_id = ClientId::from_str("mockclient-1").unwrap();
 
-    let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient").unwrap());
+    let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient-0").unwrap());
 
     let ctx = MockContext::default().with_light_client(
         &client_id,
@@ -1203,9 +1203,9 @@ fn test_submit_misbehaviour_nonexisting_client(fixture: Fixture) {
 fn test_client_update_misbehaviour_nonexisting_client(fixture: Fixture) {
     let Fixture { router, .. } = fixture;
 
-    let client_id = ClientId::from_str("mockclient1").unwrap();
+    let client_id = ClientId::from_str("mockclient-1").unwrap();
 
-    let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient").unwrap());
+    let msg_envelope = msg_update_client(&ClientId::from_str("nonexistingclient-0").unwrap());
 
     let ctx = MockContext::default().with_light_client(
         &client_id,

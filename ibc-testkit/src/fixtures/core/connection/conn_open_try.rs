@@ -115,7 +115,7 @@ mod tests {
                         .to_string(),
                     raw: RawMsgConnectionOpenTry {
                         counterparty: Some(RawCounterparty {
-                            client_id: "ClientId_".to_string(),
+                            client_id: "ClientId_-0".to_string(),
                             ..dummy_raw_counterparty_conn(Some(0))
                         }),
                         ..default_try_msg.clone()

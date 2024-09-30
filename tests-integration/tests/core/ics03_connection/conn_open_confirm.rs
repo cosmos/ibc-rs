@@ -26,7 +26,7 @@ enum Ctx {
 }
 
 fn conn_open_confirm_fixture(ctx: Ctx) -> Fixture<MsgConnectionOpenConfirm> {
-    let client_id = ClientId::from_str("mock_clientid").unwrap();
+    let client_id = ClientId::from_str("mock_clientid-0").unwrap();
     let msg = dummy_conn_open_confirm();
     let counterparty = Counterparty::new(
         client_id.clone(),
