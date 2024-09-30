@@ -114,3 +114,34 @@ impl PartialEq<str> for ChannelId {
         self.as_str().eq(other)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use alloc::string::ToString;
+    use core::str::FromStr;
+
+    use super::ChannelId;
+
+    #[test]
+    fn test_channel_id() {
+        let id = ChannelId::new(27);
+        assert_eq!(id.to_string(), "channel-27");
+        let id2 = ChannelId::from_str("channel-27").unwrap();
+        assert_eq!(id, id2);
+        assert!(matches!(id, ChannelId::V1(_)));
+    }
+
+    #[test]
+    fn test_channel_id_from_client_id() {
+        let channel_id_str = "07-tendermint-21";
+        let channel_id = ChannelId::from_str(channel_id_str).unwrap();
+        assert!(matches!(channel_id, ChannelId::V2(_)));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_channel_id_from_client_id_fail() {
+        let channel_id_str = "channelToA";
+        let _ = ChannelId::from_str(channel_id_str).unwrap();
+    }
+}
