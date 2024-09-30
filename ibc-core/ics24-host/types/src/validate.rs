@@ -62,6 +62,29 @@ pub fn validate_prefix_length(
     validate_identifier_length(prefix, min, max)
 }
 
+/// Checks if the identifier is of form: *-{u64}.
+/// Example: "connection-0", "channel-100", '07-tendermint-0'.
+pub fn validate_u64_index(id: &str) -> Result<(), Error> {
+    let number_s = id
+        .rsplit_once('-')
+        .map(|(_, s)| s)
+        .ok_or_else(|| Error::FailedToParse {
+            description: id.into(),
+        })?;
+
+    if number_s.starts_with('0') && number_s.len() > 1 {
+        return Err(Error::FailedToParse {
+            description: format!("u64 index `{id}`", id = id),
+        });
+    }
+
+    _ = number_s.parse::<u64>().map_err(|e| Error::FailedToParse {
+        description: format!("u64 index `{id}`: {e}"),
+    })?;
+
+    Ok(())
+}
+
 /// Checks if the identifier is a valid named u64 index: {name}-{u64}.
 /// Example: "connection-0", "connection-100", "channel-0", "channel-100".
 pub fn validate_named_u64_index(id: &str, name: &str) -> Result<(), Error> {
@@ -94,7 +117,9 @@ pub fn validate_client_type(id: &str) -> Result<(), Error> {
 /// the ICS-24 spec.
 pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_chars(id)?;
-    validate_identifier_length(id, 9, 64)
+    validate_identifier_length(id, 9, 64)?;
+    validate_u64_index(id)?;
+    Ok(())
 }
 
 /// Default validator function for Connection identifiers.
