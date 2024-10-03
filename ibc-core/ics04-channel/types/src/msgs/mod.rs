@@ -8,6 +8,7 @@ mod chan_open_ack;
 mod chan_open_confirm;
 mod chan_open_init;
 mod chan_open_try;
+mod chan_register;
 mod recv_packet;
 mod timeout;
 mod timeout_on_close;
@@ -22,6 +23,7 @@ pub use chan_open_ack::*;
 pub use chan_open_confirm::*;
 pub use chan_open_init::*;
 pub use chan_open_try::*;
+pub use chan_register::*;
 use ibc_core_host_types::identifiers::*;
 use ibc_primitives::prelude::*;
 pub use recv_packet::*;
@@ -42,6 +44,7 @@ pub enum ChannelMsg {
     OpenConfirm(MsgChannelOpenConfirm),
     CloseInit(MsgChannelCloseInit),
     CloseConfirm(MsgChannelCloseConfirm),
+    Register(MsgChannelRegister),
 }
 
 /// All packet messages
@@ -66,6 +69,7 @@ pub fn channel_msg_to_port_id(msg: &ChannelMsg) -> &PortId {
         ChannelMsg::OpenConfirm(msg) => &msg.port_id_on_b,
         ChannelMsg::CloseInit(msg) => &msg.port_id_on_a,
         ChannelMsg::CloseConfirm(msg) => &msg.port_id_on_b,
+        ChannelMsg::Register(msg) => &msg.port_id_on_a,
     }
 }
 

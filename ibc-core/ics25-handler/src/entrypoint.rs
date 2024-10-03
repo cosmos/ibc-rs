@@ -93,6 +93,10 @@ where
                 ChannelMsg::OpenConfirm(msg) => chan_open_confirm_validate(ctx, module, msg)?,
                 ChannelMsg::CloseInit(msg) => chan_close_init_validate(ctx, module, msg)?,
                 ChannelMsg::CloseConfirm(msg) => chan_close_confirm_validate(ctx, module, msg)?,
+                ChannelMsg::Register(_msg) => {
+                    // Register application to v2 channel are not dispatched by ibc-rs as they can only be
+                    // authorized via a passing governance proposal
+                }
             }
         }
         MsgEnvelope::Packet(msg) => {
@@ -167,6 +171,10 @@ where
                 ChannelMsg::OpenConfirm(msg) => chan_open_confirm_execute(ctx, module, msg)?,
                 ChannelMsg::CloseInit(msg) => chan_close_init_execute(ctx, module, msg)?,
                 ChannelMsg::CloseConfirm(msg) => chan_close_confirm_execute(ctx, module, msg)?,
+                ChannelMsg::Register(_msg) => {
+                    // Register application to v2 channel are not dispatched by ibc-rs as they can only be
+                    // authorized via a passing governance proposal
+                }
             }
         }
         MsgEnvelope::Packet(msg) => {
