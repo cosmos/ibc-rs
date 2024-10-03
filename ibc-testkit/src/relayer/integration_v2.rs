@@ -4,6 +4,7 @@ use ibc::core::channel::types::msgs::MsgChannelRegister;
 use ibc::core::channel::types::Version;
 use ibc::core::client::context::client_state::ClientStateValidation;
 use ibc::core::host::types::identifiers::{ChannelId, PortId};
+use ibc::core::host::ValidationContext;
 
 use crate::context::TestContext;
 use crate::fixtures::core::signer::dummy_account_id;
@@ -43,7 +44,7 @@ where
         client_id_on_a: client_id_on_a.clone(),
         client_id_on_b: client_id_on_b.clone(),
         signer: signer.clone(),
-        commitment_prefix_on_b: b"ibc".to_vec().into(),
+        commitment_prefix_on_b: relayer.get_ctx_b().ibc_store().commitment_prefix(),
         ordering: Order::Unordered,
         version_proposal: Version::empty(),
     };
@@ -62,7 +63,7 @@ where
         client_id_on_a: client_id_on_b.clone(),
         client_id_on_b: client_id_on_a.clone(),
         signer: signer.clone(),
-        commitment_prefix_on_b: b"ibc".to_vec().into(),
+        commitment_prefix_on_b: relayer.get_ctx_b().ibc_store().commitment_prefix(),
         ordering: Order::Unordered,
         version_proposal: Version::empty(),
     };
