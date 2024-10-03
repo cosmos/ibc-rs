@@ -311,43 +311,53 @@ where
     ///
     /// The IBC packet is created by an IBC application on the first context.
     pub fn submit_packet_on_b(&mut self, packet: Packet, signer: Signer) {
-        let conn_id_on_a = self
-            .ctx_a
-            .ibc_store()
-            .channel_end(&ChannelEndPath::new(
-                &packet.port_id_on_a,
-                &packet.chan_id_on_a,
-            ))
-            .expect("connection exists")
-            .connection_hops()[0]
-            .clone();
+        let (client_id_on_a, client_id_on_b) = match (&packet.chan_id_on_a, &packet.chan_id_on_b) {
+            (ChannelId::V1(_), ChannelId::V1(_)) => {
+                let conn_id_on_a = self
+                    .ctx_a
+                    .ibc_store()
+                    .channel_end(&ChannelEndPath::new(
+                        &packet.port_id_on_a,
+                        &packet.chan_id_on_a,
+                    ))
+                    .expect("connection exists")
+                    .connection_hops()[0]
+                    .clone();
 
-        let conn_id_on_b = self
-            .ctx_b
-            .ibc_store()
-            .channel_end(&ChannelEndPath::new(
-                &packet.port_id_on_b,
-                &packet.chan_id_on_b,
-            ))
-            .expect("connection exists")
-            .connection_hops()[0]
-            .clone();
+                let conn_id_on_b = self
+                    .ctx_b
+                    .ibc_store()
+                    .channel_end(&ChannelEndPath::new(
+                        &packet.port_id_on_b,
+                        &packet.chan_id_on_b,
+                    ))
+                    .expect("connection exists")
+                    .connection_hops()[0]
+                    .clone();
 
-        let client_id_on_a = self
-            .ctx_a
-            .ibc_store()
-            .connection_end(&conn_id_on_a)
-            .expect("connection exists")
-            .client_id()
-            .clone();
+                let client_id_on_a = self
+                    .ctx_a
+                    .ibc_store()
+                    .connection_end(&conn_id_on_a)
+                    .expect("connection exists")
+                    .client_id()
+                    .clone();
 
-        let client_id_on_b = self
-            .ctx_b
-            .ibc_store()
-            .connection_end(&conn_id_on_b)
-            .expect("connection exists")
-            .client_id()
-            .clone();
+                let client_id_on_b = self
+                    .ctx_b
+                    .ibc_store()
+                    .connection_end(&conn_id_on_b)
+                    .expect("connection exists")
+                    .client_id()
+                    .clone();
+
+                (client_id_on_a, client_id_on_b)
+            }
+            (ChannelId::V2(client_id_on_a), ChannelId::V2(client_id_on_b)) => {
+                (client_id_on_a.clone(), client_id_on_b.clone())
+            }
+            _ => panic!("channel versions must match"),
+        };
 
         TypedRelayerOps::<A, B>::submit_packet_on_b(
             &mut self.ctx_a,
@@ -364,43 +374,53 @@ where
     ///
     /// The IBC packet is created by an IBC application on the first context.
     pub fn timeout_packet_from_a(&mut self, packet: Packet, signer: Signer) {
-        let conn_id_on_a = self
-            .ctx_a
-            .ibc_store()
-            .channel_end(&ChannelEndPath::new(
-                &packet.port_id_on_a,
-                &packet.chan_id_on_a,
-            ))
-            .expect("connection exists")
-            .connection_hops()[0]
-            .clone();
+        let (client_id_on_a, client_id_on_b) = match (&packet.chan_id_on_a, &packet.chan_id_on_b) {
+            (ChannelId::V1(_), ChannelId::V1(_)) => {
+                let conn_id_on_a = self
+                    .ctx_a
+                    .ibc_store()
+                    .channel_end(&ChannelEndPath::new(
+                        &packet.port_id_on_a,
+                        &packet.chan_id_on_a,
+                    ))
+                    .expect("connection exists")
+                    .connection_hops()[0]
+                    .clone();
 
-        let conn_id_on_b = self
-            .ctx_b
-            .ibc_store()
-            .channel_end(&ChannelEndPath::new(
-                &packet.port_id_on_b,
-                &packet.chan_id_on_b,
-            ))
-            .expect("connection exists")
-            .connection_hops()[0]
-            .clone();
+                let conn_id_on_b = self
+                    .ctx_b
+                    .ibc_store()
+                    .channel_end(&ChannelEndPath::new(
+                        &packet.port_id_on_b,
+                        &packet.chan_id_on_b,
+                    ))
+                    .expect("connection exists")
+                    .connection_hops()[0]
+                    .clone();
 
-        let client_id_on_a = self
-            .ctx_a
-            .ibc_store()
-            .connection_end(&conn_id_on_a)
-            .expect("connection exists")
-            .client_id()
-            .clone();
+                let client_id_on_a = self
+                    .ctx_a
+                    .ibc_store()
+                    .connection_end(&conn_id_on_a)
+                    .expect("connection exists")
+                    .client_id()
+                    .clone();
 
-        let client_id_on_b = self
-            .ctx_b
-            .ibc_store()
-            .connection_end(&conn_id_on_b)
-            .expect("connection exists")
-            .client_id()
-            .clone();
+                let client_id_on_b = self
+                    .ctx_b
+                    .ibc_store()
+                    .connection_end(&conn_id_on_b)
+                    .expect("connection exists")
+                    .client_id()
+                    .clone();
+
+                (client_id_on_a, client_id_on_b)
+            }
+            (ChannelId::V2(client_id_on_a), ChannelId::V2(client_id_on_b)) => {
+                (client_id_on_a.clone(), client_id_on_b.clone())
+            }
+            _ => panic!("channel versions must match"),
+        };
 
         TypedRelayerOps::<A, B>::timeout_packet_from_a(
             &mut self.ctx_a,
