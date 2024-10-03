@@ -54,16 +54,16 @@ impl ChannelId {
     /// Get this identifier as a borrowed `&str`
     pub fn as_str(&self) -> &str {
         match self {
-            ChannelId::V1(id) => id.as_str(),
-            ChannelId::V2(id) => id.as_str(),
+            Self::V1(id) => id.as_str(),
+            Self::V2(id) => id.as_str(),
         }
     }
 
     /// Get this identifier as a borrowed byte slice
     pub fn as_bytes(&self) -> &[u8] {
         match self {
-            ChannelId::V1(id) => id.as_bytes(),
-            ChannelId::V2(id) => id.as_bytes(),
+            Self::V1(id) => id.as_bytes(),
+            Self::V2(id) => id.as_bytes(),
         }
     }
 
@@ -76,8 +76,8 @@ impl ChannelId {
 impl Display for ChannelId {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         match self {
-            ChannelId::V1(id) => write!(f, "{id}"),
-            ChannelId::V2(id) => write!(f, "{id}"),
+            Self::V1(id) => write!(f, "{id}"),
+            Self::V2(id) => write!(f, "{id}"),
         }
     }
 }
@@ -95,8 +95,8 @@ impl FromStr for ChannelId {
 impl AsRef<str> for ChannelId {
     fn as_ref(&self) -> &str {
         match self {
-            ChannelId::V1(id) => id,
-            ChannelId::V2(id) => id.as_str(),
+            Self::V1(id) => id,
+            Self::V2(id) => id.as_str(),
         }
     }
 }
