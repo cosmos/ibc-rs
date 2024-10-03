@@ -1,11 +1,19 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenTry`.
 
-use ibc_core_channel_types::channel::Counterparty;
-use ibc_core_channel_types::channel::{ChannelEnd, State as ChannelState};
+use core::time::Duration;
+
+use ibc_core_channel_types::channel::{
+    ChannelEnd, Counterparty as ChannelCounterparty, State as ChannelState,
+};
 use ibc_core_channel_types::error::ChannelError;
 use ibc_core_channel_types::msgs::MsgChannelRegister;
+use ibc_core_connection::types::{
+    ConnectionEnd, Counterparty as ConnectionCounterparty, State as ConnectionState,
+};
 use ibc_core_host::types::identifiers::{ChannelId, ConnectionId};
-use ibc_core_host::types::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
+use ibc_core_host::types::path::{
+    ChannelEndPath, ClientConnectionPath, ConnectionPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+};
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
@@ -38,16 +46,41 @@ where
 {
     // TODO(rano): store counters for send/recv/ack packets
 
-    // store channel end
+    // bootstrap connection end
+
+    let versions = ctx.get_compatible_versions();
+
+    let conn_end_on_a = ConnectionEnd::new(
+        ConnectionState::Open,
+        msg.client_id_on_a.clone(),
+        ConnectionCounterparty::new(
+            msg.client_id_on_b.clone(),
+            Some(ConnectionId::V2(msg.client_id_on_b.clone())),
+            msg.commitment_prefix_on_b.clone(),
+        ),
+        versions,
+        Duration::from_secs(0),
+    )?;
+
+    // Construct the identifier for the new connection.
+    let conn_id_on_a = ConnectionId::V2(msg.client_id_on_a.clone());
+
+    ctx.store_connection_to_client(
+        &ClientConnectionPath::new(msg.client_id_on_a.clone()),
+        conn_id_on_a.clone(),
+    )?;
+    ctx.store_connection(&ConnectionPath::new(&conn_id_on_a), conn_end_on_a)?;
+
+    // bootstrap channel end
 
     let chan_end_on_a = ChannelEnd::new(
         ChannelState::Open,
         msg.ordering,
-        Counterparty::new(
+        ChannelCounterparty::new(
             msg.port_id_on_b.clone(),
             Some(ChannelId::V2(msg.client_id_on_b.clone())),
         ),
-        vec![ConnectionId::new(1)], // TODO(rano): v2: this is to avoid panic in v1 logic
+        vec![conn_id_on_a],
         msg.version_proposal.clone(),
     )?;
 
