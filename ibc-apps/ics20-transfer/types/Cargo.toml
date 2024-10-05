@@ -26,7 +26,7 @@ displaydoc      = { workspace = true }
 primitive-types = { version = "0.12.2", default-features = false, features = [ "serde_no_std" ] }
 schemars        = { workspace = true, optional = true }
 serde           = { workspace = true, optional = true }
-uint            = { version = "0.9", default-features = false }
+uint            = { version = "0.10", default-features = false }
 
 # ibc dependencies
 ibc-core  = { workspace = true }
