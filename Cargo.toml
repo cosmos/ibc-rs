@@ -85,7 +85,6 @@ ibc-core-handler    = { version = "0.55.0", path = "./ibc-core/ics25-handler", d
 ibc-core-router     = { version = "0.55.0", path = "./ibc-core/ics26-routing", default-features = false }
 ibc-query           = { version = "0.55.0", path = "./ibc-query", default-features = false }
 
-ibc-client-cw         = { version = "0.55.0", path = "./ibc-clients/cw-context", default-features = false }
 ibc-client-tendermint = { version = "0.55.0", path = "./ibc-clients/ics07-tendermint", default-features = false }
 
 ibc-app-transfer     = { version = "0.55.0", path = "./ibc-apps/ics20-transfer", default-features = false }
