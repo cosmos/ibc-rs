@@ -24,7 +24,7 @@ and eventually picked up by the IBC relayer.
 
 An event has an arbitrary structure, depending on the handler that produces it.
 Here is the [list of all IBC-related events][events], as seen by the relayer.
-Note that the consumer of these events in production would not be the relayer directly 
+Note that the consumer of these events in production would not be the relayer directly
 (instead the consumer is the node/SDK where the IBC module executes),
 but nevertheless handlers will reuse these event definitions.
 
@@ -41,7 +41,7 @@ pub enum IBCEvent {
     OpenInitConnection(ConnectionEvents::OpenInit),
     OpenTryConnection(ConnectionEvents::OpenTry),
     //     ...
-} 
+}
 ```
 
 ### Logging
@@ -445,7 +445,7 @@ which are agnostic to the actual type of client being used.
 
 We could alternatively model all chain-specific datatypes as boxed trait objects (`Box<dyn Trait>`),
 but this approach runs into a lot of limitations of trait objects, such as the inability to easily
-require such trait objects to be Clonable, or Serializable, or to define an equality relation on them.
+require such trait objects to be Cloneable, or Serializable, or to define an equality relation on them.
 Some support for such functionality can be found in third-party libraries, but the overall experience
 for the developer is too subpar.
 
