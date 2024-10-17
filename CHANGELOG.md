@@ -1,5 +1,24 @@
 # CHANGELOG
 
+## v0.55.1
+
+*October 17, 2024*
+
+This patch release fixes the `Cargo.toml` workspace file and adds a helper
+`From<Infallible>` implementation for `ClientError`.
+
+There are no consensus-breaking changes in this release.
+
+### BUG FIXES
+
+- [ibc] Remove non-existing `ibc-client-cw` link in the `Cargo.toml` workspace.
+  ([#1357](https://github.com/cosmos/ibc-rs/issues/1357)).
+
+### IMPROVEMENTS
+
+- [ibc-core] Implement `From<Infallible>` for `ClientError`
+  ([#1356](https://github.com/cosmos/ibc-rs/issues/1356)).
+
 ## v0.55.0
 
 *September 26, 2024*
