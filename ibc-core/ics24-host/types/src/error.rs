@@ -125,6 +125,12 @@ impl From<ProtoError> for DecodingError {
     }
 }
 
+impl From<ProstError> for DecodingError {
+    fn from(e: ProstError) -> Self {
+        Self::Prost(e)
+    }
+}
+
 impl From<Base64Error> for DecodingError {
     fn from(e: Base64Error) -> Self {
         Self::Base64(e)
