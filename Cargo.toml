@@ -34,6 +34,16 @@ members = [
   "ibc-query",
   "ibc-testkit",
 
+  "ibc-eureka-core/ics26-routing/types",
+  "ibc-eureka-core/ics23-commitment/types",
+  "ibc-eureka-core/ics04-channel/types",
+  "ibc-eureka-core/ics25-handler/types",
+  "ibc-eureka-core/ics24-host",
+  "ibc-eureka-core/ics26-routing",
+  "ibc-eureka-core/ics04-channel",
+  "ibc-eureka-core/ics25-handler",
+  "ibc-eureka-core",
+
   # internal crates that are not published
   "tests-integration",
 ]
@@ -85,6 +95,13 @@ ibc-core-handler    = { version = "0.55.1", path = "./ibc-core/ics25-handler", d
 ibc-core-router     = { version = "0.55.1", path = "./ibc-core/ics26-routing", default-features = false }
 ibc-query           = { version = "0.55.1", path = "./ibc-query", default-features = false }
 
+ibc-eureka-core-client     = { version = "0.55.1", path = "./ibc-eureka-core/ics02-client", default-features = false }
+ibc-eureka-core-connection = { version = "0.55.1", path = "./ibc-eureka-core/ics03-connection", default-features = false }
+ibc-eureka-core-channel    = { version = "0.55.1", path = "./ibc-eureka-core/ics04-channel", default-features = false }
+ibc-eureka-core-host       = { version = "0.55.1", path = "./ibc-eureka-core/ics24-host", default-features = false }
+ibc-eureka-core-handler    = { version = "0.55.1", path = "./ibc-eureka-core/ics25-handler", default-features = false }
+ibc-eureka-core-router     = { version = "0.55.1", path = "./ibc-eureka-core/ics26-routing", default-features = false }
+
 ibc-client-tendermint = { version = "0.55.1", path = "./ibc-clients/ics07-tendermint", default-features = false }
 
 ibc-app-transfer     = { version = "0.55.1", path = "./ibc-apps/ics20-transfer", default-features = false }
@@ -103,6 +120,16 @@ ibc-client-tendermint-types = { version = "0.55.1", path = "./ibc-clients/ics07-
 ibc-client-wasm-types       = { version = "0.55.1", path = "./ibc-clients/ics08-wasm/types", default-features = false }
 ibc-app-transfer-types      = { version = "0.55.1", path = "./ibc-apps/ics20-transfer/types", default-features = false }
 ibc-app-nft-transfer-types  = { version = "0.55.1", path = "./ibc-apps/ics721-nft-transfer/types", default-features = false }
+
+ibc-eureka-core-client-context   = { version = "0.55.1", path = "./ibc-eureka-core/ics02-client/context", default-features = false }
+ibc-eureka-core-client-types     = { version = "0.55.1", path = "./ibc-eureka-core/ics02-client/types", default-features = false }
+ibc-eureka-core-channel-types    = { version = "0.55.1", path = "./ibc-eureka-core/ics04-channel/types", default-features = false }
+ibc-eureka-core-connection-types = { version = "0.55.1", path = "./ibc-eureka-core/ics03-connection/types", default-features = false }
+ibc-eureka-core-commitment-types = { version = "0.55.1", path = "./ibc-eureka-core/ics23-commitment/types", default-features = false }
+ibc-eureka-core-host-cosmos      = { version = "0.55.1", path = "./ibc-eureka-core/ics24-host/cosmos", default-features = false }
+ibc-eureka-core-host-types       = { version = "0.55.1", path = "./ibc-eureka-core/ics24-host/types", default-features = false }
+ibc-eureka-core-handler-types    = { version = "0.55.1", path = "./ibc-eureka-core/ics25-handler/types", default-features = false }
+ibc-eureka-core-router-types     = { version = "0.55.1", path = "./ibc-eureka-core/ics26-routing/types", default-features = false }
 
 ibc-proto = { version = "0.47.1", default-features = false }
 
