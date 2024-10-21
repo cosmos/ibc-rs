@@ -3,9 +3,9 @@
 use core::convert::Infallible;
 
 use displaydoc::Display;
-use ibc_core_commitment_types::error::CommitmentError;
-use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
-use ibc_core_host_types::identifiers::ClientId;
+use ibc_eureka_core_commitment_types::error::CommitmentError;
+use ibc_eureka_core_host_types::error::{DecodingError, HostError, IdentifierError};
+use ibc_eureka_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
 

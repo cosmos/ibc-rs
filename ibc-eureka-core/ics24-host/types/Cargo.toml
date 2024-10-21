@@ -1,5 +1,5 @@
 [package]
-name         = "ibc-core-host-types"
+name         = "ibc-eureka-core-host-types"
 version      = { workspace = true }
 authors      = { workspace = true }
 edition      = { workspace = true }

@@ -1,14 +1,14 @@
-use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, Order, State};
-use ibc_core_channel_types::commitment::compute_packet_commitment;
-use ibc_core_channel_types::error::ChannelError;
-use ibc_core_channel_types::msgs::MsgTimeoutOnClose;
-use ibc_core_client::context::prelude::*;
-use ibc_core_connection::delay::verify_conn_delay_passed;
-use ibc_core_connection::types::error::ConnectionError;
-use ibc_core_host::types::path::{
+use ibc_eureka_core_channel_types::channel::{ChannelEnd, Counterparty, Order, State};
+use ibc_eureka_core_channel_types::commitment::compute_packet_commitment;
+use ibc_eureka_core_channel_types::error::ChannelError;
+use ibc_eureka_core_channel_types::msgs::MsgTimeoutOnClose;
+use ibc_eureka_core_client::context::prelude::*;
+use ibc_eureka_core_connection::delay::verify_conn_delay_passed;
+use ibc_eureka_core_connection::types::error::ConnectionError;
+use ibc_eureka_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
-use ibc_core_host::ValidationContext;
+use ibc_eureka_core_host::ValidationContext;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Protobuf;
 

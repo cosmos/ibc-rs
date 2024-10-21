@@ -22,7 +22,7 @@ pub use chan_open_ack::*;
 pub use chan_open_confirm::*;
 pub use chan_open_init::*;
 pub use chan_open_try::*;
-use ibc_core_host_types::identifiers::*;
+use ibc_eureka_core_host_types::identifiers::*;
 use ibc_primitives::prelude::*;
 pub use recv_packet::*;
 pub use timeout::*;

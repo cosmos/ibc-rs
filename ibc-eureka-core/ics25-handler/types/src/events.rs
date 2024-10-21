@@ -1,10 +1,10 @@
 //! Defines events emitted during handling of IBC messages
 
-use ibc_core_channel_types::events as ChannelEvents;
-use ibc_core_client_types::events::{self as ClientEvents};
-use ibc_core_connection_types::events as ConnectionEvents;
-use ibc_core_host_types::error::DecodingError;
-use ibc_core_router_types::event::ModuleEvent;
+use ibc_eureka_core_channel_types::events as ChannelEvents;
+use ibc_eureka_core_client_types::events::{self as ClientEvents};
+use ibc_eureka_core_connection_types::events as ConnectionEvents;
+use ibc_eureka_core_host_types::error::DecodingError;
+use ibc_eureka_core_router_types::event::ModuleEvent;
 use ibc_primitives::prelude::*;
 use tendermint::abci;
 

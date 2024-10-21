@@ -36,8 +36,8 @@ impl ClientId {
     /// # Example
     ///
     /// ```
-    /// # use ibc_core_host_types::identifiers::ClientId;
-    /// # use ibc_core_host_types::identifiers::ClientType;
+    /// # use ibc_eureka_core_host_types::identifiers::ClientId;
+    /// # use ibc_eureka_core_host_types::identifiers::ClientType;
     /// # use std::str::FromStr;
     /// let client_type = ClientType::from_str("07-tendermint").unwrap();
     /// let client_id = &client_type.build_client_id(0);
@@ -91,7 +91,7 @@ impl FromStr for ClientId {
 /// Equality check against string literal (satisfies &ClientId == &str).
 /// ```
 /// use core::str::FromStr;
-/// use ibc_core_host_types::identifiers::ClientId;
+/// use ibc_eureka_core_host_types::identifiers::ClientId;
 /// let client_id = ClientId::from_str("clientidtwo");
 /// assert!(client_id.is_ok());
 /// client_id.map(|id| {assert_eq!(&id, "clientidtwo")});

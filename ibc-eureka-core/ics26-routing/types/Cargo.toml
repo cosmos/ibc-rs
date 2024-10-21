@@ -1,5 +1,5 @@
 [package]
-name         = "ibc-core-router-types"
+name         = "ibc-eureka-core-router-types"
 version      = { workspace = true }
 authors      = { workspace = true }
 edition      = { workspace = true }
@@ -28,9 +28,9 @@ serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-core-host-types = { workspace = true }
-ibc-primitives      = { workspace = true }
-ibc-proto           = { workspace = true }
+ibc-eureka-core-host-types = { workspace = true }
+ibc-primitives             = { workspace = true }
+ibc-proto                  = { workspace = true }
 
 # cosmos dependencies
 tendermint = { workspace = true }
@@ -46,26 +46,26 @@ std = [
   "serde/std",
   "subtle-encoding/std",
   "ibc-primitives/std",
-  "ibc-core-host-types/std",
+  "ibc-eureka-core-host-types/std",
   "ibc-proto/std",
   "tendermint/std",
 ]
 serde = [
   "dep:serde",
   "ibc-primitives/serde",
-  "ibc-core-host-types/serde",
+  "ibc-eureka-core-host-types/serde",
   "ibc-primitives/serde",
   "ibc-proto/serde",
 ]
 borsh = [
   "dep:borsh",
-  "ibc-core-host-types/borsh",
+  "ibc-eureka-core-host-types/borsh",
   "ibc-primitives/borsh",
   "ibc-proto/borsh",
 ]
 schema = [
   "dep:schemars",
-  "ibc-core-host-types/schema",
+  "ibc-eureka-core-host-types/schema",
   "ibc-primitives/schema",
   "ibc-proto/json-schema",
   "serde",
@@ -74,7 +74,7 @@ schema = [
 parity-scale-codec = [
   "dep:parity-scale-codec",
   "dep:scale-info",
-  "ibc-core-host-types/parity-scale-codec",
+  "ibc-eureka-core-host-types/parity-scale-codec",
   "ibc-primitives/parity-scale-codec",
   "ibc-proto/parity-scale-codec",
 ]

@@ -1,6 +1,6 @@
 //! Types for the IBC events emitted from Tendermint Websocket by the connection module.
 
-use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
+use ibc_eureka_core_host_types::identifiers::{ClientId, ConnectionId};
 use ibc_primitives::prelude::*;
 use tendermint::abci;
 
@@ -307,7 +307,7 @@ mod tests {
 
     use core::str::FromStr;
 
-    use ibc_core_host_types::identifiers::ClientType;
+    use ibc_eureka_core_host_types::identifiers::ClientType;
     use tendermint::abci::Event as AbciEvent;
 
     use super::*;

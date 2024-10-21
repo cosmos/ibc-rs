@@ -1,15 +1,15 @@
 //! Protocol logic specific to processing ICS3 messages of type `MsgConnectionOpenAck`.
 
-use ibc_core_client::context::prelude::*;
-use ibc_core_client::types::error::ClientError;
-use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_connection_types::events::OpenAck;
-use ibc_core_connection_types::msgs::MsgConnectionOpenAck;
-use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
-use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::identifiers::ClientId;
-use ibc_core_host::types::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path};
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_eureka_core_client::context::prelude::*;
+use ibc_eureka_core_client::types::error::ClientError;
+use ibc_eureka_core_connection_types::error::ConnectionError;
+use ibc_eureka_core_connection_types::events::OpenAck;
+use ibc_eureka_core_connection_types::msgs::MsgConnectionOpenAck;
+use ibc_eureka_core_connection_types::{ConnectionEnd, Counterparty, State};
+use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::identifiers::ClientId;
+use ibc_eureka_core_host::types::path::{ClientConsensusStatePath, ClientStatePath, ConnectionPath, Path};
+use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::{Any, Protobuf};
 use ibc_primitives::ToVec;

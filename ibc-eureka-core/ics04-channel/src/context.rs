@@ -1,14 +1,14 @@
 //! ICS4 (channel) context.
 
-use ibc_core_channel_types::channel::ChannelEnd;
-use ibc_core_channel_types::commitment::PacketCommitment;
-use ibc_core_client::context::prelude::*;
-use ibc_core_connection::types::ConnectionEnd;
-use ibc_core_handler_types::events::IbcEvent;
-use ibc_core_host::types::error::HostError;
-use ibc_core_host::types::identifiers::{ConnectionId, Sequence};
-use ibc_core_host::types::path::{ChannelEndPath, CommitmentPath, SeqSendPath};
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_eureka_core_channel_types::channel::ChannelEnd;
+use ibc_eureka_core_channel_types::commitment::PacketCommitment;
+use ibc_eureka_core_client::context::prelude::*;
+use ibc_eureka_core_connection::types::ConnectionEnd;
+use ibc_eureka_core_handler_types::events::IbcEvent;
+use ibc_eureka_core_host::types::error::HostError;
+use ibc_eureka_core_host::types::identifiers::{ConnectionId, Sequence};
+use ibc_eureka_core_host::types::path::{ChannelEndPath, CommitmentPath, SeqSendPath};
+use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 
 /// Methods required in send packet validation, to be implemented by the host

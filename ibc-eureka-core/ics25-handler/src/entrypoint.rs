@@ -1,4 +1,4 @@
-use ibc_core_channel::handler::{
+use ibc_eureka_core_channel::handler::{
     acknowledgement_packet_execute, acknowledgement_packet_validate, chan_close_confirm_execute,
     chan_close_confirm_validate, chan_close_init_execute, chan_close_init_validate,
     chan_open_ack_execute, chan_open_ack_validate, chan_open_confirm_execute,
@@ -6,23 +6,23 @@ use ibc_core_channel::handler::{
     chan_open_try_execute, chan_open_try_validate, recv_packet_execute, recv_packet_validate,
     timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
 };
-use ibc_core_channel::types::msgs::{
+use ibc_eureka_core_channel::types::msgs::{
     channel_msg_to_port_id, packet_msg_to_port_id, ChannelMsg, PacketMsg,
 };
-use ibc_core_client::context::{ClientExecutionContext, ClientValidationContext};
-use ibc_core_client::handler::{create_client, update_client, upgrade_client};
-use ibc_core_client::types::error::ClientError;
-use ibc_core_client::types::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
-use ibc_core_connection::handler::{
+use ibc_eureka_core_client::context::{ClientExecutionContext, ClientValidationContext};
+use ibc_eureka_core_client::handler::{create_client, update_client, upgrade_client};
+use ibc_eureka_core_client::types::error::ClientError;
+use ibc_eureka_core_client::types::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
+use ibc_eureka_core_connection::handler::{
     conn_open_ack, conn_open_confirm, conn_open_init, conn_open_try,
 };
-use ibc_core_connection::types::msgs::ConnectionMsg;
-use ibc_core_handler_types::error::HandlerError;
-use ibc_core_handler_types::msgs::MsgEnvelope;
-use ibc_core_host::types::error::HostError;
-use ibc_core_host::{ExecutionContext, ValidationContext};
-use ibc_core_router::router::Router;
-use ibc_core_router::types::error::RouterError;
+use ibc_eureka_core_connection::types::msgs::ConnectionMsg;
+use ibc_eureka_core_handler_types::error::HandlerError;
+use ibc_eureka_core_handler_types::msgs::MsgEnvelope;
+use ibc_eureka_core_host::types::error::HostError;
+use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
+use ibc_eureka_core_router::router::Router;
+use ibc_eureka_core_router::types::error::RouterError;
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 

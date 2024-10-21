@@ -1,5 +1,5 @@
 [package]
-name         = "ibc-core-channel"
+name         = "ibc-eureka-core-channel"
 version      = { workspace = true }
 authors      = { workspace = true }
 edition      = { workspace = true }
@@ -11,73 +11,73 @@ readme       = "./../README.md"
 
 description = """
     Maintained by `ibc-rs`, contains the implementation of the ICS-04 Channel & Packet Semantics and
-    re-exports essential data structures and domain types from `ibc-core-channel-types` crate.
+    re-exports essential data structures and domain types from `ibc-eureka-core-channel-types` crate.
 """
 
 [package.metadata.docs.rs]
 all-features = true
 
 [dependencies]
-ibc-core-client           = { workspace = true }
-ibc-core-connection       = { workspace = true }
-ibc-core-channel-types    = { workspace = true }
-ibc-core-commitment-types = { workspace = true }
-ibc-core-host             = { workspace = true }
-ibc-core-handler-types    = { workspace = true }
-ibc-core-router           = { workspace = true }
-ibc-primitives            = { workspace = true }
+ibc-eureka-core-client           = { workspace = true }
+ibc-eureka-core-connection       = { workspace = true }
+ibc-eureka-core-channel-types    = { workspace = true }
+ibc-eureka-core-commitment-types = { workspace = true }
+ibc-eureka-core-host             = { workspace = true }
+ibc-eureka-core-handler-types    = { workspace = true }
+ibc-eureka-core-router           = { workspace = true }
+ibc-primitives                   = { workspace = true }
 
 [features]
 default = [ "std" ]
 std = [
-  "ibc-core-client/std",
-  "ibc-core-connection/std",
-  "ibc-core-channel-types/std",
-  "ibc-core-commitment-types/std",
-  "ibc-core-host/std",
-  "ibc-core-handler-types/std",
-  "ibc-core-router/std",
+  "ibc-eureka-core-client/std",
+  "ibc-eureka-core-connection/std",
+  "ibc-eureka-core-channel-types/std",
+  "ibc-eureka-core-commitment-types/std",
+  "ibc-eureka-core-host/std",
+  "ibc-eureka-core-handler-types/std",
+  "ibc-eureka-core-router/std",
   "ibc-primitives/std",
 ]
 serde = [
-  "ibc-core-client/serde",
-  "ibc-core-connection/serde",
-  "ibc-core-channel-types/serde",
-  "ibc-core-commitment-types/serde",
-  "ibc-core-host/serde",
-  "ibc-core-handler-types/serde",
-  "ibc-core-router/serde",
+  "ibc-eureka-core-client/serde",
+  "ibc-eureka-core-connection/serde",
+  "ibc-eureka-core-channel-types/serde",
+  "ibc-eureka-core-commitment-types/serde",
+  "ibc-eureka-core-host/serde",
+  "ibc-eureka-core-handler-types/serde",
+  "ibc-eureka-core-router/serde",
   "ibc-primitives/serde",
 ]
 schema = [
-  "ibc-core-client/schema",
-  "ibc-core-connection/schema",
-  "ibc-core-channel-types/schema",
-  "ibc-core-commitment-types/schema",
-  "ibc-core-host/schema",
-  "ibc-core-handler-types/schema",
-  "ibc-core-router/schema",
+  "ibc-eureka-core-client/schema",
+  "ibc-eureka-core-connection/schema",
+  "ibc-eureka-core-channel-types/schema",
+  "ibc-eureka-core-commitment-types/schema",
+  "ibc-eureka-core-host/schema",
+  "ibc-eureka-core-handler-types/schema",
+  "ibc-eureka-core-router/schema",
   "ibc-primitives/schema",
   "serde",
   "std",
 ]
 borsh = [
-  "ibc-core-client/borsh",
-  "ibc-core-connection/borsh",
-  "ibc-core-channel-types/borsh",
-  "ibc-core-commitment-types/borsh",
-  "ibc-core-host/borsh",
-  "ibc-core-handler-types/borsh",
-  "ibc-core-router/borsh",
+  "ibc-eureka-core-client/borsh",
+  "ibc-eureka-core-connection/borsh",
+  "ibc-eureka-core-channel-types/borsh",
+  "ibc-eureka-core-commitment-types/borsh",
+  "ibc-eureka-core-host/borsh",
+  "ibc-eureka-core-handler-types/borsh",
+  "ibc-eureka-core-router/borsh",
   "ibc-primitives/borsh",
 ]
 parity-scale-codec = [
-  "ibc-core-client/parity-scale-codec",
-  "ibc-core-connection/parity-scale-codec",
-  "ibc-core-channel-types/parity-scale-codec",
-  "ibc-core-commitment-types/parity-scale-codec",
-  "ibc-core-host/parity-scale-codec",
-  "ibc-core-handler-types/parity-scale-codec",
-  "ibc-core-router/parity-scale-codec",
+  "ibc-eureka-core-client/parity-scale-codec",
+  "ibc-eureka-core-connection/parity-scale-codec",
+  "ibc-eureka-core-channel-types/parity-scale-codec",
+  "ibc-eureka-core-commitment-types/parity-scale-codec",
+  "ibc-eureka-core-host/parity-scale-codec",
+  "ibc-eureka-core-handler-types/parity-scale-codec",
+  "ibc-eureka-core-router/parity-scale-codec",
   "ibc-primitives/parity-scale-codec",
 ]

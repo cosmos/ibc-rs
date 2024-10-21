@@ -22,8 +22,8 @@ pub(crate) mod utils;
 mod context;
 pub use context::*;
 
-/// Re-exports ICS-24 data structures from `ibc-core-host-types` crate.
+/// Re-exports ICS-24 data structures from `ibc-eureka-core-host-types` crate.
 pub mod types {
     #[doc(inline)]
-    pub use ibc_core_host_types::*;
+    pub use ibc_eureka_core_host_types::*;
 }

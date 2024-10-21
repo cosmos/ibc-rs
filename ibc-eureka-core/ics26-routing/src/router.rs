@@ -1,7 +1,7 @@
 //! Defines the `Router`, which binds modules to ports
 
-use ibc_core_host_types::identifiers::PortId;
-use ibc_core_router_types::module::ModuleId;
+use ibc_eureka_core_host_types::identifiers::PortId;
+use ibc_eureka_core_router_types::module::ModuleId;
 
 use crate::module::Module;
 

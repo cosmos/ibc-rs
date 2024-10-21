@@ -8,7 +8,7 @@ use crate::event::ModuleEvent;
 /// Module name, internal to the chain.
 ///
 /// That is, the IBC protocol never exposes this name. Note that this is
-/// different from IBC host [identifiers][ibc_core_host_types::identifiers],
+/// different from IBC host [identifiers][ibc_eureka_core_host_types::identifiers],
 /// which are exposed to other chains by the protocol.
 #[cfg_attr(
     feature = "parity-scale-codec",

@@ -11,11 +11,11 @@
     rust_2018_idioms
 )]
 
-/// Re-exports IBC handler entrypoints from the `ibc-core-handler` crate for
+/// Re-exports IBC handler entrypoints from the `ibc-eureka-core-handler` crate for
 /// added convenience.
 pub mod entrypoint {
     #[doc(inline)]
-    pub use ibc_core_handler::entrypoint::*;
+    pub use ibc_eureka_core_handler::entrypoint::*;
 }
 
 /// Re-exports IBC primitive types from the `ibc-primitives` crate
@@ -24,46 +24,46 @@ pub mod primitives {
     pub use ibc_primitives::*;
 }
 
-/// Re-exports ICS-02 implementation from the `ibc-core-client` crate
+/// Re-exports ICS-02 implementation from the `ibc-eureka-core-client` crate
 pub mod client {
     #[doc(inline)]
-    pub use ibc_core_client::*;
+    pub use ibc_eureka_core_client::*;
 }
 
-/// Re-exports ICS-03 implementation from the `ibc-core-connection` crate
+/// Re-exports ICS-03 implementation from the `ibc-eureka-core-connection` crate
 pub mod connection {
     #[doc(inline)]
-    pub use ibc_core_connection::*;
+    pub use ibc_eureka_core_connection::*;
 }
 
-/// Re-exports ICS-04 implementation from the `ibc-core-channel` crate
+/// Re-exports ICS-04 implementation from the `ibc-eureka-core-channel` crate
 pub mod channel {
     #[doc(inline)]
-    pub use ibc_core_channel::*;
+    pub use ibc_eureka_core_channel::*;
 }
 
-/// Re-exports ICS-23 data structures from the `ibc-core-commitment-types` crate
+/// Re-exports ICS-23 data structures from the `ibc-eureka-core-commitment-types` crate
 pub mod commitment_types {
     #[doc(inline)]
-    pub use ibc_core_commitment_types::*;
+    pub use ibc_eureka_core_commitment_types::*;
 }
 
-/// Re-exports ICS-24 implementation from the `ibc-core-host` crate
+/// Re-exports ICS-24 implementation from the `ibc-eureka-core-host` crate
 pub mod host {
     #[doc(inline)]
-    pub use ibc_core_host::*;
+    pub use ibc_eureka_core_host::*;
 }
 
-/// Re-exports ICS-25 implementation from the `ibc-core-handler` crate
+/// Re-exports ICS-25 implementation from the `ibc-eureka-core-handler` crate
 pub mod handler {
     #[doc(inline)]
-    pub use ibc_core_handler::*;
+    pub use ibc_eureka_core_handler::*;
 }
 
-/// Re-exports ICS-26 implementation from the `ibc-core-router` crate
+/// Re-exports ICS-26 implementation from the `ibc-eureka-core-router` crate
 pub mod router {
     #[doc(inline)]
-    pub use ibc_core_router::*;
+    pub use ibc_eureka_core_router::*;
 }
 
 /// Re-exports convenient derive macros from `ibc-derive` crate.

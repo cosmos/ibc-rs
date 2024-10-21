@@ -5,7 +5,7 @@
 //!
 //! When processing a given message `M`, if any method in this library returns
 //! an error, the runtime is expected to rollback all state modifications made
-//! to the context (e.g. [`ExecutionContext`](ibc_core_host::ExecutionContext))
+//! to the context (e.g. [`ExecutionContext`](ibc_eureka_core_host::ExecutionContext))
 //! while processing `M`. If the transaction containing `M` consists of multiple
 //! messages, then typically the state modifications from all messages are
 //! expected to be rolled back as well.
@@ -26,8 +26,8 @@ extern crate std;
 
 pub mod entrypoint;
 
-/// Re-export IBC handler types from `ibc-core-handler-types` crate.
+/// Re-export IBC handler types from `ibc-eureka-core-handler-types` crate.
 pub mod types {
     #[doc(inline)]
-    pub use ibc_core_handler_types::*;
+    pub use ibc_eureka_core_handler_types::*;
 }

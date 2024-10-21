@@ -8,11 +8,11 @@ IBC is a distributed protocol that enables communication between distinct
 sovereign blockchains and IBC core is the part of the protocol that handles the
 transport, authentication, and ordering (TAO) of data packets.
 
-The structure within the `ibc-core` crate is designed to provide flexibility for
-external users. You can choose to utilize the entire `ibc-core` crate, or
+The structure within the `ibc-eureka-core` crate is designed to provide flexibility for
+external users. You can choose to utilize the entire `ibc-eureka-core` crate, or
 selectively import specific libraries. From there, you also have the flexibility
-of bringing in an entire sub-module (e.g. the `ibc-core-client` crate), or only
-a module's associated data structures (e.g. `ibc-core-client-types`).
+of bringing in an entire sub-module (e.g. the `ibc-eureka-core-client` crate), or only
+a module's associated data structures (e.g. `ibc-eureka-core-client-types`).
 
 This versatility empowers hosts, including chain integrators, relayers, or any
 IBC tooling projects, to build their solution on top of the layers that best
@@ -20,40 +20,40 @@ suit their particular requirements.
 
 ## Sub-Crates
 
-Currently, the `ibc-core` crate contains the implementation of the following IBC
+Currently, the `ibc-eureka-core` crate contains the implementation of the following IBC
 core specifications:
 
 ### ICS-02: Client Semantics
 
-- [ibc-core-client](./../ibc-core/ics02-client)
-- [ibc-core-client-context](./../ibc-core/ics02-client/context)
-- [ibc-core-client-types](./../ibc-core/ics02-client/types)
+- [ibc-eureka-core-client](./../ibc-eureka-core/ics02-client)
+- [ibc-eureka-core-client-context](./../ibc-eureka-core/ics02-client/context)
+- [ibc-eureka-core-client-types](./../ibc-eureka-core/ics02-client/types)
 
 ### ICS-03: Connection Semantics
 
-- [ibc-core-connection](./../ibc-core/ics03-connection)
-- [ibc-core-connection-types](./../ibc-core/ics03-connection/types)
+- [ibc-eureka-core-connection](./../ibc-eureka-core/ics03-connection)
+- [ibc-eureka-core-connection-types](./../ibc-eureka-core/ics03-connection/types)
 
 ### ICS-04: Channel and Packet Semantics
 
-- [ibc-core-channel](./../ibc-core/ics04-channel)
-- [ibc-core-channel-types](./../ibc-core/ics04-channel/types)
+- [ibc-eureka-core-channel](./../ibc-eureka-core/ics04-channel)
+- [ibc-eureka-core-channel-types](./../ibc-eureka-core/ics04-channel/types)
 
 ### ICS-24: Host Requirements
 
-- [ibc-core-host](./../ibc-core/ics24-host)
-- [ibc-core-host-cosmos](./../ibc-core/ics24-host/cosmos)
-- [ibc-core-host-types](./../ibc-core/ics24-host/types)
+- [ibc-eureka-core-host](./../ibc-eureka-core/ics24-host)
+- [ibc-eureka-core-host-cosmos](./../ibc-eureka-core/ics24-host/cosmos)
+- [ibc-eureka-core-host-types](./../ibc-eureka-core/ics24-host/types)
 
 ### ICS-25: Handler Interface
 
-- [ibc-core-handler](./../ibc-core/ics25-handler)
-- [ibc-core-handler-types](./../ibc-core/ics25-handler/types)
+- [ibc-eureka-core-handler](./../ibc-eureka-core/ics25-handler)
+- [ibc-eureka-core-handler-types](./../ibc-eureka-core/ics25-handler/types)
 
 ### ICS-26: Routing Module
 
-- [ibc-core-routing](./../ibc-core/ics26-routing)
-- [ibc-core-routing-types](./../ibc-core/ics26-routing/types)
+- [ibc-eureka-core-routing](./../ibc-eureka-core/ics26-routing)
+- [ibc-eureka-core-routing-types](./../ibc-eureka-core/ics26-routing/types)
 
 ## Divergence from the Interchain Standards (ICS)
 

@@ -19,8 +19,8 @@ extern crate std;
 pub mod context;
 pub mod handler;
 
-/// Re-exports ICS-04 data structures from the `ibc-core-channel-types` crate.
+/// Re-exports ICS-04 data structures from the `ibc-eureka-core-channel-types` crate.
 pub mod types {
     #[doc(inline)]
-    pub use ibc_core_channel_types::*;
+    pub use ibc_eureka_core_channel_types::*;
 }

@@ -17,8 +17,8 @@ extern crate std;
 pub mod module;
 pub mod router;
 
-/// Re-exports router data structures from the `ibc-core-router-types` crate
+/// Re-exports router data structures from the `ibc-eureka-core-router-types` crate
 pub mod types {
     #[doc(inline)]
-    pub use ibc_core_router_types::*;
+    pub use ibc_eureka_core_router_types::*;
 }

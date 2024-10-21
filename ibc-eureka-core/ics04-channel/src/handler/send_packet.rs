@@ -1,11 +1,11 @@
-use ibc_core_channel_types::channel::Counterparty;
-use ibc_core_channel_types::commitment::compute_packet_commitment;
-use ibc_core_channel_types::error::ChannelError;
-use ibc_core_channel_types::events::SendPacket;
-use ibc_core_channel_types::packet::Packet;
-use ibc_core_client::context::prelude::*;
-use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::path::{
+use ibc_eureka_core_channel_types::channel::Counterparty;
+use ibc_eureka_core_channel_types::commitment::compute_packet_commitment;
+use ibc_eureka_core_channel_types::error::ChannelError;
+use ibc_eureka_core_channel_types::events::SendPacket;
+use ibc_eureka_core_channel_types::packet::Packet;
+use ibc_eureka_core_client::context::prelude::*;
+use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;

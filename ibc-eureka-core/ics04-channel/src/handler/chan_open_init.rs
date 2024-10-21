@@ -1,15 +1,15 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenInit`.
 
-use ibc_core_channel_types::channel::{ChannelEnd, Counterparty, State};
-use ibc_core_channel_types::error::ChannelError;
-use ibc_core_channel_types::events::OpenInit;
-use ibc_core_channel_types::msgs::MsgChannelOpenInit;
-use ibc_core_client::context::prelude::*;
-use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::identifiers::ChannelId;
-use ibc_core_host::types::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
-use ibc_core_host::{ExecutionContext, ValidationContext};
-use ibc_core_router::module::Module;
+use ibc_eureka_core_channel_types::channel::{ChannelEnd, Counterparty, State};
+use ibc_eureka_core_channel_types::error::ChannelError;
+use ibc_eureka_core_channel_types::events::OpenInit;
+use ibc_eureka_core_channel_types::msgs::MsgChannelOpenInit;
+use ibc_eureka_core_client::context::prelude::*;
+use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::identifiers::ChannelId;
+use ibc_eureka_core_host::types::path::{ChannelEndPath, SeqAckPath, SeqRecvPath, SeqSendPath};
+use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
+use ibc_eureka_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
 pub fn chan_open_init_validate<ValCtx>(

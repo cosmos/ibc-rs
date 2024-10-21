@@ -1,5 +1,5 @@
 [package]
-name         = "ibc-core-client-types"
+name         = "ibc-eureka-core-client-types"
 version      = { workspace = true }
 authors      = { workspace = true }
 edition      = { workspace = true }
@@ -28,10 +28,10 @@ serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-core-commitment-types = { workspace = true }
-ibc-core-host-types       = { workspace = true }
-ibc-primitives            = { workspace = true }
-ibc-proto                 = { workspace = true }
+ibc-eureka-core-commitment-types = { workspace = true }
+ibc-eureka-core-host-types       = { workspace = true }
+ibc-primitives                   = { workspace = true }
+ibc-proto                        = { workspace = true }
 
 # cosmos dependencies
 tendermint = { workspace = true }
@@ -49,30 +49,30 @@ std = [
   "displaydoc/std",
   "serde/std",
   "subtle-encoding/std",
-  "ibc-core-commitment-types/std",
-  "ibc-core-host-types/std",
+  "ibc-eureka-core-commitment-types/std",
+  "ibc-eureka-core-host-types/std",
   "ibc-primitives/std",
   "ibc-proto/std",
   "tendermint/std",
 ]
 serde = [
-  "ibc-core-host-types/serde",
-  "ibc-core-commitment-types/serde",
+  "ibc-eureka-core-host-types/serde",
+  "ibc-eureka-core-commitment-types/serde",
   "ibc-primitives/serde",
   "ibc-proto/serde",
   "dep:serde",
 ]
 borsh = [
   "dep:borsh",
-  "ibc-core-host-types/borsh",
-  "ibc-core-commitment-types/borsh",
+  "ibc-eureka-core-host-types/borsh",
+  "ibc-eureka-core-commitment-types/borsh",
   "ibc-primitives/borsh",
   "ibc-proto/borsh",
 ]
 schema = [
   "dep:schemars",
-  "ibc-core-host-types/schema",
-  "ibc-core-commitment-types/schema",
+  "ibc-eureka-core-host-types/schema",
+  "ibc-eureka-core-commitment-types/schema",
   "ibc-primitives/schema",
   "ibc-proto/json-schema",
   "serde",
@@ -81,8 +81,8 @@ schema = [
 parity-scale-codec = [
   "dep:parity-scale-codec",
   "dep:scale-info",
-  "ibc-core-host-types/parity-scale-codec",
-  "ibc-core-commitment-types/parity-scale-codec",
+  "ibc-eureka-core-host-types/parity-scale-codec",
+  "ibc-eureka-core-commitment-types/parity-scale-codec",
   "ibc-primitives/parity-scale-codec",
   "ibc-proto/parity-scale-codec",
 ]

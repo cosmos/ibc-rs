@@ -1,5 +1,5 @@
 [package]
-name         = "ibc-core-commitment-types"
+name         = "ibc-eureka-core-commitment-types"
 version      = { workspace = true }
 authors      = { workspace = true }
 edition      = { workspace = true }
@@ -28,10 +28,10 @@ serde           = { workspace = true, optional = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-proto           = { workspace = true }
-ibc-primitives      = { workspace = true }
-ics23               = { version = "0.12", default-features = false, features = [ "host-functions" ] }
-ibc-core-host-types = { workspace = true }
+ibc-proto                  = { workspace = true }
+ibc-primitives             = { workspace = true }
+ics23                      = { version = "0.12", default-features = false, features = [ "host-functions" ] }
+ibc-eureka-core-host-types = { workspace = true }
 
 # parity dependencies
 parity-scale-codec = { workspace = true, optional = true }
@@ -47,14 +47,14 @@ std = [
   "serde/std",
   "subtle-encoding/std",
   "ibc-primitives/std",
-  "ibc-core-host-types/std",
+  "ibc-eureka-core-host-types/std",
   "ibc-proto/std",
   "ics23/std",
 ]
 serde = [
   "dep:serde",
   "ibc-primitives/serde",
-  "ibc-core-host-types/serde",
+  "ibc-eureka-core-host-types/serde",
   "ibc-proto/serde",
   "ics23/serde",
 ]
@@ -62,7 +62,7 @@ schema = [
   "dep:schemars",
   "ibc-proto/json-schema",
   "ibc-primitives/schema",
-  "ibc-core-host-types/schema",
+  "ibc-eureka-core-host-types/schema",
   "serde",
   "std",
 ]
@@ -70,12 +70,12 @@ borsh = [
   "dep:borsh",
   "ibc-proto/borsh",
   "ibc-primitives/borsh",
-  "ibc-core-host-types/borsh",
+  "ibc-eureka-core-host-types/borsh",
 ]
 parity-scale-codec = [
   "dep:parity-scale-codec",
   "dep:scale-info",
   "ibc-primitives/parity-scale-codec",
-  "ibc-core-host-types/parity-scale-codec",
+  "ibc-eureka-core-host-types/parity-scale-codec",
   "ibc-proto/parity-scale-codec",
 ]

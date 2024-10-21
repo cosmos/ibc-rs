@@ -1,4 +1,4 @@
-use ibc_core_channel_types::msgs::{
+use ibc_eureka_core_channel_types::msgs::{
     ChannelMsg, MsgAcknowledgement, MsgChannelCloseConfirm, MsgChannelCloseInit, MsgChannelOpenAck,
     MsgChannelOpenConfirm, MsgChannelOpenInit, MsgChannelOpenTry, MsgRecvPacket, MsgTimeout,
     MsgTimeoutOnClose, PacketMsg, ACKNOWLEDGEMENT_TYPE_URL, CHAN_CLOSE_CONFIRM_TYPE_URL,
@@ -7,17 +7,17 @@ use ibc_core_channel_types::msgs::{
     TIMEOUT_ON_CLOSE_TYPE_URL, TIMEOUT_TYPE_URL,
 };
 #[allow(deprecated)]
-use ibc_core_client_types::msgs::{
+use ibc_eureka_core_client_types::msgs::{
     ClientMsg, MsgCreateClient, MsgSubmitMisbehaviour, MsgUpdateClient, MsgUpgradeClient,
     CREATE_CLIENT_TYPE_URL, SUBMIT_MISBEHAVIOUR_TYPE_URL, UPDATE_CLIENT_TYPE_URL,
     UPGRADE_CLIENT_TYPE_URL,
 };
-use ibc_core_connection_types::msgs::{
+use ibc_eureka_core_connection_types::msgs::{
     ConnectionMsg, MsgConnectionOpenAck, MsgConnectionOpenConfirm, MsgConnectionOpenInit,
     MsgConnectionOpenTry, CONN_OPEN_ACK_TYPE_URL, CONN_OPEN_CONFIRM_TYPE_URL,
     CONN_OPEN_INIT_TYPE_URL, CONN_OPEN_TRY_TYPE_URL,
 };
-use ibc_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::Protobuf;

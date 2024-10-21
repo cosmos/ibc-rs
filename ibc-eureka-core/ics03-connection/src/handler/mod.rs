@@ -1,8 +1,8 @@
-use ibc_core_client::types::error::ClientError;
-use ibc_core_connection_types::error::ConnectionError;
+use ibc_eureka_core_client::types::error::ClientError;
+use ibc_eureka_core_connection_types::error::ConnectionError;
 #[cfg(feature = "wasm-client")]
-use ibc_core_host::types::error::DecodingError;
-use ibc_core_host::types::identifiers::ClientId;
+use ibc_eureka_core_host::types::error::DecodingError;
+use ibc_eureka_core_host::types::identifiers::ClientId;
 use ibc_primitives::proto::Any;
 
 pub mod conn_open_ack;

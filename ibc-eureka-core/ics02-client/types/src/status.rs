@@ -1,7 +1,7 @@
 use core::fmt::{Debug, Display, Formatter};
 use core::str::FromStr;
 
-use ibc_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 
 use crate::error::ClientError;

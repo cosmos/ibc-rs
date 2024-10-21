@@ -1,11 +1,11 @@
 //! Defines the main channel, port, and packet error types
 
 use displaydoc::Display;
-use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::Height;
-use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
-use ibc_core_host_types::identifiers::Sequence;
+use ibc_eureka_core_client_types::error::ClientError;
+use ibc_eureka_core_client_types::Height;
+use ibc_eureka_core_connection_types::error::ConnectionError;
+use ibc_eureka_core_host_types::error::{DecodingError, HostError, IdentifierError};
+use ibc_eureka_core_host_types::identifiers::Sequence;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
 

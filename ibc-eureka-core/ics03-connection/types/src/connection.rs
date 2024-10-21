@@ -3,9 +3,9 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 use core::time::Duration;
 
-use ibc_core_commitment_types::commitment::CommitmentPrefix;
-use ibc_core_host_types::error::DecodingError;
-use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
+use ibc_eureka_core_commitment_types::commitment::CommitmentPrefix;
+use ibc_eureka_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::identifiers::{ClientId, ConnectionId};
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::connection::v1::{
     ConnectionEnd as RawConnectionEnd, Counterparty as RawCounterparty,

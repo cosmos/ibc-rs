@@ -1,17 +1,17 @@
 use core::time::Duration;
 
-use ibc_core_channel_types::channel::ChannelEnd;
-use ibc_core_channel_types::commitment::{AcknowledgementCommitment, PacketCommitment};
-use ibc_core_channel_types::packet::Receipt;
-use ibc_core_client_context::prelude::*;
-use ibc_core_client_types::Height;
-use ibc_core_commitment_types::commitment::CommitmentPrefix;
-use ibc_core_connection_types::version::{pick_version, Version as ConnectionVersion};
-use ibc_core_connection_types::ConnectionEnd;
-use ibc_core_handler_types::events::IbcEvent;
-use ibc_core_host_types::error::HostError;
-use ibc_core_host_types::identifiers::{ConnectionId, Sequence};
-use ibc_core_host_types::path::{
+use ibc_eureka_core_channel_types::channel::ChannelEnd;
+use ibc_eureka_core_channel_types::commitment::{AcknowledgementCommitment, PacketCommitment};
+use ibc_eureka_core_channel_types::packet::Receipt;
+use ibc_eureka_core_client_context::prelude::*;
+use ibc_eureka_core_client_types::Height;
+use ibc_eureka_core_commitment_types::commitment::CommitmentPrefix;
+use ibc_eureka_core_connection_types::version::{pick_version, Version as ConnectionVersion};
+use ibc_eureka_core_connection_types::ConnectionEnd;
+use ibc_eureka_core_handler_types::events::IbcEvent;
+use ibc_eureka_core_host_types::error::HostError;
+use ibc_eureka_core_host_types::identifiers::{ConnectionId, Sequence};
+use ibc_eureka_core_host_types::path::{
     AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath, ReceiptPath,
     SeqAckPath, SeqRecvPath, SeqSendPath,
 };
@@ -22,7 +22,7 @@ use crate::utils::calculate_block_delay;
 
 /// Context to be implemented by the host that provides all "read-only" methods.
 ///
-/// Trait used for the top-level `validate` entrypoint in the `ibc-core` crate.
+/// Trait used for the top-level `validate` entrypoint in the `ibc-eureka-core` crate.
 pub trait ValidationContext {
     type V: ClientValidationContext;
     /// The client state type for the host chain.
@@ -58,7 +58,7 @@ pub trait ValidationContext {
     /// requirements](https://github.com/cosmos/ibc/tree/main/spec/core/ics-024-host-requirements#client-state-validation)
     ///
     /// Additionally, implementations specific to individual chains can be found
-    /// in the `ibc-core/ics24-host` module.
+    /// in the `ibc-eureka-core/ics24-host` module.
     fn validate_self_client(
         &self,
         client_state_of_host_on_counterparty: Self::HostClientState,
@@ -144,7 +144,7 @@ pub trait ValidationContext {
 
 /// Context to be implemented by the host that provides all "write-only" methods.
 ///
-/// Trait used for the top-level `execute` and `dispatch` entrypoints in the `ibc-core` crate.
+/// Trait used for the top-level `execute` and `dispatch` entrypoints in the `ibc-eureka-core` crate.
 pub trait ExecutionContext: ValidationContext {
     type E: ClientExecutionContext;
 

@@ -1,5 +1,5 @@
 [package]
-name         = "ibc-core-router"
+name         = "ibc-eureka-core-router"
 version      = { workspace = true }
 authors      = { workspace = true }
 edition      = { workspace = true }
@@ -24,10 +24,10 @@ displaydoc      = { workspace = true }
 subtle-encoding = { workspace = true }
 
 # ibc dependencies
-ibc-primitives         = { workspace = true }
-ibc-core-channel-types = { workspace = true }
-ibc-core-host-types    = { workspace = true }
-ibc-core-router-types  = { workspace = true }
+ibc-primitives                = { workspace = true }
+ibc-eureka-core-channel-types = { workspace = true }
+ibc-eureka-core-host-types    = { workspace = true }
+ibc-eureka-core-router-types  = { workspace = true }
 
 [features]
 default = [ "std" ]
@@ -35,33 +35,33 @@ std = [
   "displaydoc/std",
   "subtle-encoding/std",
   "ibc-primitives/std",
-  "ibc-core-channel-types/std",
-  "ibc-core-host-types/std",
-  "ibc-core-router-types/std",
+  "ibc-eureka-core-channel-types/std",
+  "ibc-eureka-core-host-types/std",
+  "ibc-eureka-core-router-types/std",
 ]
 serde = [
   "ibc-primitives/serde",
-  "ibc-core-channel-types/serde",
-  "ibc-core-host-types/serde",
-  "ibc-core-router-types/serde",
+  "ibc-eureka-core-channel-types/serde",
+  "ibc-eureka-core-host-types/serde",
+  "ibc-eureka-core-router-types/serde",
 ]
 borsh = [
   "ibc-primitives/borsh",
-  "ibc-core-channel-types/borsh",
-  "ibc-core-host-types/borsh",
-  "ibc-core-router-types/borsh",
+  "ibc-eureka-core-channel-types/borsh",
+  "ibc-eureka-core-host-types/borsh",
+  "ibc-eureka-core-router-types/borsh",
 ]
 schema = [
-  "ibc-core-channel-types/schema",
-  "ibc-core-host-types/schema",
-  "ibc-core-router-types/schema",
+  "ibc-eureka-core-channel-types/schema",
+  "ibc-eureka-core-host-types/schema",
+  "ibc-eureka-core-router-types/schema",
   "ibc-primitives/schema",
   "serde",
   "std",
 ]
 parity-scale-codec = [
-  "ibc-core-channel-types/parity-scale-codec",
-  "ibc-core-host-types/parity-scale-codec",
-  "ibc-core-router-types/parity-scale-codec",
+  "ibc-eureka-core-channel-types/parity-scale-codec",
+  "ibc-eureka-core-host-types/parity-scale-codec",
+  "ibc-eureka-core-router-types/parity-scale-codec",
   "ibc-primitives/parity-scale-codec",
 ]

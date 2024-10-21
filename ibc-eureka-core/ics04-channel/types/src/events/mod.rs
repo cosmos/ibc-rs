@@ -3,8 +3,8 @@
 mod channel_attributes;
 mod packet_attributes;
 
-use ibc_core_host_types::error::DecodingError;
-use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
+use ibc_eureka_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use tendermint::abci;
 

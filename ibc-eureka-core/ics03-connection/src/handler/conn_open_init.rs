@@ -1,13 +1,13 @@
 //! Protocol logic specific to ICS3 messages of type `MsgConnectionOpenInit`.
-use ibc_core_client::context::prelude::*;
-use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_connection_types::events::OpenInit;
-use ibc_core_connection_types::msgs::MsgConnectionOpenInit;
-use ibc_core_connection_types::{ConnectionEnd, Counterparty, State};
-use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::identifiers::ConnectionId;
-use ibc_core_host::types::path::{ClientConnectionPath, ConnectionPath};
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_eureka_core_client::context::prelude::*;
+use ibc_eureka_core_connection_types::error::ConnectionError;
+use ibc_eureka_core_connection_types::events::OpenInit;
+use ibc_eureka_core_connection_types::msgs::MsgConnectionOpenInit;
+use ibc_eureka_core_connection_types::{ConnectionEnd, Counterparty, State};
+use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::identifiers::ConnectionId;
+use ibc_eureka_core_host::types::path::{ClientConnectionPath, ConnectionPath};
+use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: MsgConnectionOpenInit) -> Result<(), ConnectionError>

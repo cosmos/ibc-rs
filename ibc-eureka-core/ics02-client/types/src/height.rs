@@ -3,7 +3,7 @@
 use core::cmp::Ordering;
 use core::str::FromStr;
 
-use ibc_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 use ibc_proto::Protobuf;

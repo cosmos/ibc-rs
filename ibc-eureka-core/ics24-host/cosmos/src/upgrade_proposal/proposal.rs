@@ -1,6 +1,6 @@
 //! Definition of domain `UpgradeProposal` type for handling upgrade client proposal
 
-use ibc_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
 use ibc_proto::ibc::core::client::v1::UpgradeProposal as RawUpgradeProposal;

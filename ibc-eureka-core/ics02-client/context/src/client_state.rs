@@ -1,12 +1,12 @@
 //! Defines `ClientState`, the core type to be implemented by light clients
 
-use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::{Height, Status};
-use ibc_core_commitment_types::commitment::{
+use ibc_eureka_core_client_types::error::ClientError;
+use ibc_eureka_core_client_types::{Height, Status};
+use ibc_eureka_core_commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use ibc_core_host_types::identifiers::{ClientId, ClientType};
-use ibc_core_host_types::path::{Path, PathBytes};
+use ibc_eureka_core_host_types::identifiers::{ClientId, ClientType};
+use ibc_eureka_core_host_types::path::{Path, PathBytes};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 use ibc_primitives::Timestamp;

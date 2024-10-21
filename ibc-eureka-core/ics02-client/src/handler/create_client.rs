@@ -1,12 +1,12 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgCreateClient`.
 
-use ibc_core_client_context::prelude::*;
-use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::events::CreateClient;
-use ibc_core_client_types::msgs::MsgCreateClient;
-use ibc_core_client_types::Status;
-use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::{ClientStateMut, ClientStateRef, ExecutionContext, ValidationContext};
+use ibc_eureka_core_client_context::prelude::*;
+use ibc_eureka_core_client_types::error::ClientError;
+use ibc_eureka_core_client_types::events::CreateClient;
+use ibc_eureka_core_client_types::msgs::MsgCreateClient;
+use ibc_eureka_core_client_types::Status;
+use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::{ClientStateMut, ClientStateRef, ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::proto::Any;
 

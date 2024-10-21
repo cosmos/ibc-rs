@@ -1,7 +1,7 @@
 //! Defines the packet type
-use ibc_core_client_types::Height;
-use ibc_core_host_types::error::DecodingError;
-use ibc_core_host_types::identifiers::{ChannelId, PortId, Sequence};
+use ibc_eureka_core_client_types::Height;
+use ibc_eureka_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 use ibc_proto::ibc::core::channel::v1::{Packet as RawPacket, PacketState as RawPacketState};
@@ -91,7 +91,7 @@ pub struct Packet {
     pub chan_id_on_b: ChannelId,
     #[cfg_attr(
         feature = "serde",
-        serde(serialize_with = "ibc_core_commitment_types::serializer::ser_hex_upper")
+        serde(serialize_with = "ibc_eureka_core_commitment_types::serializer::ser_hex_upper")
     )]
     pub data: Vec<u8>,
     pub timeout_height_on_b: TimeoutHeight,
@@ -263,7 +263,7 @@ pub struct PacketState {
     pub seq: Sequence,
     #[cfg_attr(
         feature = "serde",
-        serde(serialize_with = "ibc_core_commitment_types::serializer::ser_hex_upper")
+        serde(serialize_with = "ibc_eureka_core_commitment_types::serializer::ser_hex_upper")
     )]
     pub data: Vec<u8>,
 }

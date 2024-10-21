@@ -2,10 +2,10 @@
 
 use derive_more::From;
 use displaydoc::Display;
-use ibc_core_channel_types::error::ChannelError;
-use ibc_core_client_types::error::ClientError;
-use ibc_core_connection_types::error::ConnectionError;
-use ibc_core_router_types::error::RouterError;
+use ibc_eureka_core_channel_types::error::ChannelError;
+use ibc_eureka_core_client_types::error::ClientError;
+use ibc_eureka_core_connection_types::error::ConnectionError;
+use ibc_eureka_core_router_types::error::RouterError;
 use ibc_primitives::prelude::*;
 
 /// Top-level type that surfaces errors from the core ibc-rs crates.

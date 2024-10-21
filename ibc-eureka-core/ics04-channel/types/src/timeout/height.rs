@@ -2,8 +2,8 @@
 
 use core::fmt::{Display, Error as FmtError, Formatter};
 
-use ibc_core_client_types::Height;
-use ibc_core_host_types::error::DecodingError;
+use ibc_eureka_core_client_types::Height;
+use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 
@@ -183,7 +183,7 @@ mod serialize {
         where
             D: serde::Deserializer<'de>,
         {
-            use ibc_core_client_types::Height as Ics02Height;
+            use ibc_eureka_core_client_types::Height as Ics02Height;
 
             // Here we have to use a bespoke struct as well in order to deserialize
             // a height which may have a revision height equal to zero.

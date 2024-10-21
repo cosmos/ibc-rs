@@ -1,10 +1,10 @@
 //! Protocol logic for processing ICS02 messages of type `MsgRecoverClient`.
 
-use ibc_core_client_context::prelude::*;
-use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::msgs::MsgRecoverClient;
-use ibc_core_host::types::path::ClientConsensusStatePath;
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_eureka_core_client_context::prelude::*;
+use ibc_eureka_core_client_types::error::ClientError;
+use ibc_eureka_core_client_types::msgs::MsgRecoverClient;
+use ibc_eureka_core_host::types::path::ClientConsensusStatePath;
+use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 
 /// Performs the validation steps associated with the client recovery process. This
 /// includes validating that the parameters of the subject and substitute clients match,

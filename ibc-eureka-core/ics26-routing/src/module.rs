@@ -1,13 +1,13 @@
 /// The trait that defines an IBC application
 use core::fmt::Debug;
 
-use ibc_core_channel_types::acknowledgement::Acknowledgement;
-use ibc_core_channel_types::channel::{Counterparty, Order};
-use ibc_core_channel_types::error::ChannelError;
-use ibc_core_channel_types::packet::Packet;
-use ibc_core_channel_types::Version;
-use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
-use ibc_core_router_types::module::ModuleExtras;
+use ibc_eureka_core_channel_types::acknowledgement::Acknowledgement;
+use ibc_eureka_core_channel_types::channel::{Counterparty, Order};
+use ibc_eureka_core_channel_types::error::ChannelError;
+use ibc_eureka_core_channel_types::packet::Packet;
+use ibc_eureka_core_channel_types::Version;
+use ibc_eureka_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc_eureka_core_router_types::module::ModuleExtras;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 

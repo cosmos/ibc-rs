@@ -126,7 +126,7 @@ mod test {
         ];
         let actual = compute_packet_commitment(
             b"packet data",
-            &TimeoutHeight::At(ibc_core_client_types::Height::new(42, 24).unwrap()),
+            &TimeoutHeight::At(ibc_eureka_core_client_types::Height::new(42, 24).unwrap()),
             &TimeoutTimestamp::from(0x42),
         );
         assert_eq!(&expected[..], actual.as_ref());

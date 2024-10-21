@@ -1,13 +1,13 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpdateAnyClient`.
 
-use ibc_core_client_context::prelude::*;
-use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::events::{ClientMisbehaviour, UpdateClient};
-use ibc_core_client_types::msgs::MsgUpdateOrMisbehaviour;
-use ibc_core_client_types::UpdateKind;
-use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::error::HostError;
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_eureka_core_client_context::prelude::*;
+use ibc_eureka_core_client_types::error::ClientError;
+use ibc_eureka_core_client_types::events::{ClientMisbehaviour, UpdateClient};
+use ibc_eureka_core_client_types::msgs::MsgUpdateOrMisbehaviour;
+use ibc_eureka_core_client_types::UpdateKind;
+use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::error::HostError;
+use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 use ibc_primitives::ToVec;
 

@@ -1,9 +1,9 @@
 //! Defines the connection error type
 
 use displaydoc::Display;
-use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::Height;
-use ibc_core_host_types::error::{DecodingError, HostError, IdentifierError};
+use ibc_eureka_core_client_types::error::ClientError;
+use ibc_eureka_core_client_types::Height;
+use ibc_eureka_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
 

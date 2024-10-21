@@ -1,6 +1,6 @@
 //! Defines proof specs, which encode the structure of proofs
 
-use ibc_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::ics23::{InnerSpec as RawInnerSpec, LeafOp as RawLeafOp, ProofSpec as RawProofSpec};
 use ics23::{HashOp, LengthOp};

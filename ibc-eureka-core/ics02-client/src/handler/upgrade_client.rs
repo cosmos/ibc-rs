@@ -1,12 +1,12 @@
 //! Protocol logic specific to processing ICS2 messages of type `MsgUpgradeAnyClient`.
 //!
-use ibc_core_client_context::prelude::*;
-use ibc_core_client_types::error::ClientError;
-use ibc_core_client_types::events::UpgradeClient;
-use ibc_core_client_types::msgs::MsgUpgradeClient;
-use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::path::ClientConsensusStatePath;
-use ibc_core_host::{ExecutionContext, ValidationContext};
+use ibc_eureka_core_client_context::prelude::*;
+use ibc_eureka_core_client_types::error::ClientError;
+use ibc_eureka_core_client_types::events::UpgradeClient;
+use ibc_eureka_core_client_types::msgs::MsgUpgradeClient;
+use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::path::ClientConsensusStatePath;
+use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 
 pub fn validate<Ctx>(ctx: &Ctx, msg: MsgUpgradeClient) -> Result<(), ClientError>

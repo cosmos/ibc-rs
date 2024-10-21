@@ -1,10 +1,10 @@
 use core::time::Duration;
 
 use ibc_client_tendermint::types::ClientState as TmClientState;
-use ibc_core_client_types::Height;
-use ibc_core_commitment_types::specs::ProofSpecs;
-use ibc_core_host_types::error::HostError;
-use ibc_core_host_types::identifiers::ChainId;
+use ibc_eureka_core_client_types::Height;
+use ibc_eureka_core_commitment_types::specs::ProofSpecs;
+use ibc_eureka_core_host_types::error::HostError;
+use ibc_eureka_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 

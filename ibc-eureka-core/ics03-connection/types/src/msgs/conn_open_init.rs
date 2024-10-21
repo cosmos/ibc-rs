@@ -1,7 +1,7 @@
 use core::time::Duration;
 
-use ibc_core_host_types::error::DecodingError;
-use ibc_core_host_types::identifiers::ClientId;
+use ibc_eureka_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenInit as RawMsgConnectionOpenInit;

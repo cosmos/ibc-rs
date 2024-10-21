@@ -1,5 +1,5 @@
 use displaydoc::Display;
-use ibc_core_host_types::error::HostError;
+use ibc_eureka_core_host_types::error::HostError;
 use ibc_primitives::prelude::*;
 
 /// Error type for the router module.

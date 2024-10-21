@@ -1,7 +1,7 @@
 //! This module holds all the abci event attributes for IBC events emitted
 //! during the channel handshake.
 use derive_more::From;
-use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc_eureka_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
 use tendermint::abci;
 
 use crate::Version;

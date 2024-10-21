@@ -33,5 +33,5 @@ pub mod prelude {
 
 pub mod types {
     #[doc(inline)]
-    pub use ibc_core_client_types::*;
+    pub use ibc_eureka_core_client_types::*;
 }

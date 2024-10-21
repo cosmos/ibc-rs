@@ -34,7 +34,7 @@ impl ChannelId {
     /// accepts a single argument, the `counter`.
     ///
     /// ```
-    /// # use ibc_core_host_types::identifiers::ChannelId;
+    /// # use ibc_eureka_core_host_types::identifiers::ChannelId;
     /// let chan_id = ChannelId::new(27);
     /// assert_eq!(chan_id.to_string(), "channel-27");
     /// ```
@@ -87,7 +87,7 @@ impl AsRef<str> for ChannelId {
 /// Equality check against string literal (satisfies &ChannelId == &str).
 /// ```
 /// use core::str::FromStr;
-/// use ibc_core_host_types::identifiers::ChannelId;
+/// use ibc_eureka_core_host_types::identifiers::ChannelId;
 /// let channel_id = ChannelId::from_str("channel-0");
 /// assert!(channel_id.is_ok());
 /// channel_id.map(|id| {assert_eq!(&id, "channel-0")});

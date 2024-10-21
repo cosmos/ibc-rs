@@ -1,19 +1,21 @@
-use ibc_core_channel_types::channel::{Counterparty, Order, State as ChannelState};
-use ibc_core_channel_types::commitment::{compute_ack_commitment, compute_packet_commitment};
-use ibc_core_channel_types::error::ChannelError;
-use ibc_core_channel_types::events::{ReceivePacket, WriteAcknowledgement};
-use ibc_core_channel_types::msgs::MsgRecvPacket;
-use ibc_core_channel_types::packet::Receipt;
-use ibc_core_client::context::prelude::*;
-use ibc_core_connection::delay::verify_conn_delay_passed;
-use ibc_core_connection::types::State as ConnectionState;
-use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_core_host::types::path::{
+use ibc_eureka_core_channel_types::channel::{Counterparty, Order, State as ChannelState};
+use ibc_eureka_core_channel_types::commitment::{
+    compute_ack_commitment, compute_packet_commitment,
+};
+use ibc_eureka_core_channel_types::error::ChannelError;
+use ibc_eureka_core_channel_types::events::{ReceivePacket, WriteAcknowledgement};
+use ibc_eureka_core_channel_types::msgs::MsgRecvPacket;
+use ibc_eureka_core_channel_types::packet::Receipt;
+use ibc_eureka_core_client::context::prelude::*;
+use ibc_eureka_core_connection::delay::verify_conn_delay_passed;
+use ibc_eureka_core_connection::types::State as ConnectionState;
+use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
     SeqRecvPath,
 };
-use ibc_core_host::{ExecutionContext, ValidationContext};
-use ibc_core_router::module::Module;
+use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
+use ibc_eureka_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
 pub fn recv_packet_validate<ValCtx>(ctx_b: &ValCtx, msg: MsgRecvPacket) -> Result<(), ChannelError>

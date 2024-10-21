@@ -19,8 +19,8 @@ extern crate std;
 pub mod delay;
 pub mod handler;
 
-/// Re-exports ICS-03 data structures from the `ibc-core-connection-types` crate
+/// Re-exports ICS-03 data structures from the `ibc-eureka-core-connection-types` crate
 pub mod types {
     #[doc(inline)]
-    pub use ibc_core_connection_types::*;
+    pub use ibc_eureka_core_connection_types::*;
 }

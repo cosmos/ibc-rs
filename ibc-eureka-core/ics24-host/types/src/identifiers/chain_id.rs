@@ -47,7 +47,7 @@ impl ChainId {
     /// the revision number is parsed. Otherwise, the revision number is set to 0.
     ///
     /// ```
-    /// use ibc_core_host_types::identifiers::ChainId;
+    /// use ibc_eureka_core_host_types::identifiers::ChainId;
     ///
     /// let chain_id = "chainA";
     /// let id = ChainId::new(chain_id).unwrap();
@@ -83,7 +83,7 @@ impl ChainId {
     /// the revision number overflows.
     ///
     /// ```
-    /// use ibc_core_host_types::identifiers::ChainId;
+    /// use ibc_eureka_core_host_types::identifiers::ChainId;
     ///
     /// let mut chain_id = ChainId::new("chainA-1").unwrap();
     /// assert!(chain_id.increment_revision_number().is_ok());

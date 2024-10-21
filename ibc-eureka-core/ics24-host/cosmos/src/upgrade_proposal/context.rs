@@ -5,9 +5,9 @@
 //! [Basecoin-rs](https://github.com/informalsystems/basecoin-rs) repository.
 //! If it proves to be generic enough, we may move it to the ICS02 section.
 
-use ibc_core_client_context::ClientValidationContext;
-use ibc_core_host_types::error::HostError;
-use ibc_core_host_types::path::{UpgradeClientStatePath, UpgradeConsensusStatePath};
+use ibc_eureka_core_client_context::ClientValidationContext;
+use ibc_eureka_core_host_types::error::HostError;
+use ibc_eureka_core_host_types::path::{UpgradeClientStatePath, UpgradeConsensusStatePath};
 
 use super::Plan;
 

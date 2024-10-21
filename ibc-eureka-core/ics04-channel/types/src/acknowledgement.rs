@@ -3,7 +3,7 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use derive_more::Into;
-use ibc_core_host_types::error::DecodingError;
+use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 
 use crate::error::ChannelError;

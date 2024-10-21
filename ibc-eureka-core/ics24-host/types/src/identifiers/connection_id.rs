@@ -33,7 +33,7 @@ impl ConnectionId {
     /// `ConnectionId::prefix()`) so this method accepts a single argument, the `counter`.
     ///
     /// ```
-    /// # use ibc_core_host_types::identifiers::ConnectionId;
+    /// # use ibc_eureka_core_host_types::identifiers::ConnectionId;
     /// let conn_id = ConnectionId::new(11);
     /// assert_eq!(&conn_id, "connection-11");
     /// ```
@@ -81,7 +81,7 @@ impl FromStr for ConnectionId {
 /// Equality check against string literal (satisfies &ConnectionId == &str).
 /// ```
 /// use core::str::FromStr;
-/// use ibc_core_host_types::identifiers::ConnectionId;
+/// use ibc_eureka_core_host_types::identifiers::ConnectionId;
 /// let conn_id = ConnectionId::from_str("connection-0");
 /// assert!(conn_id.is_ok());
 /// conn_id.map(|id| {assert_eq!(&id, "connection-0")});

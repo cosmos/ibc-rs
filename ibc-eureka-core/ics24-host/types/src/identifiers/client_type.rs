@@ -39,8 +39,8 @@ impl ClientType {
     /// infallible since client type is assumed to be correct.
     ///
     /// ```
-    /// # use ibc_core_host_types::identifiers::ClientId;
-    /// # use ibc_core_host_types::identifiers::ClientType;
+    /// # use ibc_eureka_core_host_types::identifiers::ClientId;
+    /// # use ibc_eureka_core_host_types::identifiers::ClientType;
     /// # use std::str::FromStr;
     /// let client_type = ClientType::from_str("07-tendermint").unwrap();
     /// let client_id = client_type.build_client_id(14);
