@@ -28,7 +28,8 @@ where
         use ibc_client_wasm_types::client_state::ClientState as WasmClientState;
         use prost::Message;
 
-        let wasm_client_state = WasmClientState::try_from(value)?;
+        let wasm_client_state =
+            WasmClientState::try_from(value).expect("TODO(rano): propagate the error");
 
         let any_client_state = <Any as Message>::decode(wasm_client_state.data.as_slice())
             .map_err(|e| ConnectionError::Decoding(DecodingError::Prost(e)))?;
