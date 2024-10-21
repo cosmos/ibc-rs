@@ -1,0 +1,71 @@
+[package]
+name         = "ibc-core-client"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "light-client" ]
+readme       = "./../README.md"
+
+description = """
+    Maintained by `ibc-rs`, contains the implementation of ICS-02 Client Semantics and
+    re-exports essential data structures and domain types from `ibc-core-client-types` crate.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+ibc-core-client-types     = { workspace = true }
+ibc-core-client-context   = { workspace = true }
+ibc-core-commitment-types = { workspace = true }
+ibc-core-host             = { workspace = true }
+ibc-core-handler-types    = { workspace = true }
+ibc-primitives            = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "ibc-core-client-types/std",
+  "ibc-core-client-context/std",
+  "ibc-core-commitment-types/std",
+  "ibc-core-host/std",
+  "ibc-core-handler-types/std",
+  "ibc-primitives/std",
+]
+serde = [
+  "ibc-core-client-types/serde",
+  "ibc-core-client-context/serde",
+  "ibc-core-commitment-types/serde",
+  "ibc-core-host/serde",
+  "ibc-core-handler-types/serde",
+  "ibc-primitives/serde",
+]
+borsh = [
+  "ibc-core-client-types/borsh",
+  "ibc-core-client-context/borsh",
+  "ibc-core-commitment-types/borsh",
+  "ibc-core-host/borsh",
+  "ibc-core-handler-types/borsh",
+  "ibc-primitives/borsh",
+]
+schema = [
+  "ibc-core-client-types/schema",
+  "ibc-core-client-context/schema",
+  "ibc-core-commitment-types/schema",
+  "ibc-core-host/schema",
+  "ibc-core-handler-types/schema",
+  "ibc-primitives/schema",
+  "serde",
+  "std",
+]
+parity-scale-codec = [
+  "ibc-core-client-types/parity-scale-codec",
+  "ibc-core-client-context/parity-scale-codec",
+  "ibc-core-commitment-types/parity-scale-codec",
+  "ibc-core-host/parity-scale-codec",
+  "ibc-core-handler-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+]
