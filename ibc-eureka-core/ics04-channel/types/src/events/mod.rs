@@ -611,15 +611,16 @@ pub struct SendPacket {
 
 impl SendPacket {
     pub fn new(packet: Packet, channel_ordering: Order, src_connection_id: ConnectionId) -> Self {
+        let payload = packet.payloads[0].clone();
         Self {
-            packet_data_attr: packet.data.into(),
-            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
-            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
-            seq_attr_on_a: packet.seq_on_a.into(),
-            port_id_attr_on_a: packet.port_id_on_a.into(),
-            chan_id_attr_on_a: packet.chan_id_on_a.into(),
-            port_id_attr_on_b: packet.port_id_on_b.into(),
-            chan_id_attr_on_b: packet.chan_id_on_b.into(),
+            packet_data_attr: payload.data.into(),
+            timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
+            seq_attr_on_a: packet.header.seq_on_a.into(),
+            port_id_attr_on_a: payload.header.source_port.1.into(),
+            chan_id_attr_on_a: ChannelId::from(packet.header.source_client).into(),
+            port_id_attr_on_b: payload.header.target_port.1.into(),
+            chan_id_attr_on_b: ChannelId::from(packet.header.target_client).into(),
             channel_ordering_attr: channel_ordering.into(),
             conn_id_attr_on_a: src_connection_id.into(),
         }
@@ -722,15 +723,16 @@ pub struct ReceivePacket {
 
 impl ReceivePacket {
     pub fn new(packet: Packet, channel_ordering: Order, dst_connection_id: ConnectionId) -> Self {
+        let payload = packet.payloads[0].clone();
         Self {
-            packet_data_attr: packet.data.into(),
-            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
-            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
-            seq_attr_on_a: packet.seq_on_a.into(),
-            port_id_attr_on_a: packet.port_id_on_a.into(),
-            chan_id_attr_on_a: packet.chan_id_on_a.into(),
-            port_id_attr_on_b: packet.port_id_on_b.into(),
-            chan_id_attr_on_b: packet.chan_id_on_b.into(),
+            packet_data_attr: payload.data.into(),
+            timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
+            seq_attr_on_a: packet.header.seq_on_a.into(),
+            port_id_attr_on_a: payload.header.source_port.1.into(),
+            chan_id_attr_on_a: ChannelId::from(packet.header.source_client).into(),
+            port_id_attr_on_b: payload.header.target_port.1.into(),
+            chan_id_attr_on_b: ChannelId::from(packet.header.target_client).into(),
             channel_ordering_attr: channel_ordering.into(),
             conn_id_attr_on_b: dst_connection_id.into(),
         }
@@ -837,15 +839,16 @@ impl WriteAcknowledgement {
         acknowledgement: Acknowledgement,
         conn_id_on_b: ConnectionId,
     ) -> Self {
+        let payload = packet.payloads[0].clone();
         Self {
-            packet_data: packet.data.into(),
-            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
-            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
-            seq_attr_on_a: packet.seq_on_a.into(),
-            port_id_attr_on_a: packet.port_id_on_a.into(),
-            chan_id_attr_on_a: packet.chan_id_on_a.into(),
-            port_id_attr_on_b: packet.port_id_on_b.into(),
-            chan_id_attr_on_b: packet.chan_id_on_b.into(),
+            packet_data: payload.data.into(),
+            timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
+            seq_attr_on_a: packet.header.seq_on_a.into(),
+            port_id_attr_on_a: payload.header.source_port.1.into(),
+            chan_id_attr_on_a: ChannelId::from(packet.header.source_client).into(),
+            port_id_attr_on_b: payload.header.target_port.1.into(),
+            chan_id_attr_on_b: ChannelId::from(packet.header.target_client).into(),
             acknowledgement: acknowledgement.into(),
             conn_id_attr_on_b: conn_id_on_b.into(),
         }
@@ -947,14 +950,15 @@ pub struct AcknowledgePacket {
 
 impl AcknowledgePacket {
     pub fn new(packet: Packet, channel_ordering: Order, src_connection_id: ConnectionId) -> Self {
+        let payload = packet.payloads[0].clone();
         Self {
-            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
-            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
-            seq_on_a: packet.seq_on_a.into(),
-            port_id_attr_on_a: packet.port_id_on_a.into(),
-            chan_id_attr_on_a: packet.chan_id_on_a.into(),
-            port_id_attr_on_b: packet.port_id_on_b.into(),
-            chan_id_attr_on_b: packet.chan_id_on_b.into(),
+            timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
+            seq_on_a: packet.header.seq_on_a.into(),
+            port_id_attr_on_a: payload.header.source_port.1.into(),
+            chan_id_attr_on_a: ChannelId::from(packet.header.source_client).into(),
+            port_id_attr_on_b: payload.header.target_port.1.into(),
+            chan_id_attr_on_b: ChannelId::from(packet.header.target_client).into(),
             channel_ordering_attr: channel_ordering.into(),
             conn_id_attr_on_a: src_connection_id.into(),
         }
@@ -1049,14 +1053,15 @@ pub struct TimeoutPacket {
 
 impl TimeoutPacket {
     pub fn new(packet: Packet, channel_ordering: Order) -> Self {
+        let payload = packet.payloads[0].clone();
         Self {
-            timeout_height_attr_on_b: packet.timeout_height_on_b.into(),
-            timeout_timestamp_attr_on_b: packet.timeout_timestamp_on_b.into(),
-            seq_attr_on_a: packet.seq_on_a.into(),
-            port_id_attr_on_a: packet.port_id_on_a.into(),
-            chan_id_attr_on_a: packet.chan_id_on_a.into(),
-            port_id_attr_on_b: packet.port_id_on_b.into(),
-            chan_id_attr_on_b: packet.chan_id_on_b.into(),
+            timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
+            timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
+            seq_attr_on_a: packet.header.seq_on_a.into(),
+            port_id_attr_on_a: payload.header.source_port.1.into(),
+            chan_id_attr_on_a: ChannelId::from(packet.header.source_client).into(),
+            port_id_attr_on_b: payload.header.target_port.1.into(),
+            chan_id_attr_on_b: ChannelId::from(packet.header.target_client).into(),
             channel_ordering_attr: channel_ordering.into(),
         }
     }

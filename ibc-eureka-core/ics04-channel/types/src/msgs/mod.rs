@@ -71,9 +71,9 @@ pub fn channel_msg_to_port_id(msg: &ChannelMsg) -> &PortId {
 
 pub fn packet_msg_to_port_id(msg: &PacketMsg) -> &PortId {
     match msg {
-        PacketMsg::Recv(msg) => &msg.packet.port_id_on_b,
-        PacketMsg::Ack(msg) => &msg.packet.port_id_on_a,
-        PacketMsg::Timeout(msg) => &msg.packet.port_id_on_a,
-        PacketMsg::TimeoutOnClose(msg) => &msg.packet.port_id_on_a,
+        PacketMsg::Recv(msg) => &msg.packet.payloads[0].header.target_port.1,
+        PacketMsg::Ack(msg) => &msg.packet.payloads[0].header.source_port.1,
+        PacketMsg::Timeout(msg) => &msg.packet.payloads[0].header.source_port.1,
+        PacketMsg::TimeoutOnClose(msg) => &msg.packet.payloads[0].header.source_port.1,
     }
 }
