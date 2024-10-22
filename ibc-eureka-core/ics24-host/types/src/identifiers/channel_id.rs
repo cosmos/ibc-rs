@@ -5,7 +5,8 @@ use derive_more::Into;
 use ibc_primitives::prelude::*;
 
 use crate::error::IdentifierError;
-use crate::validate::validate_channel_identifier;
+
+use crate::identifiers::ClientId;
 
 const CHANNEL_ID_PREFIX: &str = "channel";
 
@@ -24,25 +25,15 @@ const CHANNEL_ID_PREFIX: &str = "channel";
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Into)]
-pub struct ChannelId(String);
+pub struct ChannelId(ClientId);
+
+impl From<ClientId> for ChannelId {
+    fn from(client_id: ClientId) -> Self {
+        Self(client_id)
+    }
+}
 
 impl ChannelId {
-    /// Builds a new channel identifier. Like client and connection identifiers, channel ids are
-    /// deterministically formed from two elements: a prefix `prefix`, and a monotonically
-    /// increasing `counter`, separated by a dash "-".
-    /// The prefix is currently determined statically (see `ChannelId::prefix()`) so this method
-    /// accepts a single argument, the `counter`.
-    ///
-    /// ```
-    /// # use ibc_eureka_core_host_types::identifiers::ChannelId;
-    /// let chan_id = ChannelId::new(27);
-    /// assert_eq!(chan_id.to_string(), "channel-27");
-    /// ```
-    pub fn new(identifier: u64) -> Self {
-        let id = format!("{}-{}", Self::prefix(), identifier);
-        Self(id)
-    }
-
     /// Returns the static prefix to be used across all channel identifiers.
     pub fn prefix() -> &'static str {
         CHANNEL_ID_PREFIX
@@ -50,16 +41,12 @@ impl ChannelId {
 
     /// Get this identifier as a borrowed `&str`
     pub fn as_str(&self) -> &str {
-        &self.0
+        self.0.as_str()
     }
 
     /// Get this identifier as a borrowed byte slice
     pub fn as_bytes(&self) -> &[u8] {
         self.0.as_bytes()
-    }
-
-    pub fn zero() -> Self {
-        Self::new(0)
     }
 }
 
@@ -74,13 +61,13 @@ impl FromStr for ChannelId {
     type Err = IdentifierError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        validate_channel_identifier(s).map(|_| Self(s.to_string()))
+        Ok(Self(s.parse()?))
     }
 }
 
 impl AsRef<str> for ChannelId {
     fn as_ref(&self) -> &str {
-        &self.0
+        self.0.as_str()
     }
 }
 
