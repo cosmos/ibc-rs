@@ -2,7 +2,7 @@
 use ibc_eureka_core_client_types::Height;
 use ibc_eureka_core_commitment_types::commitment::CommitmentPrefix;
 use ibc_eureka_core_host_types::error::DecodingError;
-use ibc_eureka_core_host_types::identifiers::{ChannelId, ClientId, PortId, Sequence};
+use ibc_eureka_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Timestamp;
 use ibc_proto::ibc::core::channel::v1::{Packet as RawPacket, PacketState as RawPacketState};
@@ -83,8 +83,8 @@ impl core::fmt::Display for PacketMsgType {
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct PacketHeader {
     pub seq_on_a: Sequence,
-    pub source_client: ClientId,
-    pub target_client: ClientId,
+    pub source_client: ChannelId,
+    pub target_client: ChannelId,
     pub timeout_height_on_b: TimeoutHeight,
     pub timeout_timestamp_on_b: TimeoutTimestamp,
 }
