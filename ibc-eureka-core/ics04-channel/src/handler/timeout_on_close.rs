@@ -1,4 +1,3 @@
-use ibc_eureka_core_channel_types::channel::{ChannelEnd, Counterparty, Order, State};
 use ibc_eureka_core_channel_types::commitment::compute_packet_commitment;
 use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::msgs::MsgTimeoutOnClose;
@@ -27,11 +26,6 @@ where
     let data = &payload.data;
 
     let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
-
-    let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
-
-    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
     let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 
@@ -75,31 +69,8 @@ where
         );
         let consensus_state_of_b_on_a =
             client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
-        let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
-        let channel_id_on_b = chan_end_on_a
-            .counterparty()
-            .channel_id()
-            .ok_or(ChannelError::MissingCounterparty)?;
-        let expected_counterparty =
-            Counterparty::new(port_id_on_a.clone(), Some(channel_id_on_a.clone()));
-        let expected_chan_end_on_b = ChannelEnd::new(
-            State::Closed,
-            *chan_end_on_a.ordering(),
-            expected_counterparty,
-            chan_end_on_a.version().clone(),
-        )?;
 
         let chan_end_path_on_b = ChannelEndPath(port_id_on_b.clone(), channel_id_on_b.clone());
-
-        // Verify the proof for the channel state against the expected channel end.
-        // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
-        client_state_of_b_on_a.verify_membership(
-            prefix_on_a,
-            &msg.proof_close_on_b,
-            consensus_state_of_b_on_a.root(),
-            Path::ChannelEnd(chan_end_path_on_b),
-            expected_chan_end_on_b.encode_vec(),
-        )?;
 
         let next_seq_recv_verification_result = match chan_end_on_a.ordering {
             Order::Ordered => {

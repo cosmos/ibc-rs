@@ -13,12 +13,11 @@ use self::channel_attributes::{
     PortIdAttribute, VersionAttribute, COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY,
 };
 use self::packet_attributes::{
-    AcknowledgementAttribute, ChannelOrderingAttribute, DstChannelIdAttribute, DstPortIdAttribute,
-    PacketDataAttribute, SequenceAttribute, SrcChannelIdAttribute, SrcPortIdAttribute,
-    TimeoutHeightAttribute, TimeoutTimestampAttribute,
+    AcknowledgementAttribute, DstChannelIdAttribute, DstPortIdAttribute, PacketDataAttribute,
+    SequenceAttribute, SrcChannelIdAttribute, SrcPortIdAttribute, TimeoutHeightAttribute,
+    TimeoutTimestampAttribute,
 };
 use super::acknowledgement::Acknowledgement;
-use super::channel::Order;
 use super::timeout::TimeoutHeight;
 use super::Version;
 use crate::packet::Packet;
@@ -472,7 +471,6 @@ pub struct ChannelClosed {
     chan_id_attr_on_a: ChannelIdAttribute,
     port_id_attr_on_b: CounterpartyPortIdAttribute,
     maybe_chan_id_attr_on_b: Option<CounterpartyChannelIdAttribute>,
-    channel_ordering_attr: ChannelOrderingAttribute,
 }
 
 impl ChannelClosed {
@@ -481,14 +479,12 @@ impl ChannelClosed {
         chan_id_on_a: ChannelId,
         port_id_on_b: PortId,
         maybe_chan_id_on_b: Option<ChannelId>,
-        channel_ordering: Order,
     ) -> Self {
         Self {
             port_id_attr_on_a: port_id_on_a.into(),
             chan_id_attr_on_a: chan_id_on_a.into(),
             port_id_attr_on_b: port_id_on_b.into(),
             maybe_chan_id_attr_on_b: maybe_chan_id_on_b.map(Into::into),
-            channel_ordering_attr: channel_ordering.into(),
         }
     }
     pub fn port_id_on_b(&self) -> &PortId {
@@ -503,10 +499,6 @@ impl ChannelClosed {
     pub fn chan_id_on_a(&self) -> Option<&ChannelId> {
         self.maybe_chan_id_attr_on_b.as_ref().map(AsRef::as_ref)
     }
-    pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering_attr.order
-    }
-
     pub fn event_type(&self) -> &str {
         CHANNEL_CLOSED_EVENT
     }
@@ -524,7 +516,6 @@ impl From<ChannelClosed> for abci::Event {
                     || (COUNTERPARTY_CHANNEL_ID_ATTRIBUTE_KEY, "").into(),
                     Into::into,
                 ),
-                ev.channel_ordering_attr.into(),
             ],
         }
     }
@@ -553,11 +544,10 @@ pub struct SendPacket {
     chan_id_attr_on_a: SrcChannelIdAttribute,
     port_id_attr_on_b: DstPortIdAttribute,
     chan_id_attr_on_b: DstChannelIdAttribute,
-    channel_ordering_attr: ChannelOrderingAttribute,
 }
 
 impl SendPacket {
-    pub fn new(packet: Packet, channel_ordering: Order) -> Self {
+    pub fn new(packet: Packet) -> Self {
         let payload = packet.payloads[0].clone();
         Self {
             packet_data_attr: payload.data.into(),
@@ -568,7 +558,6 @@ impl SendPacket {
             chan_id_attr_on_a: packet.header.source_client.into(),
             port_id_attr_on_b: payload.header.target_port.1.into(),
             chan_id_attr_on_b: packet.header.target_client.into(),
-            channel_ordering_attr: channel_ordering.into(),
         }
     }
 
@@ -604,10 +593,6 @@ impl SendPacket {
         &self.chan_id_attr_on_b.dst_channel_id
     }
 
-    pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering_attr.order
-    }
-
     pub fn event_type(&self) -> &str {
         SEND_PACKET_EVENT
     }
@@ -626,7 +611,6 @@ impl TryFrom<SendPacket> for abci::Event {
         attributes.push(v.chan_id_attr_on_a.into());
         attributes.push(v.port_id_attr_on_b.into());
         attributes.push(v.chan_id_attr_on_b.into());
-        attributes.push(v.channel_ordering_attr.into());
 
         Ok(abci::Event {
             kind: SEND_PACKET_EVENT.to_string(),
@@ -658,11 +642,10 @@ pub struct ReceivePacket {
     chan_id_attr_on_a: SrcChannelIdAttribute,
     port_id_attr_on_b: DstPortIdAttribute,
     chan_id_attr_on_b: DstChannelIdAttribute,
-    channel_ordering_attr: ChannelOrderingAttribute,
 }
 
 impl ReceivePacket {
-    pub fn new(packet: Packet, channel_ordering: Order) -> Self {
+    pub fn new(packet: Packet) -> Self {
         let payload = packet.payloads[0].clone();
         Self {
             packet_data_attr: payload.data.into(),
@@ -673,7 +656,6 @@ impl ReceivePacket {
             chan_id_attr_on_a: packet.header.source_client.into(),
             port_id_attr_on_b: payload.header.target_port.1.into(),
             chan_id_attr_on_b: packet.header.target_client.into(),
-            channel_ordering_attr: channel_ordering.into(),
         }
     }
 
@@ -709,10 +691,6 @@ impl ReceivePacket {
         &self.chan_id_attr_on_b.dst_channel_id
     }
 
-    pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering_attr.order
-    }
-
     pub fn event_type(&self) -> &str {
         RECEIVE_PACKET_EVENT
     }
@@ -731,7 +709,6 @@ impl TryFrom<ReceivePacket> for abci::Event {
         attributes.push(v.chan_id_attr_on_a.into());
         attributes.push(v.port_id_attr_on_b.into());
         attributes.push(v.chan_id_attr_on_b.into());
-        attributes.push(v.channel_ordering_attr.into());
 
         Ok(abci::Event {
             kind: RECEIVE_PACKET_EVENT.to_string(),
@@ -867,11 +844,10 @@ pub struct AcknowledgePacket {
     chan_id_attr_on_a: SrcChannelIdAttribute,
     port_id_attr_on_b: DstPortIdAttribute,
     chan_id_attr_on_b: DstChannelIdAttribute,
-    channel_ordering_attr: ChannelOrderingAttribute,
 }
 
 impl AcknowledgePacket {
-    pub fn new(packet: Packet, channel_ordering: Order) -> Self {
+    pub fn new(packet: Packet) -> Self {
         let payload = packet.payloads[0].clone();
         Self {
             timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
@@ -881,7 +857,6 @@ impl AcknowledgePacket {
             chan_id_attr_on_a: packet.header.source_client.into(),
             port_id_attr_on_b: payload.header.target_port.1.into(),
             chan_id_attr_on_b: packet.header.target_client.into(),
-            channel_ordering_attr: channel_ordering.into(),
         }
     }
 
@@ -913,10 +888,6 @@ impl AcknowledgePacket {
         &self.chan_id_attr_on_b.dst_channel_id
     }
 
-    pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering_attr.order
-    }
-
     pub fn event_type(&self) -> &str {
         ACK_PACKET_EVENT
     }
@@ -936,7 +907,6 @@ impl TryFrom<AcknowledgePacket> for abci::Event {
                 v.chan_id_attr_on_a.into(),
                 v.port_id_attr_on_b.into(),
                 v.chan_id_attr_on_b.into(),
-                v.channel_ordering_attr.into(),
             ],
         })
     }
@@ -964,11 +934,10 @@ pub struct TimeoutPacket {
     chan_id_attr_on_a: SrcChannelIdAttribute,
     port_id_attr_on_b: DstPortIdAttribute,
     chan_id_attr_on_b: DstChannelIdAttribute,
-    channel_ordering_attr: ChannelOrderingAttribute,
 }
 
 impl TimeoutPacket {
-    pub fn new(packet: Packet, channel_ordering: Order) -> Self {
+    pub fn new(packet: Packet) -> Self {
         let payload = packet.payloads[0].clone();
         Self {
             timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
@@ -978,7 +947,6 @@ impl TimeoutPacket {
             chan_id_attr_on_a: packet.header.source_client.into(),
             port_id_attr_on_b: payload.header.target_port.1.into(),
             chan_id_attr_on_b: packet.header.target_client.into(),
-            channel_ordering_attr: channel_ordering.into(),
         }
     }
 
@@ -1010,10 +978,6 @@ impl TimeoutPacket {
         &self.chan_id_attr_on_b.dst_channel_id
     }
 
-    pub fn channel_ordering(&self) -> &Order {
-        &self.channel_ordering_attr.order
-    }
-
     pub fn event_type(&self) -> &str {
         TIMEOUT_EVENT
     }
@@ -1033,7 +997,6 @@ impl TryFrom<TimeoutPacket> for abci::Event {
                 v.chan_id_attr_on_a.into(),
                 v.port_id_attr_on_b.into(),
                 v.chan_id_attr_on_b.into(),
-                v.channel_ordering_attr.into(),
             ],
         })
     }

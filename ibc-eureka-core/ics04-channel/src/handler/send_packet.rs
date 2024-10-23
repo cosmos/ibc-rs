@@ -1,4 +1,3 @@
-use ibc_eureka_core_channel_types::channel::Counterparty;
 use ibc_eureka_core_channel_types::commitment::compute_packet_commitment;
 use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::SendPacket;
@@ -37,20 +36,8 @@ pub fn send_packet_validate(
 
     let port_id_on_a = &payload.header.source_port.1;
     let channel_id_on_a = &packet.header.source_client;
-    let port_id_on_b = &payload.header.target_port.1;
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
-
-    let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
-
-    // Checks the channel end not be `Closed`.
-    // This allows for optimistic packet processing before a channel opens
-    chan_end_on_a.verify_not_closed()?;
-
-    let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
-
-    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
     let client_id_on_a = channel_id_on_b.as_ref();
 
@@ -137,7 +124,7 @@ pub fn send_packet_execute(
         let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
         ctx_a.log_message("success: packet send".to_string())?;
-        let event = IbcEvent::SendPacket(SendPacket::new(packet, chan_end_on_a.ordering));
+        let event = IbcEvent::SendPacket(SendPacket::new(packet));
         ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
         ctx_a.emit_ibc_event(event)?;
     }

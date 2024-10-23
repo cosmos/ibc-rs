@@ -1,4 +1,3 @@
-use ibc_eureka_core_channel_types::channel::{Counterparty, Order, State as ChannelState};
 use ibc_eureka_core_channel_types::commitment::{
     compute_ack_commitment, compute_packet_commitment,
 };
@@ -43,7 +42,6 @@ where
     let seq_on_a = &packet.header.seq_on_a;
 
     let chan_end_path_on_b = ChannelEndPath::new(port_id_on_b, channel_id_on_b);
-    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // Check if another relayer already relayed the packet.
     // We don't want to fail the transaction in this case.
@@ -105,10 +103,7 @@ where
         ctx_b.log_message("success: packet receive".to_string())?;
         ctx_b.log_message("success: packet write acknowledgement".to_string())?;
 
-        let event = IbcEvent::ReceivePacket(ReceivePacket::new(
-            msg.packet.clone(),
-            chan_end_on_b.ordering,
-        ));
+        let event = IbcEvent::ReceivePacket(ReceivePacket::new(msg.packet.clone()));
         ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
         ctx_b.emit_ibc_event(event)?;
         let event =
@@ -145,13 +140,8 @@ where
     let data = &payload.data;
 
     let chan_end_path_on_b = ChannelEndPath::new(port_id_on_b, channel_id_on_b);
-    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
-
-    chan_end_on_b.verify_state_matches(&ChannelState::Open)?;
 
     let counterparty = Counterparty::new(port_id_on_a.clone(), Some(channel_id_on_a.clone()));
-
-    chan_end_on_b.verify_counterparty_matches(&counterparty)?;
 
     let latest_height = ctx_b.host_height()?;
     if packet.header.timeout_height_on_b.has_expired(latest_height) {

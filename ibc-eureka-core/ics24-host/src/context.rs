@@ -1,6 +1,5 @@
 use core::time::Duration;
 
-use ibc_eureka_core_channel_types::channel::ChannelEnd;
 use ibc_eureka_core_channel_types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc_eureka_core_channel_types::packet::Receipt;
 use ibc_eureka_core_client_context::prelude::*;
@@ -10,7 +9,7 @@ use ibc_eureka_core_handler_types::events::IbcEvent;
 use ibc_eureka_core_host_types::error::HostError;
 use ibc_eureka_core_host_types::identifiers::Sequence;
 use ibc_eureka_core_host_types::path::{
-    AckPath, ChannelEndPath, CommitmentPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, CommitmentPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Signer, Timestamp};
@@ -60,12 +59,6 @@ pub trait ValidationContext {
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;
-
-    /// Returns a counter on how many connections have been created thus far.
-    fn connection_counter(&self) -> Result<u64, HostError>;
-
-    /// Returns the `ChannelEnd` for the given `port_id` and `chan_id`.
-    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HostError>;
 
     /// Returns the sequence number for the next packet to be sent for the given store path
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, HostError>;
@@ -163,13 +156,6 @@ pub trait ExecutionContext: ValidationContext {
 
     /// Deletes the packet acknowledgement at the given store path
     fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), HostError>;
-
-    /// Stores the given channel_end at a path associated with the port_id and channel_id.
-    fn store_channel(
-        &mut self,
-        channel_end_path: &ChannelEndPath,
-        channel_end: ChannelEnd,
-    ) -> Result<(), HostError>;
 
     /// Stores the given `nextSequenceSend` number at the given store path
     fn store_next_sequence_send(

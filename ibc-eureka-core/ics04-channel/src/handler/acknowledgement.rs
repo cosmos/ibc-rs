@@ -1,4 +1,3 @@
-use ibc_eureka_core_channel_types::channel::{Counterparty, Order, State as ChannelState};
 use ibc_eureka_core_channel_types::commitment::{
     compute_ack_commitment, compute_packet_commitment,
 };
@@ -35,25 +34,21 @@ pub fn acknowledgement_packet_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let payload = &msg.packet.payloads[0];
+    let packet = &msg.packet;
+    let payload = &packet.payloads[0];
 
     let port_id_on_a = &payload.header.source_port.1;
-    let channel_id_on_a = &msg.packet.header.source_client;
-    let seq_on_a = &msg.packet.header.seq_on_a;
+    let channel_id_on_a = &packet.header.source_client;
+    let seq_on_a = &packet.header.seq_on_a;
 
     let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // In all cases, this event is emitted
-    let event = IbcEvent::AcknowledgePacket(AcknowledgePacket::new(
-        msg.packet.clone(),
-        chan_end_on_a.ordering,
-    ));
+    let event = IbcEvent::AcknowledgePacket(AcknowledgePacket::new(packet.clone()));
     ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
     ctx_a.emit_ibc_event(event)?;
 
-    let commitment_path_on_a =
-        CommitmentPath::new(port_id_on_a, channel_id_on_a, msg.packet.header.seq_on_a);
+    let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 
     // check if we're in the NO-OP case
     if ctx_a.get_packet_commitment(&commitment_path_on_a).is_err() {
@@ -65,7 +60,7 @@ where
     };
 
     let (extras, cb_result) =
-        module.on_acknowledgement_packet_execute(&msg.packet, &msg.acknowledgement, &msg.signer);
+        module.on_acknowledgement_packet_execute(packet, &msg.acknowledgement, &msg.signer);
 
     cb_result?;
 
@@ -116,13 +111,8 @@ where
     let data = &payload.data;
 
     let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
-
-    chan_end_on_a.verify_state_matches(&ChannelState::Open)?;
 
     let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
-
-    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
     let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 

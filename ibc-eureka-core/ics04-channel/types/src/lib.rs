@@ -16,7 +16,7 @@ extern crate alloc;
 #[cfg(feature = "std")]
 extern crate std;
 
-pub mod channel;
+// pub mod channel;
 pub mod error;
 pub mod events;
 

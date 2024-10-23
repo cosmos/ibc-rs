@@ -1,4 +1,3 @@
-use ibc_eureka_core_channel_types::channel::{Counterparty, Order, State};
 use ibc_eureka_core_channel_types::commitment::compute_packet_commitment;
 use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::{ChannelClosed, TimeoutPacket};
@@ -60,10 +59,9 @@ where
     let seq_on_a = &packet.header.seq_on_a;
 
     let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     // In all cases, this event is emitted
-    let event = IbcEvent::TimeoutPacket(TimeoutPacket::new(packet.clone(), chan_end_on_a.ordering));
+    let event = IbcEvent::TimeoutPacket(TimeoutPacket::new(packet.clone()));
     ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
     ctx_a.emit_ibc_event(event)?;
 
@@ -107,7 +105,6 @@ where
                 channel_id_on_a.clone(),
                 chan_end_on_a.counterparty().port_id.clone(),
                 chan_end_on_a.counterparty().channel_id.clone(),
-                chan_end_on_a.ordering,
             ));
             ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
             ctx_a.emit_ibc_event(event)?;
@@ -140,14 +137,6 @@ where
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
-
-    let chan_end_on_a = ctx_a.channel_end(&ChannelEndPath::new(port_id_on_a, channel_id_on_a))?;
-
-    chan_end_on_a.verify_state_matches(&State::Open)?;
-
-    let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
-
-    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
     //verify packet commitment
     let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);

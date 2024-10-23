@@ -8,7 +8,6 @@ use ibc_eureka_core_host_types::identifiers::Sequence;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
 
-use super::channel::Counterparty;
 use super::timeout::TimeoutHeight;
 use crate::commitment::PacketCommitment;
 use crate::timeout::TimeoutTimestamp;
@@ -51,11 +50,6 @@ pub enum ChannelError {
     MissingCounterparty,
     /// missing timeout
     MissingTimeout,
-    /// mismatched counterparty: expected `{expected}`, actual `{actual}`
-    MismatchedCounterparty {
-        expected: Counterparty,
-        actual: Counterparty,
-    },
     /// mismatched packet sequence: expected `{expected}`, actual `{actual}`
     MismatchedPacketSequence {
         expected: Sequence,
