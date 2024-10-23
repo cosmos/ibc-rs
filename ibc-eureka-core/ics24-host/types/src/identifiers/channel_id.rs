@@ -64,6 +64,12 @@ impl AsRef<str> for ChannelId {
     }
 }
 
+impl AsRef<ClientId> for ChannelId {
+    fn as_ref(&self) -> &ClientId {
+        &self.0
+    }
+}
+
 /// Equality check against string literal (satisfies &ChannelId == &str).
 /// ```
 /// use core::str::FromStr;
