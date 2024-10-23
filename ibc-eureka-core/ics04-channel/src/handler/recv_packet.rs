@@ -37,8 +37,14 @@ pub fn recv_packet_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let chan_end_path_on_b =
-        ChannelEndPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+    let packet = &msg.packet;
+    let payload = &packet.payloads[0];
+
+    let port_id_on_b = &payload.header.target_port.1;
+    let channel_id_on_b = &packet.header.target_client;
+    let seq_on_a = &packet.header.seq_on_a;
+
+    let chan_end_path_on_b = ChannelEndPath::new(port_id_on_b, channel_id_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     // Check if another relayer already relayed the packet.
@@ -48,19 +54,16 @@ where
             // Note: ibc-go doesn't make the check for `Order::None` channels
             Order::None => false,
             Order::Unordered => {
-                let packet = &msg.packet;
-                let receipt_path_on_b =
-                    ReceiptPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
+                let receipt_path_on_b = ReceiptPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
                 ctx_b.get_packet_receipt(&receipt_path_on_b)?.is_ok()
             }
             Order::Ordered => {
-                let seq_recv_path_on_b =
-                    SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+                let seq_recv_path_on_b = SeqRecvPath::new(port_id_on_b, channel_id_on_b);
                 let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
 
                 // the sequence number has already been incremented, so
                 // another relayer already relayed the packet
-                msg.packet.seq_on_a < next_seq_recv
+                seq_on_a < &next_seq_recv
             }
         };
 
@@ -77,26 +80,21 @@ where
         match chan_end_on_b.ordering {
             Order::Unordered => {
                 let receipt_path_on_b = ReceiptPath {
-                    port_id: msg.packet.port_id_on_b.clone(),
-                    channel_id: msg.packet.chan_id_on_b.clone(),
-                    sequence: msg.packet.seq_on_a,
+                    port_id: port_id_on_b.clone(),
+                    channel_id: channel_id_on_b.clone(),
+                    sequence: *seq_on_a,
                 };
 
                 ctx_b.store_packet_receipt(&receipt_path_on_b, Receipt::Ok)?;
             }
             Order::Ordered => {
-                let seq_recv_path_on_b =
-                    SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+                let seq_recv_path_on_b = SeqRecvPath::new(port_id_on_b, channel_id_on_b);
                 let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
                 ctx_b.store_next_sequence_recv(&seq_recv_path_on_b, next_seq_recv.increment())?;
             }
             _ => {}
         }
-        let ack_path_on_b = AckPath::new(
-            &msg.packet.port_id_on_b,
-            &msg.packet.chan_id_on_b,
-            msg.packet.seq_on_a,
-        );
+        let ack_path_on_b = AckPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
         // `writeAcknowledgement` handler state changes
         ctx_b.store_packet_acknowledgement(
             &ack_path_on_b,
@@ -143,16 +141,22 @@ where
 {
     ctx_b.validate_message_signer(&msg.signer)?;
 
-    let chan_end_path_on_b =
-        ChannelEndPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+    let packet = &msg.packet;
+    let payload = &packet.payloads[0];
+
+    let port_id_on_a = &payload.header.source_port.1;
+    let channel_id_on_a = &packet.header.source_client;
+    let port_id_on_b = &payload.header.target_port.1;
+    let channel_id_on_b = &packet.header.target_client;
+    let seq_on_a = &packet.header.seq_on_a;
+    let data = &payload.data;
+
+    let chan_end_path_on_b = ChannelEndPath::new(port_id_on_b, channel_id_on_b);
     let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
 
     chan_end_on_b.verify_state_matches(&ChannelState::Open)?;
 
-    let counterparty = Counterparty::new(
-        msg.packet.port_id_on_a.clone(),
-        Some(msg.packet.chan_id_on_a.clone()),
-    );
+    let counterparty = Counterparty::new(port_id_on_a.clone(), Some(channel_id_on_a.clone()));
 
     chan_end_on_b.verify_counterparty_matches(&counterparty)?;
 
@@ -162,16 +166,16 @@ where
     conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
 
     let latest_height = ctx_b.host_height()?;
-    if msg.packet.timeout_height_on_b.has_expired(latest_height) {
+    if packet.header.timeout_height_on_b.has_expired(latest_height) {
         return Err(ChannelError::InsufficientPacketHeight {
             chain_height: latest_height,
-            timeout_height: msg.packet.timeout_height_on_b,
+            timeout_height: packet.header.timeout_height_on_b,
         });
     }
 
     let latest_timestamp = ctx_b.host_timestamp()?;
-    if msg
-        .packet
+    if packet
+        .header
         .timeout_timestamp_on_b
         .has_expired(&latest_timestamp)
     {
@@ -200,15 +204,11 @@ where
             client_val_ctx_b.consensus_state(&client_cons_state_path_on_b)?;
 
         let expected_commitment_on_a = compute_packet_commitment(
-            &msg.packet.data,
-            &msg.packet.timeout_height_on_b,
-            &msg.packet.timeout_timestamp_on_b,
+            data,
+            &packet.header.timeout_height_on_b,
+            &packet.header.timeout_timestamp_on_b,
         );
-        let commitment_path_on_a = CommitmentPath::new(
-            &msg.packet.port_id_on_a,
-            &msg.packet.chan_id_on_a,
-            msg.packet.seq_on_a,
-        );
+        let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 
         verify_conn_delay_passed(ctx_b, msg.proof_height_on_a, &conn_end_on_b)?;
 
@@ -224,17 +224,16 @@ where
 
     match chan_end_on_b.ordering {
         Order::Ordered => {
-            let seq_recv_path_on_b =
-                SeqRecvPath::new(&msg.packet.port_id_on_b, &msg.packet.chan_id_on_b);
+            let seq_recv_path_on_b = SeqRecvPath::new(port_id_on_b, channel_id_on_b);
             let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
-            if msg.packet.seq_on_a > next_seq_recv {
+            if seq_on_a > &next_seq_recv {
                 return Err(ChannelError::MismatchedPacketSequence {
-                    actual: msg.packet.seq_on_a,
+                    actual: *seq_on_a,
                     expected: next_seq_recv,
                 });
             }
 
-            if msg.packet.seq_on_a == next_seq_recv {
+            if seq_on_a == &next_seq_recv {
                 // Case where the recvPacket is successful and an
                 // acknowledgement will be written (not a no-op)
                 validate_write_acknowledgement(ctx_b, msg)?;
@@ -265,10 +264,16 @@ fn validate_write_acknowledgement<Ctx>(ctx_b: &Ctx, msg: &MsgRecvPacket) -> Resu
 where
     Ctx: ValidationContext,
 {
-    let packet = msg.packet.clone();
-    let ack_path_on_b = AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
+    let packet = &msg.packet;
+    let payload = &packet.payloads[0];
+
+    let port_id_on_b = &payload.header.target_port.1;
+    let channel_id_on_b = &packet.header.target_client;
+    let seq_on_a = &packet.header.seq_on_a;
+
+    let ack_path_on_b = AckPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
     if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {
-        return Err(ChannelError::DuplicateAcknowledgment(msg.packet.seq_on_a));
+        return Err(ChannelError::DuplicateAcknowledgment(*seq_on_a));
     }
 
     Ok(())

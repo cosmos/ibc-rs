@@ -1,5 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenInit`.
 
+use core::str::FromStr;
+
 use ibc_eureka_core_channel_types::channel::{ChannelEnd, Counterparty, State};
 use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::OpenInit;
@@ -21,7 +23,8 @@ where
     ValCtx: ValidationContext,
 {
     validate(ctx_a, &msg)?;
-    let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
+    // todo(rano): hack
+    let chan_id_on_a = ChannelId::from_str("00-dummy-0")?;
 
     module.on_chan_open_init_validate(
         msg.ordering,
@@ -43,7 +46,8 @@ pub fn chan_open_init_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let chan_id_on_a = ChannelId::new(ctx_a.channel_counter()?);
+    // todo(rano): hack
+    let chan_id_on_a = ChannelId::from_str("00-dummy-0")?;
     let (extras, version) = module.on_chan_open_init_execute(
         msg.ordering,
         &msg.connection_hops_on_a,
