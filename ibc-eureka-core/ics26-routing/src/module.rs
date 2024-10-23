@@ -6,7 +6,7 @@ use ibc_eureka_core_channel_types::channel::{Counterparty, Order};
 use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::packet::Packet;
 use ibc_eureka_core_channel_types::Version;
-use ibc_eureka_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc_eureka_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_eureka_core_router_types::module::ModuleExtras;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
@@ -15,7 +15,6 @@ pub trait Module: Debug {
     fn on_chan_open_init_validate(
         &self,
         order: Order,
-        connection_hops: &[ConnectionId],
         port_id: &PortId,
         channel_id: &ChannelId,
         counterparty: &Counterparty,
@@ -25,7 +24,6 @@ pub trait Module: Debug {
     fn on_chan_open_init_execute(
         &mut self,
         order: Order,
-        connection_hops: &[ConnectionId],
         port_id: &PortId,
         channel_id: &ChannelId,
         counterparty: &Counterparty,
@@ -35,7 +33,6 @@ pub trait Module: Debug {
     fn on_chan_open_try_validate(
         &self,
         order: Order,
-        connection_hops: &[ConnectionId],
         port_id: &PortId,
         channel_id: &ChannelId,
         counterparty: &Counterparty,
@@ -45,7 +42,6 @@ pub trait Module: Debug {
     fn on_chan_open_try_execute(
         &mut self,
         order: Order,
-        connection_hops: &[ConnectionId],
         port_id: &PortId,
         channel_id: &ChannelId,
         counterparty: &Counterparty,

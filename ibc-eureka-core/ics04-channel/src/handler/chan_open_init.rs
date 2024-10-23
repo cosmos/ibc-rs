@@ -28,7 +28,6 @@ where
 
     module.on_chan_open_init_validate(
         msg.ordering,
-        &msg.connection_hops_on_a,
         &msg.port_id_on_a,
         &chan_id_on_a,
         &Counterparty::new(msg.port_id_on_b.clone(), None),
@@ -50,7 +49,6 @@ where
     let chan_id_on_a = ChannelId::from_str("00-dummy-0")?;
     let (extras, version) = module.on_chan_open_init_execute(
         msg.ordering,
-        &msg.connection_hops_on_a,
         &msg.port_id_on_a,
         &chan_id_on_a,
         &Counterparty::new(msg.port_id_on_b.clone(), None),
@@ -65,7 +63,6 @@ where
             State::Init,
             msg.ordering,
             Counterparty::new(msg.port_id_on_b.clone(), None),
-            msg.connection_hops_on_a.clone(),
             msg.version_proposal.clone(),
         )?;
         let chan_end_path_on_a = ChannelEndPath::new(&msg.port_id_on_a, &chan_id_on_a);
@@ -93,7 +90,6 @@ where
             msg.port_id_on_a.clone(),
             chan_id_on_a.clone(),
             msg.port_id_on_b,
-            conn_id_on_a,
             version,
         ));
         ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
@@ -117,10 +113,6 @@ where
 {
     ctx_a.validate_message_signer(&msg.signer)?;
 
-    msg.verify_connection_hops_length()?;
-    // An IBC connection running on the local (host) chain should exist.
-    let conn_end_on_a = ctx_a.connection_end(&msg.connection_hops_on_a[0])?;
-
     // Note: Not needed check if the connection end is OPEN. Optimistic channel handshake is allowed.
 
     let client_id_on_a = conn_end_on_a.client_id();
@@ -130,10 +122,6 @@ where
     client_state_of_b_on_a
         .status(ctx_a.get_client_validation_context(), client_id_on_a)?
         .verify_is_active()?;
-
-    let conn_version = conn_end_on_a.versions();
-
-    conn_version[0].verify_feature_supported(msg.ordering.to_string())?;
 
     Ok(())
 }

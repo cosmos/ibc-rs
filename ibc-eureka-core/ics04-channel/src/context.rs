@@ -3,10 +3,9 @@
 use ibc_eureka_core_channel_types::channel::ChannelEnd;
 use ibc_eureka_core_channel_types::commitment::PacketCommitment;
 use ibc_eureka_core_client::context::prelude::*;
-use ibc_eureka_core_connection::types::ConnectionEnd;
 use ibc_eureka_core_handler_types::events::IbcEvent;
 use ibc_eureka_core_host::types::error::HostError;
-use ibc_eureka_core_host::types::identifiers::{ConnectionId, Sequence};
+use ibc_eureka_core_host::types::identifiers::Sequence;
 use ibc_eureka_core_host::types::path::{ChannelEndPath, CommitmentPath, SeqSendPath};
 use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
@@ -20,9 +19,6 @@ pub trait SendPacketValidationContext {
 
     /// Returns the ChannelEnd for the given `port_id` and `chan_id`.
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HostError>;
-
-    /// Returns the ConnectionState for the given identifier `connection_id`.
-    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, HostError>;
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, HostError>;
 }
@@ -39,10 +35,6 @@ where
 
     fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HostError> {
         self.channel_end(channel_end_path)
-    }
-
-    fn connection_end(&self, connection_id: &ConnectionId) -> Result<ConnectionEnd, HostError> {
-        self.connection_end(connection_id)
     }
 
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, HostError> {

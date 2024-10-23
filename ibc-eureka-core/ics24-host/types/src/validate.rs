@@ -1,7 +1,7 @@
 use ibc_primitives::prelude::*;
 
 use crate::error::IdentifierError as Error;
-use crate::identifiers::{ChannelId, ConnectionId};
+use crate::identifiers::ChannelId;
 
 const VALID_SPECIAL_CHARS: &str = "._+-#[]<>";
 
@@ -97,16 +97,16 @@ pub fn validate_client_identifier(id: &str) -> Result<(), Error> {
     validate_identifier_length(id, 9, 64)
 }
 
-/// Default validator function for Connection identifiers.
-///
-/// A valid connection identifier must be between 10-64 characters, as specified
-/// in the ICS-24 spec.
-pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
-    validate_identifier_chars(id)?;
-    validate_identifier_length(id, 10, 64)?;
-    validate_named_u64_index(id, ConnectionId::prefix())?;
-    Ok(())
-}
+// /// Default validator function for Connection identifiers.
+// ///
+// /// A valid connection identifier must be between 10-64 characters, as specified
+// /// in the ICS-24 spec.
+// pub fn validate_connection_identifier(id: &str) -> Result<(), Error> {
+//     validate_identifier_chars(id)?;
+//     validate_identifier_length(id, 10, 64)?;
+//     validate_named_u64_index(id, ConnectionId::prefix())?;
+//     Ok(())
+// }
 
 /// Default validator function for Port identifiers.
 ///
@@ -150,39 +150,39 @@ mod tests {
         assert!(id.is_err())
     }
 
-    #[test]
-    fn parse_invalid_connection_id_min() {
-        // invalid min connection id
-        let id = validate_connection_identifier("connect01");
-        assert!(id.is_err())
-    }
+    // #[test]
+    // fn parse_invalid_connection_id_min() {
+    //     // invalid min connection id
+    //     let id = validate_connection_identifier("connect01");
+    //     assert!(id.is_err())
+    // }
 
-    #[test]
-    fn parse_connection_id_max() {
-        // invalid max connection id (test string length is 65)
-        let id = validate_connection_identifier(
-            "ihhankr30iy4nna65hjl2wjod7182io1t2s7u3ip3wqtbbn1sl0rgcntqc540r36r",
-        );
-        assert!(id.is_err())
-    }
+    // #[test]
+    // fn parse_connection_id_max() {
+    //     // invalid max connection id (test string length is 65)
+    //     let id = validate_connection_identifier(
+    //         "ihhankr30iy4nna65hjl2wjod7182io1t2s7u3ip3wqtbbn1sl0rgcntqc540r36r",
+    //     );
+    //     assert!(id.is_err())
+    // }
 
-    #[test]
-    fn parse_invalid_connection_id_indexed() {
-        // valid connection id with index
-        validate_connection_identifier("connection-0").expect("success");
-        validate_connection_identifier("connection-123").expect("success");
-        validate_connection_identifier("connection-18446744073709551615").expect("success");
-    }
+    // #[test]
+    // fn parse_invalid_connection_id_indexed() {
+    //     // valid connection id with index
+    //     validate_connection_identifier("connection-0").expect("success");
+    //     validate_connection_identifier("connection-123").expect("success");
+    //     validate_connection_identifier("connection-18446744073709551615").expect("success");
+    // }
 
-    #[test]
-    fn parse_invalid_connection_id_non_indexed() {
-        // invalid indexing for connection id
-        validate_connection_identifier("connection-0123").expect_err("failure");
-        validate_connection_identifier("connection0123").expect_err("failure");
-        validate_connection_identifier("connection000").expect_err("failure");
-        // 1 << 64 = 18446744073709551616
-        validate_connection_identifier("connection-18446744073709551616").expect_err("failure");
-    }
+    // #[test]
+    // fn parse_invalid_connection_id_non_indexed() {
+    //     // invalid indexing for connection id
+    //     validate_connection_identifier("connection-0123").expect_err("failure");
+    //     validate_connection_identifier("connection0123").expect_err("failure");
+    //     validate_connection_identifier("connection000").expect_err("failure");
+    //     // 1 << 64 = 18446744073709551616
+    //     validate_connection_identifier("connection-18446744073709551616").expect_err("failure");
+    // }
 
     #[test]
     fn parse_invalid_channel_id_min() {

@@ -3,7 +3,6 @@
 use displaydoc::Display;
 use ibc_eureka_core_client_types::error::ClientError;
 use ibc_eureka_core_client_types::Height;
-use ibc_eureka_core_connection_types::error::ConnectionError;
 use ibc_eureka_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_eureka_core_host_types::identifiers::Sequence;
 use ibc_primitives::prelude::*;
@@ -24,8 +23,6 @@ pub enum ChannelError {
     Host(HostError),
     /// client error: {0}
     Client(ClientError),
-    /// connection error: {0}
-    Connection(ConnectionError),
     /// timestamp error: {0}
     Timestamp(TimestampError),
     /// packet acknowledgment for sequence `{0}` already exists
@@ -87,7 +84,6 @@ impl std::error::Error for ChannelError {
         match &self {
             Self::Decoding(e) => Some(e),
             Self::Client(e) => Some(e),
-            Self::Connection(e) => Some(e),
             Self::Host(e) => Some(e),
             Self::Timestamp(e) => Some(e),
             _ => None,

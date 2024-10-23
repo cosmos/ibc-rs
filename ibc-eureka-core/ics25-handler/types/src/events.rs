@@ -2,7 +2,6 @@
 
 use ibc_eureka_core_channel_types::events as ChannelEvents;
 use ibc_eureka_core_client_types::events::{self as ClientEvents};
-use ibc_eureka_core_connection_types::events as ConnectionEvents;
 use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_eureka_core_router_types::event::ModuleEvent;
 use ibc_primitives::prelude::*;
@@ -31,11 +30,6 @@ pub enum IbcEvent {
     UpgradeClient(ClientEvents::UpgradeClient),
     ClientMisbehaviour(ClientEvents::ClientMisbehaviour),
 
-    OpenInitConnection(ConnectionEvents::OpenInit),
-    OpenTryConnection(ConnectionEvents::OpenTry),
-    OpenAckConnection(ConnectionEvents::OpenAck),
-    OpenConfirmConnection(ConnectionEvents::OpenConfirm),
-
     OpenInitChannel(ChannelEvents::OpenInit),
     OpenTryChannel(ChannelEvents::OpenTry),
     OpenAckChannel(ChannelEvents::OpenAck),
@@ -63,10 +57,6 @@ impl TryFrom<IbcEvent> for abci::Event {
             IbcEvent::UpdateClient(event) => event.into(),
             IbcEvent::UpgradeClient(event) => event.into(),
             IbcEvent::ClientMisbehaviour(event) => event.into(),
-            IbcEvent::OpenInitConnection(event) => event.into(),
-            IbcEvent::OpenTryConnection(event) => event.into(),
-            IbcEvent::OpenAckConnection(event) => event.into(),
-            IbcEvent::OpenConfirmConnection(event) => event.into(),
             IbcEvent::OpenInitChannel(event) => event.into(),
             IbcEvent::OpenTryChannel(event) => event.into(),
             IbcEvent::OpenAckChannel(event) => event.into(),
@@ -95,10 +85,6 @@ impl IbcEvent {
             IbcEvent::UpdateClient(event) => event.event_type(),
             IbcEvent::ClientMisbehaviour(event) => event.event_type(),
             IbcEvent::UpgradeClient(event) => event.event_type(),
-            IbcEvent::OpenInitConnection(event) => event.event_type(),
-            IbcEvent::OpenTryConnection(event) => event.event_type(),
-            IbcEvent::OpenAckConnection(event) => event.event_type(),
-            IbcEvent::OpenConfirmConnection(event) => event.event_type(),
             IbcEvent::OpenInitChannel(event) => event.event_type(),
             IbcEvent::OpenTryChannel(event) => event.event_type(),
             IbcEvent::OpenAckChannel(event) => event.event_type(),

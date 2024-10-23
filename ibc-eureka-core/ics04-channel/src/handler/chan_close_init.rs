@@ -4,7 +4,6 @@ use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::CloseInit;
 use ibc_eureka_core_channel_types::msgs::MsgChannelCloseInit;
 use ibc_eureka_core_client::context::prelude::*;
-use ibc_eureka_core_connection::types::State as ConnectionState;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_eureka_core_host::types::path::ChannelEndPath;
 use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
@@ -60,14 +59,12 @@ where
                 .channel_id
                 .clone()
                 .ok_or(ChannelError::MissingCounterparty)?;
-            let conn_id_on_a = chan_end_on_a.connection_hops[0].clone();
 
             IbcEvent::CloseInitChannel(CloseInit::new(
                 msg.port_id_on_a.clone(),
                 msg.chan_id_on_a.clone(),
                 port_id_on_b,
                 chan_id_on_b,
-                conn_id_on_a,
             ))
         };
         ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
@@ -96,13 +93,6 @@ where
 
     // Validate that the channel end is in a state where it can be closed.
     chan_end_on_a.verify_not_closed()?;
-
-    // An OPEN IBC connection running on the local (host) chain should exist.
-    chan_end_on_a.verify_connection_hops_length()?;
-
-    let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
-
-    conn_end_on_a.verify_state_matches(&ConnectionState::Open)?;
 
     let client_id_on_a = conn_end_on_a.client_id();
 

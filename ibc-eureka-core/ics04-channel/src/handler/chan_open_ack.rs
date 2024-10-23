@@ -70,7 +70,6 @@ where
                 msg.chan_id_on_a.clone(),
                 port_id_on_b,
                 msg.chan_id_on_b,
-                conn_id_on_a,
             ))
         };
         ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
@@ -99,13 +98,6 @@ where
 
     // Validate that the channel end is in a state where it can be ack.
     chan_end_on_a.verify_state_matches(&ChannelState::Init)?;
-
-    // An OPEN IBC connection running on the local (host) chain should exist.
-    chan_end_on_a.verify_connection_hops_length()?;
-
-    let conn_end_on_a = ctx_a.connection_end(&chan_end_on_a.connection_hops()[0])?;
-
-    conn_end_on_a.verify_state_matches(&ConnectionState::Open)?;
 
     // Verify proofs
     {
@@ -139,7 +131,6 @@ where
             // fine to use A's ordering here
             *chan_end_on_a.ordering(),
             Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-            vec![conn_id_on_b.clone()],
             msg.version_on_b.clone(),
         )?;
         let chan_end_path_on_b = ChannelEndPath::new(port_id_on_b, &msg.chan_id_on_b);

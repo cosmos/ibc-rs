@@ -52,11 +52,7 @@ pub fn send_packet_validate(
 
     chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
-    let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
-
-    let conn_end_on_a = ctx_a.connection_end(conn_id_on_a)?;
-
-    let client_id_on_a = conn_end_on_a.client_id();
+    let client_id_on_a = channel_id_on_b.as_ref();
 
     let client_val_ctx_a = ctx_a.get_client_validation_context();
 
@@ -139,14 +135,9 @@ pub fn send_packet_execute(
     {
         let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
         let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
-        let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
         ctx_a.log_message("success: packet send".to_string())?;
-        let event = IbcEvent::SendPacket(SendPacket::new(
-            packet,
-            chan_end_on_a.ordering,
-            conn_id_on_a.clone(),
-        ));
+        let event = IbcEvent::SendPacket(SendPacket::new(packet, chan_end_on_a.ordering));
         ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
         ctx_a.emit_ibc_event(event)?;
     }

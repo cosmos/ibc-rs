@@ -34,7 +34,6 @@ where
 
     module.on_chan_open_try_validate(
         msg.ordering,
-        &msg.connection_hops_on_b,
         &msg.port_id_on_b,
         &chan_id_on_b,
         &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
@@ -56,14 +55,11 @@ where
     let chan_id_on_b = ChannelId::from_str("00-dummy-0")?;
     let (extras, version) = module.on_chan_open_try_execute(
         msg.ordering,
-        &msg.connection_hops_on_b,
         &msg.port_id_on_b,
         &chan_id_on_b,
         &Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
         &msg.version_supported_on_a,
     )?;
-
-    let conn_id_on_b = msg.connection_hops_on_b[0].clone();
 
     // state changes
     {
@@ -71,7 +67,6 @@ where
             ChannelState::TryOpen,
             msg.ordering,
             Counterparty::new(msg.port_id_on_a.clone(), Some(msg.chan_id_on_a.clone())),
-            msg.connection_hops_on_b.clone(),
             version.clone(),
         )?;
 
@@ -101,7 +96,6 @@ where
             chan_id_on_b.clone(),
             msg.port_id_on_a.clone(),
             msg.chan_id_on_a.clone(),
-            conn_id_on_b,
             version,
         ));
         ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
@@ -124,16 +118,6 @@ where
     Ctx: ValidationContext,
 {
     ctx_b.validate_message_signer(&msg.signer)?;
-
-    msg.verify_connection_hops_length()?;
-
-    let conn_end_on_b = ctx_b.connection_end(&msg.connection_hops_on_b[0])?;
-
-    conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
-
-    let conn_version = conn_end_on_b.versions();
-
-    conn_version[0].verify_feature_supported(msg.ordering.to_string())?;
 
     // Verify proofs
     {
@@ -166,7 +150,6 @@ where
             ChannelState::Init,
             msg.ordering,
             Counterparty::new(msg.port_id_on_b.clone(), None),
-            vec![conn_id_on_a.clone()],
             msg.version_supported_on_a.clone(),
         )?;
         let chan_end_path_on_a = ChannelEndPath::new(&port_id_on_a, &chan_id_on_a);

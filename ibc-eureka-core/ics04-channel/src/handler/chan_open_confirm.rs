@@ -71,7 +71,6 @@ where
             msg.chan_id_on_b.clone(),
             port_id_on_a,
             chan_id_on_a,
-            conn_id_on_b,
         ));
         ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
         ctx_b.emit_ibc_event(core_event)?;
@@ -142,7 +141,6 @@ where
             ChannelState::Open,
             *chan_end_on_b.ordering(),
             Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
-            vec![conn_id_on_a.clone()],
             chan_end_on_b.version.clone(),
         )?;
         let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, chan_id_on_a);

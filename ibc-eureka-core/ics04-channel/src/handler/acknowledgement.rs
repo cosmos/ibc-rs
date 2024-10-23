@@ -6,8 +6,6 @@ use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::AcknowledgePacket;
 use ibc_eureka_core_channel_types::msgs::MsgAcknowledgement;
 use ibc_eureka_core_client::context::prelude::*;
-use ibc_eureka_core_connection::delay::verify_conn_delay_passed;
-use ibc_eureka_core_connection::types::State as ConnectionState;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_eureka_core_host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, SeqAckPath,
@@ -45,13 +43,11 @@ where
 
     let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
-    let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
     // In all cases, this event is emitted
     let event = IbcEvent::AcknowledgePacket(AcknowledgePacket::new(
         msg.packet.clone(),
         chan_end_on_a.ordering,
-        conn_id_on_a.clone(),
     ));
     ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
     ctx_a.emit_ibc_event(event)?;
@@ -112,9 +108,9 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let port_id_on_a = &payload.header.source_port.1;
+    let (prefix_on_a, port_id_on_a) = &payload.header.source_port;
     let channel_id_on_a = &packet.header.source_client;
-    let port_id_on_b = &payload.header.target_port.1;
+    let (_, port_id_on_b) = &payload.header.target_port;
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
@@ -127,11 +123,6 @@ where
     let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
 
     chan_end_on_a.verify_counterparty_matches(&counterparty)?;
-
-    let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
-    let conn_end_on_a = ctx_a.connection_end(conn_id_on_a)?;
-
-    conn_end_on_a.verify_state_matches(&ConnectionState::Open)?;
 
     let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 
@@ -170,7 +161,8 @@ where
 
     // Verify proofs
     {
-        let client_id_on_a = conn_end_on_a.client_id();
+        // TODO(rano): avoid a vs b confusion
+        let client_id_on_a = channel_id_on_b.as_ref();
 
         let client_val_ctx_a = ctx_a.get_client_validation_context();
 
@@ -192,11 +184,9 @@ where
         let ack_commitment = compute_ack_commitment(&msg.acknowledgement);
         let ack_path_on_b = AckPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
 
-        verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
-
         // Verify the proof for the packet against the chain store.
         client_state_of_b_on_a.verify_membership(
-            conn_end_on_a.counterparty().prefix(),
+            prefix_on_a,
             &msg.proof_acked_on_b,
             consensus_state_of_b_on_a.root(),
             Path::Ack(ack_path_on_b),

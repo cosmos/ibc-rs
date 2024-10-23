@@ -1,14 +1,13 @@
 use ibc_eureka_core_client_types::Height;
 use ibc_eureka_core_commitment_types::commitment::CommitmentProofBytes;
 use ibc_eureka_core_host_types::error::DecodingError;
-use ibc_eureka_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc_eureka_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenTry as RawMsgChannelOpenTry;
 use ibc_proto::Protobuf;
 
-use crate::channel::{verify_connection_hops_length, ChannelEnd, Counterparty, Order, State};
-use crate::error::ChannelError;
+use crate::channel::{ChannelEnd, Counterparty, Order, State};
 use crate::Version;
 
 pub const CHAN_OPEN_TRY_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenTry";
@@ -25,7 +24,6 @@ pub const CHAN_OPEN_TRY_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenTry
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenTry {
     pub port_id_on_b: PortId,
-    pub connection_hops_on_b: Vec<ConnectionId>,
     pub port_id_on_a: PortId,
     pub chan_id_on_a: ChannelId,
     pub version_supported_on_a: Version,
@@ -37,15 +35,6 @@ pub struct MsgChannelOpenTry {
     #[deprecated(since = "0.22.0")]
     /// Only kept here for proper conversion to/from the raw type
     pub version_proposal: Version,
-}
-
-impl MsgChannelOpenTry {
-    /// Checks if the `connection_hops` has a length of `expected`.
-    ///
-    /// Note: The current IBC version only supports one connection hop.
-    pub fn verify_connection_hops_length(&self) -> Result<(), ChannelError> {
-        verify_connection_hops_length(&self.connection_hops_on_b, 1)
-    }
 }
 
 impl Protobuf<RawMsgChannelOpenTry> for MsgChannelOpenTry {}
@@ -77,7 +66,6 @@ impl TryFrom<RawMsgChannelOpenTry> for MsgChannelOpenTry {
         let msg = MsgChannelOpenTry {
             port_id_on_b: raw_msg.port_id.parse()?,
             ordering: chan_end_on_b.ordering,
-            connection_hops_on_b: chan_end_on_b.connection_hops,
             port_id_on_a: chan_end_on_b.remote.port_id,
             chan_id_on_a: chan_end_on_b.remote.channel_id.ok_or(
                 DecodingError::missing_raw_data("msg channel open try counterparty channel ID"),
@@ -104,7 +92,6 @@ impl From<MsgChannelOpenTry> for RawMsgChannelOpenTry {
             State::TryOpen,
             domain_msg.ordering,
             Counterparty::new(domain_msg.port_id_on_a, Some(domain_msg.chan_id_on_a)),
-            domain_msg.connection_hops_on_b,
             Version::empty(), // Excessive field to satisfy the type conversion
         );
         #[allow(deprecated)]

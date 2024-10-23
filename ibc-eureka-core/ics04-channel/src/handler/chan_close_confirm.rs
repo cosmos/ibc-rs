@@ -7,8 +7,6 @@ use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::CloseConfirm;
 use ibc_eureka_core_channel_types::msgs::MsgChannelCloseConfirm;
 use ibc_eureka_core_client::context::prelude::*;
-use ibc_eureka_core_connection::types::error::ConnectionError;
-use ibc_eureka_core_connection::types::State as ConnectionState;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_eureka_core_host::types::path::{ChannelEndPath, ClientConsensusStatePath, Path};
 use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
@@ -64,14 +62,12 @@ where
                 .channel_id
                 .clone()
                 .ok_or(ChannelError::MissingCounterparty)?;
-            let conn_id_on_b = chan_end_on_b.connection_hops[0].clone();
 
             IbcEvent::CloseConfirmChannel(CloseConfirm::new(
                 msg.port_id_on_b.clone(),
                 msg.chan_id_on_b.clone(),
                 port_id_on_a,
                 chan_id_on_a,
-                conn_id_on_b,
             ))
         };
         ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
@@ -101,10 +97,6 @@ where
 
     // Validate that the channel end is in a state where it can be closed.
     chan_end_on_b.verify_not_closed()?;
-
-    let conn_end_on_b = ctx_b.connection_end(&chan_end_on_b.connection_hops()[0])?;
-
-    conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
 
     // Verify proofs
     {
@@ -142,7 +134,6 @@ where
             ChannelState::Closed,
             *chan_end_on_b.ordering(),
             Counterparty::new(msg.port_id_on_b.clone(), Some(msg.chan_id_on_b.clone())),
-            vec![conn_id_on_a.clone()],
             chan_end_on_b.version().clone(),
         )?;
         let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, chan_id_on_a);

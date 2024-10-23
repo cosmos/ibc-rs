@@ -4,7 +4,6 @@ use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::{ChannelClosed, TimeoutPacket};
 use ibc_eureka_core_channel_types::msgs::{MsgTimeout, MsgTimeoutOnClose};
 use ibc_eureka_core_client::context::prelude::*;
-use ibc_eureka_core_connection::delay::verify_conn_delay_passed;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_eureka_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
@@ -103,14 +102,11 @@ where
         ctx_a.log_message("success: packet timeout".to_string())?;
 
         if let Order::Ordered = chan_end_on_a.ordering {
-            let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
-
             let event = IbcEvent::ChannelClosed(ChannelClosed::new(
                 port_id_on_a.clone(),
                 channel_id_on_a.clone(),
                 chan_end_on_a.counterparty().port_id.clone(),
                 chan_end_on_a.counterparty().channel_id.clone(),
-                conn_id_on_a,
                 chan_end_on_a.ordering,
             ));
             ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
@@ -138,9 +134,9 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let port_id_on_a = &payload.header.source_port.1;
+    let (_, port_id_on_a) = &payload.header.source_port;
     let channel_id_on_a = &packet.header.source_client;
-    let port_id_on_b = &payload.header.target_port.1;
+    let (prefix_on_a, port_id_on_b) = &payload.header.target_port;
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
@@ -152,9 +148,6 @@ where
     let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
 
     chan_end_on_a.verify_counterparty_matches(&counterparty)?;
-
-    let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
-    let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
 
     //verify packet commitment
     let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
@@ -181,7 +174,7 @@ where
 
     // Verify proofs
     {
-        let client_id_on_a = conn_end_on_a.client_id();
+        let client_id_on_a = channel_id_on_b.as_ref();
         let client_val_ctx_a = ctx_a.get_client_validation_context();
         let client_state_of_b_on_a = client_val_ctx_a.client_state(client_id_on_a)?;
 
@@ -210,8 +203,6 @@ where
             });
         }
 
-        verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
-
         let next_seq_recv_verification_result = match chan_end_on_a.ordering {
             Order::Ordered => {
                 if seq_on_a < &msg.next_seq_recv_on_b {
@@ -223,7 +214,7 @@ where
                 let seq_recv_path_on_b = SeqRecvPath::new(port_id_on_b, channel_id_on_b);
 
                 client_state_of_b_on_a.verify_membership(
-                    conn_end_on_a.counterparty().prefix(),
+                    prefix_on_a,
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
                     Path::SeqRecv(seq_recv_path_on_b),
@@ -234,7 +225,7 @@ where
                 let receipt_path_on_b = ReceiptPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
 
                 client_state_of_b_on_a.verify_non_membership(
-                    conn_end_on_a.counterparty().prefix(),
+                    prefix_on_a,
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
                     Path::Receipt(receipt_path_on_b),

@@ -12,11 +12,6 @@ use ibc_eureka_core_client_types::msgs::{
     CREATE_CLIENT_TYPE_URL, SUBMIT_MISBEHAVIOUR_TYPE_URL, UPDATE_CLIENT_TYPE_URL,
     UPGRADE_CLIENT_TYPE_URL,
 };
-use ibc_eureka_core_connection_types::msgs::{
-    ConnectionMsg, MsgConnectionOpenAck, MsgConnectionOpenConfirm, MsgConnectionOpenInit,
-    MsgConnectionOpenTry, CONN_OPEN_ACK_TYPE_URL, CONN_OPEN_CONFIRM_TYPE_URL,
-    CONN_OPEN_INIT_TYPE_URL, CONN_OPEN_TRY_TYPE_URL,
-};
 use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::google::protobuf::Any;
@@ -31,7 +26,6 @@ use ibc_proto::Protobuf;
 #[derive(Clone, Debug, PartialEq, Eq, derive_more::From)]
 pub enum MsgEnvelope {
     Client(ClientMsg),
-    Connection(ConnectionMsg),
     Channel(ChannelMsg),
     Packet(PacketMsg),
 }

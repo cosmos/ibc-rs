@@ -1,12 +1,11 @@
 use ibc_eureka_core_host_types::error::DecodingError;
-use ibc_eureka_core_host_types::identifiers::{ConnectionId, PortId};
+use ibc_eureka_core_host_types::identifiers::PortId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::channel::v1::MsgChannelOpenInit as RawMsgChannelOpenInit;
 use ibc_proto::Protobuf;
 
-use crate::channel::{verify_connection_hops_length, ChannelEnd, Counterparty, Order, State};
-use crate::error::ChannelError;
+use crate::channel::{ChannelEnd, Counterparty, Order, State};
 use crate::Version;
 
 pub const CHAN_OPEN_INIT_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenInit";
@@ -23,21 +22,11 @@ pub const CHAN_OPEN_INIT_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenIn
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgChannelOpenInit {
     pub port_id_on_a: PortId,
-    pub connection_hops_on_a: Vec<ConnectionId>,
     pub port_id_on_b: PortId,
     pub ordering: Order,
     pub signer: Signer,
     /// Allow a relayer to specify a particular version by providing a non-empty version string
     pub version_proposal: Version,
-}
-
-impl MsgChannelOpenInit {
-    /// Checks if the `connection_hops` has a length of `expected`.
-    ///
-    /// Note: Current IBC version only supports one connection hop.
-    pub fn verify_connection_hops_length(&self) -> Result<(), ChannelError> {
-        verify_connection_hops_length(&self.connection_hops_on_a, 1)
-    }
 }
 
 impl Protobuf<RawMsgChannelOpenInit> for MsgChannelOpenInit {}
@@ -68,7 +57,6 @@ impl TryFrom<RawMsgChannelOpenInit> for MsgChannelOpenInit {
 
         Ok(MsgChannelOpenInit {
             port_id_on_a: raw_msg.port_id.parse()?,
-            connection_hops_on_a: chan_end_on_a.connection_hops,
             port_id_on_b: chan_end_on_a.remote.port_id,
             ordering: chan_end_on_a.ordering,
             signer: raw_msg.signer.into(),
@@ -83,7 +71,6 @@ impl From<MsgChannelOpenInit> for RawMsgChannelOpenInit {
             State::Init,
             domain_msg.ordering,
             Counterparty::new(domain_msg.port_id_on_b, None),
-            domain_msg.connection_hops_on_a,
             domain_msg.version_proposal,
         );
         RawMsgChannelOpenInit {

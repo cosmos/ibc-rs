@@ -7,8 +7,6 @@ use ibc_eureka_core_channel_types::events::{ReceivePacket, WriteAcknowledgement}
 use ibc_eureka_core_channel_types::msgs::MsgRecvPacket;
 use ibc_eureka_core_channel_types::packet::Receipt;
 use ibc_eureka_core_client::context::prelude::*;
-use ibc_eureka_core_connection::delay::verify_conn_delay_passed;
-use ibc_eureka_core_connection::types::State as ConnectionState;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_eureka_core_host::types::path::{
     AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
@@ -107,19 +105,14 @@ where
         ctx_b.log_message("success: packet receive".to_string())?;
         ctx_b.log_message("success: packet write acknowledgement".to_string())?;
 
-        let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
         let event = IbcEvent::ReceivePacket(ReceivePacket::new(
             msg.packet.clone(),
             chan_end_on_b.ordering,
-            conn_id_on_b.clone(),
         ));
         ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
         ctx_b.emit_ibc_event(event)?;
-        let event = IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
-            msg.packet,
-            acknowledgement,
-            conn_id_on_b.clone(),
-        ));
+        let event =
+            IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(msg.packet, acknowledgement));
         ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
         ctx_b.emit_ibc_event(event)?;
 
@@ -144,9 +137,9 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let port_id_on_a = &payload.header.source_port.1;
+    let (_, port_id_on_a) = &payload.header.source_port;
     let channel_id_on_a = &packet.header.source_client;
-    let port_id_on_b = &payload.header.target_port.1;
+    let (prefix_on_b, port_id_on_b) = &payload.header.target_port;
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
@@ -159,11 +152,6 @@ where
     let counterparty = Counterparty::new(port_id_on_a.clone(), Some(channel_id_on_a.clone()));
 
     chan_end_on_b.verify_counterparty_matches(&counterparty)?;
-
-    let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
-    let conn_end_on_b = ctx_b.connection_end(conn_id_on_b)?;
-
-    conn_end_on_b.verify_state_matches(&ConnectionState::Open)?;
 
     let latest_height = ctx_b.host_height()?;
     if packet.header.timeout_height_on_b.has_expired(latest_height) {
@@ -184,7 +172,7 @@ where
 
     // Verify proofs
     {
-        let client_id_on_b = conn_end_on_b.client_id();
+        let client_id_on_b = channel_id_on_a.as_ref();
         let client_val_ctx_b = ctx_b.get_client_validation_context();
         let client_state_of_a_on_b = client_val_ctx_b.client_state(client_id_on_b)?;
 
@@ -210,11 +198,9 @@ where
         );
         let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 
-        verify_conn_delay_passed(ctx_b, msg.proof_height_on_a, &conn_end_on_b)?;
-
         // Verify the proof for the packet against the chain store.
         client_state_of_a_on_b.verify_membership(
-            conn_end_on_b.counterparty().prefix(),
+            prefix_on_b,
             &msg.proof_commitment_on_a,
             consensus_state_of_a_on_b.root(),
             Path::Commitment(commitment_path_on_a),

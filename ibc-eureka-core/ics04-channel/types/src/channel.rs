@@ -4,9 +4,8 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
 use ibc_eureka_core_host_types::error::DecodingError;
-use ibc_eureka_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc_eureka_core_host_types::identifiers::{ChannelId, PortId};
 use ibc_primitives::prelude::*;
-use ibc_primitives::utils::PrettySlice;
 use ibc_proto::ibc::core::channel::v1::{
     Channel as RawChannel, Counterparty as RawCounterparty,
     IdentifiedChannel as RawIdentifiedChannel,
@@ -83,12 +82,7 @@ impl From<IdentifiedChannelEnd> for RawIdentifiedChannel {
             state: value.channel_end.state as i32,
             ordering: value.channel_end.ordering as i32,
             counterparty: Some(value.channel_end.counterparty().clone().into()),
-            connection_hops: value
-                .channel_end
-                .connection_hops
-                .iter()
-                .map(|v| v.as_str().to_string())
-                .collect(),
+            connection_hops: vec![],
             version: value.channel_end.version.to_string(),
             port_id: value.port_id.to_string(),
             channel_id: value.channel_id.to_string(),
@@ -117,7 +111,6 @@ pub struct ChannelEnd {
     pub state: State,
     pub ordering: Order,
     pub remote: Counterparty,
-    pub connection_hops: Vec<ConnectionId>,
     pub version: Version,
 }
 
@@ -125,8 +118,8 @@ impl Display for ChannelEnd {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(
             f,
-            "ChannelEnd {{ state: {}, ordering: {}, remote: {}, connection_hops: {}, version: {} }}",
-            self.state, self.ordering, self.remote, PrettySlice(&self.connection_hops), self.version
+            "ChannelEnd {{ state: {}, ordering: {}, remote: {}, version: {} }}",
+            self.state, self.ordering, self.remote, self.version
         )
     }
 }
@@ -148,16 +141,9 @@ impl TryFrom<RawChannel> for ChannelEnd {
             .ok_or(DecodingError::missing_raw_data("channel counterparty"))?
             .try_into()?;
 
-        // Parse each item in connection_hops into a ConnectionId.
-        let connection_hops = value
-            .connection_hops
-            .into_iter()
-            .map(|conn_id| ConnectionId::from_str(conn_id.as_str()))
-            .collect::<Result<Vec<_>, _>>()?;
-
         let version = value.version.into();
 
-        let channel = ChannelEnd::new(chan_state, chan_ordering, remote, connection_hops, version)
+        let channel = ChannelEnd::new(chan_state, chan_ordering, remote, version)
             .map_err(|e| DecodingError::invalid_raw_data(format!("channel end: {e}")))?;
 
         Ok(channel)
@@ -170,11 +156,7 @@ impl From<ChannelEnd> for RawChannel {
             state: value.state as i32,
             ordering: value.ordering as i32,
             counterparty: Some(value.counterparty().clone().into()),
-            connection_hops: value
-                .connection_hops
-                .iter()
-                .map(|v| v.as_str().to_string())
-                .collect(),
+            connection_hops: vec![],
             version: value.version.to_string(),
             upgrade_sequence: 0,
         }
@@ -191,14 +173,12 @@ impl ChannelEnd {
         state: State,
         ordering: Order,
         remote: Counterparty,
-        connection_hops: Vec<ConnectionId>,
         version: Version,
     ) -> Self {
         Self {
             state,
             ordering,
             remote,
-            connection_hops,
             version,
         }
     }
@@ -208,11 +188,9 @@ impl ChannelEnd {
         state: State,
         ordering: Order,
         remote: Counterparty,
-        connection_hops: Vec<ConnectionId>,
         version: Version,
     ) -> Result<Self, ChannelError> {
-        let channel_end =
-            Self::new_without_validation(state, ordering, remote, connection_hops, version);
+        let channel_end = Self::new_without_validation(state, ordering, remote, version);
         channel_end.validate_basic()?;
         Ok(channel_end)
     }
@@ -245,10 +223,6 @@ impl ChannelEnd {
 
     pub fn counterparty(&self) -> &Counterparty {
         &self.remote
-    }
-
-    pub fn connection_hops(&self) -> &Vec<ConnectionId> {
-        &self.connection_hops
     }
 
     pub fn version(&self) -> &Version {
@@ -304,10 +278,6 @@ impl ChannelEnd {
         self.ordering.eq(other)
     }
 
-    pub fn connection_hops_matches(&self, other: &Vec<ConnectionId>) -> bool {
-        self.connection_hops.eq(other)
-    }
-
     /// Checks if the counterparty of this channel end matches with an expected counterparty.
     pub fn verify_counterparty_matches(&self, expected: &Counterparty) -> Result<(), ChannelError> {
         if !self.counterparty().eq(expected) {
@@ -319,30 +289,9 @@ impl ChannelEnd {
         Ok(())
     }
 
-    /// Checks if the `connection_hops` has a length of `expected`.
-    ///
-    /// Note: The current IBC version only supports one connection hop.
-    pub fn verify_connection_hops_length(&self) -> Result<(), ChannelError> {
-        verify_connection_hops_length(&self.connection_hops, 1)
-    }
-
     pub fn version_matches(&self, other: &Version) -> bool {
         self.version().eq(other)
     }
-}
-
-/// Checks if the `connection_hops` has a length of `expected`.
-pub(crate) fn verify_connection_hops_length(
-    connection_hops: &[ConnectionId],
-    expected: u64,
-) -> Result<(), ChannelError> {
-    if connection_hops.len() as u64 != expected {
-        return Err(ChannelError::InvalidConnectionHopsLength {
-            expected,
-            actual: connection_hops.len() as u64,
-        });
-    }
-    Ok(())
 }
 
 #[cfg_attr(

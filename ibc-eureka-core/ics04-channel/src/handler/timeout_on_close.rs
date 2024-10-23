@@ -3,8 +3,6 @@ use ibc_eureka_core_channel_types::commitment::compute_packet_commitment;
 use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::msgs::MsgTimeoutOnClose;
 use ibc_eureka_core_client::context::prelude::*;
-use ibc_eureka_core_connection::delay::verify_conn_delay_passed;
-use ibc_eureka_core_connection::types::error::ConnectionError;
 use ibc_eureka_core_host::types::path::{
     ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
 };
@@ -21,9 +19,9 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let port_id_on_a = &payload.header.source_port.1;
+    let (prefix_on_a, port_id_on_a) = &payload.header.source_port;
     let channel_id_on_a = &packet.header.source_client;
-    let port_id_on_b = &payload.header.target_port.1;
+    let (_, port_id_on_b) = &payload.header.target_port;
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
@@ -58,12 +56,9 @@ where
         });
     }
 
-    let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
-    let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
-
     // Verify proofs
     {
-        let client_id_on_a = conn_end_on_a.client_id();
+        let client_id_on_a = channel_id_on_b.as_ref();
         let client_val_ctx_a = ctx_a.get_client_validation_context();
         let client_state_of_b_on_a = client_val_ctx_a.client_state(client_id_on_a)?;
 
@@ -80,24 +75,17 @@ where
         );
         let consensus_state_of_b_on_a =
             client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
-        let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
         let channel_id_on_b = chan_end_on_a
             .counterparty()
             .channel_id()
             .ok_or(ChannelError::MissingCounterparty)?;
-        let conn_id_on_b = conn_end_on_a
-            .counterparty()
-            .connection_id()
-            .ok_or(ConnectionError::MissingCounterparty)?;
-        let expected_conn_hops_on_b = vec![conn_id_on_b.clone()];
         let expected_counterparty =
             Counterparty::new(port_id_on_a.clone(), Some(channel_id_on_a.clone()));
         let expected_chan_end_on_b = ChannelEnd::new(
             State::Closed,
             *chan_end_on_a.ordering(),
             expected_counterparty,
-            expected_conn_hops_on_b,
             chan_end_on_a.version().clone(),
         )?;
 
@@ -106,14 +94,12 @@ where
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
         client_state_of_b_on_a.verify_membership(
-            prefix_on_b,
+            prefix_on_a,
             &msg.proof_close_on_b,
             consensus_state_of_b_on_a.root(),
             Path::ChannelEnd(chan_end_path_on_b),
             expected_chan_end_on_b.encode_vec(),
         )?;
-
-        verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 
         let next_seq_recv_verification_result = match chan_end_on_a.ordering {
             Order::Ordered => {
@@ -126,7 +112,7 @@ where
                 let seq_recv_path_on_b = SeqRecvPath::new(&port_id_on_b, channel_id_on_b);
 
                 client_state_of_b_on_a.verify_membership(
-                    conn_end_on_a.counterparty().prefix(),
+                    prefix_on_a,
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
                     Path::SeqRecv(seq_recv_path_on_b),
@@ -137,7 +123,7 @@ where
                 let receipt_path_on_b = ReceiptPath::new(&port_id_on_b, channel_id_on_b, *seq_on_a);
 
                 client_state_of_b_on_a.verify_non_membership(
-                    conn_end_on_a.counterparty().prefix(),
+                    prefix_on_a,
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
                     Path::Receipt(receipt_path_on_b),
