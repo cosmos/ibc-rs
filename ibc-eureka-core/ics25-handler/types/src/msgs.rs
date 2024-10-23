@@ -1,10 +1,6 @@
 use ibc_eureka_core_channel_types::msgs::{
-    ChannelMsg, MsgAcknowledgement, MsgChannelCloseConfirm, MsgChannelCloseInit, MsgChannelOpenAck,
-    MsgChannelOpenConfirm, MsgChannelOpenInit, MsgChannelOpenTry, MsgRecvPacket, MsgTimeout,
-    MsgTimeoutOnClose, PacketMsg, ACKNOWLEDGEMENT_TYPE_URL, CHAN_CLOSE_CONFIRM_TYPE_URL,
-    CHAN_CLOSE_INIT_TYPE_URL, CHAN_OPEN_ACK_TYPE_URL, CHAN_OPEN_CONFIRM_TYPE_URL,
-    CHAN_OPEN_INIT_TYPE_URL, CHAN_OPEN_TRY_TYPE_URL, RECV_PACKET_TYPE_URL,
-    TIMEOUT_ON_CLOSE_TYPE_URL, TIMEOUT_TYPE_URL,
+    MsgAcknowledgement, MsgRecvPacket, MsgTimeout, MsgTimeoutOnClose, PacketMsg,
+    ACKNOWLEDGEMENT_TYPE_URL, RECV_PACKET_TYPE_URL, TIMEOUT_ON_CLOSE_TYPE_URL, TIMEOUT_TYPE_URL,
 };
 #[allow(deprecated)]
 use ibc_eureka_core_client_types::msgs::{
@@ -26,7 +22,7 @@ use ibc_proto::Protobuf;
 #[derive(Clone, Debug, PartialEq, Eq, derive_more::From)]
 pub enum MsgEnvelope {
     Client(ClientMsg),
-    Channel(ChannelMsg),
+    // Channel(ChannelMsg),
     Packet(PacketMsg),
 }
 
@@ -55,51 +51,31 @@ impl TryFrom<Any> for MsgEnvelope {
                 Ok(MsgEnvelope::Client(ClientMsg::Misbehaviour(domain_msg)))
             }
 
-            // ICS03
-            CONN_OPEN_INIT_TYPE_URL => {
-                let domain_msg = MsgConnectionOpenInit::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Connection(ConnectionMsg::OpenInit(domain_msg)))
-            }
-            CONN_OPEN_TRY_TYPE_URL => {
-                let domain_msg = MsgConnectionOpenTry::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Connection(ConnectionMsg::OpenTry(domain_msg)))
-            }
-            CONN_OPEN_ACK_TYPE_URL => {
-                let domain_msg = MsgConnectionOpenAck::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Connection(ConnectionMsg::OpenAck(domain_msg)))
-            }
-            CONN_OPEN_CONFIRM_TYPE_URL => {
-                let domain_msg = MsgConnectionOpenConfirm::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Connection(ConnectionMsg::OpenConfirm(
-                    domain_msg,
-                )))
-            }
-
-            // ICS04 channel messages
-            CHAN_OPEN_INIT_TYPE_URL => {
-                let domain_msg = MsgChannelOpenInit::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Channel(ChannelMsg::OpenInit(domain_msg)))
-            }
-            CHAN_OPEN_TRY_TYPE_URL => {
-                let domain_msg = MsgChannelOpenTry::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Channel(ChannelMsg::OpenTry(domain_msg)))
-            }
-            CHAN_OPEN_ACK_TYPE_URL => {
-                let domain_msg = MsgChannelOpenAck::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Channel(ChannelMsg::OpenAck(domain_msg)))
-            }
-            CHAN_OPEN_CONFIRM_TYPE_URL => {
-                let domain_msg = MsgChannelOpenConfirm::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Channel(ChannelMsg::OpenConfirm(domain_msg)))
-            }
-            CHAN_CLOSE_INIT_TYPE_URL => {
-                let domain_msg = MsgChannelCloseInit::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Channel(ChannelMsg::CloseInit(domain_msg)))
-            }
-            CHAN_CLOSE_CONFIRM_TYPE_URL => {
-                let domain_msg = MsgChannelCloseConfirm::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Channel(ChannelMsg::CloseConfirm(domain_msg)))
-            }
+            // // ICS04 channel messages
+            // CHAN_OPEN_INIT_TYPE_URL => {
+            //     let domain_msg = MsgChannelOpenInit::decode_vec(&any_msg.value)?;
+            //     Ok(MsgEnvelope::Channel(ChannelMsg::OpenInit(domain_msg)))
+            // }
+            // CHAN_OPEN_TRY_TYPE_URL => {
+            //     let domain_msg = MsgChannelOpenTry::decode_vec(&any_msg.value)?;
+            //     Ok(MsgEnvelope::Channel(ChannelMsg::OpenTry(domain_msg)))
+            // }
+            // CHAN_OPEN_ACK_TYPE_URL => {
+            //     let domain_msg = MsgChannelOpenAck::decode_vec(&any_msg.value)?;
+            //     Ok(MsgEnvelope::Channel(ChannelMsg::OpenAck(domain_msg)))
+            // }
+            // CHAN_OPEN_CONFIRM_TYPE_URL => {
+            //     let domain_msg = MsgChannelOpenConfirm::decode_vec(&any_msg.value)?;
+            //     Ok(MsgEnvelope::Channel(ChannelMsg::OpenConfirm(domain_msg)))
+            // }
+            // CHAN_CLOSE_INIT_TYPE_URL => {
+            //     let domain_msg = MsgChannelCloseInit::decode_vec(&any_msg.value)?;
+            //     Ok(MsgEnvelope::Channel(ChannelMsg::CloseInit(domain_msg)))
+            // }
+            // CHAN_CLOSE_CONFIRM_TYPE_URL => {
+            //     let domain_msg = MsgChannelCloseConfirm::decode_vec(&any_msg.value)?;
+            //     Ok(MsgEnvelope::Channel(ChannelMsg::CloseConfirm(domain_msg)))
+            // }
             // ICS04 packet messages
             RECV_PACKET_TYPE_URL => {
                 let domain_msg = MsgRecvPacket::decode_vec(&any_msg.value)?;
