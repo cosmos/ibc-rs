@@ -32,7 +32,6 @@ ibc-client-tendermint            = { workspace = true }
 ibc-app-transfer-types           = { workspace = true }
 ibc-eureka-core-client-types     = { workspace = true }
 ibc-eureka-core-client-context   = { workspace = true }
-ibc-eureka-core-connection-types = { workspace = true }
 ibc-eureka-core-commitment-types = { workspace = true }
 ibc-eureka-core-host-types       = { workspace = true }
 ibc-eureka-core-handler-types    = { workspace = true }
@@ -55,7 +54,6 @@ std = [
   "subtle-encoding/std",
   "ibc-eureka-core-client-types/std",
   "ibc-eureka-core-client-context/std",
-  "ibc-eureka-core-connection-types/std",
   "ibc-eureka-core-commitment-types/std",
   "ibc-eureka-core-host-types/std",
   "ibc-eureka-core-handler-types/std",
@@ -67,7 +65,6 @@ serde = [
   "ibc-client-tendermint/serde",
   "ibc-eureka-core-client-types/serde",
   "ibc-eureka-core-client-context/serde",
-  "ibc-eureka-core-connection-types/serde",
   "ibc-eureka-core-commitment-types/serde",
   "ibc-eureka-core-host-types/serde",
   "ibc-eureka-core-handler-types/serde",
@@ -78,7 +75,6 @@ schema = [
   "ibc-client-tendermint/schema",
   "ibc-eureka-core-client-types/schema",
   "ibc-eureka-core-client-context/schema",
-  "ibc-eureka-core-connection-types/schema",
   "ibc-eureka-core-commitment-types/schema",
   "ibc-eureka-core-host-types/schema",
   "ibc-eureka-core-handler-types/schema",
@@ -92,7 +88,6 @@ borsh = [
   "ibc-client-tendermint/borsh",
   "ibc-eureka-core-client-types/borsh",
   "ibc-eureka-core-client-context/borsh",
-  "ibc-eureka-core-connection-types/borsh",
   "ibc-eureka-core-commitment-types/borsh",
   "ibc-eureka-core-host-types/borsh",
   "ibc-primitives/borsh",
@@ -103,7 +98,6 @@ parity-scale-codec = [
   "dep:scale-info",
   "ibc-client-tendermint/parity-scale-codec",
   "ibc-eureka-core-client-types/parity-scale-codec",
-  "ibc-eureka-core-connection-types/parity-scale-codec",
   "ibc-eureka-core-commitment-types/parity-scale-codec",
   "ibc-eureka-core-host-types/parity-scale-codec",
   "ibc-eureka-core-handler-types/parity-scale-codec",

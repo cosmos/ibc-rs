@@ -18,8 +18,7 @@ description = """
 all-features = true
 
 [dependencies]
-ibc-eureka-core-client = { workspace = true }
-# ibc-eureka-core-connection       = { workspace = true }
+ibc-eureka-core-client           = { workspace = true }
 ibc-eureka-core-channel          = { workspace = true }
 ibc-eureka-core-commitment-types = { workspace = true }
 ibc-eureka-core-host             = { workspace = true }
@@ -32,7 +31,6 @@ ibc-primitives                   = { workspace = true }
 default = [ "std" ]
 std = [
   "ibc-eureka-core-client/std",
-  # "ibc-eureka-core-connection/std",
   "ibc-eureka-core-channel/std",
   "ibc-eureka-core-commitment-types/std",
   "ibc-eureka-core-host/std",
@@ -42,7 +40,6 @@ std = [
 ]
 serde = [
   "ibc-eureka-core-client/serde",
-  # "ibc-eureka-core-connection/serde",
   "ibc-eureka-core-channel/serde",
   "ibc-eureka-core-commitment-types/serde",
   "ibc-eureka-core-host/serde",
@@ -52,7 +49,6 @@ serde = [
 ]
 borsh = [
   "ibc-eureka-core-client/borsh",
-  # "ibc-eureka-core-connection/borsh",
   "ibc-eureka-core-channel/borsh",
   "ibc-eureka-core-commitment-types/borsh",
   "ibc-eureka-core-host/borsh",
@@ -62,7 +58,6 @@ borsh = [
 ]
 schema = [
   "ibc-eureka-core-client/schema",
-  # "ibc-eureka-core-connection/schema",
   "ibc-eureka-core-channel/schema",
   "ibc-eureka-core-commitment-types/schema",
   "ibc-eureka-core-host/schema",
@@ -74,7 +69,6 @@ schema = [
 ]
 parity-scale-codec = [
   "ibc-eureka-core-client/parity-scale-codec",
-  # "ibc-eureka-core-connection/parity-scale-codec",
   "ibc-eureka-core-channel/parity-scale-codec",
   "ibc-eureka-core-commitment-types/parity-scale-codec",
   "ibc-eureka-core-host/parity-scale-codec",
