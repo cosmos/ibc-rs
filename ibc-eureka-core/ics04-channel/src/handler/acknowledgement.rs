@@ -6,9 +6,7 @@ use ibc_eureka_core_channel_types::events::AcknowledgePacket;
 use ibc_eureka_core_channel_types::msgs::MsgAcknowledgement;
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_eureka_core_host::types::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, SeqAckPath,
-};
+use ibc_eureka_core_host::types::path::{AckPath, ClientConsensusStatePath, CommitmentPath, Path};
 use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_eureka_core_router::module::Module;
 use ibc_primitives::prelude::*;
@@ -41,8 +39,6 @@ where
     let channel_id_on_a = &packet.header.source_client;
     let seq_on_a = &packet.header.seq_on_a;
 
-    let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-
     // In all cases, this event is emitted
     let event = IbcEvent::AcknowledgePacket(AcknowledgePacket::new(packet.clone()));
     ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
@@ -67,13 +63,6 @@ where
     // apply state changes
     {
         ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
-
-        if let Order::Ordered = chan_end_on_a.ordering {
-            // Note: in validation, we verified that `msg.packet.sequence == nextSeqRecv`
-            // (where `nextSeqRecv` is the value in the store)
-            let seq_ack_path_on_a = SeqAckPath::new(port_id_on_a, channel_id_on_a);
-            ctx_a.store_next_sequence_ack(&seq_ack_path_on_a, (*seq_on_a).increment())?;
-        }
     }
 
     // emit events and logs
@@ -110,10 +99,6 @@ where
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
 
-    let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-
-    let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
-
     let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 
     // Verify packet commitment
@@ -136,17 +121,6 @@ where
             actual: commitment_on_a,
             expected: expected_commitment_on_a,
         });
-    }
-
-    if let Order::Ordered = chan_end_on_a.ordering {
-        let seq_ack_path_on_a = SeqAckPath::new(port_id_on_a, channel_id_on_a);
-        let next_seq_ack = ctx_a.get_next_sequence_ack(&seq_ack_path_on_a)?;
-        if seq_on_a != &next_seq_ack {
-            return Err(ChannelError::MismatchedPacketSequence {
-                actual: *seq_on_a,
-                expected: next_seq_ack,
-            });
-        }
     }
 
     // Verify proofs

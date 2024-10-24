@@ -4,9 +4,7 @@ use ibc_eureka_core_channel_types::events::SendPacket;
 use ibc_eureka_core_channel_types::packet::Packet;
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_eureka_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, SeqSendPath,
-};
+use ibc_eureka_core_host::types::path::{ClientConsensusStatePath, CommitmentPath, SeqSendPath};
 use ibc_primitives::prelude::*;
 
 use crate::context::{SendPacketExecutionContext, SendPacketValidationContext};
@@ -120,9 +118,6 @@ pub fn send_packet_execute(
 
     // emit events and logs
     {
-        let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-        let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
-
         ctx_a.log_message("success: packet send".to_string())?;
         let event = IbcEvent::SendPacket(SendPacket::new(packet));
         ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;

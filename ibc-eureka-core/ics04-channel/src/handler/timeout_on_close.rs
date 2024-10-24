@@ -3,11 +3,10 @@ use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::msgs::MsgTimeoutOnClose;
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
+    ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
 };
 use ibc_eureka_core_host::ValidationContext;
 use ibc_primitives::prelude::*;
-use ibc_primitives::proto::Protobuf;
 
 pub fn validate<Ctx>(ctx_a: &Ctx, msg: &MsgTimeoutOnClose) -> Result<(), ChannelError>
 where
@@ -24,8 +23,6 @@ where
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
-
-    let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
 
     let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 
@@ -70,42 +67,15 @@ where
         let consensus_state_of_b_on_a =
             client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
 
-        let chan_end_path_on_b = ChannelEndPath(port_id_on_b.clone(), channel_id_on_b.clone());
+        let next_seq_recv_verification_result = {
+            let receipt_path_on_b = ReceiptPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
 
-        let next_seq_recv_verification_result = match chan_end_on_a.ordering {
-            Order::Ordered => {
-                if seq_on_a < &msg.next_seq_recv_on_b {
-                    return Err(ChannelError::MismatchedPacketSequence {
-                        actual: *seq_on_a,
-                        expected: msg.next_seq_recv_on_b,
-                    });
-                }
-                let seq_recv_path_on_b = SeqRecvPath::new(&port_id_on_b, channel_id_on_b);
-
-                client_state_of_b_on_a.verify_membership(
-                    prefix_on_a,
-                    &msg.proof_unreceived_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    Path::SeqRecv(seq_recv_path_on_b),
-                    seq_on_a.to_vec(),
-                )
-            }
-            Order::Unordered => {
-                let receipt_path_on_b = ReceiptPath::new(&port_id_on_b, channel_id_on_b, *seq_on_a);
-
-                client_state_of_b_on_a.verify_non_membership(
-                    prefix_on_a,
-                    &msg.proof_unreceived_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    Path::Receipt(receipt_path_on_b),
-                )
-            }
-            Order::None => {
-                return Err(ChannelError::InvalidState {
-                    expected: "Channel ordering to not be None".to_string(),
-                    actual: chan_end_on_a.ordering.to_string(),
-                })
-            }
+            client_state_of_b_on_a.verify_non_membership(
+                prefix_on_a,
+                &msg.proof_unreceived_on_b,
+                consensus_state_of_b_on_a.root(),
+                Path::Receipt(receipt_path_on_b),
+            )
         };
 
         next_seq_recv_verification_result?;

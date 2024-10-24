@@ -1,11 +1,11 @@
 use ibc_eureka_core_channel_types::commitment::compute_packet_commitment;
 use ibc_eureka_core_channel_types::error::ChannelError;
-use ibc_eureka_core_channel_types::events::{ChannelClosed, TimeoutPacket};
+use ibc_eureka_core_channel_types::events::TimeoutPacket;
 use ibc_eureka_core_channel_types::msgs::{MsgTimeout, MsgTimeoutOnClose};
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_eureka_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
+    ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
 };
 use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_eureka_core_router::module::Module;
@@ -58,8 +58,6 @@ where
     let channel_id_on_a = &packet.header.source_client;
     let seq_on_a = &packet.header.seq_on_a;
 
-    let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-
     // In all cases, this event is emitted
     let event = IbcEvent::TimeoutPacket(TimeoutPacket::new(packet.clone()));
     ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
@@ -80,35 +78,9 @@ where
 
     cb_result?;
 
-    // apply state changes
-    let chan_end_on_a = {
-        ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
-
-        if let Order::Ordered = chan_end_on_a.ordering {
-            let mut chan_end_on_a = chan_end_on_a;
-            chan_end_on_a.state = State::Closed;
-            ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a.clone())?;
-
-            chan_end_on_a
-        } else {
-            chan_end_on_a
-        }
-    };
-
     // emit events and logs
     {
         ctx_a.log_message("success: packet timeout".to_string())?;
-
-        if let Order::Ordered = chan_end_on_a.ordering {
-            let event = IbcEvent::ChannelClosed(ChannelClosed::new(
-                port_id_on_a.clone(),
-                channel_id_on_a.clone(),
-                chan_end_on_a.counterparty().port_id.clone(),
-                chan_end_on_a.counterparty().channel_id.clone(),
-            ));
-            ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
-            ctx_a.emit_ibc_event(event)?;
-        }
 
         for module_event in extras.events {
             ctx_a.emit_ibc_event(IbcEvent::Module(module_event))?;
@@ -192,40 +164,15 @@ where
             });
         }
 
-        let next_seq_recv_verification_result = match chan_end_on_a.ordering {
-            Order::Ordered => {
-                if seq_on_a < &msg.next_seq_recv_on_b {
-                    return Err(ChannelError::MismatchedPacketSequence {
-                        actual: *seq_on_a,
-                        expected: msg.next_seq_recv_on_b,
-                    });
-                }
-                let seq_recv_path_on_b = SeqRecvPath::new(port_id_on_b, channel_id_on_b);
+        let next_seq_recv_verification_result = {
+            let receipt_path_on_b = ReceiptPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
 
-                client_state_of_b_on_a.verify_membership(
-                    prefix_on_a,
-                    &msg.proof_unreceived_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    Path::SeqRecv(seq_recv_path_on_b),
-                    seq_on_a.to_vec(),
-                )
-            }
-            Order::Unordered => {
-                let receipt_path_on_b = ReceiptPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
-
-                client_state_of_b_on_a.verify_non_membership(
-                    prefix_on_a,
-                    &msg.proof_unreceived_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    Path::Receipt(receipt_path_on_b),
-                )
-            }
-            Order::None => {
-                return Err(ChannelError::InvalidState {
-                    expected: "Channel ordering to not be None".to_string(),
-                    actual: chan_end_on_a.ordering.to_string(),
-                })
-            }
+            client_state_of_b_on_a.verify_non_membership(
+                prefix_on_a,
+                &msg.proof_unreceived_on_b,
+                consensus_state_of_b_on_a.root(),
+                Path::Receipt(receipt_path_on_b),
+            )
         };
 
         next_seq_recv_verification_result?;
