@@ -1,0 +1,80 @@
+[package]
+name         = "ibc-eureka-core-router-types"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "routing", "types" ]
+readme       = "./../../README.md"
+
+description = """
+    Maintained by `ibc-rs`, encapsulates essential ICS-26 Routing Module data structures and domain types,
+    as specified in the Inter-Blockchain Communication (IBC) protocol. Designed for universal applicability
+    to facilitate development and integration across diverse IBC-enabled projects.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh           = { workspace = true, optional = true }
+derive_more     = { workspace = true }
+displaydoc      = { workspace = true }
+schemars        = { workspace = true, optional = true }
+serde           = { workspace = true, optional = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-eureka-core-host-types = { workspace = true }
+ibc-primitives             = { workspace = true }
+ibc-proto                  = { workspace = true }
+
+# cosmos dependencies
+tendermint = { workspace = true }
+
+# parity dependencies
+parity-scale-codec = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "displaydoc/std",
+  "serde/std",
+  "subtle-encoding/std",
+  "ibc-primitives/std",
+  "ibc-eureka-core-host-types/std",
+  "ibc-proto/std",
+  "tendermint/std",
+]
+serde = [
+  "dep:serde",
+  "ibc-primitives/serde",
+  "ibc-eureka-core-host-types/serde",
+  "ibc-primitives/serde",
+  "ibc-proto/serde",
+]
+borsh = [
+  "dep:borsh",
+  "ibc-eureka-core-host-types/borsh",
+  "ibc-primitives/borsh",
+  "ibc-proto/borsh",
+]
+schema = [
+  "dep:schemars",
+  "ibc-eureka-core-host-types/schema",
+  "ibc-primitives/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
+]
+parity-scale-codec = [
+  "dep:parity-scale-codec",
+  "dep:scale-info",
+  "ibc-eureka-core-host-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+  "ibc-proto/parity-scale-codec",
+]

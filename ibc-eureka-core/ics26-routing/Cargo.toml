@@ -1,0 +1,67 @@
+[package]
+name         = "ibc-eureka-core-router"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "routing" ]
+readme       = "./../README.md"
+
+description = """
+    Maintained by `ibc-rs`, contains necessary traits to implement the routing and callback functionality
+    (IBC router module) used for connecting the application layer to the transport layer of an IBC enabled chain.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+derive_more     = { workspace = true }
+displaydoc      = { workspace = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-primitives                = { workspace = true }
+ibc-eureka-core-channel-types = { workspace = true }
+ibc-eureka-core-host-types    = { workspace = true }
+ibc-eureka-core-router-types  = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "displaydoc/std",
+  "subtle-encoding/std",
+  "ibc-primitives/std",
+  "ibc-eureka-core-channel-types/std",
+  "ibc-eureka-core-host-types/std",
+  "ibc-eureka-core-router-types/std",
+]
+serde = [
+  "ibc-primitives/serde",
+  "ibc-eureka-core-channel-types/serde",
+  "ibc-eureka-core-host-types/serde",
+  "ibc-eureka-core-router-types/serde",
+]
+borsh = [
+  "ibc-primitives/borsh",
+  "ibc-eureka-core-channel-types/borsh",
+  "ibc-eureka-core-host-types/borsh",
+  "ibc-eureka-core-router-types/borsh",
+]
+schema = [
+  "ibc-eureka-core-channel-types/schema",
+  "ibc-eureka-core-host-types/schema",
+  "ibc-eureka-core-router-types/schema",
+  "ibc-primitives/schema",
+  "serde",
+  "std",
+]
+parity-scale-codec = [
+  "ibc-eureka-core-channel-types/parity-scale-codec",
+  "ibc-eureka-core-host-types/parity-scale-codec",
+  "ibc-eureka-core-router-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+]
