@@ -35,7 +35,7 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let port_id_on_b = &payload.header.target_port.1;
+    let (_, port_id_on_b) = &payload.header.target_port;
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
 
@@ -187,7 +187,7 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let port_id_on_b = &payload.header.target_port.1;
+    let (_, port_id_on_b) = &payload.header.target_port;
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
 

@@ -32,7 +32,7 @@ pub fn send_packet_validate(
 
     let payload = &packet.payloads[0];
 
-    let port_id_on_a = &payload.header.source_port.1;
+    let (_, port_id_on_a) = &payload.header.source_port;
     let channel_id_on_a = &packet.header.source_client;
     let channel_id_on_b = &packet.header.target_client;
     let seq_on_a = &packet.header.seq_on_a;
@@ -95,7 +95,7 @@ pub fn send_packet_execute(
 ) -> Result<(), ChannelError> {
     let payload = &packet.payloads[0];
 
-    let port_id_on_a = &payload.header.source_port.1;
+    let (_, port_id_on_a) = &payload.header.source_port;
     let channel_id_on_a = &packet.header.source_client;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;

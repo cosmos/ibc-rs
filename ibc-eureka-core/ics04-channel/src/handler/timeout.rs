@@ -54,7 +54,7 @@ where
 
     let payload = &packet.payloads[0];
 
-    let port_id_on_a = &payload.header.source_port.1;
+    let (_, port_id_on_a) = &payload.header.source_port;
     let channel_id_on_a = &packet.header.source_client;
     let seq_on_a = &packet.header.seq_on_a;
 
