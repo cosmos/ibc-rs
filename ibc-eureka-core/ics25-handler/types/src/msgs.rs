@@ -51,31 +51,6 @@ impl TryFrom<Any> for MsgEnvelope {
                 Ok(MsgEnvelope::Client(ClientMsg::Misbehaviour(domain_msg)))
             }
 
-            // // ICS04 channel messages
-            // CHAN_OPEN_INIT_TYPE_URL => {
-            //     let domain_msg = MsgChannelOpenInit::decode_vec(&any_msg.value)?;
-            //     Ok(MsgEnvelope::Channel(ChannelMsg::OpenInit(domain_msg)))
-            // }
-            // CHAN_OPEN_TRY_TYPE_URL => {
-            //     let domain_msg = MsgChannelOpenTry::decode_vec(&any_msg.value)?;
-            //     Ok(MsgEnvelope::Channel(ChannelMsg::OpenTry(domain_msg)))
-            // }
-            // CHAN_OPEN_ACK_TYPE_URL => {
-            //     let domain_msg = MsgChannelOpenAck::decode_vec(&any_msg.value)?;
-            //     Ok(MsgEnvelope::Channel(ChannelMsg::OpenAck(domain_msg)))
-            // }
-            // CHAN_OPEN_CONFIRM_TYPE_URL => {
-            //     let domain_msg = MsgChannelOpenConfirm::decode_vec(&any_msg.value)?;
-            //     Ok(MsgEnvelope::Channel(ChannelMsg::OpenConfirm(domain_msg)))
-            // }
-            // CHAN_CLOSE_INIT_TYPE_URL => {
-            //     let domain_msg = MsgChannelCloseInit::decode_vec(&any_msg.value)?;
-            //     Ok(MsgEnvelope::Channel(ChannelMsg::CloseInit(domain_msg)))
-            // }
-            // CHAN_CLOSE_CONFIRM_TYPE_URL => {
-            //     let domain_msg = MsgChannelCloseConfirm::decode_vec(&any_msg.value)?;
-            //     Ok(MsgEnvelope::Channel(ChannelMsg::CloseConfirm(domain_msg)))
-            // }
             // ICS04 packet messages
             RECV_PACKET_TYPE_URL => {
                 let domain_msg = MsgRecvPacket::decode_vec(&any_msg.value)?;
