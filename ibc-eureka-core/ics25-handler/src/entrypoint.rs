@@ -1,6 +1,6 @@
 use ibc_eureka_core_channel::handler::{
     acknowledgement_packet_execute, acknowledgement_packet_validate, recv_packet_execute,
-    recv_packet_validate, timeout_packet_execute, timeout_packet_validate, TimeoutMsgType,
+    recv_packet_validate, timeout_packet_execute, timeout_packet_validate,
 };
 use ibc_eureka_core_channel::types::msgs::{packet_msg_to_port_id, PacketMsg};
 use ibc_eureka_core_client::context::{ClientExecutionContext, ClientValidationContext};
@@ -73,12 +73,7 @@ where
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_validate(ctx, msg)?,
                 PacketMsg::Ack(msg) => acknowledgement_packet_validate(ctx, module, msg)?,
-                PacketMsg::Timeout(msg) => {
-                    timeout_packet_validate(ctx, module, TimeoutMsgType::Timeout(msg))?
-                }
-                PacketMsg::TimeoutOnClose(msg) => {
-                    timeout_packet_validate(ctx, module, TimeoutMsgType::TimeoutOnClose(msg))?
-                }
+                PacketMsg::Timeout(msg) => timeout_packet_validate(ctx, module, msg)?,
             }
         }
     };
@@ -123,12 +118,7 @@ where
             match msg {
                 PacketMsg::Recv(msg) => recv_packet_execute(ctx, module, msg)?,
                 PacketMsg::Ack(msg) => acknowledgement_packet_execute(ctx, module, msg)?,
-                PacketMsg::Timeout(msg) => {
-                    timeout_packet_execute(ctx, module, TimeoutMsgType::Timeout(msg))?
-                }
-                PacketMsg::TimeoutOnClose(msg) => {
-                    timeout_packet_execute(ctx, module, TimeoutMsgType::TimeoutOnClose(msg))?
-                }
+                PacketMsg::Timeout(msg) => timeout_packet_execute(ctx, module, msg)?,
             }
         }
     }

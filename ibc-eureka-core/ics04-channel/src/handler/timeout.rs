@@ -1,7 +1,7 @@
 use ibc_eureka_core_channel_types::commitment::compute_packet_commitment;
 use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::TimeoutPacket;
-use ibc_eureka_core_channel_types::msgs::{MsgTimeout, MsgTimeoutOnClose};
+use ibc_eureka_core_channel_types::msgs::MsgTimeout;
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_eureka_core_host::types::path::{
@@ -11,30 +11,17 @@ use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_eureka_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
-use super::timeout_on_close;
-
-pub enum TimeoutMsgType {
-    Timeout(MsgTimeout),
-    TimeoutOnClose(MsgTimeoutOnClose),
-}
-
 pub fn timeout_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
     module: &dyn Module,
-    timeout_msg_type: TimeoutMsgType,
+    msg: MsgTimeout,
 ) -> Result<(), ChannelError>
 where
     ValCtx: ValidationContext,
 {
-    match &timeout_msg_type {
-        TimeoutMsgType::Timeout(msg) => validate(ctx_a, msg),
-        TimeoutMsgType::TimeoutOnClose(msg) => timeout_on_close::validate(ctx_a, msg),
-    }?;
+    validate(ctx_a, &msg)?;
 
-    let (packet, signer) = match timeout_msg_type {
-        TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
-        TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
-    };
+    let (packet, signer) = (msg.packet, msg.signer);
 
     module.on_timeout_packet_validate(&packet, &signer)
 }
@@ -42,15 +29,12 @@ where
 pub fn timeout_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
     module: &mut dyn Module,
-    timeout_msg_type: TimeoutMsgType,
+    msg: MsgTimeout,
 ) -> Result<(), ChannelError>
 where
     ExecCtx: ExecutionContext,
 {
-    let (packet, signer) = match timeout_msg_type {
-        TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
-        TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
-    };
+    let (packet, signer) = (msg.packet, msg.signer);
 
     let payload = &packet.payloads[0];
 

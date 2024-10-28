@@ -26,7 +26,6 @@ pub enum PacketMsg {
     Recv(MsgRecvPacket),
     Ack(MsgAcknowledgement),
     Timeout(MsgTimeout),
-    TimeoutOnClose(MsgTimeoutOnClose),
 }
 
 pub fn packet_msg_to_port_id(msg: &PacketMsg) -> &PortId {
@@ -34,6 +33,5 @@ pub fn packet_msg_to_port_id(msg: &PacketMsg) -> &PortId {
         PacketMsg::Recv(msg) => &msg.packet.payloads[0].header.target_port.1,
         PacketMsg::Ack(msg) => &msg.packet.payloads[0].header.source_port.1,
         PacketMsg::Timeout(msg) => &msg.packet.payloads[0].header.source_port.1,
-        PacketMsg::TimeoutOnClose(msg) => &msg.packet.payloads[0].header.source_port.1,
     }
 }

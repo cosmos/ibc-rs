@@ -1,6 +1,6 @@
 use ibc_eureka_core_channel_types::msgs::{
-    MsgAcknowledgement, MsgRecvPacket, MsgTimeout, MsgTimeoutOnClose, PacketMsg,
-    ACKNOWLEDGEMENT_TYPE_URL, RECV_PACKET_TYPE_URL, TIMEOUT_ON_CLOSE_TYPE_URL, TIMEOUT_TYPE_URL,
+    MsgAcknowledgement, MsgRecvPacket, MsgTimeout, PacketMsg, ACKNOWLEDGEMENT_TYPE_URL,
+    RECV_PACKET_TYPE_URL, TIMEOUT_TYPE_URL,
 };
 #[allow(deprecated)]
 use ibc_eureka_core_client_types::msgs::{
@@ -64,11 +64,6 @@ impl TryFrom<Any> for MsgEnvelope {
                 let domain_msg = MsgTimeout::decode_vec(&any_msg.value)?;
                 Ok(MsgEnvelope::Packet(PacketMsg::Timeout(domain_msg)))
             }
-            TIMEOUT_ON_CLOSE_TYPE_URL => {
-                let domain_msg = MsgTimeoutOnClose::decode_vec(&any_msg.value)?;
-                Ok(MsgEnvelope::Packet(PacketMsg::TimeoutOnClose(domain_msg)))
-            }
-
             _ => Err(DecodingError::UnknownTypeUrl(any_msg.type_url))?,
         }
     }
