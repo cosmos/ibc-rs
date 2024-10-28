@@ -45,7 +45,7 @@ pub trait ClientValidationContext: Sized {
     fn counterparty_meta(
         &self,
         client_id: &ClientId,
-    ) -> Result<(ClientId, CommitmentPrefix), HostError>;
+    ) -> Result<Option<(ClientId, CommitmentPrefix)>, HostError>;
 }
 
 /// Defines the methods that all client `ExecutionContext`s (precisely the

@@ -145,8 +145,9 @@ where
 
         let client_val_ctx_b = ctx_b.get_client_validation_context();
 
-        let (stored_id_target_client_on_source, source_prefix) =
-            client_val_ctx_b.counterparty_meta(id_source_client_on_target)?;
+        let (stored_id_target_client_on_source, source_prefix) = client_val_ctx_b
+            .counterparty_meta(id_source_client_on_target)?
+            .ok_or(ChannelError::MissingCounterparty)?;
 
         if &stored_id_target_client_on_source != id_target_client_on_source {
             return Err(ChannelError::MismatchCounterparty {
