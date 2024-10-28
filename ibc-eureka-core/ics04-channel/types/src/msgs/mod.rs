@@ -30,8 +30,8 @@ pub enum PacketMsg {
 
 pub fn packet_msg_to_port_id(msg: &PacketMsg) -> &PortId {
     match msg {
-        PacketMsg::Recv(msg) => &msg.packet.payloads[0].header.target_port.1,
-        PacketMsg::Ack(msg) => &msg.packet.payloads[0].header.source_port.1,
-        PacketMsg::Timeout(msg) => &msg.packet.payloads[0].header.source_port.1,
+        PacketMsg::Recv(msg) => &msg.packet.payloads[0].header.target_port,
+        PacketMsg::Ack(msg) => &msg.packet.payloads[0].header.source_port,
+        PacketMsg::Timeout(msg) => &msg.packet.payloads[0].header.source_port,
     }
 }

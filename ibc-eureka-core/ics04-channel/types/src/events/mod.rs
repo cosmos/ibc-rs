@@ -554,9 +554,9 @@ impl SendPacket {
             timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
             timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
             seq_attr_on_a: packet.header.seq_on_a.into(),
-            port_id_attr_on_a: payload.header.source_port.1.into(),
+            port_id_attr_on_a: payload.header.source_port.into(),
             chan_id_attr_on_a: packet.header.target_client_on_source.into(),
-            port_id_attr_on_b: payload.header.target_port.1.into(),
+            port_id_attr_on_b: payload.header.target_port.into(),
             chan_id_attr_on_b: packet.header.source_client_on_target.into(),
         }
     }
@@ -652,9 +652,9 @@ impl ReceivePacket {
             timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
             timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
             seq_attr_on_a: packet.header.seq_on_a.into(),
-            port_id_attr_on_a: payload.header.source_port.1.into(),
+            port_id_attr_on_a: payload.header.source_port.into(),
             chan_id_attr_on_a: packet.header.target_client_on_source.into(),
-            port_id_attr_on_b: payload.header.target_port.1.into(),
+            port_id_attr_on_b: payload.header.target_port.into(),
             chan_id_attr_on_b: packet.header.source_client_on_target.into(),
         }
     }
@@ -751,9 +751,9 @@ impl WriteAcknowledgement {
             timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
             timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
             seq_attr_on_a: packet.header.seq_on_a.into(),
-            port_id_attr_on_a: payload.header.source_port.1.into(),
+            port_id_attr_on_a: payload.header.source_port.into(),
             chan_id_attr_on_a: packet.header.target_client_on_source.into(),
-            port_id_attr_on_b: payload.header.target_port.1.into(),
+            port_id_attr_on_b: payload.header.target_port.into(),
             chan_id_attr_on_b: packet.header.source_client_on_target.into(),
             acknowledgement: acknowledgement.into(),
         }
@@ -853,9 +853,9 @@ impl AcknowledgePacket {
             timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
             timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
             seq_on_a: packet.header.seq_on_a.into(),
-            port_id_attr_on_a: payload.header.source_port.1.into(),
+            port_id_attr_on_a: payload.header.source_port.into(),
             chan_id_attr_on_a: packet.header.target_client_on_source.into(),
-            port_id_attr_on_b: payload.header.target_port.1.into(),
+            port_id_attr_on_b: payload.header.target_port.into(),
             chan_id_attr_on_b: packet.header.source_client_on_target.into(),
         }
     }
@@ -943,9 +943,9 @@ impl TimeoutPacket {
             timeout_height_attr_on_b: packet.header.timeout_height_on_b.into(),
             timeout_timestamp_attr_on_b: packet.header.timeout_timestamp_on_b.into(),
             seq_attr_on_a: packet.header.seq_on_a.into(),
-            port_id_attr_on_a: payload.header.source_port.1.into(),
+            port_id_attr_on_a: payload.header.source_port.into(),
             chan_id_attr_on_a: packet.header.target_client_on_source.into(),
-            port_id_attr_on_b: payload.header.target_port.1.into(),
+            port_id_attr_on_b: payload.header.target_port.into(),
             chan_id_attr_on_b: packet.header.source_client_on_target.into(),
         }
     }
