@@ -526,16 +526,16 @@ pub struct SeqSendPathV2 {
 
 impl SeqSendPathV2 {
     pub fn new(
-        source_client_on_target: ClientId,
-        source_prefix: String,
-        target_client_on_source: ClientId,
-        target_prefix: String,
+        source_client_on_target: &ClientId,
+        source_prefix: &str,
+        target_client_on_source: &ClientId,
+        target_prefix: &str,
     ) -> Self {
         Self {
-            source_client_on_target,
-            source_prefix,
-            target_client_on_source,
-            target_prefix,
+            source_client_on_target: source_client_on_target.clone(),
+            source_prefix: source_prefix.to_string(),
+            target_client_on_source: target_client_on_source.clone(),
+            target_prefix: target_prefix.to_string(),
         }
     }
 }
@@ -589,16 +589,16 @@ pub struct SeqRecvPathV2 {
 
 impl SeqRecvPathV2 {
     pub fn new(
-        source_client_on_target: ClientId,
-        source_prefix: String,
-        target_client_on_source: ClientId,
-        target_prefix: String,
+        source_client_on_target: &ClientId,
+        source_prefix: &str,
+        target_client_on_source: &ClientId,
+        target_prefix: &str,
     ) -> Self {
         Self {
-            source_client_on_target,
-            source_prefix,
-            target_client_on_source,
-            target_prefix,
+            source_client_on_target: source_client_on_target.clone(),
+            source_prefix: source_prefix.to_string(),
+            target_client_on_source: target_client_on_source.clone(),
+            target_prefix: target_prefix.to_string(),
         }
     }
 }
@@ -652,16 +652,16 @@ pub struct SeqAckPathV2 {
 
 impl SeqAckPathV2 {
     pub fn new(
-        source_client_on_target: ClientId,
-        source_prefix: String,
-        target_client_on_source: ClientId,
-        target_prefix: String,
+        source_client_on_target: &ClientId,
+        source_prefix: &str,
+        target_client_on_source: &ClientId,
+        target_prefix: &str,
     ) -> Self {
         Self {
-            source_client_on_target,
-            source_prefix,
-            target_client_on_source,
-            target_prefix,
+            source_client_on_target: source_client_on_target.clone(),
+            source_prefix: source_prefix.to_string(),
+            target_client_on_source: target_client_on_source.clone(),
+            target_prefix: target_prefix.to_string(),
         }
     }
 }
@@ -732,18 +732,18 @@ pub struct CommitmentPathV2 {
 
 impl CommitmentPathV2 {
     pub fn new(
-        source_client_on_target: ClientId,
-        source_prefix: String,
-        target_client_on_source: ClientId,
-        target_prefix: String,
-        sequence: Sequence,
+        source_client_on_target: &ClientId,
+        source_prefix: &str,
+        target_client_on_source: &ClientId,
+        target_prefix: &str,
+        sequence: &Sequence,
     ) -> Self {
         Self {
-            source_client_on_target,
-            source_prefix,
-            target_client_on_source,
-            target_prefix,
-            sequence,
+            source_client_on_target: source_client_on_target.clone(),
+            source_prefix: source_prefix.to_string(),
+            target_client_on_source: target_client_on_source.clone(),
+            target_prefix: target_prefix.to_string(),
+            sequence: *sequence,
         }
     }
 
@@ -820,18 +820,18 @@ pub struct AckPathV2 {
 
 impl AckPathV2 {
     pub fn new(
-        source_client_on_target: ClientId,
-        source_prefix: String,
-        target_client_on_source: ClientId,
-        target_prefix: String,
-        sequence: Sequence,
+        source_client_on_target: &ClientId,
+        source_prefix: &str,
+        target_client_on_source: &ClientId,
+        target_prefix: &str,
+        sequence: &Sequence,
     ) -> Self {
         Self {
-            source_client_on_target,
-            source_prefix,
-            target_client_on_source,
-            target_prefix,
-            sequence,
+            source_client_on_target: source_client_on_target.clone(),
+            source_prefix: source_prefix.to_string(),
+            target_client_on_source: target_client_on_source.clone(),
+            target_prefix: target_prefix.to_string(),
+            sequence: *sequence,
         }
     }
 
@@ -908,18 +908,18 @@ pub struct ReceiptPathV2 {
 
 impl ReceiptPathV2 {
     pub fn new(
-        source_client_on_target: ClientId,
-        source_prefix: String,
-        target_client_on_source: ClientId,
-        target_prefix: String,
-        sequence: Sequence,
+        source_client_on_target: &ClientId,
+        source_prefix: &str,
+        target_client_on_source: &ClientId,
+        target_prefix: &str,
+        sequence: &Sequence,
     ) -> Self {
         Self {
-            source_client_on_target,
-            source_prefix,
-            target_client_on_source,
-            target_prefix,
-            sequence,
+            source_client_on_target: source_client_on_target.clone(),
+            source_prefix: source_prefix.to_string(),
+            target_client_on_source: target_client_on_source.clone(),
+            target_prefix: target_prefix.to_string(),
+            sequence: *sequence,
         }
     }
 
@@ -1378,34 +1378,34 @@ fn parse_commit_ack_receipt_seqs_v2(components: &[&str]) -> Option<Path> {
     }
 
     let source_client_on_target = ClientId::from_str(components[3]).ok()?;
-    let source_prefix = components[5].into();
+    let source_prefix = components[5];
     let target_client_on_source = ClientId::from_str(components[7]).ok()?;
-    let target_prefix = components[9].into();
+    let target_prefix = components[9];
 
     match components[1] {
         NEXT_SEQ_SEND_PREFIX => Some(
             SeqSendPathV2::new(
-                source_client_on_target,
+                &source_client_on_target,
                 source_prefix,
-                target_client_on_source,
+                &target_client_on_source,
                 target_prefix,
             )
             .into(),
         ),
         NEXT_SEQ_RECV_PREFIX => Some(
             SeqRecvPathV2::new(
-                source_client_on_target,
+                &source_client_on_target,
                 source_prefix,
-                target_client_on_source,
+                &target_client_on_source,
                 target_prefix,
             )
             .into(),
         ),
         NEXT_SEQ_ACK_PREFIX => Some(
             SeqAckPathV2::new(
-                source_client_on_target,
+                &source_client_on_target,
                 source_prefix,
-                target_client_on_source,
+                &target_client_on_source,
                 target_prefix,
             )
             .into(),
@@ -1437,39 +1437,39 @@ fn parse_commit_ack_receipt_v2(components: &[&str]) -> Option<Path> {
     }
 
     let source_client_on_target = ClientId::from_str(components[3]).ok()?;
-    let source_prefix = components[5].into();
+    let source_prefix = components[5];
     let target_client_on_source = ClientId::from_str(components[7]).ok()?;
-    let target_prefix = components[9].into();
+    let target_prefix = components[9];
     let sequence = Sequence::from_str(components[11]).ok()?;
 
     match components[1] {
         PACKET_COMMITMENT_PREFIX => Some(
             CommitmentPathV2::new(
-                source_client_on_target,
+                &source_client_on_target,
                 source_prefix,
-                target_client_on_source,
+                &target_client_on_source,
                 target_prefix,
-                sequence,
+                &sequence,
             )
             .into(),
         ),
         PACKET_ACK_PREFIX => Some(
             AckPathV2::new(
-                source_client_on_target,
+                &source_client_on_target,
                 source_prefix,
-                target_client_on_source,
+                &target_client_on_source,
                 target_prefix,
-                sequence,
+                &sequence,
             )
             .into(),
         ),
         PACKET_RECEIPT_PREFIX => Some(
             ReceiptPathV2::new(
-                source_client_on_target,
+                &source_client_on_target,
                 source_prefix,
-                target_client_on_source,
+                &target_client_on_source,
                 target_prefix,
-                sequence,
+                &sequence,
             )
             .into(),
         ),
