@@ -41,7 +41,8 @@ pub trait ClientValidationContext: Sized {
         height: &Height,
     ) -> Result<(Timestamp, Height), HostError>;
 
-    fn counterparty_client(
+    /// Returns the client identifier and the commitment prefix of the counterparty client.
+    fn counterparty_meta(
         &self,
         client_id: &ClientId,
     ) -> Result<(ClientId, CommitmentPrefix), HostError>;
@@ -105,12 +106,16 @@ pub trait ClientExecutionContext:
     /// Note that this timestamp is determined by the host.
     fn delete_update_meta(&mut self, client_id: ClientId, height: Height) -> Result<(), HostError>;
 
-    fn store_counterparty_client(
+    /// Store the client identifier and the commitment prefix of the counterparty client.
+    fn store_counterparty_meta(
         &self,
         client_id: &ClientId,
         counterparty_client_id: &ClientId,
         counterparty_prefix: &CommitmentPrefix,
     ) -> Result<(), HostError>;
+
+    /// Delete the client identifier and the commitment prefix of the counterparty client.
+    fn delete_counterparty_meta(&self, client_id: &ClientId) -> Result<(), HostError>;
 }
 
 /// An optional trait that extends the client validation context capabilities by

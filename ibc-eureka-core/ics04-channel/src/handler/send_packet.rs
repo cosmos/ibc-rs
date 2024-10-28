@@ -43,7 +43,7 @@ pub fn send_packet_validate(
     let id_source_client_on_target: &ClientId = channel_source_client_on_target.as_ref();
 
     let (stored_id_source_client_on_target, _) =
-        client_val_ctx_a.counterparty_client(id_target_client_on_source)?;
+        client_val_ctx_a.counterparty_meta(id_target_client_on_source)?;
 
     if &stored_id_source_client_on_target != id_source_client_on_target {
         return Err(ChannelError::MismatchCounterparty {
