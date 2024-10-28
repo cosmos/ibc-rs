@@ -36,7 +36,7 @@ where
     let payload = &packet.payloads[0];
 
     let (_, port_id_on_a) = &payload.header.source_port;
-    let channel_id_on_a = &packet.header.source_client;
+    let channel_id_on_a = &packet.header.target_client_on_source;
     let seq_on_a = &packet.header.seq_on_a;
 
     // In all cases, this event is emitted
@@ -93,9 +93,9 @@ where
     let payload = &packet.payloads[0];
 
     let (prefix_on_a, port_id_on_a) = &payload.header.source_port;
-    let channel_id_on_a = &packet.header.source_client;
+    let channel_id_on_a = &packet.header.target_client_on_source;
     let (_, port_id_on_b) = &payload.header.target_port;
-    let channel_id_on_b = &packet.header.target_client;
+    let channel_id_on_b = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
 

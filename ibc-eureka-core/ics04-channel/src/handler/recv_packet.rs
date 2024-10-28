@@ -35,15 +35,16 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let (_, port_id_on_b) = &payload.header.target_port;
-    let channel_id_on_b = &packet.header.target_client;
+    let (_, target_port) = &payload.header.target_port;
+    let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
 
     // Check if another relayer already relayed the packet.
     // We don't want to fail the transaction in this case.
     {
         let packet_already_received = {
-            let receipt_path_on_b = ReceiptPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
+            let receipt_path_on_b =
+                ReceiptPath::new(target_port, channel_source_client_on_target, *seq_on_a);
             ctx_b.get_packet_receipt(&receipt_path_on_b)?.is_ok()
         };
 
@@ -58,11 +59,11 @@ where
     {
         // `recvPacket` core handler state changes
         {
-            let seq_recv_path_on_b = SeqRecvPath::new(port_id_on_b, channel_id_on_b);
+            let seq_recv_path_on_b = SeqRecvPath::new(target_port, channel_source_client_on_target);
             let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
             ctx_b.store_next_sequence_recv(&seq_recv_path_on_b, next_seq_recv.increment())?;
         }
-        let ack_path_on_b = AckPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
+        let ack_path_on_b = AckPath::new(target_port, channel_source_client_on_target, *seq_on_a);
         // `writeAcknowledgement` handler state changes
         ctx_b.store_packet_acknowledgement(
             &ack_path_on_b,
@@ -104,10 +105,9 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let (_, port_id_on_a) = &payload.header.source_port;
-    let channel_id_on_a = &packet.header.source_client;
-    let (prefix_on_b, _) = &payload.header.target_port;
-    let _ = &packet.header.target_client;
+    let (prefix_source, source_port) = &payload.header.source_port;
+    let channel_target_client_on_source = &packet.header.target_client_on_source;
+    let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
 
@@ -130,18 +130,21 @@ where
 
     // Verify proofs
     {
-        let client_id_on_b = channel_id_on_a.as_ref();
+        let id_source_client_on_target = channel_source_client_on_target.as_ref();
         let client_val_ctx_b = ctx_b.get_client_validation_context();
-        let client_state_of_a_on_b = client_val_ctx_b.client_state(client_id_on_b)?;
+        let source_client_on_target = client_val_ctx_b.client_state(id_source_client_on_target)?;
 
-        client_state_of_a_on_b
-            .status(ctx_b.get_client_validation_context(), client_id_on_b)?
+        source_client_on_target
+            .status(
+                ctx_b.get_client_validation_context(),
+                id_source_client_on_target,
+            )?
             .verify_is_active()?;
 
-        client_state_of_a_on_b.validate_proof_height(msg.proof_height_on_a)?;
+        source_client_on_target.validate_proof_height(msg.proof_height_on_a)?;
 
         let client_cons_state_path_on_b = ClientConsensusStatePath::new(
-            client_id_on_b.clone(),
+            id_source_client_on_target.clone(),
             msg.proof_height_on_a.revision_number(),
             msg.proof_height_on_a.revision_height(),
         );
@@ -154,11 +157,12 @@ where
             &packet.header.timeout_height_on_b,
             &packet.header.timeout_timestamp_on_b,
         );
-        let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
+        let commitment_path_on_a =
+            CommitmentPath::new(source_port, channel_target_client_on_source, *seq_on_a);
 
         // Verify the proof for the packet against the chain store.
-        client_state_of_a_on_b.verify_membership(
-            prefix_on_b,
+        source_client_on_target.verify_membership(
+            prefix_source,
             &msg.proof_commitment_on_a,
             consensus_state_of_a_on_b.root(),
             Path::Commitment(commitment_path_on_a),
@@ -187,11 +191,11 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let (_, port_id_on_b) = &payload.header.target_port;
-    let channel_id_on_b = &packet.header.target_client;
+    let (_, target_port) = &payload.header.target_port;
+    let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
 
-    let ack_path_on_b = AckPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
+    let ack_path_on_b = AckPath::new(target_port, channel_source_client_on_target, *seq_on_a);
     if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {
         return Err(ChannelError::DuplicateAcknowledgment(*seq_on_a));
     }

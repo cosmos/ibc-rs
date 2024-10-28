@@ -17,14 +17,15 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let (prefix_on_a, port_id_on_a) = &payload.header.source_port;
-    let channel_id_on_a = &packet.header.source_client;
-    let (_, port_id_on_b) = &payload.header.target_port;
-    let channel_id_on_b = &packet.header.target_client;
+    let (_, source_port) = &payload.header.source_port;
+    let channel_target_client_on_source = &packet.header.target_client_on_source;
+    let (target_prefix, target_port) = &payload.header.target_port;
+    let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
 
-    let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
+    let commitment_path_on_a =
+        CommitmentPath::new(source_port, channel_target_client_on_source, *seq_on_a);
 
     //verify the packet was sent, check the store
     let Ok(commitment_on_a) = ctx_a.get_packet_commitment(&commitment_path_on_a) else {
@@ -49,18 +50,21 @@ where
 
     // Verify proofs
     {
-        let client_id_on_a = channel_id_on_b.as_ref();
+        let id_target_client_on_source = channel_target_client_on_source.as_ref();
         let client_val_ctx_a = ctx_a.get_client_validation_context();
-        let client_state_of_b_on_a = client_val_ctx_a.client_state(client_id_on_a)?;
+        let target_client_on_source = client_val_ctx_a.client_state(id_target_client_on_source)?;
 
-        client_state_of_b_on_a
-            .status(ctx_a.get_client_validation_context(), client_id_on_a)?
+        target_client_on_source
+            .status(
+                ctx_a.get_client_validation_context(),
+                id_target_client_on_source,
+            )?
             .verify_is_active()?;
 
-        client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
+        target_client_on_source.validate_proof_height(msg.proof_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
-            client_id_on_a.clone(),
+            id_target_client_on_source.clone(),
             msg.proof_height_on_b.revision_number(),
             msg.proof_height_on_b.revision_height(),
         );
@@ -68,10 +72,11 @@ where
             client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
 
         let next_seq_recv_verification_result = {
-            let receipt_path_on_b = ReceiptPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
+            let receipt_path_on_b =
+                ReceiptPath::new(target_port, channel_source_client_on_target, *seq_on_a);
 
-            client_state_of_b_on_a.verify_non_membership(
-                prefix_on_a,
+            target_client_on_source.verify_non_membership(
+                target_prefix,
                 &msg.proof_unreceived_on_b,
                 consensus_state_of_b_on_a.root(),
                 Path::Receipt(receipt_path_on_b),
