@@ -81,6 +81,7 @@ pub fn send_packet_validate(
     // TODO(rano): include full channel identifier in the path
     let seq_send_path_on_a = SeqSendPath::new(
         channel_source_client_on_target.as_ref(),
+        // todo(rano): use ascii encoding of the bytes
         &format!("{source_prefix:?}"),
         channel_target_client_on_source.as_ref(),
         &format!("{target_prefix:?}"),
