@@ -4,6 +4,7 @@ use ibc_eureka_core_channel_types::events::TimeoutPacket;
 use ibc_eureka_core_channel_types::msgs::MsgTimeout;
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::identifiers::ClientId;
 use ibc_eureka_core_host::types::path::{
     ClientConsensusStatePath, CommitmentPathV2 as CommitmentPath, Path,
     ReceiptPathV2 as ReceiptPath,
@@ -125,7 +126,20 @@ where
     // Verify proofs
     {
         let id_target_client_on_source = channel_target_client_on_source.as_ref();
+        let id_source_client_on_target: &ClientId = channel_source_client_on_target.as_ref();
+
         let client_val_ctx_a = ctx_a.get_client_validation_context();
+
+        let (stored_id_source_client_on_target, target_prefix) =
+            client_val_ctx_a.counterparty_client(id_target_client_on_source)?;
+
+        if &stored_id_source_client_on_target != id_source_client_on_target {
+            return Err(ChannelError::MismatchCounterparty {
+                expected: stored_id_source_client_on_target.clone(),
+                actual: id_source_client_on_target.clone(),
+            });
+        }
+
         let target_client_on_source = client_val_ctx_a.client_state(id_target_client_on_source)?;
 
         target_client_on_source

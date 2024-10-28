@@ -4,6 +4,7 @@ use ibc_eureka_core_channel_types::events::SendPacket;
 use ibc_eureka_core_channel_types::packet::Packet;
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::identifiers::ClientId;
 use ibc_eureka_core_host::types::path::{
     ClientConsensusStatePath, CommitmentPathV2 as CommitmentPath, SeqSendPathV2 as SeqSendPath,
 };
@@ -36,9 +37,20 @@ pub fn send_packet_validate(
     let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
 
-    let id_target_client_on_source = channel_target_client_on_source.as_ref();
-
     let client_val_ctx_a = ctx_a.get_client_validation_context();
+
+    let id_target_client_on_source = channel_target_client_on_source.as_ref();
+    let id_source_client_on_target: &ClientId = channel_source_client_on_target.as_ref();
+
+    let (stored_id_source_client_on_target, _) =
+        client_val_ctx_a.counterparty_client(id_target_client_on_source)?;
+
+    if &stored_id_source_client_on_target != id_source_client_on_target {
+        return Err(ChannelError::MismatchCounterparty {
+            expected: stored_id_source_client_on_target.clone(),
+            actual: id_source_client_on_target.clone(),
+        });
+    }
 
     let target_client_on_source = client_val_ctx_a.client_state(id_target_client_on_source)?;
 

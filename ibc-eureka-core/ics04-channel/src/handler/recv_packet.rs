@@ -6,6 +6,7 @@ use ibc_eureka_core_channel_types::events::{ReceivePacket, WriteAcknowledgement}
 use ibc_eureka_core_channel_types::msgs::MsgRecvPacket;
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
+use ibc_eureka_core_host::types::identifiers::ClientId;
 use ibc_eureka_core_host::types::path::{
     AckPathV2 as AckPath, ClientConsensusStatePath, CommitmentPathV2 as CommitmentPath, Path,
     ReceiptPathV2 as ReceiptPath, SeqRecvPathV2 as SeqRecvPath,
@@ -140,7 +141,20 @@ where
     // Verify proofs
     {
         let id_source_client_on_target = channel_source_client_on_target.as_ref();
+        let id_target_client_on_source: &ClientId = channel_target_client_on_source.as_ref();
+
         let client_val_ctx_b = ctx_b.get_client_validation_context();
+
+        let (stored_id_target_client_on_source, source_prefix) =
+            client_val_ctx_b.counterparty_client(id_source_client_on_target)?;
+
+        if &stored_id_target_client_on_source != id_target_client_on_source {
+            return Err(ChannelError::MismatchCounterparty {
+                expected: stored_id_target_client_on_source.clone(),
+                actual: id_target_client_on_source.clone(),
+            });
+        }
+
         let source_client_on_target = client_val_ctx_b.client_state(id_source_client_on_target)?;
 
         source_client_on_target
