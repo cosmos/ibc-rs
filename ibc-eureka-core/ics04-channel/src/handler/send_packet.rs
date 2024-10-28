@@ -4,7 +4,9 @@ use ibc_eureka_core_channel_types::events::SendPacket;
 use ibc_eureka_core_channel_types::packet::Packet;
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_eureka_core_host::types::path::{ClientConsensusStatePath, CommitmentPath, SeqSendPath};
+use ibc_eureka_core_host::types::path::{
+    ClientConsensusStatePath, CommitmentPathV2 as CommitmentPath, SeqSendPathV2 as SeqSendPath,
+};
 use ibc_primitives::prelude::*;
 
 use crate::context::{SendPacketExecutionContext, SendPacketValidationContext};
@@ -32,8 +34,10 @@ pub fn send_packet_validate(
 
     let payload = &packet.payloads[0];
 
-    let (_, source_port) = &payload.header.source_port;
+    let (source_prefix, _source_port) = &payload.header.source_port;
     let channel_target_client_on_source = &packet.header.target_client_on_source;
+    let (target_prefix, _target_port) = &payload.header.target_port;
+    let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
 
     let id_target_client_on_source = channel_target_client_on_source.as_ref();
@@ -75,7 +79,12 @@ pub fn send_packet_validate(
     }
 
     // TODO(rano): include full channel identifier in the path
-    let seq_send_path_on_a = SeqSendPath::new(source_port, channel_target_client_on_source);
+    let seq_send_path_on_a = SeqSendPath::new(
+        channel_source_client_on_target.as_ref(),
+        &format!("{source_prefix:?}"),
+        channel_target_client_on_source.as_ref(),
+        &format!("{target_prefix:?}"),
+    );
     let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
     if seq_on_a != &next_seq_send_on_a {
@@ -97,20 +106,33 @@ pub fn send_packet_execute(
 ) -> Result<(), ChannelError> {
     let payload = &packet.payloads[0];
 
-    let (_, source_port) = &payload.header.source_port;
+    let (source_prefix, _source_port) = &payload.header.source_port;
     let channel_target_client_on_source = &packet.header.target_client_on_source;
+    let (target_prefix, _target_port) = &payload.header.target_port;
+    let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
 
     {
-        let seq_send_path_on_a = SeqSendPath::new(source_port, channel_target_client_on_source);
+        let seq_send_path_on_a = SeqSendPath::new(
+            channel_source_client_on_target.as_ref(),
+            &format!("{source_prefix:?}"),
+            channel_target_client_on_source.as_ref(),
+            &format!("{target_prefix:?}"),
+        );
         let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
         ctx_a.store_next_sequence_send(&seq_send_path_on_a, next_seq_send_on_a.increment())?;
     }
 
     ctx_a.store_packet_commitment(
-        &CommitmentPath::new(source_port, channel_target_client_on_source, *seq_on_a),
+        &CommitmentPath::new(
+            channel_source_client_on_target.as_ref(),
+            &format!("{source_prefix:?}"),
+            channel_target_client_on_source.as_ref(),
+            &format!("{target_prefix:?}"),
+            seq_on_a,
+        ),
         compute_packet_commitment(
             data,
             &packet.header.timeout_height_on_b,
