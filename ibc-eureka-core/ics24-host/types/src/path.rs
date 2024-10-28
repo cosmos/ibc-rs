@@ -15,6 +15,12 @@ pub const NEXT_CLIENT_SEQUENCE: &str = "nextClientSequence";
 pub const NEXT_CONNECTION_SEQUENCE: &str = "nextConnectionSequence";
 pub const NEXT_CHANNEL_SEQUENCE: &str = "nextChannelSequence";
 
+pub const EUREKA: &str = "eureka";
+pub const SOURCE_CLIENT_ON_TARGET: &str = "sourceClientOnTarget";
+pub const SOURCE_PREFIX: &str = "sourcePrefix";
+pub const TARGET_CLIENT_ON_SOURCE: &str = "targetClientOnSource";
+pub const TARGET_PREFIX: &str = "targetPrefix";
+
 pub const CLIENT_PREFIX: &str = "clients";
 pub const CLIENT_STATE: &str = "clientState";
 pub const CONSENSUS_STATE_PREFIX: &str = "consensusStates";
@@ -98,6 +104,12 @@ pub enum Path {
     Commitment(CommitmentPath),
     Ack(AckPath),
     Receipt(ReceiptPath),
+    SeqSendV2(SeqSendPathV2),
+    SeqRecvV2(SeqRecvPathV2),
+    SeqAckV2(SeqAckPathV2),
+    CommitmentV2(CommitmentPathV2),
+    AckV2(AckPathV2),
+    ReceiptV2(ReceiptPathV2),
     UpgradeClientState(UpgradeClientStatePath),
     UpgradeConsensusState(UpgradeConsensusStatePath),
 }
@@ -502,6 +514,46 @@ impl SeqSendPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
+    fmt = "{EUREKA}/{NEXT_SEQ_SEND_PREFIX}/{SOURCE_CLIENT_ON_TARGET}/{source_client_on_target}/{SOURCE_PREFIX}/{source_prefix}/{TARGET_CLIENT_ON_SOURCE}/{target_client_on_source}/{TARGET_PREFIX}/{target_prefix}"
+)]
+pub struct SeqSendPathV2 {
+    pub source_client_on_target: ClientId,
+    pub source_prefix: String,
+    pub target_client_on_source: ClientId,
+    pub target_prefix: String,
+}
+
+impl SeqSendPathV2 {
+    pub fn new(
+        source_client_on_target: ClientId,
+        source_prefix: String,
+        target_client_on_source: ClientId,
+        target_prefix: String,
+    ) -> Self {
+        Self {
+            source_client_on_target,
+            source_prefix,
+            target_client_on_source,
+            target_prefix,
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "{NEXT_SEQ_RECV_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct SeqRecvPath(pub PortId, pub ChannelId);
 
@@ -525,12 +577,92 @@ impl SeqRecvPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
+    fmt = "{EUREKA}/{NEXT_SEQ_RECV_PREFIX}/{SOURCE_CLIENT_ON_TARGET}/{source_client_on_target}/{SOURCE_PREFIX}/{source_prefix}/{TARGET_CLIENT_ON_SOURCE}/{target_client_on_source}/{TARGET_PREFIX}/{target_prefix}"
+)]
+pub struct SeqRecvPathV2 {
+    pub source_client_on_target: ClientId,
+    pub source_prefix: String,
+    pub target_client_on_source: ClientId,
+    pub target_prefix: String,
+}
+
+impl SeqRecvPathV2 {
+    pub fn new(
+        source_client_on_target: ClientId,
+        source_prefix: String,
+        target_client_on_source: ClientId,
+        target_prefix: String,
+    ) -> Self {
+        Self {
+            source_client_on_target,
+            source_prefix,
+            target_client_on_source,
+            target_prefix,
+        }
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(fmt = "{NEXT_SEQ_ACK_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct SeqAckPath(pub PortId, pub ChannelId);
 
 impl SeqAckPath {
     pub fn new(port_id: &PortId, channel_id: &ChannelId) -> SeqAckPath {
         SeqAckPath(port_id.clone(), channel_id.clone())
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
+    fmt = "{EUREKA}/{NEXT_SEQ_ACK_PREFIX}/{SOURCE_CLIENT_ON_TARGET}/{source_client_on_target}/{SOURCE_PREFIX}/{source_prefix}/{TARGET_CLIENT_ON_SOURCE}/{target_client_on_source}/{TARGET_PREFIX}/{target_prefix}"
+)]
+pub struct SeqAckPathV2 {
+    pub source_client_on_target: ClientId,
+    pub source_prefix: String,
+    pub target_client_on_source: ClientId,
+    pub target_prefix: String,
+}
+
+impl SeqAckPathV2 {
+    pub fn new(
+        source_client_on_target: ClientId,
+        source_prefix: String,
+        target_client_on_source: ClientId,
+        target_prefix: String,
+    ) -> Self {
+        Self {
+            source_client_on_target,
+            source_prefix,
+            target_client_on_source,
+            target_prefix,
+        }
     }
 }
 
@@ -588,6 +720,55 @@ impl CommitmentPath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(
+    fmt = "{EUREKA}/{PACKET_COMMITMENT_PREFIX}/{SOURCE_CLIENT_ON_TARGET}/{source_client_on_target}/{SOURCE_PREFIX}/{source_prefix}/{TARGET_CLIENT_ON_SOURCE}/{target_client_on_source}/{TARGET_PREFIX}/{target_prefix}/{SEQUENCE_PREFIX}/{sequence}"
+)]
+pub struct CommitmentPathV2 {
+    pub source_client_on_target: ClientId,
+    pub source_prefix: String,
+    pub target_client_on_source: ClientId,
+    pub target_prefix: String,
+    pub sequence: Sequence,
+}
+
+impl CommitmentPathV2 {
+    pub fn new(
+        source_client_on_target: ClientId,
+        source_prefix: String,
+        target_client_on_source: ClientId,
+        target_prefix: String,
+        sequence: Sequence,
+    ) -> Self {
+        Self {
+            source_client_on_target,
+            source_prefix,
+            target_client_on_source,
+            target_prefix,
+            sequence,
+        }
+    }
+
+    /// Returns the commitment store prefix under which all the packet
+    /// commitments are stored: "commitments"
+    pub fn prefix() -> String {
+        format!("{EUREKA}/{PACKET_COMMITMENT_PREFIX}")
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
     fmt = "{PACKET_ACK_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
 )]
 pub struct AckPath {
@@ -627,6 +808,55 @@ impl AckPath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(
+    fmt = "{EUREKA}/{PACKET_ACK_PREFIX}/{SOURCE_CLIENT_ON_TARGET}/{source_client_on_target}/{SOURCE_PREFIX}/{source_prefix}/{TARGET_CLIENT_ON_SOURCE}/{target_client_on_source}/{TARGET_PREFIX}/{target_prefix}/{SEQUENCE_PREFIX}/{sequence}"
+)]
+pub struct AckPathV2 {
+    pub source_client_on_target: ClientId,
+    pub source_prefix: String,
+    pub target_client_on_source: ClientId,
+    pub target_prefix: String,
+    pub sequence: Sequence,
+}
+
+impl AckPathV2 {
+    pub fn new(
+        source_client_on_target: ClientId,
+        source_prefix: String,
+        target_client_on_source: ClientId,
+        target_prefix: String,
+        sequence: Sequence,
+    ) -> Self {
+        Self {
+            source_client_on_target,
+            source_prefix,
+            target_client_on_source,
+            target_prefix,
+            sequence,
+        }
+    }
+
+    /// Returns the ack store prefix under which all the packet acks are stored:
+    /// "acks"
+    pub fn prefix() -> String {
+        format!("{EUREKA}/{PACKET_ACK_PREFIX}")
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
     fmt = "{PACKET_RECEIPT_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
 )]
 pub struct ReceiptPath {
@@ -648,6 +878,55 @@ impl ReceiptPath {
     /// stored: "receipts"
     pub fn prefix() -> String {
         PACKET_RECEIPT_PREFIX.to_string()
+    }
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
+#[display(
+    fmt = "{EUREKA}/{PACKET_RECEIPT_PREFIX}/{SOURCE_CLIENT_ON_TARGET}/{source_client_on_target}/{SOURCE_PREFIX}/{source_prefix}/{TARGET_CLIENT_ON_SOURCE}/{target_client_on_source}/{TARGET_PREFIX}/{target_prefix}/{SEQUENCE_PREFIX}/{sequence}"
+)]
+pub struct ReceiptPathV2 {
+    pub source_client_on_target: ClientId,
+    pub source_prefix: String,
+    pub target_client_on_source: ClientId,
+    pub target_prefix: String,
+    pub sequence: Sequence,
+}
+
+impl ReceiptPathV2 {
+    pub fn new(
+        source_client_on_target: ClientId,
+        source_prefix: String,
+        target_client_on_source: ClientId,
+        target_prefix: String,
+        sequence: Sequence,
+    ) -> Self {
+        Self {
+            source_client_on_target,
+            source_prefix,
+            target_client_on_source,
+            target_prefix,
+            sequence,
+        }
+    }
+
+    /// Returns the receipt store prefix under which all the packet receipts are
+    /// stored: "receipts"
+    pub fn prefix() -> String {
+        format!("{EUREKA}/{PACKET_RECEIPT_PREFIX}")
     }
 }
 
@@ -768,6 +1047,8 @@ impl FromStr for Path {
             .or_else(|| parse_commitments(&components))
             .or_else(|| parse_acks(&components))
             .or_else(|| parse_receipts(&components))
+            .or_else(|| parse_commit_ack_receipt_seqs_v2(&components))
+            .or_else(|| parse_commit_ack_receipt_v2(&components))
             .or_else(|| parse_upgrade_client_state(&components))
             .or_else(|| parse_upgrade_consensus_state(&components))
             .ok_or(PathError::ParseFailure {
@@ -1073,6 +1354,127 @@ fn parse_receipts(components: &[&str]) -> Option<Path> {
         }
         .into(),
     )
+}
+
+fn parse_commit_ack_receipt_seqs_v2(components: &[&str]) -> Option<Path> {
+    if components.len() != 10 {
+        return None;
+    }
+
+    if !(components[0] == EUREKA
+        && components[2] == SOURCE_CLIENT_ON_TARGET
+        && components[4] == SOURCE_PREFIX
+        && components[6] == TARGET_CLIENT_ON_SOURCE
+        && components[8] == TARGET_PREFIX)
+    {
+        return None;
+    }
+
+    if !(components[1] == NEXT_SEQ_SEND_PREFIX
+        || components[1] == NEXT_SEQ_RECV_PREFIX
+        || components[1] == NEXT_SEQ_ACK_PREFIX)
+    {
+        return None;
+    }
+
+    let source_client_on_target = ClientId::from_str(components[3]).ok()?;
+    let source_prefix = components[5].into();
+    let target_client_on_source = ClientId::from_str(components[7]).ok()?;
+    let target_prefix = components[9].into();
+
+    match components[1] {
+        NEXT_SEQ_SEND_PREFIX => Some(
+            SeqSendPathV2::new(
+                source_client_on_target,
+                source_prefix,
+                target_client_on_source,
+                target_prefix,
+            )
+            .into(),
+        ),
+        NEXT_SEQ_RECV_PREFIX => Some(
+            SeqRecvPathV2::new(
+                source_client_on_target,
+                source_prefix,
+                target_client_on_source,
+                target_prefix,
+            )
+            .into(),
+        ),
+        NEXT_SEQ_ACK_PREFIX => Some(
+            SeqAckPathV2::new(
+                source_client_on_target,
+                source_prefix,
+                target_client_on_source,
+                target_prefix,
+            )
+            .into(),
+        ),
+        _ => None,
+    }
+}
+
+fn parse_commit_ack_receipt_v2(components: &[&str]) -> Option<Path> {
+    if components.len() != 12 {
+        return None;
+    }
+
+    if !(components[0] == EUREKA
+        && components[2] == SOURCE_CLIENT_ON_TARGET
+        && components[4] == SOURCE_PREFIX
+        && components[6] == TARGET_CLIENT_ON_SOURCE
+        && components[8] == TARGET_PREFIX
+        && components[10] == SEQUENCE_PREFIX)
+    {
+        return None;
+    }
+
+    if !(components[1] == PACKET_COMMITMENT_PREFIX
+        || components[1] == PACKET_ACK_PREFIX
+        || components[1] == PACKET_RECEIPT_PREFIX)
+    {
+        return None;
+    }
+
+    let source_client_on_target = ClientId::from_str(components[3]).ok()?;
+    let source_prefix = components[5].into();
+    let target_client_on_source = ClientId::from_str(components[7]).ok()?;
+    let target_prefix = components[9].into();
+    let sequence = Sequence::from_str(components[11]).ok()?;
+
+    match components[1] {
+        PACKET_COMMITMENT_PREFIX => Some(
+            CommitmentPathV2::new(
+                source_client_on_target,
+                source_prefix,
+                target_client_on_source,
+                target_prefix,
+                sequence,
+            )
+            .into(),
+        ),
+        PACKET_ACK_PREFIX => Some(
+            AckPathV2::new(
+                source_client_on_target,
+                source_prefix,
+                target_client_on_source,
+                target_prefix,
+                sequence,
+            )
+            .into(),
+        ),
+        PACKET_RECEIPT_PREFIX => Some(
+            ReceiptPathV2::new(
+                source_client_on_target,
+                source_prefix,
+                target_client_on_source,
+                target_prefix,
+                sequence,
+            )
+            .into(),
+        ),
+        _ => None,
+    }
 }
 
 fn parse_upgrade_client_state(components: &[&str]) -> Option<Path> {
