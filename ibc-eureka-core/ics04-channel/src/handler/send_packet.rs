@@ -32,11 +32,7 @@ pub fn send_packet_validate(
         return Err(ChannelError::MissingTimeout);
     }
 
-    let payload = &packet.payloads[0];
-
-    let (source_prefix, _source_port) = &payload.header.source_port;
     let channel_target_client_on_source = &packet.header.target_client_on_source;
-    let (target_prefix, _target_port) = &payload.header.target_port;
     let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
 
@@ -82,9 +78,7 @@ pub fn send_packet_validate(
     let seq_send_path_on_a = SeqSendPath::new(
         channel_source_client_on_target.as_ref(),
         // todo(rano): use ascii encoding of the bytes
-        &format!("{source_prefix:?}"),
         channel_target_client_on_source.as_ref(),
-        &format!("{target_prefix:?}"),
     );
     let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
@@ -107,9 +101,7 @@ pub fn send_packet_execute(
 ) -> Result<(), ChannelError> {
     let payload = &packet.payloads[0];
 
-    let (source_prefix, _source_port) = &payload.header.source_port;
     let channel_target_client_on_source = &packet.header.target_client_on_source;
-    let (target_prefix, _target_port) = &payload.header.target_port;
     let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
@@ -117,9 +109,7 @@ pub fn send_packet_execute(
     {
         let seq_send_path_on_a = SeqSendPath::new(
             channel_source_client_on_target.as_ref(),
-            &format!("{source_prefix:?}"),
             channel_target_client_on_source.as_ref(),
-            &format!("{target_prefix:?}"),
         );
         let next_seq_send_on_a = ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
@@ -129,9 +119,7 @@ pub fn send_packet_execute(
     ctx_a.store_packet_commitment(
         &CommitmentPath::new(
             channel_source_client_on_target.as_ref(),
-            &format!("{source_prefix:?}"),
             channel_target_client_on_source.as_ref(),
-            &format!("{target_prefix:?}"),
             seq_on_a,
         ),
         compute_packet_commitment(

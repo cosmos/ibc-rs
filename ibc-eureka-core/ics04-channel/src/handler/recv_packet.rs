@@ -34,11 +34,8 @@ where
     ExecCtx: ExecutionContext,
 {
     let packet = &msg.packet;
-    let payload = &packet.payloads[0];
 
-    let (source_prefix, _source_port) = &payload.header.source_port;
     let channel_source_client_on_target = &packet.header.source_client_on_target;
-    let (target_prefix, _target_port) = &payload.header.target_port;
     let channel_target_client_on_source = &packet.header.target_client_on_source;
     let seq_on_a = &packet.header.seq_on_a;
 
@@ -48,9 +45,7 @@ where
         let packet_already_received = {
             let receipt_path_on_b = ReceiptPath::new(
                 channel_source_client_on_target.as_ref(),
-                &format!("{source_prefix:?}"),
                 channel_target_client_on_source.as_ref(),
-                &format!("{target_prefix:?}"),
                 seq_on_a,
             );
             ctx_b.get_packet_receipt(&receipt_path_on_b)?.is_ok()
@@ -69,18 +64,14 @@ where
         {
             let seq_recv_path_on_b = SeqRecvPath::new(
                 channel_source_client_on_target.as_ref(),
-                &format!("{source_prefix:?}"),
                 channel_target_client_on_source.as_ref(),
-                &format!("{target_prefix:?}"),
             );
             let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
             ctx_b.store_next_sequence_recv(&seq_recv_path_on_b, next_seq_recv.increment())?;
         }
         let ack_path_on_b = AckPath::new(
             channel_source_client_on_target.as_ref(),
-            &format!("{source_prefix:?}"),
             channel_target_client_on_source.as_ref(),
-            &format!("{target_prefix:?}"),
             seq_on_a,
         );
         // `writeAcknowledgement` handler state changes
@@ -124,9 +115,7 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let (source_prefix, _source_port) = &payload.header.source_port;
     let channel_target_client_on_source = &packet.header.target_client_on_source;
-    let (target_prefix, _target_port) = &payload.header.target_port;
     let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
@@ -179,15 +168,13 @@ where
         );
         let commitment_path_on_a = CommitmentPath::new(
             channel_source_client_on_target.as_ref(),
-            &format!("{source_prefix:?}"),
             channel_target_client_on_source.as_ref(),
-            &format!("{target_prefix:?}"),
             seq_on_a,
         );
 
         // Verify the proof for the packet against the chain store.
         source_client_on_target.verify_membership(
-            source_prefix,
+            &source_prefix,
             &msg.proof_commitment_on_a,
             consensus_state_of_a_on_b.root(),
             Path::CommitmentV2(commitment_path_on_a),
@@ -214,19 +201,14 @@ where
     Ctx: ValidationContext,
 {
     let packet = &msg.packet;
-    let payload = &packet.payloads[0];
 
     let channel_source_client_on_target = &packet.header.source_client_on_target;
-    let (target_prefix, _target_port) = &payload.header.target_port;
     let channel_target_client_on_source = &packet.header.target_client_on_source;
-    let (source_prefix, _source_port) = &payload.header.source_port;
     let seq_on_a = &packet.header.seq_on_a;
 
     let ack_path_on_b = AckPath::new(
         channel_source_client_on_target.as_ref(),
-        &format!("{source_prefix:?}"),
         channel_target_client_on_source.as_ref(),
-        &format!("{target_prefix:?}"),
         seq_on_a,
     );
     if ctx_b.get_packet_acknowledgement(&ack_path_on_b).is_ok() {

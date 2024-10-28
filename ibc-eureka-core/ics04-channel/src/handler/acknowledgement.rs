@@ -35,11 +35,8 @@ where
     ExecCtx: ExecutionContext,
 {
     let packet = &msg.packet;
-    let payload = &packet.payloads[0];
 
-    let (source_prefix, _source_port) = &payload.header.source_port;
     let channel_target_client_on_source = &packet.header.target_client_on_source;
-    let (target_prefix, _target_port) = &payload.header.target_port;
     let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
 
@@ -50,9 +47,7 @@ where
 
     let commitment_path_on_a = CommitmentPath::new(
         channel_source_client_on_target.as_ref(),
-        &format!("{source_prefix:?}"),
         channel_target_client_on_source.as_ref(),
-        &format!("{target_prefix:?}"),
         seq_on_a,
     );
 
@@ -102,18 +97,14 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let (source_prefix, _source_port) = &payload.header.source_port;
     let channel_target_client_on_source = &packet.header.target_client_on_source;
-    let (target_prefix, _target_port) = &payload.header.target_port;
     let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
 
     let commitment_path_on_a = CommitmentPath::new(
         channel_source_client_on_target.as_ref(),
-        &format!("{source_prefix:?}"),
         channel_target_client_on_source.as_ref(),
-        &format!("{target_prefix:?}"),
         seq_on_a,
     );
 
@@ -167,15 +158,13 @@ where
         let ack_commitment = compute_ack_commitment(&msg.acknowledgement);
         let ack_path_on_b = AckPath::new(
             channel_source_client_on_target.as_ref(),
-            &format!("{source_prefix:?}"),
             channel_target_client_on_source.as_ref(),
-            &format!("{target_prefix:?}"),
             seq_on_a,
         );
 
         // Verify the proof for the packet against the chain store.
         target_client_on_source.verify_membership(
-            target_prefix,
+            &target_prefix,
             &msg.proof_acked_on_b,
             consensus_state_of_b_on_a.root(),
             Path::AckV2(ack_path_on_b),
