@@ -5,13 +5,12 @@ use core::str;
 
 use derive_more::From;
 use ibc_eureka_core_host_types::error::DecodingError;
-use ibc_eureka_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
+use ibc_eureka_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use subtle_encoding::hex;
 use tendermint::abci;
 
 use crate::acknowledgement::Acknowledgement;
-use crate::channel::Order;
 use crate::timeout::{TimeoutHeight, TimeoutTimestamp};
 
 const PKT_SEQ_ATTRIBUTE_KEY: &str = "packet_sequence";
@@ -21,12 +20,12 @@ const PKT_SRC_PORT_ATTRIBUTE_KEY: &str = "packet_src_port";
 const PKT_SRC_CHANNEL_ATTRIBUTE_KEY: &str = "packet_src_channel";
 const PKT_DST_PORT_ATTRIBUTE_KEY: &str = "packet_dst_port";
 const PKT_DST_CHANNEL_ATTRIBUTE_KEY: &str = "packet_dst_channel";
-const PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY: &str = "packet_channel_ordering";
+// const PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY: &str = "packet_channel_ordering";
 const PKT_TIMEOUT_HEIGHT_ATTRIBUTE_KEY: &str = "packet_timeout_height";
 const PKT_TIMEOUT_TIMESTAMP_ATTRIBUTE_KEY: &str = "packet_timeout_timestamp";
 const PKT_ACK_ATTRIBUTE_KEY: &str = "packet_ack";
 const PKT_ACK_HEX_ATTRIBUTE_KEY: &str = "packet_ack_hex";
-const PKT_CONNECTION_ID_ATTRIBUTE_KEY: &str = "packet_connection";
+// const PKT_CONNECTION_ID_ATTRIBUTE_KEY: &str = "packet_connection";
 
 #[cfg_attr(
     feature = "parity-scale-codec",
@@ -238,54 +237,6 @@ pub struct DstChannelIdAttribute {
 impl From<DstChannelIdAttribute> for abci::EventAttribute {
     fn from(attr: DstChannelIdAttribute) -> Self {
         (PKT_DST_CHANNEL_ATTRIBUTE_KEY, attr.dst_channel_id.as_str()).into()
-    }
-}
-
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, From, PartialEq, Eq)]
-pub struct ChannelOrderingAttribute {
-    pub order: Order,
-}
-
-impl From<ChannelOrderingAttribute> for abci::EventAttribute {
-    fn from(attr: ChannelOrderingAttribute) -> Self {
-        (PKT_CHANNEL_ORDERING_ATTRIBUTE_KEY, attr.order.as_str()).into()
-    }
-}
-
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, From, PartialEq, Eq)]
-pub struct PacketConnectionIdAttribute {
-    pub connection_id: ConnectionId,
-}
-
-impl From<PacketConnectionIdAttribute> for abci::EventAttribute {
-    fn from(attr: PacketConnectionIdAttribute) -> Self {
-        (PKT_CONNECTION_ID_ATTRIBUTE_KEY, attr.connection_id.as_str()).into()
     }
 }
 

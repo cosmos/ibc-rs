@@ -83,8 +83,8 @@ impl core::fmt::Display for PacketMsgType {
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct PacketHeader {
     pub seq_on_a: Sequence,
-    pub source_client: ChannelId,
-    pub target_client: ChannelId,
+    pub target_client_on_source: ChannelId,
+    pub source_client_on_target: ChannelId,
     pub timeout_height_on_b: TimeoutHeight,
     pub timeout_timestamp_on_b: TimeoutTimestamp,
 }
@@ -188,7 +188,9 @@ impl core::fmt::Display for Packet {
         write!(
             f,
             "seq:{}, path:{}/{}",
-            self.header.seq_on_a, self.header.source_client, self.header.target_client
+            self.header.seq_on_a,
+            self.header.target_client_on_source,
+            self.header.source_client_on_target
         )?;
         for payload in &self.payloads {
             write!(
@@ -237,8 +239,8 @@ impl TryFrom<RawPacket> for Packet {
         Ok(Packet {
             header: PacketHeader {
                 seq_on_a: Sequence::from(raw_pkt.sequence),
-                source_client: raw_pkt.source_channel.parse()?,
-                target_client: raw_pkt.destination_channel.parse()?,
+                target_client_on_source: raw_pkt.source_channel.parse()?,
+                source_client_on_target: raw_pkt.destination_channel.parse()?,
                 timeout_height_on_b: packet_timeout_height,
                 timeout_timestamp_on_b,
             },
@@ -258,8 +260,8 @@ impl From<Packet> for RawPacket {
     fn from(packet: Packet) -> Self {
         Self {
             sequence: packet.header.seq_on_a.value(),
-            source_channel: packet.header.source_client.to_string(),
-            destination_channel: packet.header.target_client.to_string(),
+            source_channel: packet.header.target_client_on_source.to_string(),
+            destination_channel: packet.header.source_client_on_target.to_string(),
             timeout_height: packet.header.timeout_height_on_b.into(),
             timeout_timestamp: packet.header.timeout_timestamp_on_b.nanoseconds(),
             // TODO(rano): support multi payload; currently only one payload is supported

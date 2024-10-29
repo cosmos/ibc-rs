@@ -3,13 +3,11 @@
 use displaydoc::Display;
 use ibc_eureka_core_client_types::error::ClientError;
 use ibc_eureka_core_client_types::Height;
-use ibc_eureka_core_connection_types::error::ConnectionError;
 use ibc_eureka_core_host_types::error::{DecodingError, HostError, IdentifierError};
 use ibc_eureka_core_host_types::identifiers::Sequence;
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
 
-use super::channel::Counterparty;
 use super::timeout::TimeoutHeight;
 use crate::commitment::PacketCommitment;
 use crate::timeout::TimeoutTimestamp;
@@ -24,8 +22,6 @@ pub enum ChannelError {
     Host(HostError),
     /// client error: {0}
     Client(ClientError),
-    /// connection error: {0}
-    Connection(ConnectionError),
     /// timestamp error: {0}
     Timestamp(TimestampError),
     /// packet acknowledgment for sequence `{0}` already exists
@@ -54,11 +50,6 @@ pub enum ChannelError {
     MissingCounterparty,
     /// missing timeout
     MissingTimeout,
-    /// mismatched counterparty: expected `{expected}`, actual `{actual}`
-    MismatchedCounterparty {
-        expected: Counterparty,
-        actual: Counterparty,
-    },
     /// mismatched packet sequence: expected `{expected}`, actual `{actual}`
     MismatchedPacketSequence {
         expected: Sequence,
@@ -87,7 +78,6 @@ impl std::error::Error for ChannelError {
         match &self {
             Self::Decoding(e) => Some(e),
             Self::Client(e) => Some(e),
-            Self::Connection(e) => Some(e),
             Self::Host(e) => Some(e),
             Self::Timestamp(e) => Some(e),
             _ => None,

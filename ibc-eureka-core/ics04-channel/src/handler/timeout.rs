@@ -1,42 +1,27 @@
-use ibc_eureka_core_channel_types::channel::{Counterparty, Order, State};
 use ibc_eureka_core_channel_types::commitment::compute_packet_commitment;
 use ibc_eureka_core_channel_types::error::ChannelError;
-use ibc_eureka_core_channel_types::events::{ChannelClosed, TimeoutPacket};
-use ibc_eureka_core_channel_types::msgs::{MsgTimeout, MsgTimeoutOnClose};
+use ibc_eureka_core_channel_types::events::TimeoutPacket;
+use ibc_eureka_core_channel_types::msgs::MsgTimeout;
 use ibc_eureka_core_client::context::prelude::*;
-use ibc_eureka_core_connection::delay::verify_conn_delay_passed;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_eureka_core_host::types::path::{
-    ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath, SeqRecvPath,
+    ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
 };
 use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_eureka_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
-use super::timeout_on_close;
-
-pub enum TimeoutMsgType {
-    Timeout(MsgTimeout),
-    TimeoutOnClose(MsgTimeoutOnClose),
-}
-
 pub fn timeout_packet_validate<ValCtx>(
     ctx_a: &ValCtx,
     module: &dyn Module,
-    timeout_msg_type: TimeoutMsgType,
+    msg: MsgTimeout,
 ) -> Result<(), ChannelError>
 where
     ValCtx: ValidationContext,
 {
-    match &timeout_msg_type {
-        TimeoutMsgType::Timeout(msg) => validate(ctx_a, msg),
-        TimeoutMsgType::TimeoutOnClose(msg) => timeout_on_close::validate(ctx_a, msg),
-    }?;
+    validate(ctx_a, &msg)?;
 
-    let (packet, signer) = match timeout_msg_type {
-        TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
-        TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
-    };
+    let (packet, signer) = (msg.packet, msg.signer);
 
     module.on_timeout_packet_validate(&packet, &signer)
 }
@@ -44,31 +29,26 @@ where
 pub fn timeout_packet_execute<ExecCtx>(
     ctx_a: &mut ExecCtx,
     module: &mut dyn Module,
-    timeout_msg_type: TimeoutMsgType,
+    msg: MsgTimeout,
 ) -> Result<(), ChannelError>
 where
     ExecCtx: ExecutionContext,
 {
-    let (packet, signer) = match timeout_msg_type {
-        TimeoutMsgType::Timeout(msg) => (msg.packet, msg.signer),
-        TimeoutMsgType::TimeoutOnClose(msg) => (msg.packet, msg.signer),
-    };
+    let (packet, signer) = (msg.packet, msg.signer);
 
     let payload = &packet.payloads[0];
 
-    let port_id_on_a = &payload.header.source_port.1;
-    let channel_id_on_a = &packet.header.source_client;
+    let (_, source_port) = &payload.header.source_port;
+    let channel_target_client_on_source = &packet.header.target_client_on_source;
     let seq_on_a = &packet.header.seq_on_a;
 
-    let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
-    let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
-
     // In all cases, this event is emitted
-    let event = IbcEvent::TimeoutPacket(TimeoutPacket::new(packet.clone(), chan_end_on_a.ordering));
+    let event = IbcEvent::TimeoutPacket(TimeoutPacket::new(packet.clone()));
     ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
     ctx_a.emit_ibc_event(event)?;
 
-    let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
+    let commitment_path_on_a =
+        CommitmentPath::new(source_port, channel_target_client_on_source, *seq_on_a);
 
     // check if we're in the NO-OP case
     if ctx_a.get_packet_commitment(&commitment_path_on_a).is_err() {
@@ -83,39 +63,9 @@ where
 
     cb_result?;
 
-    // apply state changes
-    let chan_end_on_a = {
-        ctx_a.delete_packet_commitment(&commitment_path_on_a)?;
-
-        if let Order::Ordered = chan_end_on_a.ordering {
-            let mut chan_end_on_a = chan_end_on_a;
-            chan_end_on_a.state = State::Closed;
-            ctx_a.store_channel(&chan_end_path_on_a, chan_end_on_a.clone())?;
-
-            chan_end_on_a
-        } else {
-            chan_end_on_a
-        }
-    };
-
     // emit events and logs
     {
         ctx_a.log_message("success: packet timeout".to_string())?;
-
-        if let Order::Ordered = chan_end_on_a.ordering {
-            let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
-
-            let event = IbcEvent::ChannelClosed(ChannelClosed::new(
-                port_id_on_a.clone(),
-                channel_id_on_a.clone(),
-                chan_end_on_a.counterparty().port_id.clone(),
-                chan_end_on_a.counterparty().channel_id.clone(),
-                conn_id_on_a,
-                chan_end_on_a.ordering,
-            ));
-            ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
-            ctx_a.emit_ibc_event(event)?;
-        }
 
         for module_event in extras.events {
             ctx_a.emit_ibc_event(IbcEvent::Module(module_event))?;
@@ -138,26 +88,16 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let port_id_on_a = &payload.header.source_port.1;
-    let channel_id_on_a = &packet.header.source_client;
-    let port_id_on_b = &payload.header.target_port.1;
-    let channel_id_on_b = &packet.header.target_client;
+    let (_, source_port) = &payload.header.source_port;
+    let channel_target_client_on_source = &packet.header.target_client_on_source;
+    let (target_prefix, target_port) = &payload.header.target_port;
+    let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
 
-    let chan_end_on_a = ctx_a.channel_end(&ChannelEndPath::new(port_id_on_a, channel_id_on_a))?;
-
-    chan_end_on_a.verify_state_matches(&State::Open)?;
-
-    let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
-
-    chan_end_on_a.verify_counterparty_matches(&counterparty)?;
-
-    let conn_id_on_a = chan_end_on_a.connection_hops()[0].clone();
-    let conn_end_on_a = ctx_a.connection_end(&conn_id_on_a)?;
-
     //verify packet commitment
-    let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
+    let commitment_path_on_a =
+        CommitmentPath::new(source_port, channel_target_client_on_source, *seq_on_a);
     let Ok(commitment_on_a) = ctx_a.get_packet_commitment(&commitment_path_on_a) else {
         // This error indicates that the timeout has already been relayed
         // or there is a misconfigured relayer attempting to prove a timeout
@@ -181,19 +121,22 @@ where
 
     // Verify proofs
     {
-        let client_id_on_a = conn_end_on_a.client_id();
+        let id_target_client_on_source = channel_target_client_on_source.as_ref();
         let client_val_ctx_a = ctx_a.get_client_validation_context();
-        let client_state_of_b_on_a = client_val_ctx_a.client_state(client_id_on_a)?;
+        let target_client_on_source = client_val_ctx_a.client_state(id_target_client_on_source)?;
 
-        client_state_of_b_on_a
-            .status(ctx_a.get_client_validation_context(), client_id_on_a)?
+        target_client_on_source
+            .status(
+                ctx_a.get_client_validation_context(),
+                id_target_client_on_source,
+            )?
             .verify_is_active()?;
 
-        client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
+        target_client_on_source.validate_proof_height(msg.proof_height_on_b)?;
 
         // check that timeout height or timeout timestamp has passed on the other end
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
-            client_id_on_a.clone(),
+            id_target_client_on_source.clone(),
             msg.proof_height_on_b.revision_number(),
             msg.proof_height_on_b.revision_height(),
         );
@@ -210,42 +153,16 @@ where
             });
         }
 
-        verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
+        let next_seq_recv_verification_result = {
+            let receipt_path_on_b =
+                ReceiptPath::new(target_port, channel_source_client_on_target, *seq_on_a);
 
-        let next_seq_recv_verification_result = match chan_end_on_a.ordering {
-            Order::Ordered => {
-                if seq_on_a < &msg.next_seq_recv_on_b {
-                    return Err(ChannelError::MismatchedPacketSequence {
-                        actual: *seq_on_a,
-                        expected: msg.next_seq_recv_on_b,
-                    });
-                }
-                let seq_recv_path_on_b = SeqRecvPath::new(port_id_on_b, channel_id_on_b);
-
-                client_state_of_b_on_a.verify_membership(
-                    conn_end_on_a.counterparty().prefix(),
-                    &msg.proof_unreceived_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    Path::SeqRecv(seq_recv_path_on_b),
-                    seq_on_a.to_vec(),
-                )
-            }
-            Order::Unordered => {
-                let receipt_path_on_b = ReceiptPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
-
-                client_state_of_b_on_a.verify_non_membership(
-                    conn_end_on_a.counterparty().prefix(),
-                    &msg.proof_unreceived_on_b,
-                    consensus_state_of_b_on_a.root(),
-                    Path::Receipt(receipt_path_on_b),
-                )
-            }
-            Order::None => {
-                return Err(ChannelError::InvalidState {
-                    expected: "Channel ordering to not be None".to_string(),
-                    actual: chan_end_on_a.ordering.to_string(),
-                })
-            }
+            target_client_on_source.verify_non_membership(
+                target_prefix,
+                &msg.proof_unreceived_on_b,
+                consensus_state_of_b_on_a.root(),
+                Path::Receipt(receipt_path_on_b),
+            )
         };
 
         next_seq_recv_verification_result?;

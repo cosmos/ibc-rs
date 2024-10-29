@@ -1,19 +1,15 @@
 use core::time::Duration;
 
-use ibc_eureka_core_channel_types::channel::ChannelEnd;
 use ibc_eureka_core_channel_types::commitment::{AcknowledgementCommitment, PacketCommitment};
 use ibc_eureka_core_channel_types::packet::Receipt;
 use ibc_eureka_core_client_context::prelude::*;
 use ibc_eureka_core_client_types::Height;
 use ibc_eureka_core_commitment_types::commitment::CommitmentPrefix;
-use ibc_eureka_core_connection_types::version::{pick_version, Version as ConnectionVersion};
-use ibc_eureka_core_connection_types::ConnectionEnd;
 use ibc_eureka_core_handler_types::events::IbcEvent;
 use ibc_eureka_core_host_types::error::HostError;
-use ibc_eureka_core_host_types::identifiers::{ConnectionId, Sequence};
+use ibc_eureka_core_host_types::identifiers::Sequence;
 use ibc_eureka_core_host_types::path::{
-    AckPath, ChannelEndPath, ClientConnectionPath, CommitmentPath, ConnectionPath, ReceiptPath,
-    SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPath, CommitmentPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
 };
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Signer, Timestamp};
@@ -47,9 +43,6 @@ pub trait ValidationContext {
     /// `ExecutionContext::increase_client_counter`.
     fn client_counter(&self) -> Result<u64, HostError>;
 
-    /// Returns the ConnectionEnd for the given identifier `conn_id`.
-    fn connection_end(&self, conn_id: &ConnectionId) -> Result<ConnectionEnd, HostError>;
-
     /// Validates the `ClientState` of the host chain stored on the counterparty
     /// chain against the host's internal state.
     ///
@@ -66,31 +59,6 @@ pub trait ValidationContext {
 
     /// Returns the prefix that the local chain uses in the KV store.
     fn commitment_prefix(&self) -> CommitmentPrefix;
-
-    /// Returns a counter on how many connections have been created thus far.
-    fn connection_counter(&self) -> Result<u64, HostError>;
-
-    /// Function required by ICS-03. Returns the list of all possible versions that the connection
-    /// handshake protocol supports.
-    fn get_compatible_versions(&self) -> Vec<ConnectionVersion> {
-        ConnectionVersion::compatibles()
-    }
-
-    /// Function required by ICS-03. Returns one version out of the supplied list of versions, which the
-    /// connection handshake protocol prefers.
-    fn pick_version(
-        &self,
-        counterparty_candidate_versions: &[ConnectionVersion],
-    ) -> Result<ConnectionVersion, HostError> {
-        pick_version(
-            &self.get_compatible_versions(),
-            counterparty_candidate_versions,
-        )
-        .map_err(HostError::missing_state)
-    }
-
-    /// Returns the `ChannelEnd` for the given `port_id` and `chan_id`.
-    fn channel_end(&self, channel_end_path: &ChannelEndPath) -> Result<ChannelEnd, HostError>;
 
     /// Returns the sequence number for the next packet to be sent for the given store path
     fn get_next_sequence_send(&self, seq_send_path: &SeqSendPath) -> Result<Sequence, HostError>;
@@ -155,20 +123,6 @@ pub trait ExecutionContext: ValidationContext {
     /// Increases the counter, that keeps track of how many clients have been created.
     fn increase_client_counter(&mut self) -> Result<(), HostError>;
 
-    /// Stores the given connection_end at path
-    fn store_connection(
-        &mut self,
-        connection_path: &ConnectionPath,
-        connection_end: ConnectionEnd,
-    ) -> Result<(), HostError>;
-
-    /// Stores the given connection_id at a path associated with the client_id.
-    fn store_connection_to_client(
-        &mut self,
-        client_connection_path: &ClientConnectionPath,
-        conn_id: ConnectionId,
-    ) -> Result<(), HostError>;
-
     /// Called upon connection identifier creation (Init or Try process).
     /// Increases the counter which keeps track of how many connections have been created.
     fn increase_connection_counter(&mut self) -> Result<(), HostError>;
@@ -202,13 +156,6 @@ pub trait ExecutionContext: ValidationContext {
 
     /// Deletes the packet acknowledgement at the given store path
     fn delete_packet_acknowledgement(&mut self, ack_path: &AckPath) -> Result<(), HostError>;
-
-    /// Stores the given channel_end at a path associated with the port_id and channel_id.
-    fn store_channel(
-        &mut self,
-        channel_end_path: &ChannelEndPath,
-        channel_end: ChannelEnd,
-    ) -> Result<(), HostError>;
 
     /// Stores the given `nextSequenceSend` number at the given store path
     fn store_next_sequence_send(

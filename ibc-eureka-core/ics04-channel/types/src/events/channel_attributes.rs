@@ -1,12 +1,12 @@
 //! This module holds all the abci event attributes for IBC events emitted
 //! during the channel handshake.
 use derive_more::From;
-use ibc_eureka_core_host_types::identifiers::{ChannelId, ConnectionId, PortId};
+use ibc_eureka_core_host_types::identifiers::{ChannelId, PortId};
 use tendermint::abci;
 
 use crate::Version;
 
-const CONNECTION_ID_ATTRIBUTE_KEY: &str = "connection_id";
+// const CONNECTION_ID_ATTRIBUTE_KEY: &str = "connection_id";
 const CHANNEL_ID_ATTRIBUTE_KEY: &str = "channel_id";
 const PORT_ID_ATTRIBUTE_KEY: &str = "port_id";
 /// This attribute key is public so that OpenInit can use it to convert itself
@@ -120,30 +120,6 @@ impl From<CounterpartyChannelIdAttribute> for abci::EventAttribute {
 impl AsRef<ChannelId> for CounterpartyChannelIdAttribute {
     fn as_ref(&self) -> &ChannelId {
         &self.counterparty_channel_id
-    }
-}
-
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, From, PartialEq, Eq)]
-pub struct ConnectionIdAttribute {
-    pub connection_id: ConnectionId,
-}
-
-impl From<ConnectionIdAttribute> for abci::EventAttribute {
-    fn from(attr: ConnectionIdAttribute) -> Self {
-        (CONNECTION_ID_ATTRIBUTE_KEY, attr.connection_id.as_str()).into()
     }
 }
 

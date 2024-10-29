@@ -30,12 +30,6 @@ pub mod client {
     pub use ibc_eureka_core_client::*;
 }
 
-/// Re-exports ICS-03 implementation from the `ibc-eureka-core-connection` crate
-pub mod connection {
-    #[doc(inline)]
-    pub use ibc_eureka_core_connection::*;
-}
-
 /// Re-exports ICS-04 implementation from the `ibc-eureka-core-channel` crate
 pub mod channel {
     #[doc(inline)]

@@ -9,7 +9,7 @@ use core::str::FromStr;
 use derive_more::{Display, From};
 use ibc_primitives::prelude::*;
 
-use crate::identifiers::{ChannelId, ClientId, ConnectionId, PortId, Sequence};
+use crate::identifiers::{ChannelId, ClientId, PortId, Sequence};
 
 pub const NEXT_CLIENT_SEQUENCE: &str = "nextClientSequence";
 pub const NEXT_CONNECTION_SEQUENCE: &str = "nextConnectionSequence";
@@ -90,7 +90,6 @@ pub enum Path {
     ClientUpdateTime(ClientUpdateTimePath),
     ClientUpdateHeight(ClientUpdateHeightPath),
     ClientConnection(ClientConnectionPath),
-    Connection(ConnectionPath),
     Ports(PortPath),
     ChannelEnd(ChannelEndPath),
     SeqSend(SeqSendPath),
@@ -389,35 +388,6 @@ pub struct ClientConnectionPath(pub ClientId);
 impl ClientConnectionPath {
     pub fn new(client_id: ClientId) -> ClientConnectionPath {
         ClientConnectionPath(client_id)
-    }
-}
-
-#[cfg_attr(
-    feature = "parity-scale-codec",
-    derive(
-        parity_scale_codec::Encode,
-        parity_scale_codec::Decode,
-        scale_info::TypeInfo
-    )
-)]
-#[cfg_attr(
-    feature = "borsh",
-    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
-)]
-#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{CONNECTION_PREFIX}/{_0}")]
-pub struct ConnectionPath(pub ConnectionId);
-
-impl ConnectionPath {
-    pub fn new(connection_id: &ConnectionId) -> ConnectionPath {
-        ConnectionPath(connection_id.clone())
-    }
-
-    /// Returns the connection store prefix under which all the connections are
-    /// stored: "connections".
-    pub fn prefix() -> String {
-        CONNECTION_PREFIX.to_string()
     }
 }
 
@@ -792,7 +762,6 @@ impl FromStr for Path {
 
         parse_next_sequence(&components)
             .or_else(|| parse_client_paths(&components))
-            .or_else(|| parse_connections(&components))
             .or_else(|| parse_ports(&components))
             .or_else(|| parse_channel_ends(&components))
             .or_else(|| parse_seqs(&components))
@@ -887,24 +856,6 @@ fn parse_client_paths(components: &[&str]) -> Option<Path> {
     } else {
         None
     }
-}
-
-fn parse_connections(components: &[&str]) -> Option<Path> {
-    if components.len() != 2 {
-        return None;
-    }
-
-    let first = *components.first()?;
-
-    if first != CONNECTION_PREFIX {
-        return None;
-    }
-
-    let connection_id = *components.last()?;
-
-    let connection_id = ConnectionId::from_str(connection_id).ok()?;
-
-    Some(ConnectionPath(connection_id).into())
 }
 
 fn parse_ports(components: &[&str]) -> Option<Path> {

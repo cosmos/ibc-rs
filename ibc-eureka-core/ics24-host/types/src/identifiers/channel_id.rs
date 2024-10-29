@@ -1,7 +1,7 @@
 use core::fmt::{Debug, Display, Error as FmtError, Formatter};
 use core::str::FromStr;
 
-use derive_more::Into;
+use derive_more::{From, Into};
 use ibc_primitives::prelude::*;
 
 use crate::error::IdentifierError;
@@ -23,14 +23,8 @@ const CHANNEL_ID_PREFIX: &str = "channel";
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Into)]
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, From, Into)]
 pub struct ChannelId(ClientId);
-
-impl From<ClientId> for ChannelId {
-    fn from(client_id: ClientId) -> Self {
-        Self(client_id)
-    }
-}
 
 impl ChannelId {
     /// Returns the static prefix to be used across all channel identifiers.
@@ -67,6 +61,12 @@ impl FromStr for ChannelId {
 impl AsRef<str> for ChannelId {
     fn as_ref(&self) -> &str {
         self.0.as_str()
+    }
+}
+
+impl AsRef<ClientId> for ChannelId {
+    fn as_ref(&self) -> &ClientId {
+        &self.0
     }
 }
 
