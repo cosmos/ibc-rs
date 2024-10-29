@@ -20,4 +20,4 @@ extern crate std;
 pub mod error;
 pub mod identifiers;
 pub mod path;
-pub(crate) mod validate;
+pub mod validate;

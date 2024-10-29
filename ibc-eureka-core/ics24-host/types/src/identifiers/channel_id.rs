@@ -5,7 +5,6 @@ use derive_more::Into;
 use ibc_primitives::prelude::*;
 
 use crate::error::IdentifierError;
-
 use crate::identifiers::ClientId;
 
 const CHANNEL_ID_PREFIX: &str = "channel";

@@ -1,5 +1,7 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenTry`.
 
+use core::str::FromStr;
+
 use ibc_eureka_core_channel_types::channel::{ChannelEnd, Counterparty, State as ChannelState};
 use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::OpenTry;
@@ -27,7 +29,8 @@ where
 {
     validate(ctx_b, &msg)?;
 
-    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+    // todo(rano): hack
+    let chan_id_on_b = ChannelId::from_str("00-dummy-0")?;
 
     module.on_chan_open_try_validate(
         msg.ordering,
@@ -49,7 +52,8 @@ pub fn chan_open_try_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let chan_id_on_b = ChannelId::new(ctx_b.channel_counter()?);
+    // todo(rano): hack
+    let chan_id_on_b = ChannelId::from_str("00-dummy-0")?;
     let (extras, version) = module.on_chan_open_try_execute(
         msg.ordering,
         &msg.connection_hops_on_b,

@@ -1,6 +1,8 @@
 //! Protocol logic specific to ICS4 messages of type `MsgChannelOpenConfirm`.
 
-use ibc_eureka_core_channel_types::channel::{ChannelEnd, Counterparty, State, State as ChannelState};
+use ibc_eureka_core_channel_types::channel::{
+    ChannelEnd, Counterparty, State, State as ChannelState,
+};
 use ibc_eureka_core_channel_types::error::ChannelError;
 use ibc_eureka_core_channel_types::events::OpenConfirm;
 use ibc_eureka_core_channel_types::msgs::MsgChannelOpenConfirm;

@@ -37,8 +37,13 @@ pub fn acknowledgement_packet_execute<ExecCtx>(
 where
     ExecCtx: ExecutionContext,
 {
-    let chan_end_path_on_a =
-        ChannelEndPath::new(&msg.packet.port_id_on_a, &msg.packet.chan_id_on_a);
+    let payload = &msg.packet.payloads[0];
+
+    let port_id_on_a = &payload.header.source_port.1;
+    let channel_id_on_a = &msg.packet.header.source_client;
+    let seq_on_a = &msg.packet.header.seq_on_a;
+
+    let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
     let conn_id_on_a = &chan_end_on_a.connection_hops()[0];
 
@@ -51,11 +56,8 @@ where
     ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
     ctx_a.emit_ibc_event(event)?;
 
-    let commitment_path_on_a = CommitmentPath::new(
-        &msg.packet.port_id_on_a,
-        &msg.packet.chan_id_on_a,
-        msg.packet.seq_on_a,
-    );
+    let commitment_path_on_a =
+        CommitmentPath::new(port_id_on_a, channel_id_on_a, msg.packet.header.seq_on_a);
 
     // check if we're in the NO-OP case
     if ctx_a.get_packet_commitment(&commitment_path_on_a).is_err() {
@@ -78,9 +80,8 @@ where
         if let Order::Ordered = chan_end_on_a.ordering {
             // Note: in validation, we verified that `msg.packet.sequence == nextSeqRecv`
             // (where `nextSeqRecv` is the value in the store)
-            let seq_ack_path_on_a =
-                SeqAckPath::new(&msg.packet.port_id_on_a, &msg.packet.chan_id_on_a);
-            ctx_a.store_next_sequence_ack(&seq_ack_path_on_a, msg.packet.seq_on_a.increment())?;
+            let seq_ack_path_on_a = SeqAckPath::new(port_id_on_a, channel_id_on_a);
+            ctx_a.store_next_sequence_ack(&seq_ack_path_on_a, (*seq_on_a).increment())?;
         }
     }
 
@@ -109,15 +110,21 @@ where
     ctx_a.validate_message_signer(&msg.signer)?;
 
     let packet = &msg.packet;
-    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
+    let payload = &packet.payloads[0];
+
+    let port_id_on_a = &payload.header.source_port.1;
+    let channel_id_on_a = &packet.header.source_client;
+    let port_id_on_b = &payload.header.target_port.1;
+    let channel_id_on_b = &packet.header.target_client;
+    let seq_on_a = &packet.header.seq_on_a;
+    let data = &payload.data;
+
+    let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
     chan_end_on_a.verify_state_matches(&ChannelState::Open)?;
 
-    let counterparty = Counterparty::new(
-        packet.port_id_on_b.clone(),
-        Some(packet.chan_id_on_b.clone()),
-    );
+    let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
 
     chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
@@ -126,8 +133,7 @@ where
 
     conn_end_on_a.verify_state_matches(&ConnectionState::Open)?;
 
-    let commitment_path_on_a =
-        CommitmentPath::new(&packet.port_id_on_a, &packet.chan_id_on_a, packet.seq_on_a);
+    let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 
     // Verify packet commitment
     let Ok(commitment_on_a) = ctx_a.get_packet_commitment(&commitment_path_on_a) else {
@@ -139,9 +145,9 @@ where
     };
 
     let expected_commitment_on_a = compute_packet_commitment(
-        &packet.data,
-        &packet.timeout_height_on_b,
-        &packet.timeout_timestamp_on_b,
+        data,
+        &packet.header.timeout_height_on_b,
+        &packet.header.timeout_timestamp_on_b,
     );
 
     if commitment_on_a != expected_commitment_on_a {
@@ -152,11 +158,11 @@ where
     }
 
     if let Order::Ordered = chan_end_on_a.ordering {
-        let seq_ack_path_on_a = SeqAckPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
+        let seq_ack_path_on_a = SeqAckPath::new(port_id_on_a, channel_id_on_a);
         let next_seq_ack = ctx_a.get_next_sequence_ack(&seq_ack_path_on_a)?;
-        if packet.seq_on_a != next_seq_ack {
+        if seq_on_a != &next_seq_ack {
             return Err(ChannelError::MismatchedPacketSequence {
-                actual: packet.seq_on_a,
+                actual: *seq_on_a,
                 expected: next_seq_ack,
             });
         }
@@ -184,8 +190,7 @@ where
         let consensus_state_of_b_on_a =
             client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let ack_commitment = compute_ack_commitment(&msg.acknowledgement);
-        let ack_path_on_b =
-            AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
+        let ack_path_on_b = AckPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
 
         verify_conn_delay_passed(ctx_a, msg.proof_height_on_b, &conn_end_on_a)?;
 

@@ -19,21 +19,23 @@ where
     ctx_a.validate_message_signer(&msg.signer)?;
 
     let packet = &msg.packet;
-    let chan_end_path_on_a = ChannelEndPath::new(&packet.port_id_on_a, &packet.chan_id_on_a);
+    let payload = &packet.payloads[0];
+
+    let port_id_on_a = &payload.header.source_port.1;
+    let channel_id_on_a = &packet.header.source_client;
+    let port_id_on_b = &payload.header.target_port.1;
+    let channel_id_on_b = &packet.header.target_client;
+    let seq_on_a = &packet.header.seq_on_a;
+    let data = &payload.data;
+
+    let chan_end_path_on_a = ChannelEndPath::new(port_id_on_a, channel_id_on_a);
     let chan_end_on_a = ctx_a.channel_end(&chan_end_path_on_a)?;
 
-    let counterparty = Counterparty::new(
-        packet.port_id_on_b.clone(),
-        Some(packet.chan_id_on_b.clone()),
-    );
+    let counterparty = Counterparty::new(port_id_on_b.clone(), Some(channel_id_on_b.clone()));
 
     chan_end_on_a.verify_counterparty_matches(&counterparty)?;
 
-    let commitment_path_on_a = CommitmentPath::new(
-        &msg.packet.port_id_on_a,
-        &msg.packet.chan_id_on_a,
-        msg.packet.seq_on_a,
-    );
+    let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
 
     //verify the packet was sent, check the store
     let Ok(commitment_on_a) = ctx_a.get_packet_commitment(&commitment_path_on_a) else {
@@ -45,9 +47,9 @@ where
     };
 
     let expected_commitment_on_a = compute_packet_commitment(
-        &packet.data,
-        &packet.timeout_height_on_b,
-        &packet.timeout_timestamp_on_b,
+        data,
+        &packet.header.timeout_height_on_b,
+        &packet.header.timeout_timestamp_on_b,
     );
     if commitment_on_a != expected_commitment_on_a {
         return Err(ChannelError::MismatchedPacketCommitment {
@@ -80,7 +82,7 @@ where
             client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let prefix_on_b = conn_end_on_a.counterparty().prefix();
         let port_id_on_b = chan_end_on_a.counterparty().port_id.clone();
-        let chan_id_on_b = chan_end_on_a
+        let channel_id_on_b = chan_end_on_a
             .counterparty()
             .channel_id()
             .ok_or(ChannelError::MissingCounterparty)?;
@@ -89,10 +91,8 @@ where
             .connection_id()
             .ok_or(ConnectionError::MissingCounterparty)?;
         let expected_conn_hops_on_b = vec![conn_id_on_b.clone()];
-        let expected_counterparty = Counterparty::new(
-            packet.port_id_on_a.clone(),
-            Some(packet.chan_id_on_a.clone()),
-        );
+        let expected_counterparty =
+            Counterparty::new(port_id_on_a.clone(), Some(channel_id_on_a.clone()));
         let expected_chan_end_on_b = ChannelEnd::new(
             State::Closed,
             *chan_end_on_a.ordering(),
@@ -101,7 +101,7 @@ where
             chan_end_on_a.version().clone(),
         )?;
 
-        let chan_end_path_on_b = ChannelEndPath(port_id_on_b, chan_id_on_b.clone());
+        let chan_end_path_on_b = ChannelEndPath(port_id_on_b.clone(), channel_id_on_b.clone());
 
         // Verify the proof for the channel state against the expected channel end.
         // A counterparty channel id of None in not possible, and is checked by validate_basic in msg.
@@ -117,29 +117,24 @@ where
 
         let next_seq_recv_verification_result = match chan_end_on_a.ordering {
             Order::Ordered => {
-                if packet.seq_on_a < msg.next_seq_recv_on_b {
+                if seq_on_a < &msg.next_seq_recv_on_b {
                     return Err(ChannelError::MismatchedPacketSequence {
-                        actual: packet.seq_on_a,
+                        actual: *seq_on_a,
                         expected: msg.next_seq_recv_on_b,
                     });
                 }
-                let seq_recv_path_on_b =
-                    SeqRecvPath::new(&packet.port_id_on_b, &packet.chan_id_on_b);
+                let seq_recv_path_on_b = SeqRecvPath::new(&port_id_on_b, channel_id_on_b);
 
                 client_state_of_b_on_a.verify_membership(
                     conn_end_on_a.counterparty().prefix(),
                     &msg.proof_unreceived_on_b,
                     consensus_state_of_b_on_a.root(),
                     Path::SeqRecv(seq_recv_path_on_b),
-                    packet.seq_on_a.to_vec(),
+                    seq_on_a.to_vec(),
                 )
             }
             Order::Unordered => {
-                let receipt_path_on_b = ReceiptPath::new(
-                    &msg.packet.port_id_on_b,
-                    &msg.packet.chan_id_on_b,
-                    msg.packet.seq_on_a,
-                );
+                let receipt_path_on_b = ReceiptPath::new(&port_id_on_b, channel_id_on_b, *seq_on_a);
 
                 client_state_of_b_on_a.verify_non_membership(
                     conn_end_on_a.counterparty().prefix(),

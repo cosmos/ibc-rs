@@ -1,5 +1,6 @@
 //! Defines the packet type
 use ibc_eureka_core_client_types::Height;
+use ibc_eureka_core_commitment_types::commitment::CommitmentPrefix;
 use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_eureka_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
@@ -65,6 +66,73 @@ impl core::fmt::Display for PacketMsgType {
     }
 }
 
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct PacketHeader {
+    pub seq_on_a: Sequence,
+    pub source_client: ChannelId,
+    pub target_client: ChannelId,
+    pub timeout_height_on_b: TimeoutHeight,
+    pub timeout_timestamp_on_b: TimeoutTimestamp,
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct PayloadHeader {
+    pub source_port: (CommitmentPrefix, PortId),
+    pub target_port: (CommitmentPrefix, PortId),
+}
+
+#[cfg_attr(
+    feature = "parity-scale-codec",
+    derive(
+        parity_scale_codec::Encode,
+        parity_scale_codec::Decode,
+        scale_info::TypeInfo
+    )
+)]
+#[cfg_attr(
+    feature = "borsh",
+    derive(borsh::BorshSerialize, borsh::BorshDeserialize)
+)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
+#[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
+pub struct Payload {
+    pub header: PayloadHeader,
+    #[cfg_attr(
+        feature = "serde",
+        serde(serialize_with = "ibc_eureka_core_commitment_types::serializer::ser_hex_upper")
+    )]
+    pub data: Vec<u8>,
+}
+
 /// The packet type; this is what applications send to one another.
 ///
 /// Each application defines the structure of the `data` field.
@@ -82,60 +150,10 @@ impl core::fmt::Display for PacketMsgType {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct Packet {
-    pub seq_on_a: Sequence,
-    pub port_id_on_a: PortId,
-    pub chan_id_on_a: ChannelId,
-    pub port_id_on_b: PortId,
-    pub chan_id_on_b: ChannelId,
-    #[cfg_attr(
-        feature = "serde",
-        serde(serialize_with = "ibc_eureka_core_commitment_types::serializer::ser_hex_upper")
-    )]
-    pub data: Vec<u8>,
-    pub timeout_height_on_b: TimeoutHeight,
-    pub timeout_timestamp_on_b: TimeoutTimestamp,
-}
-
-struct PacketData<'a>(&'a [u8]);
-
-impl<'a> core::fmt::Debug for PacketData<'a> {
-    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
-        write!(formatter, "{:?}", self.0)
-    }
-}
-
-impl core::fmt::Debug for Packet {
-    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
-        // Remember: if you alter the definition of `Packet`,
-        // 1. update the formatter debug struct builder calls (return object of
-        //    this function)
-        // 2. update this destructuring assignment accordingly
-        let Packet {
-            seq_on_a: _,
-            port_id_on_a: _,
-            chan_id_on_a: _,
-            port_id_on_b: _,
-            chan_id_on_b: _,
-            data,
-            timeout_height_on_b: _,
-            timeout_timestamp_on_b: _,
-        } = self;
-        let data_wrapper = PacketData(data);
-
-        formatter
-            .debug_struct("Packet")
-            .field("sequence", &self.seq_on_a)
-            .field("source_port", &self.port_id_on_a)
-            .field("source_channel", &self.chan_id_on_a)
-            .field("destination_port", &self.port_id_on_b)
-            .field("destination_channel", &self.chan_id_on_b)
-            .field("data", &data_wrapper)
-            .field("timeout_height", &self.timeout_height_on_b)
-            .field("timeout_timestamp", &self.timeout_timestamp_on_b)
-            .finish()
-    }
+    pub header: PacketHeader,
+    pub payloads: Vec<Payload>,
 }
 
 impl Packet {
@@ -153,9 +171,12 @@ impl Packet {
     /// instead of the common-case where it results in
     /// [`MsgRecvPacket`](crate::msgs::MsgRecvPacket).
     pub fn timed_out(&self, dst_chain_ts: &Timestamp, dst_chain_height: Height) -> bool {
-        let height_timed_out = self.timeout_height_on_b.has_expired(dst_chain_height);
+        let height_timed_out = self
+            .header
+            .timeout_height_on_b
+            .has_expired(dst_chain_height);
 
-        let timestamp_timed_out = self.timeout_timestamp_on_b.has_expired(dst_chain_ts);
+        let timestamp_timed_out = self.header.timeout_timestamp_on_b.has_expired(dst_chain_ts);
 
         height_timed_out || timestamp_timed_out
     }
@@ -166,15 +187,17 @@ impl core::fmt::Display for Packet {
     fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
         write!(
             f,
-            "seq:{}, path:{}/{}->{}/{}, toh:{}, tos:{})",
-            self.seq_on_a,
-            self.chan_id_on_a,
-            self.port_id_on_a,
-            self.chan_id_on_b,
-            self.port_id_on_b,
-            self.timeout_height_on_b,
-            self.timeout_timestamp_on_b
-        )
+            "seq:{}, path:{}/{}",
+            self.header.seq_on_a, self.header.source_client, self.header.target_client
+        )?;
+        for payload in &self.payloads {
+            write!(
+                f,
+                "src_port:{}, dst_port:{}",
+                payload.header.source_port.1, payload.header.target_port.1
+            )?;
+        }
+        Ok(())
     }
 }
 
@@ -212,29 +235,37 @@ impl TryFrom<RawPacket> for Packet {
         }
 
         Ok(Packet {
-            seq_on_a: Sequence::from(raw_pkt.sequence),
-            port_id_on_a: raw_pkt.source_port.parse()?,
-            chan_id_on_a: raw_pkt.source_channel.parse()?,
-            port_id_on_b: raw_pkt.destination_port.parse()?,
-            chan_id_on_b: raw_pkt.destination_channel.parse()?,
-            data: raw_pkt.data,
-            timeout_height_on_b: packet_timeout_height,
-            timeout_timestamp_on_b,
+            header: PacketHeader {
+                seq_on_a: Sequence::from(raw_pkt.sequence),
+                source_client: raw_pkt.source_channel.parse()?,
+                target_client: raw_pkt.destination_channel.parse()?,
+                timeout_height_on_b: packet_timeout_height,
+                timeout_timestamp_on_b,
+            },
+            // TODO(rano): support multi payload; currently only one payload is supported
+            payloads: vec![Payload {
+                header: PayloadHeader {
+                    source_port: (CommitmentPrefix::empty(), raw_pkt.source_port.parse()?),
+                    target_port: (CommitmentPrefix::empty(), raw_pkt.destination_port.parse()?),
+                },
+                data: raw_pkt.data,
+            }],
         })
     }
 }
 
 impl From<Packet> for RawPacket {
     fn from(packet: Packet) -> Self {
-        RawPacket {
-            sequence: packet.seq_on_a.value(),
-            source_port: packet.port_id_on_a.to_string(),
-            source_channel: packet.chan_id_on_a.to_string(),
-            destination_port: packet.port_id_on_b.to_string(),
-            destination_channel: packet.chan_id_on_b.to_string(),
-            data: packet.data,
-            timeout_height: packet.timeout_height_on_b.into(),
-            timeout_timestamp: packet.timeout_timestamp_on_b.nanoseconds(),
+        Self {
+            sequence: packet.header.seq_on_a.value(),
+            source_channel: packet.header.source_client.to_string(),
+            destination_channel: packet.header.target_client.to_string(),
+            timeout_height: packet.header.timeout_height_on_b.into(),
+            timeout_timestamp: packet.header.timeout_timestamp_on_b.nanoseconds(),
+            // TODO(rano): support multi payload; currently only one payload is supported
+            source_port: packet.payloads[0].header.source_port.1.to_string(),
+            destination_port: packet.payloads[0].header.target_port.1.to_string(),
+            data: packet.payloads[0].data.clone(),
         }
     }
 }
@@ -256,7 +287,7 @@ impl From<Packet> for RawPacket {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
-#[derive(Clone, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct PacketState {
     pub port_id: PortId,
     pub chan_id: ChannelId,
@@ -266,19 +297,6 @@ pub struct PacketState {
         serde(serialize_with = "ibc_eureka_core_commitment_types::serializer::ser_hex_upper")
     )]
     pub data: Vec<u8>,
-}
-impl core::fmt::Debug for PacketState {
-    fn fmt(&self, formatter: &mut core::fmt::Formatter<'_>) -> Result<(), core::fmt::Error> {
-        let data_wrapper = PacketData(&self.data);
-
-        formatter
-            .debug_struct("PacketState")
-            .field("port", &self.port_id)
-            .field("channel", &self.chan_id)
-            .field("sequence", &self.seq)
-            .field("data", &data_wrapper)
-            .finish()
-    }
 }
 
 /// Custom debug output to omit the packet data
