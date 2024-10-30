@@ -27,6 +27,7 @@ ibc-core             = { workspace = true }
 ibc-core-host-cosmos = { workspace = true }
 ibc-derive           = { workspace = true }
 ibc-primitives       = { workspace = true }
+ibc-eureka-core      = { workspace = true }
 
 [features]
 default = [ "std" ]
@@ -34,6 +35,7 @@ std = [
   "ibc-apps/std",
   "ibc-clients/std",
   "ibc-core/std",
+  "ibc-eureka-core/std",
   "ibc-core-host-cosmos/std",
   "ibc-primitives/std",
 ]

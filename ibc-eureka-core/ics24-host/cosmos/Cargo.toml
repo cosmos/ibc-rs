@@ -1,0 +1,112 @@
+[package]
+name         = "ibc-eureka-core-host-cosmos"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "tendermint" ]
+readme       = "./../../README.md"
+
+description = """
+    Maintained by `ibc-rs`, contains Cosmos-specific helper traits and implementations
+    to facilitate IBC integration, ensuring proper interaction with modules/components
+    beyond the IBC modules on host chains.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+# external dependencies
+borsh           = { workspace = true, optional = true }
+derive_more     = { workspace = true }
+displaydoc      = { workspace = true }
+serde           = { workspace = true, optional = true }
+sha2            = { workspace = true }
+subtle-encoding = { workspace = true }
+
+# ibc dependencies
+ibc-client-tendermint            = { workspace = true }
+ibc-app-transfer-types           = { workspace = true }
+ibc-eureka-core-client-types     = { workspace = true }
+ibc-eureka-core-client-context   = { workspace = true }
+ibc-eureka-core-connection-types = { workspace = true }
+ibc-eureka-core-commitment-types = { workspace = true }
+ibc-eureka-core-host-types       = { workspace = true }
+ibc-eureka-core-handler-types    = { workspace = true }
+ibc-primitives                   = { workspace = true }
+ibc-proto                        = { workspace = true }
+
+# cosmos dependencies
+tendermint = { workspace = true }
+
+# parity dependencies
+parity-scale-codec = { workspace = true, optional = true }
+scale-info         = { workspace = true, optional = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "displaydoc/std",
+  "serde/std",
+  "sha2/std",
+  "subtle-encoding/std",
+  "ibc-eureka-core-client-types/std",
+  "ibc-eureka-core-client-context/std",
+  "ibc-eureka-core-connection-types/std",
+  "ibc-eureka-core-commitment-types/std",
+  "ibc-eureka-core-host-types/std",
+  "ibc-eureka-core-handler-types/std",
+  "ibc-primitives/std",
+  "ibc-proto/std",
+]
+serde = [
+  "dep:serde",
+  "ibc-client-tendermint/serde",
+  "ibc-eureka-core-client-types/serde",
+  "ibc-eureka-core-client-context/serde",
+  "ibc-eureka-core-connection-types/serde",
+  "ibc-eureka-core-commitment-types/serde",
+  "ibc-eureka-core-host-types/serde",
+  "ibc-eureka-core-handler-types/serde",
+  "ibc-primitives/serde",
+  "ibc-proto/serde",
+]
+schema = [
+  "ibc-client-tendermint/schema",
+  "ibc-eureka-core-client-types/schema",
+  "ibc-eureka-core-client-context/schema",
+  "ibc-eureka-core-connection-types/schema",
+  "ibc-eureka-core-commitment-types/schema",
+  "ibc-eureka-core-host-types/schema",
+  "ibc-eureka-core-handler-types/schema",
+  "ibc-primitives/schema",
+  "ibc-proto/json-schema",
+  "serde",
+  "std",
+]
+borsh = [
+  "dep:borsh",
+  "ibc-client-tendermint/borsh",
+  "ibc-eureka-core-client-types/borsh",
+  "ibc-eureka-core-client-context/borsh",
+  "ibc-eureka-core-connection-types/borsh",
+  "ibc-eureka-core-commitment-types/borsh",
+  "ibc-eureka-core-host-types/borsh",
+  "ibc-primitives/borsh",
+  "ibc-proto/borsh",
+]
+parity-scale-codec = [
+  "dep:parity-scale-codec",
+  "dep:scale-info",
+  "ibc-client-tendermint/parity-scale-codec",
+  "ibc-eureka-core-client-types/parity-scale-codec",
+  "ibc-eureka-core-connection-types/parity-scale-codec",
+  "ibc-eureka-core-commitment-types/parity-scale-codec",
+  "ibc-eureka-core-host-types/parity-scale-codec",
+  "ibc-eureka-core-handler-types/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+  "ibc-proto/parity-scale-codec",
+]

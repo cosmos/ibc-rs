@@ -1,0 +1,83 @@
+[package]
+name         = "ibc-eureka-core-channel"
+version      = { workspace = true }
+authors      = { workspace = true }
+edition      = { workspace = true }
+rust-version = { workspace = true }
+license      = { workspace = true }
+repository   = { workspace = true }
+keywords     = [ "blockchain", "cosmos", "ibc", "channel" ]
+readme       = "./../README.md"
+
+description = """
+    Maintained by `ibc-rs`, contains the implementation of the ICS-04 Channel & Packet Semantics and
+    re-exports essential data structures and domain types from `ibc-eureka-core-channel-types` crate.
+"""
+
+[package.metadata.docs.rs]
+all-features = true
+
+[dependencies]
+ibc-eureka-core-client           = { workspace = true }
+ibc-eureka-core-connection       = { workspace = true }
+ibc-eureka-core-channel-types    = { workspace = true }
+ibc-eureka-core-commitment-types = { workspace = true }
+ibc-eureka-core-host             = { workspace = true }
+ibc-eureka-core-handler-types    = { workspace = true }
+ibc-eureka-core-router           = { workspace = true }
+ibc-primitives                   = { workspace = true }
+
+[features]
+default = [ "std" ]
+std = [
+  "ibc-eureka-core-client/std",
+  "ibc-eureka-core-connection/std",
+  "ibc-eureka-core-channel-types/std",
+  "ibc-eureka-core-commitment-types/std",
+  "ibc-eureka-core-host/std",
+  "ibc-eureka-core-handler-types/std",
+  "ibc-eureka-core-router/std",
+  "ibc-primitives/std",
+]
+serde = [
+  "ibc-eureka-core-client/serde",
+  "ibc-eureka-core-connection/serde",
+  "ibc-eureka-core-channel-types/serde",
+  "ibc-eureka-core-commitment-types/serde",
+  "ibc-eureka-core-host/serde",
+  "ibc-eureka-core-handler-types/serde",
+  "ibc-eureka-core-router/serde",
+  "ibc-primitives/serde",
+]
+schema = [
+  "ibc-eureka-core-client/schema",
+  "ibc-eureka-core-connection/schema",
+  "ibc-eureka-core-channel-types/schema",
+  "ibc-eureka-core-commitment-types/schema",
+  "ibc-eureka-core-host/schema",
+  "ibc-eureka-core-handler-types/schema",
+  "ibc-eureka-core-router/schema",
+  "ibc-primitives/schema",
+  "serde",
+  "std",
+]
+borsh = [
+  "ibc-eureka-core-client/borsh",
+  "ibc-eureka-core-connection/borsh",
+  "ibc-eureka-core-channel-types/borsh",
+  "ibc-eureka-core-commitment-types/borsh",
+  "ibc-eureka-core-host/borsh",
+  "ibc-eureka-core-handler-types/borsh",
+  "ibc-eureka-core-router/borsh",
+  "ibc-primitives/borsh",
+]
+parity-scale-codec = [
+  "ibc-eureka-core-client/parity-scale-codec",
+  "ibc-eureka-core-connection/parity-scale-codec",
+  "ibc-eureka-core-channel-types/parity-scale-codec",
+  "ibc-eureka-core-commitment-types/parity-scale-codec",
+  "ibc-eureka-core-host/parity-scale-codec",
+  "ibc-eureka-core-handler-types/parity-scale-codec",
+  "ibc-eureka-core-router/parity-scale-codec",
+  "ibc-primitives/parity-scale-codec",
+]
