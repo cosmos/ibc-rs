@@ -85,6 +85,8 @@ ibc-apps       = { version = "0.55.1", path = "./ibc-apps", default-features = f
 ibc-primitives = { version = "0.55.1", path = "./ibc-primitives", default-features = false }
 ibc-testkit    = { version = "0.55.1", path = "./ibc-testkit", default-features = false }
 
+ibc-eureka-core = { version = "0.55.1", path = "./ibc-eureka-core", default-features = false }
+
 ibc-derive = { version = "0.9.0", path = "./ibc-derive" }
 
 ibc-core-client     = { version = "0.55.1", path = "./ibc-core/ics02-client", default-features = false }
