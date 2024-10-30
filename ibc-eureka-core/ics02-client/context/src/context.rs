@@ -1,4 +1,5 @@
 use ibc_eureka_core_client_types::Height;
+use ibc_eureka_core_commitment_types::commitment::CommitmentPrefix;
 use ibc_eureka_core_host_types::error::HostError;
 use ibc_eureka_core_host_types::identifiers::ClientId;
 use ibc_eureka_core_host_types::path::{ClientConsensusStatePath, ClientStatePath};
@@ -39,6 +40,12 @@ pub trait ClientValidationContext: Sized {
         client_id: &ClientId,
         height: &Height,
     ) -> Result<(Timestamp, Height), HostError>;
+
+    /// Returns the client identifier and the commitment prefix of the counterparty client.
+    fn counterparty_meta(
+        &self,
+        client_id: &ClientId,
+    ) -> Result<Option<(ClientId, CommitmentPrefix)>, HostError>;
 }
 
 /// Defines the methods that all client `ExecutionContext`s (precisely the
@@ -98,6 +105,17 @@ pub trait ClientExecutionContext:
     ///
     /// Note that this timestamp is determined by the host.
     fn delete_update_meta(&mut self, client_id: ClientId, height: Height) -> Result<(), HostError>;
+
+    /// Store the client identifier and the commitment prefix of the counterparty client.
+    fn store_counterparty_meta(
+        &self,
+        client_id: &ClientId,
+        counterparty_client_id: &ClientId,
+        counterparty_prefix: &CommitmentPrefix,
+    ) -> Result<(), HostError>;
+
+    /// Delete the client identifier and the commitment prefix of the counterparty client.
+    fn delete_counterparty_meta(&self, client_id: &ClientId) -> Result<(), HostError>;
 }
 
 /// An optional trait that extends the client validation context capabilities by

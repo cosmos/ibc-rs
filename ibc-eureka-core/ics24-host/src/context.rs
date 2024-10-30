@@ -9,7 +9,8 @@ use ibc_eureka_core_handler_types::events::IbcEvent;
 use ibc_eureka_core_host_types::error::HostError;
 use ibc_eureka_core_host_types::identifiers::Sequence;
 use ibc_eureka_core_host_types::path::{
-    AckPath, CommitmentPath, ReceiptPath, SeqAckPath, SeqRecvPath, SeqSendPath,
+    AckPathV2 as AckPath, CommitmentPathV2 as CommitmentPath, ReceiptPathV2 as ReceiptPath,
+    SeqAckPathV2 as SeqAckPath, SeqRecvPathV2 as SeqRecvPath, SeqSendPathV2 as SeqSendPath,
 };
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Signer, Timestamp};

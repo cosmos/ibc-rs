@@ -1,6 +1,5 @@
 //! Defines the packet type
 use ibc_eureka_core_client_types::Height;
-use ibc_eureka_core_commitment_types::commitment::CommitmentPrefix;
 use ibc_eureka_core_host_types::error::DecodingError;
 use ibc_eureka_core_host_types::identifiers::{ChannelId, PortId, Sequence};
 use ibc_primitives::prelude::*;
@@ -105,8 +104,8 @@ pub struct PacketHeader {
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]
 pub struct PayloadHeader {
-    pub source_port: (CommitmentPrefix, PortId),
-    pub target_port: (CommitmentPrefix, PortId),
+    pub source_port: PortId,
+    pub target_port: PortId,
 }
 
 #[cfg_attr(
@@ -196,7 +195,7 @@ impl core::fmt::Display for Packet {
             write!(
                 f,
                 "src_port:{}, dst_port:{}",
-                payload.header.source_port.1, payload.header.target_port.1
+                payload.header.source_port, payload.header.target_port
             )?;
         }
         Ok(())
@@ -247,8 +246,8 @@ impl TryFrom<RawPacket> for Packet {
             // TODO(rano): support multi payload; currently only one payload is supported
             payloads: vec![Payload {
                 header: PayloadHeader {
-                    source_port: (CommitmentPrefix::empty(), raw_pkt.source_port.parse()?),
-                    target_port: (CommitmentPrefix::empty(), raw_pkt.destination_port.parse()?),
+                    source_port: raw_pkt.source_port.parse()?,
+                    target_port: raw_pkt.destination_port.parse()?,
                 },
                 data: raw_pkt.data,
             }],
@@ -265,8 +264,8 @@ impl From<Packet> for RawPacket {
             timeout_height: packet.header.timeout_height_on_b.into(),
             timeout_timestamp: packet.header.timeout_timestamp_on_b.nanoseconds(),
             // TODO(rano): support multi payload; currently only one payload is supported
-            source_port: packet.payloads[0].header.source_port.1.to_string(),
-            destination_port: packet.payloads[0].header.target_port.1.to_string(),
+            source_port: packet.payloads[0].header.source_port.to_string(),
+            destination_port: packet.payloads[0].header.target_port.to_string(),
             data: packet.payloads[0].data.clone(),
         }
     }

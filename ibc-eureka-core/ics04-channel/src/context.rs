@@ -5,7 +5,9 @@ use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::IbcEvent;
 use ibc_eureka_core_host::types::error::HostError;
 use ibc_eureka_core_host::types::identifiers::Sequence;
-use ibc_eureka_core_host::types::path::{CommitmentPath, SeqSendPath};
+use ibc_eureka_core_host::types::path::{
+    CommitmentPathV2 as CommitmentPath, SeqSendPathV2 as SeqSendPath,
+};
 use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_primitives::prelude::*;
 

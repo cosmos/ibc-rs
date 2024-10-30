@@ -4,7 +4,7 @@ use displaydoc::Display;
 use ibc_eureka_core_client_types::error::ClientError;
 use ibc_eureka_core_client_types::Height;
 use ibc_eureka_core_host_types::error::{DecodingError, HostError, IdentifierError};
-use ibc_eureka_core_host_types::identifiers::Sequence;
+use ibc_eureka_core_host_types::identifiers::{ClientId, Sequence};
 use ibc_primitives::prelude::*;
 use ibc_primitives::{Timestamp, TimestampError};
 
@@ -50,6 +50,11 @@ pub enum ChannelError {
     MissingCounterparty,
     /// missing timeout
     MissingTimeout,
+    /// mismatched counterparty: expected `{expected}`, actual `{actual}`
+    MismatchCounterparty {
+        expected: ClientId,
+        actual: ClientId,
+    },
     /// mismatched packet sequence: expected `{expected}`, actual `{actual}`
     MismatchedPacketSequence {
         expected: Sequence,

@@ -4,7 +4,9 @@ use ibc_eureka_core_channel::handler::{
 };
 use ibc_eureka_core_channel::types::msgs::{packet_msg_to_port_id, PacketMsg};
 use ibc_eureka_core_client::context::{ClientExecutionContext, ClientValidationContext};
-use ibc_eureka_core_client::handler::{create_client, update_client, upgrade_client};
+use ibc_eureka_core_client::handler::{
+    create_client, provide_counterparty, update_client, upgrade_client,
+};
 use ibc_eureka_core_client::types::error::ClientError;
 use ibc_eureka_core_client::types::msgs::{ClientMsg, MsgUpdateOrMisbehaviour};
 use ibc_eureka_core_handler_types::error::HandlerError;
@@ -60,6 +62,7 @@ where
                 // Recover client messages are not dispatched by ibc-rs as they can only be
                 // authorized via a passing governance proposal
             }
+            ClientMsg::ProvideCounterparty(msg) => provide_counterparty::validate(ctx, msg)?,
         },
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);
@@ -105,6 +108,7 @@ where
                 // Recover client messages are not dispatched by ibc-rs as they can only be
                 // authorized via a passing governance proposal
             }
+            ClientMsg::ProvideCounterparty(msg) => provide_counterparty::execute(ctx, msg)?,
         },
         MsgEnvelope::Packet(msg) => {
             let port_id = packet_msg_to_port_id(&msg);

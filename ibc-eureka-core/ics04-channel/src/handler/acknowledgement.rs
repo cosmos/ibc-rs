@@ -6,7 +6,10 @@ use ibc_eureka_core_channel_types::events::AcknowledgePacket;
 use ibc_eureka_core_channel_types::msgs::MsgAcknowledgement;
 use ibc_eureka_core_client::context::prelude::*;
 use ibc_eureka_core_handler_types::events::{IbcEvent, MessageEvent};
-use ibc_eureka_core_host::types::path::{AckPath, ClientConsensusStatePath, CommitmentPath, Path};
+use ibc_eureka_core_host::types::identifiers::ClientId;
+use ibc_eureka_core_host::types::path::{
+    AckPathV2 as AckPath, ClientConsensusStatePath, CommitmentPathV2 as CommitmentPath, Path,
+};
 use ibc_eureka_core_host::{ExecutionContext, ValidationContext};
 use ibc_eureka_core_router::module::Module;
 use ibc_primitives::prelude::*;
@@ -33,10 +36,9 @@ where
     ExecCtx: ExecutionContext,
 {
     let packet = &msg.packet;
-    let payload = &packet.payloads[0];
 
-    let (_, port_id_on_a) = &payload.header.source_port;
-    let channel_id_on_a = &packet.header.target_client_on_source;
+    let channel_target_client_on_source = &packet.header.target_client_on_source;
+    let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
 
     // In all cases, this event is emitted
@@ -44,7 +46,11 @@ where
     ctx_a.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
     ctx_a.emit_ibc_event(event)?;
 
-    let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
+    let commitment_path_on_a = CommitmentPath::new(
+        channel_source_client_on_target.as_ref(),
+        channel_target_client_on_source.as_ref(),
+        seq_on_a,
+    );
 
     // check if we're in the NO-OP case
     if ctx_a.get_packet_commitment(&commitment_path_on_a).is_err() {
@@ -92,14 +98,16 @@ where
     let packet = &msg.packet;
     let payload = &packet.payloads[0];
 
-    let (prefix_on_a, port_id_on_a) = &payload.header.source_port;
-    let channel_id_on_a = &packet.header.target_client_on_source;
-    let (_, port_id_on_b) = &payload.header.target_port;
-    let channel_id_on_b = &packet.header.source_client_on_target;
+    let channel_target_client_on_source = &packet.header.target_client_on_source;
+    let channel_source_client_on_target = &packet.header.source_client_on_target;
     let seq_on_a = &packet.header.seq_on_a;
     let data = &payload.data;
 
-    let commitment_path_on_a = CommitmentPath::new(port_id_on_a, channel_id_on_a, *seq_on_a);
+    let commitment_path_on_a = CommitmentPath::new(
+        channel_source_client_on_target.as_ref(),
+        channel_target_client_on_source.as_ref(),
+        seq_on_a,
+    );
 
     // Verify packet commitment
     let Ok(commitment_on_a) = ctx_a.get_packet_commitment(&commitment_path_on_a) else {
@@ -126,34 +134,53 @@ where
     // Verify proofs
     {
         // TODO(rano): avoid a vs b confusion
-        let client_id_on_a = channel_id_on_b.as_ref();
+        let id_target_client_on_source = channel_target_client_on_source.as_ref();
+        let id_source_client_on_target: &ClientId = channel_source_client_on_target.as_ref();
 
         let client_val_ctx_a = ctx_a.get_client_validation_context();
 
-        let client_state_of_b_on_a = client_val_ctx_a.client_state(client_id_on_a)?;
+        let (stored_id_source_client_on_target, target_prefix) = client_val_ctx_a
+            .counterparty_meta(id_target_client_on_source)?
+            .ok_or(ChannelError::MissingCounterparty)?;
 
-        client_state_of_b_on_a
-            .status(ctx_a.get_client_validation_context(), client_id_on_a)?
+        if &stored_id_source_client_on_target != id_source_client_on_target {
+            return Err(ChannelError::MismatchCounterparty {
+                expected: stored_id_source_client_on_target.clone(),
+                actual: id_source_client_on_target.clone(),
+            });
+        }
+
+        let target_client_on_source = client_val_ctx_a.client_state(id_target_client_on_source)?;
+
+        target_client_on_source
+            .status(
+                ctx_a.get_client_validation_context(),
+                id_target_client_on_source,
+            )?
             .verify_is_active()?;
 
-        client_state_of_b_on_a.validate_proof_height(msg.proof_height_on_b)?;
+        target_client_on_source.validate_proof_height(msg.proof_height_on_b)?;
 
         let client_cons_state_path_on_a = ClientConsensusStatePath::new(
-            client_id_on_a.clone(),
+            id_target_client_on_source.clone(),
             msg.proof_height_on_b.revision_number(),
             msg.proof_height_on_b.revision_height(),
         );
         let consensus_state_of_b_on_a =
             client_val_ctx_a.consensus_state(&client_cons_state_path_on_a)?;
         let ack_commitment = compute_ack_commitment(&msg.acknowledgement);
-        let ack_path_on_b = AckPath::new(port_id_on_b, channel_id_on_b, *seq_on_a);
+        let ack_path_on_b = AckPath::new(
+            channel_source_client_on_target.as_ref(),
+            channel_target_client_on_source.as_ref(),
+            seq_on_a,
+        );
 
         // Verify the proof for the packet against the chain store.
-        client_state_of_b_on_a.verify_membership(
-            prefix_on_a,
+        target_client_on_source.verify_membership(
+            &target_prefix,
             &msg.proof_acked_on_b,
             consensus_state_of_b_on_a.root(),
-            Path::Ack(ack_path_on_b),
+            Path::AckV2(ack_path_on_b),
             ack_commitment.into_vec(),
         )?;
     }
