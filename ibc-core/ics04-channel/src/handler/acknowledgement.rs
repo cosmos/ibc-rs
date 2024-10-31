@@ -1,18 +1,94 @@
+use ibc_core_channel_types::acknowledgement::Acknowledgement;
 use ibc_core_channel_types::channel::{Counterparty, Order, State as ChannelState};
 use ibc_core_channel_types::commitment::{compute_ack_commitment, compute_packet_commitment};
 use ibc_core_channel_types::error::ChannelError;
-use ibc_core_channel_types::events::AcknowledgePacket;
+use ibc_core_channel_types::events::{AcknowledgePacket, WriteAcknowledgement};
 use ibc_core_channel_types::msgs::MsgAcknowledgement;
+use ibc_core_channel_types::packet::{Packet, Receipt};
 use ibc_core_client::context::prelude::*;
 use ibc_core_connection::delay::verify_conn_delay_passed;
 use ibc_core_connection::types::State as ConnectionState;
 use ibc_core_handler_types::events::{IbcEvent, MessageEvent};
 use ibc_core_host::types::path::{
-    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, SeqAckPath,
+    AckPath, ChannelEndPath, ClientConsensusStatePath, CommitmentPath, Path, ReceiptPath,
+    SeqAckPath, SeqRecvPath,
 };
 use ibc_core_host::{ExecutionContext, ValidationContext};
 use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
+
+pub fn commit_packet_sequence_number<ExecCtx>(
+    ctx_b: &mut ExecCtx,
+    packet: &Packet,
+) -> Result<(), ChannelError>
+where
+    ExecCtx: ExecutionContext,
+{
+    let chan_end_path_on_b = ChannelEndPath::new(&packet.port_id_on_b, &packet.chan_id_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
+
+    // `recvPacket` core handler state changes
+    match chan_end_on_b.ordering {
+        Order::Unordered => {
+            let receipt_path_on_b = ReceiptPath {
+                port_id: packet.port_id_on_b.clone(),
+                channel_id: packet.chan_id_on_b.clone(),
+                sequence: packet.seq_on_a,
+            };
+
+            ctx_b.store_packet_receipt(&receipt_path_on_b, Receipt::Ok)?;
+        }
+        Order::Ordered => {
+            let seq_recv_path_on_b = SeqRecvPath::new(&packet.port_id_on_b, &packet.chan_id_on_b);
+            let next_seq_recv = ctx_b.get_next_sequence_recv(&seq_recv_path_on_b)?;
+            ctx_b.store_next_sequence_recv(&seq_recv_path_on_b, next_seq_recv.increment())?;
+        }
+        _ => {}
+    }
+
+    Ok(())
+}
+
+pub fn commit_packet_acknowledgment<ExecCtx>(
+    ctx_b: &mut ExecCtx,
+    packet: &Packet,
+    acknowledgement: &Acknowledgement,
+) -> Result<(), ChannelError>
+where
+    ExecCtx: ExecutionContext,
+{
+    let ack_path_on_b = AckPath::new(&packet.port_id_on_b, &packet.chan_id_on_b, packet.seq_on_a);
+
+    // `writeAcknowledgement` handler state changes
+    ctx_b.store_packet_acknowledgement(&ack_path_on_b, compute_ack_commitment(acknowledgement))?;
+
+    Ok(())
+}
+
+pub fn emit_packet_acknowledgement_event<ExecCtx>(
+    ctx_b: &mut ExecCtx,
+    packet: Packet,
+    acknowledgement: Acknowledgement,
+) -> Result<(), ChannelError>
+where
+    ExecCtx: ExecutionContext,
+{
+    let chan_end_path_on_b = ChannelEndPath::new(&packet.port_id_on_b, &packet.chan_id_on_b);
+    let chan_end_on_b = ctx_b.channel_end(&chan_end_path_on_b)?;
+    let conn_id_on_b = &chan_end_on_b.connection_hops()[0];
+
+    ctx_b.log_message("success: packet write acknowledgement".to_string())?;
+
+    let event = IbcEvent::WriteAcknowledgement(WriteAcknowledgement::new(
+        packet,
+        acknowledgement,
+        conn_id_on_b.clone(),
+    ));
+    ctx_b.emit_ibc_event(IbcEvent::Message(MessageEvent::Channel))?;
+    ctx_b.emit_ibc_event(event)?;
+
+    Ok(())
+}
 
 pub fn acknowledgement_packet_validate<ValCtx>(
     ctx_a: &ValCtx,

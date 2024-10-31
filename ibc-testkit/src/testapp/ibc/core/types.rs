@@ -279,12 +279,12 @@ mod tests {
                 &mut self,
                 _packet: &Packet,
                 _relayer: &Signer,
-            ) -> (ModuleExtras, Acknowledgement) {
+            ) -> (ModuleExtras, Option<Acknowledgement>) {
                 self.counter += 1;
 
                 (
                     ModuleExtras::empty(),
-                    Acknowledgement::try_from(vec![1u8]).expect("Never fails"),
+                    Some(Acknowledgement::try_from(vec![1u8]).expect("Never fails")),
                 )
             }
 
@@ -379,10 +379,10 @@ mod tests {
                 &mut self,
                 _packet: &Packet,
                 _relayer: &Signer,
-            ) -> (ModuleExtras, Acknowledgement) {
+            ) -> (ModuleExtras, Option<Acknowledgement>) {
                 (
                     ModuleExtras::empty(),
-                    Acknowledgement::try_from(vec![1u8]).expect("Never fails"),
+                    Some(Acknowledgement::try_from(vec![1u8]).expect("Never fails")),
                 )
             }
 

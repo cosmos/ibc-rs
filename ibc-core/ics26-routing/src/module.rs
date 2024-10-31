@@ -123,11 +123,33 @@ pub trait Module: Debug {
     // if any error occurs, than an "error acknowledgement"
     // must be returned
 
+    /// ICS-26 `onRecvPacket` callback implementation.
+    ///
+    /// # Note on optional acknowledgements
+    ///
+    /// Acknowledgements can be committed asynchronously, hence
+    /// the `Option` type. In general, acknowledgements should
+    /// be committed to storage, accompanied by an ack event,
+    /// as soon as a packet is received. This will be done
+    /// automatically as long as `Some(ack)` is returned from
+    /// this callback. However, in some cases, such as when
+    /// implementing a multiple hop packet delivery protocol,
+    /// a packet can only be acknowledged after it has reached
+    /// the last hop.
+    ///
+    /// ## Committing a packet asynchronously
+    ///
+    /// Event emission and state updates for packet acknowledgements
+    /// can be performed asynchronously using [`emit_packet_acknowledgement_event`]
+    /// and [`commit_packet_acknowledgment`], respectively.
+    ///
+    /// [`commit_packet_acknowledgment`]: ../../channel/handler/fn.commit_packet_acknowledgment.html
+    /// [`emit_packet_acknowledgement_event`]: ../../channel/handler/fn.emit_packet_acknowledgement_event.html
     fn on_recv_packet_execute(
         &mut self,
         packet: &Packet,
         relayer: &Signer,
-    ) -> (ModuleExtras, Acknowledgement);
+    ) -> (ModuleExtras, Option<Acknowledgement>);
 
     fn on_acknowledgement_packet_validate(
         &self,
