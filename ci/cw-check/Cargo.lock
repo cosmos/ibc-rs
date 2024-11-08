@@ -1118,8 +1118,8 @@ dependencies = [
 
 [[package]]
 name = "ibc-proto"
-version = "0.51.0"
-source = "git+https://github.com/cosmos/ibc-proto-rs?branch=rano%2Ffix%2Ftendermint-proto-schemars#3325dbdde8d5dac6e9fcae41f44ebdd725d520fb"
+version = "0.51.1"
+source = "git+https://github.com/cosmos/ibc-proto-rs?branch=release%2Fv0.51.1#ebbb9b2df8d652801c23bc6709bf6a177ca03c02"
 dependencies = [
  "base64 0.22.1",
  "bytes",
