@@ -119,4 +119,4 @@ parity-scale-codec = { version = "3.6.12", default-features = false, features = 
 scale-info         = { version = "2.11.3", default-features = false }
 
 [patch.crates-io]
-ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs", branch = "rano/fix/tendermint-proto-schemars" }
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs", branch = "release/v0.51.1" }
