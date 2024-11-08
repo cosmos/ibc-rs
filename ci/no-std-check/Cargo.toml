@@ -29,3 +29,6 @@ syn = ">=2.0.5"
 panic-handler = [  ]
 use-substrate = [ "sp-core", "sp-io", "sp-runtime", "sp-std" ]
 substrate-std = [ "sp-core/std", "sp-io/std", "sp-runtime/std", "sp-std/std" ]
+
+[patch.crates-io]
+cosmos-sdk-proto = { git = "https://github.com/rnbguy/cosmos-rust", branch = "rano/fix/serde-no-std" }
