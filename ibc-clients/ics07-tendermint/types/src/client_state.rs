@@ -320,9 +320,9 @@ impl From<ClientState> for RawTmClientState {
         Self {
             chain_id: value.chain_id.to_string(),
             trust_level: Some(value.trust_level.into()),
-            trusting_period: Some(value.trusting_period.into()),
-            unbonding_period: Some(value.unbonding_period.into()),
-            max_clock_drift: Some(value.max_clock_drift.into()),
+            trusting_period: value.trusting_period.try_into().ok(),
+            unbonding_period: value.unbonding_period.try_into().ok(),
+            max_clock_drift: value.max_clock_drift.try_into().ok(),
             // NOTE: The protobuf encoded `frozen_height` of an active client
             // must be set to `0` so that `ibc-go` driven chains can properly
             // decode the `ClientState` value. In `RawClientState`, a
