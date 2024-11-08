@@ -1119,8 +1119,7 @@ dependencies = [
 [[package]]
 name = "ibc-proto"
 version = "0.51.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "07b9db9a33cb15d6eb56105cd9b70db016e56bcae74a8adaa1627e5b24d1f1d2"
+source = "git+https://github.com/cosmos/ibc-proto-rs?branch=rano%2Ffix%2Ftendermint-proto-schemars#3325dbdde8d5dac6e9fcae41f44ebdd725d520fb"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -1789,6 +1788,7 @@ dependencies = [
  "parity-scale-codec",
  "prost",
  "scale-info",
+ "schemars",
  "serde",
  "serde_bytes",
  "subtle-encoding",
