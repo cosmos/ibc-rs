@@ -141,7 +141,7 @@ jobs:
           cargo msrv --version
 
       - name: Calculate MSRV
-        run: cargo msrv --output-format minimal --min 1.68.0
+        run: cargo msrv find --output-format minimal --min 1.68.0
 
       - name: Build with MSRV
         uses: actions-rs/cargo@v1
