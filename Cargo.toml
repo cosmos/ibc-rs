@@ -107,12 +107,12 @@ ibc-app-nft-transfer-types  = { version = "0.55.1", path = "./ibc-apps/ics721-nf
 ibc-proto = { version = "0.51.0", default-features = false }
 
 # cosmos dependencies
-tendermint                       = { version = "0.38.0", default-features = false }
-tendermint-light-client          = { version = "0.38.0", default-features = false }
-tendermint-light-client-verifier = { version = "0.38.0", default-features = false }
-tendermint-proto                 = { version = "0.38.0", default-features = false }
-tendermint-rpc                   = { version = "0.38.0", default-features = false }
-tendermint-testgen               = { version = "0.38.0", default-features = false }
+tendermint                       = { version = "0.40.0", default-features = false }
+tendermint-light-client          = { version = "0.40.0", default-features = false }
+tendermint-light-client-verifier = { version = "0.40.0", default-features = false }
+tendermint-proto                 = { version = "0.40.0", default-features = false }
+tendermint-rpc                   = { version = "0.40.0", default-features = false }
+tendermint-testgen               = { version = "0.40.0", default-features = false }
 
 # parity dependencies
 parity-scale-codec = { version = "3.6.12", default-features = false, features = [ "derive" ] }
