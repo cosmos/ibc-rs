@@ -472,8 +472,9 @@ checksum = "cd7e35aee659887cbfb97aaf227ac12cad1a9d7c71e55ff3376839ed4e282d08"
 
 [[package]]
 name = "cosmos-sdk-proto"
-version = "0.26.0"
-source = "git+https://github.com/rnbguy/cosmos-rust?branch=rano/fix/serde-no-std#a532d06f594d45cfd2605268696ccb86cb2142ce"
+version = "0.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "462e1f6a8e005acc8835d32d60cbd7973ed65ea2a8d8473830e675f050956427"
 dependencies = [
  "informalsystems-pbjson",
  "prost",
