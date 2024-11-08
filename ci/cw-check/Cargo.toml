@@ -23,3 +23,6 @@ opt-level        = "s"
 overflow-checks  = true
 panic            = "abort"
 rpath            = false
+
+[patch.crates-io]
+ibc-proto = { git = "https://github.com/cosmos/ibc-proto-rs", branch = "rano/fix/tendermint-proto-schemars" }
