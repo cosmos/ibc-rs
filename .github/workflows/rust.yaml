@@ -110,8 +110,8 @@ jobs:
     name: Test MSRV for `ibc` libraries
     timeout-minutes: 30
     env:
-      CARGO_MSRV_VERSION: 0.16.0-beta.23
-      MSRV: 1.72.1
+      CARGO_MSRV_VERSION: 0.16.2
+      MSRV: 1.75.0
     strategy:
       matrix:
         param:
@@ -141,7 +141,7 @@ jobs:
           cargo msrv --version
 
       - name: Calculate MSRV
-        run: cargo msrv --output-format minimal --min 1.68.0
+        run: cargo msrv find --output-format minimal --min 1.68.0
 
       - name: Build with MSRV
         uses: actions-rs/cargo@v1

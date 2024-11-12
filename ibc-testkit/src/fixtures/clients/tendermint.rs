@@ -2,8 +2,9 @@ use core::str::FromStr;
 use core::time::Duration;
 
 use basecoin_store::avl::get_proof_spec as basecoin_proof_spec;
+use bon::Builder;
 use ibc::clients::tendermint::client_state::ClientState as TmClientState;
-use ibc::clients::tendermint::types::error::{Error as ClientError, Error};
+use ibc::clients::tendermint::types::error::TendermintClientError;
 use ibc::clients::tendermint::types::proto::v1::{ClientState as RawTmClientState, Fraction};
 #[cfg(feature = "serde")]
 use ibc::clients::tendermint::types::Header;
@@ -13,13 +14,15 @@ use ibc::clients::tendermint::types::{
 use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::specs::ProofSpecs;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use tendermint::block::Header as TmHeader;
-use typed_builder::TypedBuilder;
 
 /// Returns a dummy tendermint `ClientState` by given `frozen_height`, for testing purposes only!
-pub fn dummy_tm_client_state_from_raw(frozen_height: RawHeight) -> Result<TmClientState, Error> {
+pub fn dummy_tm_client_state_from_raw(
+    frozen_height: RawHeight,
+) -> Result<TmClientState, DecodingError> {
     ClientStateType::try_from(dummy_raw_tm_client_state(frozen_height)).map(TmClientState::from)
 }
 
@@ -54,9 +57,9 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
             numerator: 1,
             denominator: 3,
         }),
-        trusting_period: Some(Duration::from_secs(64000).into()),
-        unbonding_period: Some(Duration::from_secs(128_000).into()),
-        max_clock_drift: Some(Duration::from_millis(3000).into()),
+        trusting_period: Some(Duration::from_secs(64000).try_into().expect("no error")),
+        unbonding_period: Some(Duration::from_secs(128_000).try_into().expect("no error")),
+        max_clock_drift: Some(Duration::from_millis(3000).try_into().expect("no error")),
         latest_height: Some(Height::new(0, 10).expect("Never fails").into()),
         proof_specs: ProofSpecs::cosmos().into(),
         upgrade_path: Vec::new(),
@@ -66,7 +69,7 @@ pub fn dummy_raw_tm_client_state(frozen_height: RawHeight) -> RawTmClientState {
     }
 }
 
-#[derive(TypedBuilder, Debug)]
+#[derive(Debug, Builder)]
 pub struct ClientStateConfig {
     #[builder(default = TrustThreshold::ONE_THIRD)]
     pub trust_level: TrustThreshold,
@@ -95,7 +98,7 @@ impl ClientStateConfig {
         self,
         chain_id: ChainId,
         latest_height: Height,
-    ) -> Result<TmClientState, ClientError> {
+    ) -> Result<TmClientState, TendermintClientError> {
         Ok(ClientStateType::new(
             chain_id,
             self.trust_level,

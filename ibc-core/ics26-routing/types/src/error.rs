@@ -1,18 +1,14 @@
 use displaydoc::Display;
-use ibc_core_host_types::identifiers::PortId;
+use ibc_core_host_types::error::HostError;
 use ibc_primitives::prelude::*;
 
 /// Error type for the router module.
-#[derive(Debug, Display)]
+#[derive(Debug, Display, derive_more::From)]
 pub enum RouterError {
-    /// unknown type URL `{url}`
-    UnknownMessageTypeUrl { url: String },
-    /// the message is malformed and cannot be decoded error: `{reason}`
-    MalformedMessageBytes { reason: String },
-    /// port `{port_id}` is unknown
-    UnknownPort { port_id: PortId },
-    /// module not found
-    ModuleNotFound,
+    /// host error: {0}
+    Host(HostError),
+    /// missing module
+    MissingModule,
 }
 
 #[cfg(feature = "std")]

@@ -1,11 +1,13 @@
-use ibc_client_tendermint_types::error::{Error, IntoResult};
+use ibc_client_tendermint_types::error::{IntoResult, TendermintClientError};
 use ibc_client_tendermint_types::{ConsensusState as ConsensusStateType, Header as TmHeader};
 use ibc_core_client::context::{Convertible, ExtClientValidationContext};
 use ibc_core_client::types::error::ClientError;
 use ibc_core_client::types::Height;
+use ibc_core_host::types::error::IdentifierError;
 use ibc_core_host::types::identifiers::{ChainId, ClientId};
 use ibc_core_host::types::path::ClientConsensusStatePath;
 use ibc_primitives::prelude::*;
+use ibc_primitives::IntoHostTime;
 use tendermint::crypto::Sha256;
 use tendermint::merkle::MerkleHash;
 use tendermint_light_client_verifier::options::Options;
@@ -52,21 +54,20 @@ where
             )?;
 
             TrustedBlockState {
-                chain_id: &chain_id
-                    .as_str()
-                    .try_into()
-                    .map_err(|e| ClientError::Other {
-                        description: format!("failed to parse chain id: {}", e),
-                    })?,
+                chain_id: &chain_id.as_str().try_into().map_err(|e| {
+                    IdentifierError::FailedToParse {
+                        description: format!("chain ID `{chain_id}`: {e:?}"),
+                    }
+                })?,
                 header_time: trusted_consensus_state.timestamp(),
                 height: header
                     .trusted_height
                     .revision_height()
                     .try_into()
-                    .map_err(|_| ClientError::ClientSpecific {
-                        description: Error::InvalidHeaderHeight {
-                            height: header.trusted_height.revision_height(),
-                        }
+                    .map_err(|_| ClientError::FailedToVerifyHeader {
+                        description: TendermintClientError::InvalidHeaderHeight(
+                            header.trusted_height.revision_height(),
+                        )
                         .to_string(),
                     })?,
                 next_validators: &header.trusted_next_validator_set,
@@ -83,7 +84,7 @@ where
             next_validators: None,
         };
 
-        let now = ctx.host_timestamp()?.into_tm_time();
+        let now = ctx.host_timestamp()?.into_host_time()?;
 
         // main header verification, delegated to the tendermint-light-client crate.
         verifier

@@ -1,10 +1,10 @@
 //! Defines the required context traits for ICS-721 to interact with host
 //! machine.
+use ibc_core::host::types::error::HostError;
 use ibc_core::host::types::identifiers::{ChannelId, PortId};
 use ibc_core::primitives::prelude::*;
 use ibc_core::primitives::Signer;
 
-use crate::types::error::NftTransferError;
 use crate::types::{
     ClassData, ClassId, ClassUri, Memo, PrefixedClassId, TokenData, TokenId, TokenUri,
 };
@@ -41,13 +41,13 @@ pub trait NftTransferValidationContext {
     type NftClass: NftClassContext;
 
     /// get_port returns the portID for the transfer module.
-    fn get_port(&self) -> Result<PortId, NftTransferError>;
+    fn get_port(&self) -> Result<PortId, HostError>;
 
     /// Returns Ok() if the host chain supports sending NFTs.
-    fn can_send_nft(&self) -> Result<(), NftTransferError>;
+    fn can_send_nft(&self) -> Result<(), HostError>;
 
     /// Returns Ok() if the host chain supports receiving NFTs.
-    fn can_receive_nft(&self) -> Result<(), NftTransferError>;
+    fn can_receive_nft(&self) -> Result<(), HostError>;
 
     /// Validates that the NFT can be created or updated successfully.
     ///
@@ -62,7 +62,7 @@ pub trait NftTransferValidationContext {
         class_id: &PrefixedClassId,
         class_uri: Option<&ClassUri>,
         class_data: Option<&ClassData>,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Validates that the tokens can be escrowed successfully.
     ///
@@ -77,7 +77,7 @@ pub trait NftTransferValidationContext {
         class_id: &PrefixedClassId,
         token_id: &TokenId,
         memo: &Memo,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Validates that the NFT can be unescrowed successfully.
     fn unescrow_nft_validate(
@@ -87,7 +87,7 @@ pub trait NftTransferValidationContext {
         channel_id: &ChannelId,
         class_id: &PrefixedClassId,
         token_id: &TokenId,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Validates the receiver account and the NFT input
     ///
@@ -104,7 +104,7 @@ pub trait NftTransferValidationContext {
         token_id: &TokenId,
         token_uri: Option<&TokenUri>,
         token_data: Option<&TokenData>,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Validates the sender account and the coin input before burning.
     ///
@@ -117,7 +117,7 @@ pub trait NftTransferValidationContext {
         class_id: &PrefixedClassId,
         token_id: &TokenId,
         memo: &Memo,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Returns a hash of the prefixed class ID and the token ID.
     /// Implement only if the host chain supports hashed class ID and token ID.
@@ -134,11 +134,10 @@ pub trait NftTransferValidationContext {
         &self,
         class_id: &PrefixedClassId,
         token_id: &TokenId,
-    ) -> Result<Self::Nft, NftTransferError>;
+    ) -> Result<Self::Nft, HostError>;
 
     /// Returns the NFT class
-    fn get_nft_class(&self, class_id: &PrefixedClassId)
-        -> Result<Self::NftClass, NftTransferError>;
+    fn get_nft_class(&self, class_id: &PrefixedClassId) -> Result<Self::NftClass, HostError>;
 }
 
 /// Read-write methods required in NFT transfer execution context.
@@ -149,7 +148,7 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
         class_id: &PrefixedClassId,
         class_uri: Option<&ClassUri>,
         class_data: Option<&ClassData>,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Executes the escrow of the NFT in a user account.
     ///
@@ -163,7 +162,7 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
         class_id: &PrefixedClassId,
         token_id: &TokenId,
         memo: &Memo,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Executes the unescrow of the NFT in a user account.
     fn unescrow_nft_execute(
@@ -173,7 +172,7 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
         channel_id: &ChannelId,
         class_id: &PrefixedClassId,
         token_id: &TokenId,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Executes minting of the NFT in a user account.
     fn mint_nft_execute(
@@ -183,7 +182,7 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
         token_id: &TokenId,
         token_uri: Option<&TokenUri>,
         token_data: Option<&TokenData>,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 
     /// Executes burning of the NFT in a user account.
     ///
@@ -195,5 +194,5 @@ pub trait NftTransferExecutionContext: NftTransferValidationContext {
         class_id: &PrefixedClassId,
         token_id: &TokenId,
         memo: &Memo,
-    ) -> Result<(), NftTransferError>;
+    ) -> Result<(), HostError>;
 }

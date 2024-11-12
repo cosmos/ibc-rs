@@ -3,9 +3,10 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use derive_more::Into;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 
-use super::error::PacketError;
+use crate::error::ChannelError;
 
 /// A generic Acknowledgement type that modules may interpret as they like.
 ///
@@ -41,11 +42,11 @@ impl AsRef<[u8]> for Acknowledgement {
 }
 
 impl TryFrom<Vec<u8>> for Acknowledgement {
-    type Error = PacketError;
+    type Error = DecodingError;
 
     fn try_from(bytes: Vec<u8>) -> Result<Self, Self::Error> {
         if bytes.is_empty() {
-            Err(PacketError::InvalidAcknowledgement)
+            Err(DecodingError::missing_raw_data("acknowledgment"))
         } else {
             Ok(Self(bytes))
         }
@@ -77,11 +78,11 @@ pub struct StatusValue(String);
 
 impl StatusValue {
     /// Constructs a new instance of `StatusValue` if the given value is not empty.
-    pub fn new(value: impl ToString) -> Result<Self, PacketError> {
+    pub fn new(value: impl ToString) -> Result<Self, ChannelError> {
         let value = value.to_string();
 
         if value.is_empty() {
-            return Err(PacketError::EmptyAcknowledgementStatus);
+            return Err(ChannelError::MissingAcknowledgmentStatus);
         }
 
         Ok(Self(value))

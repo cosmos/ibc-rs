@@ -3,10 +3,9 @@
 use core::fmt::{Display, Error as FmtError, Formatter};
 
 use ibc_core_client_types::Height;
+use ibc_core_host_types::error::DecodingError;
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::client::v1::Height as RawHeight;
-
-use crate::error::PacketError;
 
 /// Indicates a consensus height on the destination chain after which the packet
 /// will no longer be processed, and will instead count as having timed-out.
@@ -86,7 +85,7 @@ impl TimeoutHeight {
 }
 
 impl TryFrom<RawHeight> for TimeoutHeight {
-    type Error = PacketError;
+    type Error = DecodingError;
 
     // Note: it is important for `revision_number` to also be `0`, otherwise
     // packet commitment proofs will be incorrect (proof construction in
@@ -96,16 +95,14 @@ impl TryFrom<RawHeight> for TimeoutHeight {
         if raw_height.revision_number == 0 && raw_height.revision_height == 0 {
             Ok(TimeoutHeight::Never)
         } else {
-            let height = raw_height
-                .try_into()
-                .map_err(PacketError::InvalidTimeoutHeight)?;
+            let height = raw_height.try_into()?;
             Ok(TimeoutHeight::At(height))
         }
     }
 }
 
 impl TryFrom<Option<RawHeight>> for TimeoutHeight {
-    type Error = PacketError;
+    type Error = DecodingError;
 
     fn try_from(maybe_raw_height: Option<RawHeight>) -> Result<Self, Self::Error> {
         match maybe_raw_height {

@@ -1,5 +1,6 @@
 use core::str::FromStr;
 
+use bon::Builder;
 use ibc::clients::tendermint::client_state::ClientState;
 use ibc::clients::tendermint::consensus_state::ConsensusState;
 use ibc::clients::tendermint::types::proto::v1::Header as RawHeader;
@@ -9,7 +10,7 @@ use ibc::core::host::types::identifiers::ChainId;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::Any;
-use ibc::primitives::ToVec;
+use ibc::primitives::{IntoHostTime, IntoTimestamp, ToVec};
 use tendermint::block::Header as TmHeader;
 use tendermint::validator::Set as ValidatorSet;
 use tendermint_testgen::light_block::TmLightBlock;
@@ -17,13 +18,12 @@ use tendermint_testgen::{
     Generator, Header as TestgenHeader, LightBlock as TestgenLightBlock,
     Validator as TestgenValidator,
 };
-use typed_builder::TypedBuilder;
 
 use crate::fixtures::clients::tendermint::ClientStateConfig;
 use crate::hosts::{TestBlock, TestHeader, TestHost};
 
 /// A host that produces Tendermint blocks and interfaces with Tendermint light clients.
-#[derive(TypedBuilder, Debug)]
+#[derive(Debug, Builder)]
 pub struct TendermintHost {
     /// Unique identifier for the chain.
     #[builder(default = ChainId::new("mock-0").expect("Never fails"))]
@@ -66,7 +66,7 @@ impl TestHost for TendermintHost {
                 .height(height)
                 .chain_id(self.chain_id.as_str())
                 .next_validators(&params.next_validators)
-                .time(timestamp.into_tm_time()),
+                .time(timestamp.into_host_time().expect("Never fails")),
         )
         .validators(&params.validators)
         .next_validators(&params.next_validators)
@@ -116,7 +116,7 @@ impl TestBlock for TmLightBlock {
         self.signed_header
             .header
             .time
-            .try_into()
+            .into_timestamp()
             .expect("Never fails")
     }
 
@@ -128,7 +128,7 @@ impl TestBlock for TmLightBlock {
     }
 }
 
-#[derive(Debug, TypedBuilder)]
+#[derive(Debug, Builder)]
 pub struct BlockParams {
     pub validators: Vec<TestgenValidator>,
     pub next_validators: Vec<TestgenValidator>,
@@ -200,7 +200,7 @@ impl TestHeader for TendermintHeader {
             .signed_header
             .header
             .time
-            .try_into()
+            .into_timestamp()
             .expect("Never fails")
     }
 }

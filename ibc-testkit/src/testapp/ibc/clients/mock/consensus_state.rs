@@ -1,6 +1,7 @@
 use ibc::core::client::context::consensus_state::ConsensusState;
 use ibc::core::client::types::error::ClientError;
 use ibc::core::commitment_types::commitment::CommitmentRoot;
+use ibc::core::host::types::error::DecodingError;
 use ibc::core::primitives::prelude::*;
 use ibc::core::primitives::Timestamp;
 use ibc::primitives::proto::{Any, Protobuf};
@@ -38,10 +39,12 @@ impl MockConsensusState {
 impl Protobuf<RawMockConsensusState> for MockConsensusState {}
 
 impl TryFrom<RawMockConsensusState> for MockConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMockConsensusState) -> Result<Self, Self::Error> {
-        let raw_header = raw.header.ok_or(ClientError::MissingRawConsensusState)?;
+        let raw_header = raw.header.ok_or(DecodingError::missing_raw_data(
+            "mock consensus state header",
+        ))?;
 
         Ok(Self {
             header: raw_header.try_into()?,
@@ -61,23 +64,16 @@ impl From<MockConsensusState> for RawMockConsensusState {
 impl Protobuf<Any> for MockConsensusState {}
 
 impl TryFrom<Any> for MockConsensusState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_consensus_state(value: &[u8]) -> Result<MockConsensusState, ClientError> {
-            let mock_consensus_state =
-                Protobuf::<RawMockConsensusState>::decode(value).map_err(|e| {
-                    ClientError::Other {
-                        description: e.to_string(),
-                    }
-                })?;
-            Ok(mock_consensus_state)
-        }
-        match raw.type_url.as_str() {
-            MOCK_CONSENSUS_STATE_TYPE_URL => decode_consensus_state(&raw.value),
-            _ => Err(ClientError::UnknownConsensusStateType {
-                consensus_state_type: raw.type_url,
-            }),
+        if let MOCK_CONSENSUS_STATE_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawMockConsensusState>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
+                expected: MOCK_CONSENSUS_STATE_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })
         }
     }
 }
@@ -96,7 +92,7 @@ impl ConsensusState for MockConsensusState {
         &self.root
     }
 
-    fn timestamp(&self) -> Timestamp {
-        self.header.timestamp
+    fn timestamp(&self) -> Result<Timestamp, ClientError> {
+        Ok(self.header.timestamp)
     }
 }

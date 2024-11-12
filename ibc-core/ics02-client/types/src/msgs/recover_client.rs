@@ -1,12 +1,11 @@
 //! Definition of domain type message `MsgRecoverClient`.
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ClientId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::client::v1::MsgRecoverClient as RawMsgRecoverClient;
 use ibc_proto::Protobuf;
-
-use crate::error::ClientError;
 
 pub const RECOVER_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgRecoverClient";
 
@@ -38,18 +37,12 @@ pub struct MsgRecoverClient {
 impl Protobuf<RawMsgRecoverClient> for MsgRecoverClient {}
 
 impl TryFrom<RawMsgRecoverClient> for MsgRecoverClient {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMsgRecoverClient) -> Result<Self, Self::Error> {
         Ok(MsgRecoverClient {
-            subject_client_id: raw
-                .subject_client_id
-                .parse()
-                .map_err(ClientError::InvalidMsgRecoverClientId)?,
-            substitute_client_id: raw
-                .substitute_client_id
-                .parse()
-                .map_err(ClientError::InvalidMsgRecoverClientId)?,
+            subject_client_id: raw.subject_client_id.parse()?,
+            substitute_client_id: raw.substitute_client_id.parse()?,
             signer: raw.signer.into(),
         })
     }

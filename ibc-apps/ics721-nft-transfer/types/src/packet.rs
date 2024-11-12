@@ -2,6 +2,7 @@
 
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
+use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 #[cfg(feature = "serde")]
 use ibc_core::primitives::serializers;
@@ -91,7 +92,7 @@ impl PacketData {
     /// Performs the basic validation of the packet data fields.
     pub fn validate_basic(&self) -> Result<(), NftTransferError> {
         if self.token_ids.0.is_empty() {
-            return Err(NftTransferError::NoTokenId);
+            return Err(NftTransferError::MissingTokenId);
         }
         let num = self.token_ids.0.len();
         let num_uri = self
@@ -105,14 +106,17 @@ impl PacketData {
             .map(|t| t.len())
             .unwrap_or_default();
         if (num_uri != 0 && num_uri != num) || (num_data != 0 && num_data != num) {
-            return Err(NftTransferError::TokenMismatched);
+            return Err(NftTransferError::MismatchedNumberOfTokenIds {
+                actual: num,
+                expected: num_uri,
+            });
         }
         Ok(())
     }
 }
 
 impl TryFrom<RawPacketData> for PacketData {
-    type Error = NftTransferError;
+    type Error = DecodingError;
 
     fn try_from(raw_pkt_data: RawPacketData) -> Result<Self, Self::Error> {
         let class_uri = if raw_pkt_data.class_uri.is_empty() {
@@ -123,11 +127,8 @@ impl TryFrom<RawPacketData> for PacketData {
         let class_data = if raw_pkt_data.class_data.is_empty() {
             None
         } else {
-            let decoded = BASE64_STANDARD
-                .decode(raw_pkt_data.class_data)
-                .map_err(|_| NftTransferError::InvalidJsonData)?;
-            let data_str =
-                String::from_utf8(decoded).map_err(|_| NftTransferError::InvalidJsonData)?;
+            let decoded = BASE64_STANDARD.decode(raw_pkt_data.class_data)?;
+            let data_str = String::from_utf8(decoded)?;
             Some(data_str.parse()?)
         };
 
@@ -138,11 +139,8 @@ impl TryFrom<RawPacketData> for PacketData {
             .token_data
             .iter()
             .map(|data| {
-                let decoded = BASE64_STANDARD
-                    .decode(data)
-                    .map_err(|_| NftTransferError::InvalidJsonData)?;
-                let data_str =
-                    String::from_utf8(decoded).map_err(|_| NftTransferError::InvalidJsonData)?;
+                let decoded = BASE64_STANDARD.decode(data)?;
+                let data_str = String::from_utf8(decoded)?;
                 data_str.parse()
             })
             .collect();
@@ -157,6 +155,7 @@ impl TryFrom<RawPacketData> for PacketData {
             raw_pkt_data.receiver.into(),
             raw_pkt_data.memo.into(),
         )
+        .map_err(DecodingError::invalid_raw_data)
     }
 }
 

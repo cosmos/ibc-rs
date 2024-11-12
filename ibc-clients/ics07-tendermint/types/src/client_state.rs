@@ -4,10 +4,10 @@ use core::cmp::max;
 use core::str::FromStr;
 use core::time::Duration;
 
-use ibc_core_client_types::error::ClientError;
 use ibc_core_client_types::proto::v1::Height as RawHeight;
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::specs::ProofSpecs;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ChainId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::ZERO_DURATION;
@@ -18,7 +18,7 @@ use tendermint::chain::id::MAX_LENGTH as MaxChainIdLen;
 use tendermint::trust_threshold::TrustThresholdFraction as TendermintTrustThresholdFraction;
 use tendermint_light_client_verifier::options::Options;
 
-use crate::error::Error;
+use crate::error::TendermintClientError;
 use crate::header::Header as TmHeader;
 use crate::trust_threshold::TrustThreshold;
 
@@ -88,7 +88,7 @@ impl ClientState {
         proof_specs: ProofSpecs,
         upgrade_path: Vec<String>,
         allow_update: AllowUpdate,
-    ) -> Result<Self, Error> {
+    ) -> Result<Self, TendermintClientError> {
         let client_state = Self::new_without_validation(
             chain_id,
             trust_level,
@@ -105,7 +105,7 @@ impl ClientState {
         Ok(client_state)
     }
 
-    pub fn with_header(self, header: TmHeader) -> Result<Self, Error> {
+    pub fn with_header(self, header: TmHeader) -> Result<Self, TendermintClientError> {
         Ok(Self {
             latest_height: max(header.height(), self.latest_height),
             ..self
@@ -119,14 +119,14 @@ impl ClientState {
         }
     }
 
-    pub fn validate(&self) -> Result<(), Error> {
+    pub fn validate(&self) -> Result<(), TendermintClientError> {
         self.chain_id.validate_length(3, MaxChainIdLen as u64)?;
 
         // `TrustThreshold` is guaranteed to be in the range `[0, 1)`, but a `TrustThreshold::ZERO`
         // value is invalid in this context
         if self.trust_level == TrustThreshold::ZERO {
-            return Err(Error::InvalidTrustThreshold {
-                reason: "ClientState trust-level cannot be zero".to_string(),
+            return Err(TendermintClientError::InvalidTrustThreshold {
+                description: "ClientState trust-level cannot be zero".to_string(),
             });
         }
 
@@ -134,12 +134,18 @@ impl ClientState {
             self.trust_level.numerator(),
             self.trust_level.denominator(),
         )
-        .map_err(Error::InvalidTendermintTrustThreshold)?;
+        .map_err(|_| TendermintClientError::InvalidTrustThreshold {
+            description: format!(
+                "invalid Tendermint trust threshold: {:?}/{:?}",
+                self.trust_level.numerator(),
+                self.trust_level.denominator()
+            ),
+        })?;
 
         // Basic validation of trusting period and unbonding period: each should be non-zero.
         if self.trusting_period <= Duration::new(0, 0) {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
+            return Err(TendermintClientError::InvalidTrustThreshold {
+                description: format!(
                     "ClientState trusting period ({:?}) must be greater than zero",
                     self.trusting_period
                 ),
@@ -147,8 +153,8 @@ impl ClientState {
         }
 
         if self.unbonding_period <= Duration::new(0, 0) {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
+            return Err(TendermintClientError::InvalidTrustThreshold {
+                description: format!(
                     "ClientState unbonding period ({:?}) must be greater than zero",
                     self.unbonding_period
                 ),
@@ -156,23 +162,21 @@ impl ClientState {
         }
 
         if self.trusting_period >= self.unbonding_period {
-            return Err(Error::InvalidTrustThreshold {
-                reason: format!(
+            return Err(TendermintClientError::InvalidTrustThreshold {
+                description: format!(
                 "ClientState trusting period ({:?}) must be smaller than unbonding period ({:?})", self.trusting_period, self.unbonding_period
             ),
             });
         }
 
         if self.max_clock_drift <= Duration::new(0, 0) {
-            return Err(Error::InvalidMaxClockDrift {
-                reason: "ClientState max-clock-drift must be greater than zero".to_string(),
-            });
+            return Err(TendermintClientError::InvalidMaxClockDrift);
         }
 
         if self.latest_height.revision_number() != self.chain_id.revision_number() {
-            return Err(Error::InvalidLatestHeight {
-                reason: "ClientState latest-height revision number must match chain-id version"
-                    .to_string(),
+            return Err(TendermintClientError::MismatchedRevisionHeights {
+                expected: self.chain_id.revision_number(),
+                actual: self.latest_height.revision_number(),
             });
         }
 
@@ -180,13 +184,9 @@ impl ClientState {
         self.proof_specs.validate()?;
 
         // `upgrade_path` itself may be empty, but if not then each key must be non-empty
-        for (idx, key) in self.upgrade_path.iter().enumerate() {
+        for key in self.upgrade_path.iter() {
             if key.trim().is_empty() {
-                return Err(Error::Validation {
-                    reason: format!(
-                        "ClientState upgrade-path key at index {idx:?} cannot be empty"
-                    ),
-                });
+                return Err(TendermintClientError::MissingUpgradePathKey);
             }
         }
 
@@ -200,13 +200,9 @@ impl ClientState {
 
     /// Helper method to produce a [`Options`] struct for use in
     /// Tendermint-specific light client verification.
-    pub fn as_light_client_options(&self) -> Result<Options, Error> {
+    pub fn as_light_client_options(&self) -> Result<Options, TendermintClientError> {
         Ok(Options {
-            trust_threshold: self.trust_level.try_into().map_err(|e: ClientError| {
-                Error::InvalidTrustThreshold {
-                    reason: e.to_string(),
-                }
-            })?,
+            trust_threshold: self.trust_level.try_into()?,
             trusting_period: self.trusting_period,
             clock_drift: self.max_clock_drift,
         })
@@ -234,49 +230,64 @@ impl ClientState {
 impl Protobuf<RawTmClientState> for ClientState {}
 
 impl TryFrom<RawTmClientState> for ClientState {
-    type Error = Error;
+    type Error = DecodingError;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
         let chain_id = ChainId::from_str(raw.chain_id.as_str())?;
 
         let trust_level = {
-            let trust_level = raw.trust_level.ok_or(Error::MissingTrustingPeriod)?;
-            trust_level
-                .try_into()
-                .map_err(|e| Error::InvalidTrustThreshold {
-                    reason: format!("{e}"),
-                })?
+            let trust_level = raw.trust_level.ok_or(DecodingError::missing_raw_data(
+                "tm client state trust level",
+            ))?;
+            trust_level.try_into()?
         };
 
         let trusting_period = raw
             .trusting_period
-            .ok_or(Error::MissingTrustingPeriod)?
+            .ok_or(DecodingError::missing_raw_data(
+                "tm client state trusting period",
+            ))?
             .try_into()
-            .map_err(|_| Error::MissingTrustingPeriod)?;
+            .map_err(|d| {
+                DecodingError::invalid_raw_data(format!("tm client state trusting period: {d:?}"))
+            })?;
 
         let unbonding_period = raw
             .unbonding_period
-            .ok_or(Error::MissingUnbondingPeriod)?
+            .ok_or(DecodingError::missing_raw_data(
+                "tm client state unbonding period",
+            ))?
             .try_into()
-            .map_err(|_| Error::MissingUnbondingPeriod)?;
+            .map_err(|d| {
+                DecodingError::invalid_raw_data(format!("tm client state unbonding period: {d:?}"))
+            })?;
 
         let max_clock_drift = raw
             .max_clock_drift
-            .ok_or(Error::NegativeMaxClockDrift)?
+            .ok_or(DecodingError::missing_raw_data(
+                "tm client state max clock drift",
+            ))?
             .try_into()
-            .map_err(|_| Error::NegativeMaxClockDrift)?;
+            .map_err(|d| {
+                DecodingError::invalid_raw_data(format!("tm client state max clock drift: {d:?}"))
+            })?;
 
         let latest_height = raw
             .latest_height
-            .ok_or(Error::MissingLatestHeight)?
-            .try_into()
-            .map_err(|_| Error::MissingLatestHeight)?;
+            .ok_or(DecodingError::missing_raw_data(
+                "tm client state latest height",
+            ))?
+            .try_into()?;
+
+        let proof_specs = raw.proof_specs.try_into()?;
 
         // NOTE: In `RawClientState`, a `frozen_height` of `0` means "not
         // frozen". See:
         // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
-        let frozen_height =
-            Height::try_from(raw.frozen_height.ok_or(Error::MissingFrozenHeight)?).ok();
+        let frozen_height = Height::try_from(raw.frozen_height.ok_or(
+            DecodingError::missing_raw_data("tm client state frozen height"),
+        )?)
+        .ok();
 
         // We use set this deprecated field just so that we can properly convert
         // it back in its raw form
@@ -293,7 +304,7 @@ impl TryFrom<RawTmClientState> for ClientState {
             unbonding_period,
             max_clock_drift,
             latest_height,
-            raw.proof_specs.try_into()?,
+            proof_specs,
             raw.upgrade_path,
             frozen_height,
             allow_update,
@@ -309,9 +320,9 @@ impl From<ClientState> for RawTmClientState {
         Self {
             chain_id: value.chain_id.to_string(),
             trust_level: Some(value.trust_level.into()),
-            trusting_period: Some(value.trusting_period.into()),
-            unbonding_period: Some(value.unbonding_period.into()),
-            max_clock_drift: Some(value.max_clock_drift.into()),
+            trusting_period: value.trusting_period.try_into().ok(),
+            unbonding_period: value.unbonding_period.try_into().ok(),
+            max_clock_drift: value.max_clock_drift.try_into().ok(),
             // NOTE: The protobuf encoded `frozen_height` of an active client
             // must be set to `0` so that `ibc-go` driven chains can properly
             // decode the `ClientState` value. In `RawClientState`, a
@@ -333,22 +344,16 @@ impl From<ClientState> for RawTmClientState {
 impl Protobuf<Any> for ClientState {}
 
 impl TryFrom<Any> for ClientState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_client_state(value: &[u8]) -> Result<ClientState, ClientError> {
-            let client_state =
-                Protobuf::<RawTmClientState>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
-            Ok(client_state)
-        }
-
-        match raw.type_url.as_str() {
-            TENDERMINT_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
-            _ => Err(ClientError::UnknownClientStateType {
-                client_state_type: raw.type_url,
-            }),
+        if let TENDERMINT_CLIENT_STATE_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawTmClientState>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
+                expected: TENDERMINT_CLIENT_STATE_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })
         }
     }
 }
@@ -514,7 +519,7 @@ mod tests {
         for test in tests {
             let p = test.params.clone();
 
-            let cs_result: Result<ClientState, Error> = ClientState::new(
+            let cs_result: Result<ClientState, TendermintClientError> = ClientState::new(
                 p.id,
                 p.trust_level,
                 p.trusting_period,

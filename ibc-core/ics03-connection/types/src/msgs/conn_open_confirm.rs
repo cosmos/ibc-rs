@@ -1,12 +1,11 @@
 use ibc_core_client_types::Height;
 use ibc_core_commitment_types::commitment::CommitmentProofBytes;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::ConnectionId;
 use ibc_primitives::prelude::*;
 use ibc_primitives::Signer;
 use ibc_proto::ibc::core::connection::v1::MsgConnectionOpenConfirm as RawMsgConnectionOpenConfirm;
 use ibc_proto::Protobuf;
-
-use crate::error::ConnectionError;
 
 pub const CONN_OPEN_CONFIRM_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionOpenConfirm";
 
@@ -31,22 +30,18 @@ pub struct MsgConnectionOpenConfirm {
 impl Protobuf<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {}
 
 impl TryFrom<RawMsgConnectionOpenConfirm> for MsgConnectionOpenConfirm {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(msg: RawMsgConnectionOpenConfirm) -> Result<Self, Self::Error> {
         Ok(Self {
-            conn_id_on_b: msg
-                .connection_id
-                .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
-            proof_conn_end_on_a: msg
-                .proof_ack
-                .try_into()
-                .map_err(|_| ConnectionError::InvalidProof)?,
+            conn_id_on_b: msg.connection_id.parse()?,
+            proof_conn_end_on_a: msg.proof_ack.try_into()?,
             proof_height_on_a: msg
                 .proof_height
                 .and_then(|raw_height| raw_height.try_into().ok())
-                .ok_or(ConnectionError::MissingProofHeight)?,
+                .ok_or(DecodingError::invalid_raw_data(
+                    "msg conn open confirm proof height",
+                ))?,
             signer: msg.signer.into(),
         })
     }

@@ -118,6 +118,7 @@ fn split_for_impl(
     let mut predicates = vec![];
 
     if let syn::PathArguments::AngleBracketed(gen) = args {
+        generics.reserve_exact(gen.args.len());
         for arg in gen.args {
             match arg.clone() {
                 GenericArgument::Type(_) | GenericArgument::Lifetime(_) => {

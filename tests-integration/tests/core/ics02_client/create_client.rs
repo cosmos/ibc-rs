@@ -8,7 +8,7 @@ use ibc::core::client::types::msgs::{ClientMsg, MsgCreateClient};
 use ibc::core::client::types::Height;
 use ibc::core::commitment_types::error::CommitmentError;
 use ibc::core::entrypoint::{execute, validate};
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::handler::types::error::HandlerError;
 use ibc::core::handler::types::msgs::MsgEnvelope;
 use ibc::core::host::types::identifiers::ClientId;
 use ibc::core::host::types::path::{ClientConsensusStatePath, NextClientSequencePath};
@@ -21,7 +21,7 @@ use ibc_testkit::fixtures::clients::tendermint::dummy_tm_client_state_from_heade
 use ibc_testkit::fixtures::clients::tendermint::{
     dummy_expired_tendermint_header, dummy_valid_tendermint_header,
 };
-use ibc_testkit::fixtures::core::context::TestContextConfig;
+use ibc_testkit::fixtures::core::context::dummy_store_generic_test_context;
 use ibc_testkit::fixtures::core::signer::dummy_account_id;
 use ibc_testkit::fixtures::{Expect, Fixture};
 use ibc_testkit::testapp::ibc::clients::mock::client_state::{
@@ -31,7 +31,7 @@ use ibc_testkit::testapp::ibc::clients::mock::consensus_state::MockConsensusStat
 use ibc_testkit::testapp::ibc::clients::mock::header::MockHeader;
 use ibc_testkit::testapp::ibc::clients::{AnyClientState, AnyConsensusState};
 use ibc_testkit::testapp::ibc::core::router::MockRouter;
-use ibc_testkit::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder};
+use ibc_testkit::testapp::ibc::core::types::{dummy_light_client, DefaultIbcStore};
 use ibc_testkit::utils::year_2023;
 use test_log::test;
 
@@ -180,11 +180,9 @@ fn test_create_expired_mock_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::ExpiredMockHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(
-            ClientError::ClientNotActive {
-                status: Status::Expired,
-            },
-        ))),
+        Expect::Failure(Some(HandlerError::Client(ClientError::InvalidStatus(
+            Status::Expired,
+        )))),
     );
 }
 
@@ -208,11 +206,9 @@ fn test_create_expired_tm_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::ExpiredTendermintHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(
-            ClientError::ClientNotActive {
-                status: Status::Expired,
-            },
-        ))),
+        Expect::Failure(Some(HandlerError::Client(ClientError::InvalidStatus(
+            Status::Expired,
+        )))),
     );
 }
 
@@ -222,9 +218,9 @@ fn test_create_frozen_tm_client() {
     let fxt = create_client_fixture(Ctx::Default, Msg::FrozenTendermintHeader);
     create_client_validate(
         &fxt,
-        Expect::Failure(Some(ContextError::ClientError(ClientError::ClientFrozen {
-            description: "the client is frozen".to_string(),
-        }))),
+        Expect::Failure(Some(HandlerError::Client(ClientError::InvalidStatus(
+            Status::Frozen,
+        )))),
     );
 }
 
@@ -233,14 +229,12 @@ fn test_tm_create_client_proof_verification_ok() {
     let client_id = ClientId::new("07-tendermint", 0).expect("no error");
     let client_height = Height::new(0, 10).expect("no error");
 
-    let ctx_tm = TestContextConfig::builder()
+    let ctx_tm: TendermintContext = dummy_store_generic_test_context()
         .latest_height(client_height)
-        .build::<TendermintContext>();
+        .call();
 
-    let ctx_mk = MockContext::default().with_light_client(
-        &client_id,
-        LightClientBuilder::init().context(&ctx_tm).build(),
-    );
+    let ctx_mk =
+        MockContext::default().with_light_client(&client_id, dummy_light_client(&ctx_tm).call());
 
     let client_validation_ctx_mk = ctx_mk.ibc_store().get_client_validation_context();
 
@@ -306,6 +300,6 @@ fn test_tm_create_client_proof_verification_ok() {
                 serde_json::to_vec(&(next_client_seq_value + 1)).expect("valid json serialization"),
             )
             .expect_err("proof verification fails"),
-        ClientError::Ics23Verification(CommitmentError::VerificationFailure)
+        ClientError::FailedICS23Verification(CommitmentError::FailedToVerifyMembership)
     ));
 }

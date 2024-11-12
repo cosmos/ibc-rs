@@ -32,8 +32,5 @@ mc.log
 # caused by a dependency updated to a faulty version.
 /Cargo.lock
 
-# Ignore CosmWasm artifacts
-cw-contracts/
-
 # Ignore dotenv
 .env

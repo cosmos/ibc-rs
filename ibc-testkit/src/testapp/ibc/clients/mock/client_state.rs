@@ -8,7 +8,7 @@ use ibc::core::client::types::{Height, Status};
 use ibc::core::commitment_types::commitment::{
     CommitmentPrefix, CommitmentProofBytes, CommitmentRoot,
 };
-use ibc::core::handler::types::error::ContextError;
+use ibc::core::host::types::error::{DecodingError, HostError};
 use ibc::core::host::types::identifiers::{ClientId, ClientType};
 use ibc::core::host::types::path::{ClientConsensusStatePath, ClientStatePath, Path, PathBytes};
 use ibc::core::primitives::prelude::*;
@@ -91,15 +91,13 @@ impl MockClientState {
 impl Protobuf<RawMockClientState> for MockClientState {}
 
 impl TryFrom<RawMockClientState> for MockClientState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: RawMockClientState) -> Result<Self, Self::Error> {
         Ok(Self {
             header: raw
                 .header
-                .ok_or(ClientError::Other {
-                    description: "header is not present".into(),
-                })?
+                .ok_or(DecodingError::missing_raw_data("mock client state header"))?
                 .try_into()?,
             trusting_period: Duration::from_nanos(raw.trusting_period),
             frozen: raw.frozen,
@@ -124,21 +122,16 @@ impl From<MockClientState> for RawMockClientState {
 impl Protobuf<Any> for MockClientState {}
 
 impl TryFrom<Any> for MockClientState {
-    type Error = ClientError;
+    type Error = DecodingError;
 
     fn try_from(raw: Any) -> Result<Self, Self::Error> {
-        fn decode_client_state(value: &[u8]) -> Result<MockClientState, ClientError> {
-            let client_state =
-                Protobuf::<RawMockClientState>::decode(value).map_err(|e| ClientError::Other {
-                    description: e.to_string(),
-                })?;
-            Ok(client_state)
-        }
-        match raw.type_url.as_str() {
-            MOCK_CLIENT_STATE_TYPE_URL => decode_client_state(&raw.value),
-            _ => Err(ClientError::UnknownClientStateType {
-                client_state_type: raw.type_url,
-            }),
+        if let MOCK_CLIENT_STATE_TYPE_URL = raw.type_url.as_str() {
+            Protobuf::<RawMockClientState>::decode(raw.value.as_ref()).map_err(Into::into)
+        } else {
+            Err(DecodingError::MismatchedResourceName {
+                expected: MOCK_CLIENT_STATE_TYPE_URL.to_string(),
+                actual: raw.type_url,
+            })
         }
     }
 }
@@ -154,10 +147,10 @@ impl From<MockClientState> for Any {
 
 pub trait MockClientContext {
     /// Returns the current timestamp of the local chain.
-    fn host_timestamp(&self) -> Result<Timestamp, ContextError>;
+    fn host_timestamp(&self) -> Result<Timestamp, HostError>;
 
     /// Returns the current height of the local chain.
-    fn host_height(&self) -> Result<Height, ContextError>;
+    fn host_height(&self) -> Result<Height, HostError>;
 }
 
 impl ClientStateCommon for MockClientState {
@@ -171,9 +164,7 @@ impl ClientStateCommon for MockClientState {
         if consensus_state_status(&mock_consensus_state, host_timestamp, self.trusting_period)?
             .is_expired()
         {
-            return Err(ClientError::ClientNotActive {
-                status: Status::Expired,
-            });
+            return Err(ClientError::InvalidStatus(Status::Expired));
         }
 
         Ok(())
@@ -189,9 +180,9 @@ impl ClientStateCommon for MockClientState {
 
     fn validate_proof_height(&self, proof_height: Height) -> Result<(), ClientError> {
         if self.latest_height() < proof_height {
-            return Err(ClientError::InvalidProofHeight {
-                latest_height: self.latest_height(),
-                proof_height,
+            return Err(ClientError::InsufficientProofHeight {
+                actual: self.latest_height(),
+                expected: proof_height,
             });
         }
         Ok(())
@@ -212,7 +203,7 @@ impl ClientStateCommon for MockClientState {
         let upgraded_mock_client_state = Self::try_from(upgraded_client_state)?;
         MockConsensusState::try_from(upgraded_consensus_state)?;
         if self.latest_height() >= upgraded_mock_client_state.latest_height() {
-            return Err(UpgradeClientError::LowUpgradeHeight {
+            return Err(UpgradeClientError::InsufficientUpgradeHeight {
                 upgraded_height: self.latest_height(),
                 client_height: upgraded_mock_client_state.latest_height(),
             })?;
@@ -285,9 +276,7 @@ where
 
                 Ok(header_heights_equal && headers_are_in_future)
             }
-            header_type => Err(ClientError::UnknownHeaderType {
-                header_type: header_type.to_owned(),
-            }),
+            header_type => Err(ClientError::InvalidHeaderType(header_type.to_owned())),
         }
     }
 
@@ -312,9 +301,9 @@ where
         let now = ctx.host_timestamp()?;
         let elapsed_since_latest_consensus_state = now
             .duration_since(&latest_consensus_state.timestamp())
-            .ok_or(ClientError::Other {
-                description: format!("latest consensus state is in the future. now: {now}, latest consensus state: {}", latest_consensus_state.timestamp()),
-            })?;
+            .ok_or(ClientError::InvalidConsensusStateTimestamp(
+                latest_consensus_state.timestamp(),
+            ))?;
 
         if self.expired(elapsed_since_latest_consensus_state) {
             return Ok(Status::Expired);

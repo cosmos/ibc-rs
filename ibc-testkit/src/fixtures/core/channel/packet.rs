@@ -1,45 +1,32 @@
+use bon::builder;
 use ibc::core::channel::types::packet::Packet;
 use ibc::core::channel::types::proto::v1::Packet as RawPacket;
 use ibc::core::channel::types::timeout::{TimeoutHeight, TimeoutTimestamp};
 use ibc::core::client::types::proto::v1::Height as RawHeight;
 use ibc::core::host::types::identifiers::{ChannelId, PortId, Sequence};
 use ibc::core::primitives::prelude::*;
-use typed_builder::TypedBuilder;
 
-/// Configuration of the `PacketData` type for building dummy packets.
-#[derive(TypedBuilder, Debug)]
-#[builder(build_method(into = Packet))]
-pub struct PacketConfig {
-    #[builder(default = Sequence::from(0))]
-    pub seq_on_a: Sequence,
-    #[builder(default = PortId::transfer())]
-    pub port_id_on_a: PortId,
-    #[builder(default = ChannelId::zero())]
-    pub chan_id_on_a: ChannelId,
-    #[builder(default = PortId::transfer())]
-    pub port_id_on_b: PortId,
-    #[builder(default = ChannelId::zero())]
-    pub chan_id_on_b: ChannelId,
-    #[builder(default)]
-    pub data: Vec<u8>,
-    #[builder(default = TimeoutHeight::Never)]
-    pub timeout_height_on_b: TimeoutHeight,
-    #[builder(default = TimeoutTimestamp::Never)]
-    pub timeout_timestamp_on_b: TimeoutTimestamp,
-}
-
-impl From<PacketConfig> for Packet {
-    fn from(config: PacketConfig) -> Self {
-        Self {
-            seq_on_a: config.seq_on_a,
-            port_id_on_a: config.port_id_on_a,
-            chan_id_on_a: config.chan_id_on_a,
-            port_id_on_b: config.port_id_on_b,
-            chan_id_on_b: config.chan_id_on_b,
-            data: config.data,
-            timeout_height_on_b: config.timeout_height_on_b,
-            timeout_timestamp_on_b: config.timeout_timestamp_on_b,
-        }
+/// Returns a dummy [`Packet`], for testing purposes only!
+#[builder]
+pub fn dummy_packet(
+    #[builder(default = Sequence::from(0))] seq_on_a: Sequence,
+    #[builder(default = PortId::transfer())] port_id_on_a: PortId,
+    #[builder(default = ChannelId::zero())] chan_id_on_a: ChannelId,
+    #[builder(default = PortId::transfer())] port_id_on_b: PortId,
+    #[builder(default = ChannelId::zero())] chan_id_on_b: ChannelId,
+    #[builder(default)] data: Vec<u8>,
+    #[builder(default = TimeoutHeight::Never)] timeout_height_on_b: TimeoutHeight,
+    #[builder(default = TimeoutTimestamp::Never)] timeout_timestamp_on_b: TimeoutTimestamp,
+) -> Packet {
+    Packet {
+        seq_on_a,
+        port_id_on_a,
+        chan_id_on_a,
+        port_id_on_b,
+        chan_id_on_b,
+        data,
+        timeout_height_on_b,
+        timeout_timestamp_on_b,
     }
 }
 

@@ -30,7 +30,7 @@ in [ADR003 - Dealing with chain-specific datatypes](https://github.com/informals
 ->
 > We could alternatively model all chain-specific datatypes as boxed trait objects (`Box<dyn Trait>`), but this approach
 > runs into a lot of limitations of trait objects, such as the inability to easily require such trait objects to be
-> Clonable, or Serializable, or to define an equality relation on them. Some support for such functionality can be found
+> Cloneable, or Serializable, or to define an equality relation on them. Some support for such functionality can be found
 > in third-party libraries, but the overall experience for the developer is too subpar.
 >
 > We thus settle on a different strategy: lifting chain-specific data into an enum over all possible chain types.
@@ -183,7 +183,7 @@ available).
 
 #### Light client traits cannot have constructors
 
-This restriction comes from the fact that trait methods of object safe traits cannot return `Self`.  
+This restriction comes from the fact that trait methods of object safe traits cannot return `Self`.
 However, we would need a constructor to be able to create a `ClientState` and `ConsensusState` in the `create_client`
 handler. This can be done using a `where Self: Sized` clause on the trait method.
 
@@ -348,7 +348,7 @@ define_error! {
     #[derive(Debug, PartialEq, Eq)]
     Error {
         /* ... */
-    
+
         Tendermint
             [ Ics07Error ]
             | _ | { "tendermint error" },
@@ -371,11 +371,11 @@ define_error! {
     #[derive(Debug, PartialEq, Eq)]
     Error {
         /* ... */
-    
+
         ClientSpecific
             { description: String }
             | e | { format_args!("client specific error: {0}", e.description) },
-    
+
         /* ... */
     }
 }

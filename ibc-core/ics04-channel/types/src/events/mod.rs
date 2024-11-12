@@ -3,6 +3,7 @@
 mod channel_attributes;
 mod packet_attributes;
 
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ChannelId, ConnectionId, PortId, Sequence};
 use ibc_primitives::prelude::*;
 use tendermint::abci;
@@ -21,7 +22,6 @@ use super::acknowledgement::Acknowledgement;
 use super::channel::Order;
 use super::timeout::TimeoutHeight;
 use super::Version;
-use crate::error::ChannelError;
 use crate::packet::Packet;
 use crate::timeout::TimeoutTimestamp;
 
@@ -671,7 +671,7 @@ impl SendPacket {
 }
 
 impl TryFrom<SendPacket> for abci::Event {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(v: SendPacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
@@ -782,7 +782,7 @@ impl ReceivePacket {
 }
 
 impl TryFrom<ReceivePacket> for abci::Event {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(v: ReceivePacket) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
@@ -897,7 +897,7 @@ impl WriteAcknowledgement {
 }
 
 impl TryFrom<WriteAcknowledgement> for abci::Event {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(v: WriteAcknowledgement) -> Result<Self, Self::Error> {
         let mut attributes = Vec::with_capacity(11);
@@ -1002,7 +1002,7 @@ impl AcknowledgePacket {
 }
 
 impl TryFrom<AcknowledgePacket> for abci::Event {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(v: AcknowledgePacket) -> Result<Self, Self::Error> {
         Ok(abci::Event {
@@ -1099,7 +1099,7 @@ impl TimeoutPacket {
 }
 
 impl TryFrom<TimeoutPacket> for abci::Event {
-    type Error = ChannelError;
+    type Error = DecodingError;
 
     fn try_from(v: TimeoutPacket) -> Result<Self, Self::Error> {
         Ok(abci::Event {

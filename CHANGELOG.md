@@ -1,5 +1,90 @@
 # CHANGELOG
 
+## v0.55.1
+
+*October 17, 2024*
+
+This patch release fixes the `Cargo.toml` workspace file and adds a helper
+`From<Infallible>` implementation for `ClientError`.
+
+There are no consensus-breaking changes in this release.
+
+### BUG FIXES
+
+- [ibc] Remove non-existing `ibc-client-cw` link in the `Cargo.toml` workspace.
+  ([#1357](https://github.com/cosmos/ibc-rs/issues/1357)).
+
+### IMPROVEMENTS
+
+- [ibc-core] Implement `From<Infallible>` for `ClientError`
+  ([#1356](https://github.com/cosmos/ibc-rs/issues/1356)).
+
+## v0.55.0
+
+*September 26, 2024*
+
+This release brings major improvements to error handling in `ibc-rs`, giving
+hosting environments better control over errors and easier debugging for the
+developers. A key enhancement is the clearer distinction between host-sourced
+errors and those propagated by `ibc-rs`, effectively separating host-level
+errors from protocol-level ones. Therefore, a noticeable update is the renaming
+of the previous `ContextError` to `HandlerError`, which now exclusively manages
+errors from IBC handlers. In parallel, a new `HostError` has been introduced to
+handle errors originating from hosts, particularly those from validation and
+execution contexts. Additionally, error definitions within `ibc-rs` have been
+unified, reducing the granularity of error variants. For more details, please
+refer to [ADR-011](./docs/architecture/adr-11-refactor-errors.md).
+
+In addition, it introduces various fixes and enhancements. Notably, helper
+traits with default implementations have been added to simplify the conversion
+between host time types and `Timestamp`. Consequently, the `ibc-primitives`
+crate has been fully decoupled from the `tendermint` dependency.
+
+It’s also worth noting that the `cosmwasm` workspace has been relocated to its
+own repository, now available under
+[cosmwasm-ibc](https://github.com/informalsystems/cosmwasm-ibc).
+
+There are no consensus-breaking changes in this release.
+
+### BREAKING CHANGES
+
+- [ibc] Standardize error variants across the codebase to make them less
+  specific and more consistent.
+  ([\#270](https://github.com/cosmos/ibc-rs/issues/270))
+- [ibc-core-handler] Return `DecodingError` for `MsgEnvelope` when trying to
+  decode from `Any` ([\#950](https://github.com/cosmos/ibc-rs/issues/950))
+- [cosmwasm] Migrate the `cosmwasm` workspace into its own separate repository
+  located at [cosmwasm-ibc](https://github.com/informalsystems/cosmwasm-ibc).
+  ([\#1311](https://github.com/cosmos/ibc-rs/issues/1311))
+- [ibc] Consolidate decoding-related errors into new `DecodingError` type
+  ([\1319](https://github.com/cosmos/ibc-rs/issues/1319))
+- [ibc-core] Define a new `HostError` type in ICS-24 to draw distinction between
+  protocol errors and host errors. Additionally, rename `ContextError` to
+  `HandlerError` to better reflect its use case.
+  ([\1320](https://github.com/cosmos/ibc-rs/issues/1320))
+- [ibc-core-channel] Merge `PacketError` type into `ChannelError`
+  ([#1339](https://github.com/cosmos/ibc-rs/issues/1339))
+- [ibc] Clean up multi-purpose variants like the `Other` variant and reduce
+  unnecessary `String` allocations in `*Error` enums.
+  ([\#1346](https://github.com/cosmos/ibc-rs/issues/1346))
+- [ibc-core-client] Update ICS-02 `ConsensusState::timestamp()` to return
+  `Result<Timestamp, ClientError>`
+  ([\#1352](https://github.com/cosmos/ibc-rs/issues/1352))
+
+### BUG FIXES
+
+- [ibc-core] Remove faulty receipt check during `recv_packet_validate`
+  ([#1336](https://github.com/cosmos/ibc-rs/issues/1336)).
+
+### IMPROVEMENTS
+
+- [ibc-primitives] Define utility traits for converting between `Timestamp` and
+  host-specific time types.
+  ([#1323](https://github.com/cosmos/ibc-rs/pull/1323)).
+- [ibc-testkit] Remove redundant path constructions in the implementation of
+  `ValidationContext` for `MockIbcStore`
+  ([#1338](https://github.com/cosmos/ibc-rs/pull/1338)).
+
 ## v0.54.0
 
 *August 12, 2024*
@@ -641,9 +726,9 @@ There are no consensus-breaking changes.
 - Bump ibc-proto-rs to v0.34.0
   ([#790](https://github.com/cosmos/ibc-rs/issues/790))
 - Allow hosts to handle overflow cases in `increase_*_counter` methods by
-  returning `Result<(),ContextError>` type.
+  returning `Result<(),HandlerError>` type.
   ([#857](https://github.com/cosmos/ibc-rs/issues/857))
-- logger and event emitter methods return `Result<(), ContextError>` type.
+- logger and event emitter methods return `Result<(), HandlerError>` type.
   ([#859](https://github.com/cosmos/ibc-rs/issues/859))
 - Bump `ibc-proto-rs` to v0.35.0 along with some other minor dependency updates
   ([#873](https://github.com/cosmos/ibc-rs/issues/873))
@@ -1042,7 +1127,7 @@ There are no consensus-breaking changes.
 
 ### IMPROVEMENT
 
-- Fix `ContextError` Display output
+- Fix `HandlerError` Display output
   ([#547](https://github.com/cosmos/ibc-rs/issues/547))
 
 ## v0.32.0
@@ -1099,7 +1184,7 @@ There are no consensus-breaking changes.
   ([#479](https://github.com/cosmos/ibc-rs/issues/479))
 - Remove Send + Sync supertraits on the Module trait
   ([#480](https://github.com/cosmos/ibc-rs/issues/480))
-- Modify `validate_self_client` error type to return `ContextError` instead of
+- Modify `validate_self_client` error type to return `HandlerError` instead of
   `ConnectionError`
   ([#482](https://github.com/cosmos/ibc-rs/issues/482))
 

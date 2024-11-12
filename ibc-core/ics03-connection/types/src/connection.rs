@@ -4,6 +4,7 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 use core::time::Duration;
 
 use ibc_core_commitment_types::commitment::CommitmentPrefix;
+use ibc_core_host_types::error::DecodingError;
 use ibc_core_host_types::identifiers::{ClientId, ConnectionId};
 use ibc_primitives::prelude::*;
 use ibc_proto::ibc::core::connection::v1::{
@@ -55,7 +56,7 @@ impl IdentifiedConnectionEnd {
 impl Protobuf<RawIdentifiedConnection> for IdentifiedConnectionEnd {}
 
 impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(value: RawIdentifiedConnection) -> Result<Self, Self::Error> {
         let raw_connection_end = RawConnectionEnd {
@@ -67,10 +68,7 @@ impl TryFrom<RawIdentifiedConnection> for IdentifiedConnectionEnd {
         };
 
         Ok(IdentifiedConnectionEnd {
-            connection_id: value
-                .id
-                .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
+            connection_id: value.id.parse()?,
             connection_end: raw_connection_end.try_into()?,
         })
     }
@@ -197,27 +195,25 @@ mod sealed {
 impl Protobuf<RawConnectionEnd> for ConnectionEnd {}
 
 impl TryFrom<RawConnectionEnd> for ConnectionEnd {
-    type Error = ConnectionError;
+    type Error = DecodingError;
+
     fn try_from(value: RawConnectionEnd) -> Result<Self, Self::Error> {
         let state = value.state.try_into()?;
 
         if value.client_id.is_empty() {
-            return Err(ConnectionError::EmptyProtoConnectionEnd);
+            return Err(DecodingError::missing_raw_data("connection end client ID"))?;
         }
 
         if value.versions.is_empty() {
-            return Err(ConnectionError::EmptyVersions);
+            return Err(DecodingError::missing_raw_data("connection end  versions"))?;
         }
 
         Self::new(
             state,
-            value
-                .client_id
-                .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
+            value.client_id.parse()?,
             value
                 .counterparty
-                .ok_or(ConnectionError::MissingCounterparty)?
+                .ok_or(DecodingError::missing_raw_data("counterparty"))?
                 .try_into()?,
             value
                 .versions
@@ -226,6 +222,7 @@ impl TryFrom<RawConnectionEnd> for ConnectionEnd {
                 .collect::<Result<Vec<_>, _>>()?,
             Duration::from_nanos(value.delay_period),
         )
+        .map_err(|_| DecodingError::invalid_raw_data("connection end"))
     }
 }
 
@@ -257,7 +254,7 @@ impl ConnectionEnd {
         // + Init: contains the set of compatible versions,
         // + TryOpen/Open: contains the single version chosen by the handshake protocol.
         if state != State::Init && versions.len() != 1 {
-            return Err(ConnectionError::InvalidVersionLength);
+            return Err(ConnectionError::InvalidState { description: "failed to initialize new ConnectionEnd; expected `Init` connection state and a single version".to_string() });
         }
 
         Ok(Self {
@@ -312,7 +309,7 @@ impl ConnectionEnd {
     /// Checks if the state of this connection end matches with an expected state.
     pub fn verify_state_matches(&self, expected: &State) -> Result<(), ConnectionError> {
         if !self.state.eq(expected) {
-            return Err(ConnectionError::InvalidState {
+            return Err(ConnectionError::MismatchedConnectionStates {
                 expected: expected.to_string(),
                 actual: self.state.to_string(),
             });
@@ -368,28 +365,20 @@ impl Protobuf<RawCounterparty> for Counterparty {}
 // Converts from the wire format RawCounterparty. Typically used from the relayer side
 // during queries for response validation and to extract the Counterparty structure.
 impl TryFrom<RawCounterparty> for Counterparty {
-    type Error = ConnectionError;
+    type Error = DecodingError;
 
     fn try_from(raw_counterparty: RawCounterparty) -> Result<Self, Self::Error> {
         let connection_id: Option<ConnectionId> = if raw_counterparty.connection_id.is_empty() {
             None
         } else {
-            Some(
-                raw_counterparty
-                    .connection_id
-                    .parse()
-                    .map_err(ConnectionError::InvalidIdentifier)?,
-            )
+            Some(raw_counterparty.connection_id.parse()?)
         };
         Ok(Counterparty::new(
-            raw_counterparty
-                .client_id
-                .parse()
-                .map_err(ConnectionError::InvalidIdentifier)?,
+            raw_counterparty.client_id.parse()?,
             connection_id,
             raw_counterparty
                 .prefix
-                .ok_or(ConnectionError::MissingCounterparty)?
+                .ok_or(DecodingError::missing_raw_data("counterparty prefix"))?
                 .key_prefix
                 .into(),
         ))
@@ -436,15 +425,6 @@ impl Counterparty {
     pub fn prefix(&self) -> &CommitmentPrefix {
         &self.prefix
     }
-
-    /// Called upon initiating a connection handshake on the host chain to verify
-    /// that the counterparty connection id has not been set.
-    pub(crate) fn verify_empty_connection_id(&self) -> Result<(), ConnectionError> {
-        if self.connection_id().is_some() {
-            return Err(ConnectionError::InvalidCounterparty);
-        }
-        Ok(())
-    }
 }
 
 #[cfg_attr(
@@ -488,8 +468,8 @@ impl State {
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(ConnectionError::InvalidState {
-                expected: "Must be one of: 0, 1, 2, 3".to_string(),
+            _ => Err(ConnectionError::MismatchedConnectionStates {
+                expected: "0, 1, 2, or 3".to_string(),
                 actual: s.to_string(),
             }),
         }
@@ -521,17 +501,17 @@ impl Display for State {
 }
 
 impl TryFrom<i32> for State {
-    type Error = ConnectionError;
+    type Error = DecodingError;
+
     fn try_from(value: i32) -> Result<Self, Self::Error> {
         match value {
             0 => Ok(Self::Uninitialized),
             1 => Ok(Self::Init),
             2 => Ok(Self::TryOpen),
             3 => Ok(Self::Open),
-            _ => Err(ConnectionError::InvalidState {
-                expected: "Must be one of: 0, 1, 2, 3".to_string(),
-                actual: value.to_string(),
-            }),
+            _ => Err(DecodingError::invalid_raw_data(format!(
+                "connection state expected to be 0, 1, 2, or 3, actual {value}",
+            ))),
         }
     }
 }

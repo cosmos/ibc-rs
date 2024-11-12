@@ -34,7 +34,7 @@ use ibc_query::core::context::ProvableContext;
 
 use crate::context::TestContext;
 use crate::hosts::{HostClientState, TestBlock, TestHost};
-use crate::testapp::ibc::core::types::{DefaultIbcStore, LightClientBuilder, LightClientState};
+use crate::testapp::ibc::core::types::{dummy_light_client, DefaultIbcStore};
 
 /// Implements IBC relayer functions for a pair of [`TestHost`] implementations: `A` and `B`.
 /// Note that, all the implementations are in one direction: from `A` to `B`.
@@ -64,9 +64,7 @@ where
         ctx_b: &TestContext<B>,
         signer: Signer,
     ) -> ClientId {
-        let light_client_of_b = LightClientBuilder::init()
-            .context(ctx_b)
-            .build::<LightClientState<B>>();
+        let light_client_of_b = dummy_light_client(ctx_b).call();
 
         let msg_for_a = MsgEnvelope::Client(ClientMsg::CreateClient(MsgCreateClient {
             client_state: light_client_of_b.client_state.into(),
