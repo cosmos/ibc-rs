@@ -2,28 +2,39 @@
 
 ## Reporting a Security Vulnerability
 
-If you believe you have found a security vulnerability in `ibc-rs`, you can
-privately report it via the project's [**Security** tab][ibc-rs-security] using
-[GitHub's private vulnerability reporting system][gh-vulnerability].
+If you believe you have found a security vulnerability in the Interchain Stack,
+you can report it to our primary vulnerability disclosure channel, the
+[Cosmos HackerOne Bug Bounty program][hackerone-bounty].
 
-> [!IMPORTANT]
-> Please **DO NOT** file a public issue in this repository to report a security
-> vulnerability.
+> [!NOTE]
+> The `ibc-rs` is **NOT** part of the rewards program. Any issues reported for
+> `ibc-rs` are not eligible for bounty rewards.
 
-### Guidelines
+If you prefer to report an issue via email, you may send a bug report to
+security@interchain.io with the issue details, reproduction, impact, and other
+information. Please submit only one unique email thread per vulnerability.
 
-Please respect the following when reporting a security vulnerability:
+<!-- Any issues reported via email are ineligible for bounty rewards. -->
 
-- Submit only one unique report per vulnerability.
-- Explain the vulnerability in detail and add any known exploits.
-- Leave an e-mail address for further follow-up questions.
+Artifacts from an email report are saved at the time the email is triaged.
+Please note: our team cannot monitor dynamic content (e.g. a Google Docs link
+that is edited after receipt) throughout the lifecycle of a report. If you would
+like to share additional information or modify previous information, please
+include it in an additional reply as an additional attachment.
 
-Please avoid or refrain from the following:
+Please **DO NOT** file a public issue in this repository to report a security
+vulnerability.
 
-- Share the vulnerability details publicly until the issue is resolved.
-- Post personal data or any sensitive information in the report.
-- Exploit the vulnerability to cause any damage or disruption to production
-  systems or destruction of production data.
+## Coordinated Vulnerability Disclosure Policy and Safe Harbor
 
-[ibc-rs-security]: https://github.com/cosmos/ibc-rs/security
-[gh-vulnerability]: https://docs.github.com/code-security/security-advisories/guidance-on-reporting-and-writing-information-about-vulnerabilities/privately-reporting-a-security-vulnerability
+For the most up-to-date version of the policies that govern vulnerability
+disclosure, please consult the [HackerOne program page][hackerone-policy].
+
+The policy hosted on HackerOne is the official Coordinated Vulnerability
+Disclosure policy and Safe Harbor for the Interchain Stack, and the teams and
+infrastructure it supports, and it supersedes previous security policies that
+have been used in the past by individual teams and projects with targets in
+scope of the program.
+
+[hackerone-bounty]: https://hackerone.com/cosmos?type=team
+[hackerone-policy]: https://hackerone.com/cosmos?type=team&view_policy=true
