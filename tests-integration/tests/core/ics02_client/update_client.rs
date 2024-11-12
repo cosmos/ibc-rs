@@ -995,9 +995,9 @@ fn test_update_synthetic_tendermint_client_duplicate_ok() {
                     numerator: 1,
                     denominator: 3,
                 }),
-                trusting_period: Some(Duration::from_secs(64000).into()),
-                unbonding_period: Some(Duration::from_secs(128_000).into()),
-                max_clock_drift: Some(Duration::from_millis(3000).into()),
+                trusting_period: Some(Duration::from_secs(64000).try_into().expect("no error")),
+                unbonding_period: Some(Duration::from_secs(128_000).try_into().expect("no error")),
+                max_clock_drift: Some(Duration::from_millis(3000).try_into().expect("no error")),
                 latest_height: Some(
                     Height::new(
                         chain_id.revision_number(),
