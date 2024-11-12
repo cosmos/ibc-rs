@@ -368,7 +368,7 @@ dependencies = [
  "cosmwasm-core",
  "cosmwasm-crypto",
  "cosmwasm-derive",
- "derive_more 1.0.0",
+ "derive_more",
  "hex",
  "rand_core",
  "schemars",
@@ -508,17 +508,6 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 1.0.109",
-]
-
-[[package]]
-name = "derive_more"
-version = "0.99.18"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f33878137e4dafd7fa914ad4e259e18a4e8e532b9617a2d0150262bf53abfce"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn 2.0.87",
 ]
 
 [[package]]
@@ -820,7 +809,7 @@ dependencies = [
 name = "ibc-app-transfer-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core",
  "ibc-proto",
@@ -883,7 +872,7 @@ dependencies = [
 name = "ibc-core-channel-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
@@ -916,7 +905,7 @@ dependencies = [
 name = "ibc-core-client-context"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
@@ -931,7 +920,7 @@ dependencies = [
 name = "ibc-core-client-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core-commitment-types",
  "ibc-core-host-types",
@@ -949,7 +938,7 @@ dependencies = [
 name = "ibc-core-commitment-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core-host-types",
  "ibc-primitives",
@@ -979,7 +968,7 @@ dependencies = [
 name = "ibc-core-connection-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
@@ -1012,7 +1001,7 @@ dependencies = [
 name = "ibc-core-handler-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core-channel-types",
  "ibc-core-client-types",
@@ -1034,7 +1023,7 @@ dependencies = [
 name = "ibc-core-host"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core-channel-types",
  "ibc-core-client-context",
@@ -1052,7 +1041,7 @@ name = "ibc-core-host-types"
 version = "0.55.1"
 dependencies = [
  "base64 0.22.1",
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-primitives",
  "parity-scale-codec",
@@ -1066,7 +1055,7 @@ dependencies = [
 name = "ibc-core-router"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core-channel-types",
  "ibc-core-host-types",
@@ -1079,7 +1068,7 @@ dependencies = [
 name = "ibc-core-router-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-core-host-types",
  "ibc-primitives",
@@ -1105,7 +1094,7 @@ dependencies = [
 name = "ibc-primitives"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more",
  "displaydoc",
  "ibc-proto",
  "parity-scale-codec",
@@ -1530,7 +1519,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aa7ffc1c0ef49b0452c6e2986abf2b07743320641ffd5fc63d552458e3b779b"
 dependencies = [
  "cfg-if",
- "derive_more 1.0.0",
+ "derive_more",
  "parity-scale-codec",
  "scale-info-derive",
 ]

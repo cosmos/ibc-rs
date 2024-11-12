@@ -640,6 +640,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.87",
+ "unicode-xid",
 ]
 
 [[package]]
@@ -1162,7 +1163,7 @@ dependencies = [
 name = "ibc-app-transfer-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core",
  "ibc-proto",
@@ -1182,7 +1183,7 @@ dependencies = [
 name = "ibc-client-tendermint"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "ibc-client-tendermint-types",
  "ibc-core-client",
  "ibc-core-commitment-types",
@@ -1264,7 +1265,7 @@ dependencies = [
 name = "ibc-core-channel-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
@@ -1294,7 +1295,7 @@ dependencies = [
 name = "ibc-core-client-context"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
@@ -1309,7 +1310,7 @@ dependencies = [
 name = "ibc-core-client-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-commitment-types",
  "ibc-core-host-types",
@@ -1324,7 +1325,7 @@ dependencies = [
 name = "ibc-core-commitment-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-host-types",
  "ibc-primitives",
@@ -1349,7 +1350,7 @@ dependencies = [
 name = "ibc-core-connection-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-client-types",
  "ibc-core-commitment-types",
@@ -1379,7 +1380,7 @@ dependencies = [
 name = "ibc-core-handler-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-channel-types",
  "ibc-core-client-types",
@@ -1398,7 +1399,7 @@ dependencies = [
 name = "ibc-core-host"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-channel-types",
  "ibc-core-client-context",
@@ -1415,7 +1416,7 @@ dependencies = [
 name = "ibc-core-host-cosmos"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-app-transfer-types",
  "ibc-client-tendermint",
@@ -1438,7 +1439,7 @@ name = "ibc-core-host-types"
 version = "0.55.1"
 dependencies = [
  "base64 0.22.1",
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-primitives",
  "prost",
@@ -1449,7 +1450,7 @@ dependencies = [
 name = "ibc-core-router"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-channel-types",
  "ibc-core-host-types",
@@ -1462,7 +1463,7 @@ dependencies = [
 name = "ibc-core-router-types"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-core-host-types",
  "ibc-primitives",
@@ -1485,7 +1486,7 @@ dependencies = [
 name = "ibc-primitives"
 version = "0.55.1"
 dependencies = [
- "derive_more 0.99.18",
+ "derive_more 1.0.0",
  "displaydoc",
  "ibc-proto",
  "prost",
