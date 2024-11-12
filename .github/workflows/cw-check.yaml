@@ -4,7 +4,7 @@ on:
     paths:
       - .github/workflows/cw-check.yaml
       - Makefile
-      - '*.toml'
+      - "*.toml"
       - Cargo.lock
       - ci/cw-check/**
       - ibc/**

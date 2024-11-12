@@ -4,7 +4,7 @@ on:
     paths:
       - .github/workflows/rust.yaml
       - Makefile
-      - '*.toml'
+      - "*.toml"
       - ci/**
       - ibc/**
       - ibc-core/**
