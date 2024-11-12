@@ -4,7 +4,7 @@ on:
     paths:
       - .github/workflows/cw-check.yaml
       - Makefile
-      - '*.toml'
+      - "*.toml"
       - Cargo.lock
       - ci/cw-check/**
       - ibc/**
@@ -43,7 +43,7 @@ jobs:
           -v "$(pwd)":/code \
           -v "$(pwd)"/target:/target \
           -v "${HOME}/.cargo/registry":/usr/local/cargo/registry \
-          cosmwasm/optimizer:0.16.0 ./ci/cw-check
+          cosmwasm/optimizer:0.16.1 ./ci/cw-check
 
       - name: Fix permissions
         run: |

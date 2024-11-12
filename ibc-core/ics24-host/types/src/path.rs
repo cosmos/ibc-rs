@@ -117,7 +117,7 @@ pub enum Path {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{NEXT_CLIENT_SEQUENCE}")]
+#[display("{NEXT_CLIENT_SEQUENCE}")]
 pub struct NextClientSequencePath;
 
 #[cfg_attr(
@@ -134,7 +134,7 @@ pub struct NextClientSequencePath;
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{NEXT_CONNECTION_SEQUENCE}")]
+#[display("{NEXT_CONNECTION_SEQUENCE}")]
 pub struct NextConnectionSequencePath;
 
 #[cfg_attr(
@@ -151,7 +151,7 @@ pub struct NextConnectionSequencePath;
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{NEXT_CHANNEL_SEQUENCE}")]
+#[display("{NEXT_CHANNEL_SEQUENCE}")]
 pub struct NextChannelSequencePath;
 
 #[cfg_attr(
@@ -168,7 +168,7 @@ pub struct NextChannelSequencePath;
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display, From)]
-#[display(fmt = "{CLIENT_PREFIX}/{_0}/{CLIENT_STATE}")]
+#[display("{CLIENT_PREFIX}/{_0}/{CLIENT_STATE}")]
 pub struct ClientStatePath(pub ClientId);
 
 impl ClientStatePath {
@@ -204,7 +204,7 @@ impl ClientStatePath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(
-    fmt = "{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}/{revision_number}-{revision_height}"
+    "{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}/{revision_number}-{revision_height}"
 )]
 pub struct ClientConsensusStatePath {
     pub client_id: ClientId,
@@ -264,7 +264,7 @@ impl ClientConsensusStatePath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(
-    fmt = "{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}/{revision_number}-{revision_height}/{PROCESSED_TIME}"
+    "{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}/{revision_number}-{revision_height}/{PROCESSED_TIME}"
 )]
 pub struct ClientUpdateTimePath {
     pub client_id: ClientId,
@@ -314,7 +314,7 @@ impl ClientUpdateTimePath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(
-    fmt = "{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}/{revision_number}-{revision_height}/{PROCESSED_HEIGHT}"
+    "{CLIENT_PREFIX}/{client_id}/{CONSENSUS_STATE_PREFIX}/{revision_number}-{revision_height}/{PROCESSED_HEIGHT}"
 )]
 pub struct ClientUpdateHeightPath {
     pub client_id: ClientId,
@@ -383,7 +383,7 @@ pub fn iteration_key(revision_number: u64, revision_height: u64) -> Vec<u8> {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{CLIENT_PREFIX}/{_0}/{CONNECTION_PREFIX}")]
+#[display("{CLIENT_PREFIX}/{_0}/{CONNECTION_PREFIX}")]
 pub struct ClientConnectionPath(pub ClientId);
 
 impl ClientConnectionPath {
@@ -406,7 +406,7 @@ impl ClientConnectionPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{CONNECTION_PREFIX}/{_0}")]
+#[display("{CONNECTION_PREFIX}/{_0}")]
 pub struct ConnectionPath(pub ConnectionId);
 
 impl ConnectionPath {
@@ -435,7 +435,7 @@ impl ConnectionPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{PORT_PREFIX}/{_0}")]
+#[display("{PORT_PREFIX}/{_0}")]
 pub struct PortPath(pub PortId);
 
 #[cfg_attr(
@@ -452,7 +452,7 @@ pub struct PortPath(pub PortId);
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{CHANNEL_END_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
+#[display("{CHANNEL_END_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct ChannelEndPath(pub PortId, pub ChannelId);
 
 impl ChannelEndPath {
@@ -509,7 +509,7 @@ impl ChannelEndPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{NEXT_SEQ_SEND_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
+#[display("{NEXT_SEQ_SEND_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct SeqSendPath(pub PortId, pub ChannelId);
 
 impl SeqSendPath {
@@ -532,7 +532,7 @@ impl SeqSendPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{NEXT_SEQ_RECV_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
+#[display("{NEXT_SEQ_RECV_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct SeqRecvPath(pub PortId, pub ChannelId);
 
 impl SeqRecvPath {
@@ -555,7 +555,7 @@ impl SeqRecvPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{NEXT_SEQ_ACK_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
+#[display("{NEXT_SEQ_ACK_PREFIX}/{PORT_PREFIX}/{_0}/{CHANNEL_PREFIX}/{_1}")]
 pub struct SeqAckPath(pub PortId, pub ChannelId);
 
 impl SeqAckPath {
@@ -579,7 +579,7 @@ impl SeqAckPath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(
-    fmt = "{PACKET_COMMITMENT_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
+    "{PACKET_COMMITMENT_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
 )]
 pub struct CommitmentPath {
     pub port_id: PortId,
@@ -618,7 +618,7 @@ impl CommitmentPath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(
-    fmt = "{PACKET_ACK_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
+    "{PACKET_ACK_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
 )]
 pub struct AckPath {
     pub port_id: PortId,
@@ -657,7 +657,7 @@ impl AckPath {
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
 #[display(
-    fmt = "{PACKET_RECEIPT_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
+    "{PACKET_RECEIPT_PREFIX}/{PORT_PREFIX}/{port_id}/{CHANNEL_PREFIX}/{channel_id}/{SEQUENCE_PREFIX}/{sequence}"
 )]
 pub struct ReceiptPath {
     pub port_id: PortId,
@@ -695,7 +695,7 @@ impl ReceiptPath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{upgrade_path}/{height}/{UPGRADED_CLIENT_STATE}")]
+#[display("{upgrade_path}/{height}/{UPGRADED_CLIENT_STATE}")]
 pub struct UpgradeClientStatePath {
     pub upgrade_path: String,
     pub height: u64,
@@ -725,7 +725,7 @@ impl UpgradeClientStatePath {
 )]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Display)]
-#[display(fmt = "{upgrade_path}/{height}/{UPGRADED_CLIENT_CONSENSUS_STATE}")]
+#[display("{upgrade_path}/{height}/{UPGRADED_CLIENT_CONSENSUS_STATE}")]
 pub struct UpgradeConsensusStatePath {
     pub upgrade_path: String,
     pub height: u64,
