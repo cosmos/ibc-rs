@@ -4,7 +4,7 @@
 
 If you believe you have found a security vulnerability in the Interchain Stack,
 you can report it to our primary vulnerability disclosure channel, the
-[Cosmos HackerOne Bug Bounty program][hackerone-bounty].
+[Cosmos HackerOne program][hackerone-bug].
 
 > [!NOTE]
 > The `ibc-rs` is **NOT** part of the rewards program. Any issues reported for
@@ -36,5 +36,5 @@ infrastructure it supports, and it supersedes previous security policies that
 have been used in the past by individual teams and projects with targets in
 scope of the program.
 
-[hackerone-bounty]: https://hackerone.com/cosmos?type=team
+[hackerone-bug]: https://hackerone.com/cosmos?type=team
 [hackerone-policy]: https://hackerone.com/cosmos?type=team&view_policy=true
