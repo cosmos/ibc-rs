@@ -79,7 +79,7 @@ where
         };
 
         let mut extras = ModuleExtras {
-            events: vec![],
+            events: Vec::with_capacity(data.token_ids.0.len()),
             log: Vec::new(),
         };
         for (i, token_id) in data.token_ids.0.iter().enumerate() {

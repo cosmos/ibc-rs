@@ -172,9 +172,11 @@ where
     // overwrite even if they are set in MsgTransfer
     if let Some(uris) = &mut packet_data.token_uris {
         uris.clear();
+        uris.reserve_exact(token_ids.0.len());
     }
     if let Some(data) = &mut packet_data.token_data {
         data.clear();
+        data.reserve_exact(token_ids.0.len());
     }
     for token_id in token_ids.as_ref() {
         if is_sender_chain_source(msg.port_id_on_a.clone(), msg.chan_id_on_a.clone(), class_id) {
@@ -197,14 +199,14 @@ where
         let nft = transfer_ctx.get_nft(class_id, token_id)?;
         // Set the URI and the data if both exists
         if let (Some(uri), Some(data)) = (nft.get_uri(), nft.get_data()) {
-            match &mut packet_data.token_uris {
-                Some(uris) => uris.push(uri.clone()),
-                None => packet_data.token_uris = Some(vec![uri.clone()]),
-            }
-            match &mut packet_data.token_data {
-                Some(token_data) => token_data.push(data.clone()),
-                None => packet_data.token_data = Some(vec![data.clone()]),
-            }
+            packet_data
+                .token_uris
+                .get_or_insert_with(|| Vec::with_capacity(token_ids.0.len()))
+                .push(uri.clone());
+            packet_data
+                .token_data
+                .get_or_insert_with(|| Vec::with_capacity(token_ids.0.len()))
+                .push(data.clone());
         }
     }
 
