@@ -1,5 +1,29 @@
 # CHANGELOG
 
+## v0.56.0
+
+*November 15, 2024*
+
+This release upgrades the `ibc-proto` and `tendermint-rs` dependencies to
+`v0.51.1` and `v0.40.0`, respectively. It also updates the minimum supported
+Rust version (MSRV) to `1.75.0`.
+
+There are no consensus-breaking changes in this release.
+
+### BREAKING CHANGES
+
+- [ibc] Update `ibc-proto` to `v0.51.1` and `tendermint` to `v0.40.0`.
+  ([\#1375](https://github.com/cosmos/ibc-rs/pull/1375))
+- [ibc] Update MSRV to `1.75.0`.
+  ([\#1375](https://github.com/cosmos/ibc-rs/pull/1375))
+
+### IMPROVEMENTS
+
+- [ibc-apps] Relax timeout check during `MsgTransfer` proto to domain
+  conversions ([#1362](https://github.com/cosmos/ibc-rs/issues/1362)).
+- [ibc-app-nft-transfer] Preallocate `Vec` to avoid reallocation of memory
+  ([\#1374](https://github.com/cosmos/ibc-rs/pull/1374)).
+
 ## v0.55.1
 
 *October 17, 2024*
