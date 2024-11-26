@@ -144,7 +144,6 @@ pub trait Module: Debug {
     ) -> (ModuleExtras, Result<(), ChannelError>);
 
     /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
-
     fn on_timeout_packet_validate(
         &self,
         packet: &Packet,
@@ -152,7 +151,6 @@ pub trait Module: Debug {
     ) -> Result<(), ChannelError>;
 
     /// Note: `MsgTimeout` and `MsgTimeoutOnClose` use the same callback
-
     fn on_timeout_packet_execute(
         &mut self,
         packet: &Packet,
