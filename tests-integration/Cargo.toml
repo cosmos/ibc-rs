@@ -1,15 +1,15 @@
 [package]
-name        = "tests-integration"
-version     = "0.1.0"
-authors     = { workspace = true }
-license     = { workspace = true }
-edition     = { workspace = true }
+name         = "tests-integration"
+version      = "0.1.0"
+authors      = { workspace = true }
+license      = { workspace = true }
+edition      = { workspace = true }
 rust-version = { workspace = true }
-repository  = { workspace = true }
-readme      = "README.md"
-keywords    = [ "blockchain", "consensus", "cosmos", "ibc", "tendermint" ]
-publish     = false
-description = "Integration tests using `ibc-testkit` and the other IBC crates."
+repository   = { workspace = true }
+readme       = "README.md"
+keywords     = [ "blockchain", "consensus", "cosmos", "ibc", "tendermint" ]
+publish      = false
+description  = "Integration tests using `ibc-testkit` and the other IBC crates."
 
 [dependencies]
 # external dependencies
