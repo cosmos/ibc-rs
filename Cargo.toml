@@ -115,5 +115,5 @@ tendermint-rpc                   = { version = "0.40.0", default-features = fals
 tendermint-testgen               = { version = "0.40.0", default-features = false }
 
 # parity dependencies
-parity-scale-codec = { version = "^3.6.12", default-features = false, features = [ "derive" ] }
+parity-scale-codec = { version = "3.6.12", default-features = false, features = [ "derive" ] }
 scale-info         = { version = "2.11.3", default-features = false }
