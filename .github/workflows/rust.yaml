@@ -106,12 +106,9 @@ jobs:
       - name: Run cargo test
         run: make test
 
-  test-msrv:
-    name: Test MSRV for `ibc` libraries
+  rust-version:
+    name: Check Rust version for `ibc` libraries
     timeout-minutes: 30
-    env:
-      CARGO_MSRV_VERSION: 0.16.3
-      MSRV: 1.75.0
     strategy:
       matrix:
         param:
@@ -123,29 +120,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Download cargo-msrv
-        uses: dsaltares/fetch-gh-release-asset@master
-        with:
-          repo: foresterre/cargo-msrv
-          version: "tags/v${{ env.CARGO_MSRV_VERSION }}"
-          file: "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}.tgz"
-
-      - uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          toolchain: ${{ env.MSRV }}
-
-      - name: Install cargo-msrv
-        run: |
-          tar -xzf "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}.tgz"
-          mv "cargo-msrv-x86_64-${{ matrix.param.system }}-v${{ env.CARGO_MSRV_VERSION }}/cargo-msrv" ~/.cargo/bin
-          cargo msrv --version
-
-      - name: Calculate MSRV
-        run: cargo msrv find --output-format minimal --min 1.68.0
+      - uses: taiki-e/install-action@cargo-hack
 
       - name: Build with MSRV
-        uses: actions-rs/cargo@v1
-        with:
-          toolchain: ${{ env.MSRV }}
-          command: build
-          args: --all-features
+        run: cargo hack --rust-version build
+
+      - name: Test with MSRV
+        run: cargo hack --rust-version test
