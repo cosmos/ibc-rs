@@ -4,6 +4,7 @@ version     = "0.10.0"
 license     = { workspace = true }
 repository  = { workspace = true }
 edition     = { workspace = true }
+rust-version = { workspace = true }
 readme      = "README.md"
 description = "Maintained by `ibc-rs`, macros implementations of #[derive(ClientState)] and #[derive(ConsensusState)]"
 
