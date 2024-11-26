@@ -119,11 +119,10 @@ jobs:
     runs-on: ${{ matrix.param.os }}
     steps:
       - uses: actions/checkout@v4
-
       - uses: taiki-e/install-action@cargo-hack
 
       - name: Build with MSRV
-        run: cargo hack --rust-version build
+        run: cargo hack --rust-version build --all-targets --all-features
 
       - name: Test with MSRV
-        run: cargo hack --rust-version test
+        run: cargo hack --rust-version test --all-targets --all-features
