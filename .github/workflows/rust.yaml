@@ -123,11 +123,11 @@ jobs:
       - uses: taiki-e/install-action@cargo-hack
 
       - name: Download cargo-msrv
-        uses: dsaltares/fetch-gh-release-asset@master
+        uses: robinraju/release-downloader@v1
         with:
-          repo: foresterre/cargo-msrv
-          file: "cargo-msrv-x86_64-${{ matrix.param.system }}-v.*\\.tgz"
-          regex: true
+          repository: foresterre/cargo-msrv
+          latest: true
+          fileName: "cargo-msrv-x86_64-${{ matrix.param.system }}-v*.tgz"
 
       - name: Install cargo-msrv
         run: |
