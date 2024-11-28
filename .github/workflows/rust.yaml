@@ -131,20 +131,18 @@ jobs:
 
       - name: Install cargo-msrv
         run: |
-          tar -xzf "cargo-msrv-x86_64-${{ matrix.param.system }}-v*.tgz" \
-            -C ~/.cargo/bin --strip-components=1 --wildcards \
-            "cargo-msrv-x86_64-${{ matrix.param.system }}-v*/cargo-msrv"
+          find . -name 'cargo-msrv-x86_64*.tgz' -exec mv {} cargo-msrv.tgz \;
+          tar -tf cargo-msrv.tgz \
+            | grep '/cargo-msrv' \
+            | head -n1 \
+            | xargs -n1 tar -xzf cargo-msrv.tgz -C ~/.cargo/bin --strip-components=1
           cargo msrv --version
 
-      - name: Verify MSRV
-        run: cargo hack msrv verify --output-format=minimal --all-features
+      - name: Verify and Test Rust version
+        run: |
+          cargo hack msrv verify --output-format=minimal --all-features
+          cargo hack --rust-version test --all-targets --all-features
 
       - name: Find MSRV
         if: ${{ failure() }}
         run: cargo hack msrv find --min=1.75 --output-format=minimal --all-features
-
-      - name: Build with MSRV
-        run: cargo hack --rust-version build --all-targets --all-features
-
-      - name: Test with MSRV
-        run: cargo hack --rust-version test --all-targets --all-features
