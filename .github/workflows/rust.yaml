@@ -132,6 +132,7 @@ jobs:
       - name: Install cargo-msrv
         run: |
           find . -name 'cargo-msrv-x86_64*.tgz' -exec mv {} cargo-msrv.tgz \;
+          # using `tar -t | grep` because, `tar` on macos doesn't support `--wildcards`
           tar -tf cargo-msrv.tgz \
             | grep '/cargo-msrv' \
             | head -n1 \
