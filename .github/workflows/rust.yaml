@@ -130,7 +130,7 @@ jobs:
       - name: Verify and Test Rust version
         run: |
           cargo hack msrv verify --output-format=minimal --all-features
-          cargo hack --rust-version nextest run --all-targets --all-features
+          cargo hack --rust-version nextest run --all-targets --all-features --no-tests=pass
 
       - name: Find MSRV
         if: ${{ failure() }}
