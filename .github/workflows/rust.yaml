@@ -125,6 +125,8 @@ jobs:
           tool: cargo-hack,cargo-binstall
 
       - name: Install cargo-msrv
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: cargo binstall --no-confirm cargo-msrv
 
       - name: Verify and Test Rust version
