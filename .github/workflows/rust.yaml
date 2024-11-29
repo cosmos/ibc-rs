@@ -120,24 +120,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - uses: taiki-e/install-action@cargo-hack
-
-      - name: Download cargo-msrv
-        uses: robinraju/release-downloader@v1
+      - uses: taiki-e/install-action@v2
         with:
-          repository: foresterre/cargo-msrv
-          latest: true
-          fileName: "cargo-msrv-x86_64-${{ matrix.param.system }}-v*.tgz"
+          tool: cargo-hack,cargo-binstall
 
       - name: Install cargo-msrv
-        run: |
-          find . -name 'cargo-msrv-x86_64*.tgz' -exec mv {} cargo-msrv.tgz \;
-          # using `tar -t | grep` because, `tar` on macos doesn't support `--wildcards`
-          tar -tf cargo-msrv.tgz \
-            | grep '/cargo-msrv' \
-            | head -n1 \
-            | xargs -n1 tar -xzf cargo-msrv.tgz -C ~/.cargo/bin --strip-components=1
-          cargo msrv --version
+        run: cargo binstall --no-confirm cargo-msrv
 
       - name: Verify and Test Rust version
         run: |
