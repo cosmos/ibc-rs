@@ -29,7 +29,7 @@ pub use self::timeout::*;
 pub use self::timeout_on_close::*;
 
 /// Returns a dummy `RawCounterparty`, for testing purposes only!
-/// Can be optionally parametrized with a specific channel identifier.
+/// Can be optionally parameterized with a specific channel identifier.
 pub fn dummy_raw_counterparty_chan(channel_id: String) -> RawCounterparty {
     RawCounterparty {
         port_id: PortId::transfer().to_string(),

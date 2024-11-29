@@ -5,7 +5,7 @@ use core::fmt::{Display, Error as FmtError, Formatter};
 /// A slice type that implements the `Display` trait to pretty-print the contained elements.
 pub struct PrettySlice<'a, T>(pub &'a [T]);
 
-impl<'a, T: Display> Display for PrettySlice<'a, T> {
+impl<T: Display> Display for PrettySlice<'_, T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), FmtError> {
         write!(f, "[ ")?;
         let mut vec_iterator = self.0.iter().peekable();

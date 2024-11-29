@@ -28,7 +28,7 @@ pub fn msg_conn_open_try_with_client_id(
     }
 }
 
-/// Returns a dummy `RawMsgConnectionOpenTry` with parametrized heights. The parameter
+/// Returns a dummy `RawMsgConnectionOpenTry` with parameterized heights. The parameter
 /// `proof_height` represents the height, on the source chain, at which this chain produced the
 /// proof. Parameter `consensus_height` represents the height of destination chain which a
 /// client on the source chain stores.
