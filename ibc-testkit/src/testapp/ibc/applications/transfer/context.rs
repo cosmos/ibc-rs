@@ -9,6 +9,14 @@ use super::types::DummyTransferModule;
 impl TokenTransferValidationContext for DummyTransferModule {
     type AccountId = Signer;
 
+    fn sender_account(&self, sender: &Signer) -> Result<Self::AccountId, HostError> {
+        Ok(sender.clone())
+    }
+
+    fn receiver_account(&self, receiver: &Signer) -> Result<Self::AccountId, HostError> {
+        Ok(receiver.clone())
+    }
+
     fn get_port(&self) -> Result<PortId, HostError> {
         Ok(PortId::transfer())
     }

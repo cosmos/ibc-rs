@@ -8,7 +8,14 @@ use ibc_core::primitives::Signer;
 
 /// Methods required in token transfer validation, to be implemented by the host
 pub trait TokenTransferValidationContext {
-    type AccountId: TryFrom<Signer>;
+    /// Native chain account id.
+    type AccountId;
+
+    /// Attempt to convert a [`Signer`] to a native chain sender account.
+    fn sender_account(&self, sender: &Signer) -> Result<Self::AccountId, HostError>;
+
+    /// Attempt to convert a [`Signer`] to a native chain receiver account.
+    fn receiver_account(&self, receiver: &Signer) -> Result<Self::AccountId, HostError>;
 
     /// get_port returns the portID for the transfer module.
     fn get_port(&self) -> Result<PortId, HostError>;

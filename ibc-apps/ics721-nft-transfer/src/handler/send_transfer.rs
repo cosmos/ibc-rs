@@ -56,12 +56,7 @@ where
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let sequence = send_packet_ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
-    let sender: TransferCtx::AccountId = msg
-        .packet_data
-        .sender
-        .clone()
-        .try_into()
-        .map_err(|_| NftTransferError::FailedToParseAccount)?;
+    let sender: TransferCtx::AccountId = transfer_ctx.sender_account(&msg.packet_data.sender)?;
 
     let mut packet_data = msg.packet_data;
     let class_id = &packet_data.class_id;
@@ -159,12 +154,7 @@ where
     let seq_send_path_on_a = SeqSendPath::new(&msg.port_id_on_a, &msg.chan_id_on_a);
     let sequence = send_packet_ctx_a.get_next_sequence_send(&seq_send_path_on_a)?;
 
-    let sender = msg
-        .packet_data
-        .sender
-        .clone()
-        .try_into()
-        .map_err(|_| NftTransferError::FailedToParseAccount)?;
+    let sender = transfer_ctx.sender_account(&msg.packet_data.sender)?;
 
     let mut packet_data = msg.packet_data;
     let class_id = &packet_data.class_id;

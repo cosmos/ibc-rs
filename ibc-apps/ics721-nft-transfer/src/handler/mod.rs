@@ -17,11 +17,7 @@ pub fn refund_packet_nft_execute(
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), NftTransferError> {
-    let sender = data
-        .sender
-        .clone()
-        .try_into()
-        .map_err(|_| NftTransferError::FailedToParseAccount)?;
+    let sender = ctx_a.sender_account(&data.sender)?;
 
     if is_sender_chain_source(
         packet.port_id_on_a.clone(),
@@ -58,11 +54,7 @@ pub fn refund_packet_nft_validate(
     packet: &Packet,
     data: &PacketData,
 ) -> Result<(), NftTransferError> {
-    let sender = data
-        .sender
-        .clone()
-        .try_into()
-        .map_err(|_| NftTransferError::FailedToParseAccount)?;
+    let sender = ctx_a.sender_account(&data.sender)?;
 
     if is_sender_chain_source(
         packet.port_id_on_a.clone(),
