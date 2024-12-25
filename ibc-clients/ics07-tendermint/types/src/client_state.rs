@@ -233,6 +233,8 @@ impl TryFrom<RawTmClientState> for ClientState {
     type Error = DecodingError;
 
     fn try_from(raw: RawTmClientState) -> Result<Self, Self::Error> {
+        use ibc_primitives::types::duration::duration_from_proto;
+        
         let chain_id = ChainId::from_str(raw.chain_id.as_str())?;
 
         let trust_level = {
@@ -246,30 +248,33 @@ impl TryFrom<RawTmClientState> for ClientState {
             .trusting_period
             .ok_or(DecodingError::missing_raw_data(
                 "tm client state trusting period",
-            ))?
-            .try_into()
-            .map_err(|d| {
-                DecodingError::invalid_raw_data(format!("tm client state trusting period: {d:?}"))
+            ))
+            .and_then(|d| {
+                duration_from_proto(d).ok_or_else(|| {
+                    DecodingError::invalid_raw_data("invalid trusting period duration".to_string())
+                })
             })?;
 
         let unbonding_period = raw
             .unbonding_period
             .ok_or(DecodingError::missing_raw_data(
                 "tm client state unbonding period",
-            ))?
-            .try_into()
-            .map_err(|d| {
-                DecodingError::invalid_raw_data(format!("tm client state unbonding period: {d:?}"))
+            ))
+            .and_then(|d| {
+                duration_from_proto(d).ok_or_else(|| {
+                    DecodingError::invalid_raw_data("invalid unbonding period duration".to_string())
+                })
             })?;
 
         let max_clock_drift = raw
             .max_clock_drift
             .ok_or(DecodingError::missing_raw_data(
                 "tm client state max clock drift",
-            ))?
-            .try_into()
-            .map_err(|d| {
-                DecodingError::invalid_raw_data(format!("tm client state max clock drift: {d:?}"))
+            ))
+            .and_then(|d| {
+                duration_from_proto(d).ok_or_else(|| {
+                    DecodingError::invalid_raw_data("invalid max clock drift duration".to_string())
+                })
             })?;
 
         let latest_height = raw
@@ -281,16 +286,11 @@ impl TryFrom<RawTmClientState> for ClientState {
 
         let proof_specs = raw.proof_specs.try_into()?;
 
-        // NOTE: In `RawClientState`, a `frozen_height` of `0` means "not
-        // frozen". See:
-        // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
         let frozen_height = Height::try_from(raw.frozen_height.ok_or(
             DecodingError::missing_raw_data("tm client state frozen height"),
         )?)
         .ok();
 
-        // We use set this deprecated field just so that we can properly convert
-        // it back in its raw form
         #[allow(deprecated)]
         let allow_update = AllowUpdate {
             after_expiry: raw.allow_update_after_expiry,
@@ -314,20 +314,17 @@ impl TryFrom<RawTmClientState> for ClientState {
     }
 }
 
+#[allow(deprecated)]
 impl From<ClientState> for RawTmClientState {
     fn from(value: ClientState) -> Self {
-        #[allow(deprecated)]
+        use ibc_primitives::types::duration::duration_to_proto;
+        
         Self {
             chain_id: value.chain_id.to_string(),
             trust_level: Some(value.trust_level.into()),
-            trusting_period: value.trusting_period.try_into().ok(),
-            unbonding_period: value.unbonding_period.try_into().ok(),
-            max_clock_drift: value.max_clock_drift.try_into().ok(),
-            // NOTE: The protobuf encoded `frozen_height` of an active client
-            // must be set to `0` so that `ibc-go` driven chains can properly
-            // decode the `ClientState` value. In `RawClientState`, a
-            // `frozen_height` of `0` means "not frozen". See:
-            // https://github.com/cosmos/ibc-go/blob/8422d0c4c35ef970539466c5bdec1cd27369bab3/modules/light-clients/07-tendermint/types/client_state.go#L74
+            trusting_period: duration_to_proto(value.trusting_period),
+            unbonding_period: duration_to_proto(value.unbonding_period),
+            max_clock_drift: duration_to_proto(value.max_clock_drift),
             frozen_height: Some(value.frozen_height.map(Into::into).unwrap_or(RawHeight {
                 revision_number: 0,
                 revision_height: 0,
@@ -370,6 +367,9 @@ impl From<ClientState> for Any {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use core::time::Duration;
+    use ibc_proto::google::protobuf::Duration as RawDuration;
+    use rstest::rstest;
 
     #[derive(Clone, Debug, PartialEq)]
     pub struct ClientStateParams {
@@ -540,5 +540,95 @@ mod tests {
                 cs_result.err(),
             );
         }
+    }
+
+    #[test]
+    fn test_client_state_duration_conversions() {
+        let client_state = ClientState::new_without_validation(
+            ChainId::new("test-chain").unwrap(),
+            TrustThreshold::ONE_THIRD,
+            Duration::from_secs(64000),
+            Duration::from_secs(128_000),
+            Duration::from_millis(3000),
+            Height::new(0, 10).unwrap(),
+            ProofSpecs::cosmos(),
+            Vec::new(),
+            None,
+            AllowUpdate {
+                after_expiry: false,
+                after_misbehaviour: false,
+            },
+        );
+
+        let raw = RawTmClientState::from(client_state.clone());
+
+        // Check that durations were converted correctly
+        assert_eq!(
+            raw.trusting_period,
+            Some(RawDuration {
+                seconds: 64000,
+                nanos: 0
+            })
+        );
+        assert_eq!(
+            raw.unbonding_period,
+            Some(RawDuration {
+                seconds: 128_000,
+                nanos: 0
+            })
+        );
+        assert_eq!(
+            raw.max_clock_drift,
+            Some(RawDuration {
+                seconds: 3,
+                nanos: 0
+            })
+        );
+
+        // Convert back and check equality
+        let converted_back = ClientState::try_from(raw).unwrap();
+        assert_eq!(converted_back.trusting_period, client_state.trusting_period);
+        assert_eq!(converted_back.unbonding_period, client_state.unbonding_period);
+        assert_eq!(converted_back.max_clock_drift, client_state.max_clock_drift);
+    }
+
+    #[test]
+    fn test_client_state_negative_duration() {
+        let mut raw = RawTmClientState {
+            chain_id: "test-chain".to_string(),
+            trust_level: Some(Fraction {
+                numerator: 1,
+                denominator: 3,
+            }),
+            trusting_period: Some(RawDuration {
+                seconds: -1,
+                nanos: 0,
+            }),
+            unbonding_period: Some(RawDuration {
+                seconds: 128_000,
+                nanos: 0,
+            }),
+            max_clock_drift: Some(RawDuration {
+                seconds: 3,
+                nanos: 0,
+            }),
+            latest_height: Some(Height::new(0, 10).unwrap().into()),
+            proof_specs: ProofSpecs::cosmos().into(),
+            upgrade_path: Vec::new(),
+            frozen_height: Some(RawHeight {
+                revision_number: 0,
+                revision_height: 0,
+            }),
+            allow_update_after_expiry: false,
+            allow_update_after_misbehaviour: false,
+        };
+
+        assert!(ClientState::try_from(raw.clone()).is_err());
+
+        raw.trusting_period = Some(RawDuration {
+            seconds: 0,
+            nanos: -1,
+        });
+        assert!(ClientState::try_from(raw).is_err());
     }
 }
