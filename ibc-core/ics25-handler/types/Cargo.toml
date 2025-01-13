@@ -110,6 +110,8 @@ parity-scale-codec = [
 ]
 arbitrary = [
   "dep:arbitrary",
+  "ibc-core-connection-types/arbitrary",
   "ibc-core-channel-types/arbitrary",
   "ibc-primitives/arbitrary",
+  "std",
 ]

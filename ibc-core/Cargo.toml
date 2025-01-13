@@ -89,4 +89,5 @@ arbitrary = [
   "ibc-core-host/arbitrary",
   "ibc-core-handler/arbitrary",
   "ibc-primitives/arbitrary",
+  "std",
 ]

@@ -68,4 +68,4 @@ parity-scale-codec = [
   "dep:scale-info",
   "ibc-proto/parity-scale-codec",
 ]
-arbitrary = [ "dep:arbitrary" ]
+arbitrary = [ "dep:arbitrary", "std" ]

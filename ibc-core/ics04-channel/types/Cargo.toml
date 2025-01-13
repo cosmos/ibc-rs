@@ -102,4 +102,10 @@ parity-scale-codec = [
   "ibc-primitives/parity-scale-codec",
   "ibc-proto/parity-scale-codec",
 ]
-arbitrary = [ "dep:arbitrary", "ibc-primitives/arbitrary" ]
+arbitrary = [
+  "dep:arbitrary",
+  "ibc-core-client-types/arbitrary",
+  "ibc-core-host-types/arbitrary",
+  "ibc-primitives/arbitrary",
+  "std",
+]
