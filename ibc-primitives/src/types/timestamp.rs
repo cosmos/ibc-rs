@@ -26,14 +26,20 @@ pub const ZERO_DURATION: Duration = Duration::from_secs(0);
 ///  It is also encoded as part of the
 /// `ibc::channel::types::timeout::TimeoutTimestamp` type for expressly keeping
 /// track of timeout timestamps.
-#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(PartialEq, Eq, Copy, Clone, Debug, PartialOrd, Ord, Hash)]
 pub struct Timestamp {
     // Note: The schema representation is the timestamp in nanoseconds (as we do with borsh).
-    #[cfg_attr(feature = "arbitrary", arbitrary(with = arb_tendermint_time))]
     #[cfg_attr(feature = "schema", schemars(with = "u64"))]
     time: PrimitiveDateTime,
+}
+
+#[cfg(feature = "arbitrary")]
+impl<'a> arbitrary::Arbitrary<'a> for Timestamp {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let nanos: u64 = arbitrary::Arbitrary::arbitrary(u)?;
+        Ok(Timestamp::from_nanoseconds(nanos))
+    }
 }
 
 impl Timestamp {
@@ -309,18 +315,6 @@ impl std::error::Error for TimestampError {
             _ => None,
         }
     }
-}
-
-#[cfg(feature = "arbitrary")]
-fn arb_tendermint_time(
-    u: &mut arbitrary::Unstructured<'_>,
-) -> arbitrary::Result<PrimitiveDateTime> {
-    let secs: u64 = u.int_in_range(0..=u64::MAX)?;
-    let nanos: u32 = u.int_in_range(0..=999_999_999)?;
-    let total_nanos = secs as i128 * 1_000_000_000 + nanos as i128;
-    let odt = OffsetDateTime::from_unix_timestamp_nanos(total_nanos)
-        .map_err(|_| arbitrary::Error::IncorrectFormat)?;
-    Ok(PrimitiveDateTime::new(odt.date(), odt.time()))
 }
 
 #[cfg(test)]
