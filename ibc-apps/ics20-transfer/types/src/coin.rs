@@ -166,12 +166,12 @@ mod tests {
         "115792089237316195423570985008687907853269984665640564039457584007913129639936stake"
     )]
     #[case::invalid_char_in_denom("0x!")]
-    #[case::blackslash_in_denom("0x1/:.\\_-")]
+    #[case::backslash_in_denom("0x1/:.\\_-")]
     #[should_panic]
     fn test_failed_parse_raw_coin(#[case] _raw: RawCoin) {}
 
     #[rstest]
-    #[case::nomal("123stake,1a1,999den0m", &[(123, "stake"), (1, "a1"), (999, "den0m")])]
+    #[case::normal("123stake,1a1,999den0m", &[(123, "stake"), (1, "a1"), (999, "den0m")])]
     #[case::tricky("123stake,1a1-999den0m", &[(123, "stake"), (1, "a1-999den0m")])]
     #[case::colon_delimiter("123stake:1a1:999den0m", &[(123, "stake:1a1:999den0m")])]
     #[case::dash_delimiter("123stake-1a1-999den0m", &[(123, "stake-1a1-999den0m")])]
