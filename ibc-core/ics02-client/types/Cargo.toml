@@ -91,5 +91,6 @@ arbitrary = [
   "dep:arbitrary",
   "ibc-primitives/arbitrary",
   "ibc-core-commitment-types/arbitrary",
+  "ibc-core-host-types/arbitrary",
   "std",
 ]
