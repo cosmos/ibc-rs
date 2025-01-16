@@ -14,6 +14,7 @@ use ibc_proto::ibc::applications::nft_transfer::v1::ClassTrace as RawClassTrace;
 use crate::data::Data;
 
 /// Class ID for an NFT
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -56,6 +57,7 @@ impl FromStr for ClassId {
 }
 
 /// Prefixed class to trace sources like ICS-20 PrefixedDenom
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[cfg_attr(
@@ -180,10 +182,12 @@ impl Display for PrefixedClassId {
 }
 
 /// Class URI for an NFT
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ClassUri(
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = crate::arb_uri))]
     #[cfg_attr(feature = "serde", serde(with = "serializers"))]
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
     Uri,
@@ -253,6 +257,7 @@ impl FromStr for ClassUri {
 }
 
 /// Class data for an NFT
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

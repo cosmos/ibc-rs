@@ -68,6 +68,7 @@ impl core::fmt::Display for PacketMsgType {
 /// The packet type; this is what applications send to one another.
 ///
 /// Each application defines the structure of the `data` field.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

@@ -17,6 +17,7 @@ use ibc_proto::ibc::core::client::v1::Height as RawHeight;
 /// is legal and meaningful, even though the Tendermint spec rejects this height
 /// as invalid. Thus, it must be parsed specially, where this special case means
 /// "no timeout".
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

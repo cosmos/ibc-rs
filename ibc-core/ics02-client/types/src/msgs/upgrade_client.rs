@@ -14,6 +14,7 @@ use ibc_proto::Protobuf;
 pub const UPGRADE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgUpgradeClient";
 
 /// A type of message that triggers the upgrade of an on-chain (IBC) client.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
@@ -24,9 +25,11 @@ pub struct MsgUpgradeClient {
     // client unique identifier
     pub client_id: ClientId,
     // Upgraded client state
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = ibc_primitives::arb_protobuf_any))]
     pub upgraded_client_state: Any,
     // Upgraded consensus state, only contains enough information
     // to serve as a basis of trust in update logic
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = ibc_primitives::arb_protobuf_any))]
     pub upgraded_consensus_state: Any,
     // proof that old chain committed to new client
     pub proof_upgrade_client: CommitmentProofBytes,

@@ -20,6 +20,7 @@ pub(crate) const TYPE_URL: &str = "/ibc.applications.transfer.v1.MsgTransfer";
 /// have to specify the information related to the transfer of the token, and
 /// let the library figure out how to build the packet properly.
 #[derive(Clone, Debug, PartialEq, Eq)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(
     feature = "parity-scale-codec",

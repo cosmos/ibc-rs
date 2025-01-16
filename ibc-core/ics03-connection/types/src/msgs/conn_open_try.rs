@@ -17,12 +17,14 @@ pub const CONN_OPEN_TRY_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionO
 
 /// Per our convention, this message is sent to chain B.
 /// The handler will check proofs of chain A.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgConnectionOpenTry {
     /// ClientId on B that the connection is being opened for
     pub client_id_on_b: ClientId,
     /// ClientState of client tracking chain B on chain A
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = ibc_primitives::arb_protobuf_any))]
     pub client_state_of_b_on_a: Any,
     /// ClientId, ConnectionId and prefix of chain A
     pub counterparty: Counterparty,

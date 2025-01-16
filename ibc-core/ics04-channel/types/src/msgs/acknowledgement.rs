@@ -14,6 +14,7 @@ pub const ACKNOWLEDGEMENT_TYPE_URL: &str = "/ibc.core.channel.v1.MsgAcknowledgem
 ///
 /// Message definition for packet acknowledgements.
 ///
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

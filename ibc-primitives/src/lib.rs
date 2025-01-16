@@ -34,3 +34,12 @@ pub mod proto {
     pub use ibc_proto::google::protobuf::{Any, Duration, Timestamp};
     pub use ibc_proto::{Error, Protobuf};
 }
+
+#[cfg(feature = "arbitrary")]
+pub fn arb_protobuf_any(
+    u: &mut arbitrary::Unstructured<'_>,
+) -> arbitrary::Result<ibc_proto::google::protobuf::Any> {
+    let type_url: std::string::String = arbitrary::Arbitrary::arbitrary(u)?;
+    let value: std::vec::Vec<u8> = arbitrary::Arbitrary::arbitrary(u)?;
+    Ok(ibc_proto::google::protobuf::Any { type_url, value })
+}

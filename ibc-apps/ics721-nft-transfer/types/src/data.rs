@@ -10,6 +10,7 @@ use ibc_core::host::types::error::DecodingError;
 use ibc_core::primitives::prelude::*;
 use mime::Mime;
 
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

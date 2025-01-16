@@ -14,6 +14,7 @@ pub const UPDATE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 /// either with new headers, or evidence of misbehaviour.
 /// Note that some types of misbehaviour can be detected when the headers
 /// are updated (`UpdateKind::UpdateClient`).
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
@@ -22,6 +23,7 @@ pub const UPDATE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgUpdateClient";
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgUpdateClient {
     pub client_id: ClientId,
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = ibc_primitives::arb_protobuf_any))]
     pub client_message: Any,
     pub signer: Signer,
 }

@@ -14,6 +14,7 @@ pub const CHAN_CLOSE_CONFIRM_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelCl
 /// datagram).
 /// Per our convention, this message is sent to chain B.
 ///
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

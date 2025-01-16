@@ -11,6 +11,7 @@ use ibc_proto::Protobuf;
 use crate::error::ConnectionError;
 
 /// Stores the identifier and the features supported by a version
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

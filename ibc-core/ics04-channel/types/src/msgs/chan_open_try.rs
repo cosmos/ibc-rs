@@ -17,6 +17,7 @@ pub const CHAN_OPEN_TRY_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenTry
 /// Message definition for the second step in the channel open handshake (`ChanOpenTry` datagram).
 /// Per our convention, this message is sent to chain B.
 ///
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

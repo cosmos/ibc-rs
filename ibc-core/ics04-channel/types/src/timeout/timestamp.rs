@@ -14,6 +14,7 @@ use crate::error::ChannelError;
 /// nanoseconds. A protocol value of 0 indicates that the timestamp is not set.
 /// In this case, we use the explicit `Never` variant to distinguish the absence
 /// of a timeout when converting from a zero protobuf value.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

@@ -11,6 +11,7 @@ use ibc_core::primitives::serializers;
 use crate::data::Data;
 
 /// Token ID for an NFT
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -52,6 +53,7 @@ impl FromStr for TokenId {
     }
 }
 
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
@@ -116,10 +118,12 @@ impl TryFrom<Vec<String>> for TokenIds {
 }
 
 /// Token URI for an NFT
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct TokenUri(
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = crate::arb_uri))]
     #[cfg_attr(feature = "serde", serde(with = "serializers"))]
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
     Uri,
@@ -187,6 +191,7 @@ impl FromStr for TokenUri {
 }
 
 /// Token data for an NFT
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

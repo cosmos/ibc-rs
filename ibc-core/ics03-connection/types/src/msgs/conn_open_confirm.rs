@@ -11,6 +11,7 @@ pub const CONN_OPEN_CONFIRM_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnect
 
 /// Per our convention, this message is sent to chain B.
 /// The handler will check proofs of chain A.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

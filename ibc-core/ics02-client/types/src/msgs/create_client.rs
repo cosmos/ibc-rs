@@ -10,6 +10,7 @@ use ibc_proto::Protobuf;
 pub const CREATE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgCreateClient";
 
 /// A type of message that triggers the creation of a new on-chain (IBC) client.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
@@ -17,7 +18,9 @@ pub const CREATE_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgCreateClient";
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct MsgCreateClient {
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = ibc_primitives::arb_protobuf_any))]
     pub client_state: Any,
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = ibc_primitives::arb_protobuf_any))]
     pub consensus_state: Any,
     pub signer: Signer,
 }
