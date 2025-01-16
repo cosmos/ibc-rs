@@ -70,5 +70,6 @@ parity-scale-codec = [
 arbitrary = [
   "ibc-apps/arbitrary",
   "ibc-core/arbitrary",
+  "ibc-core-host-cosmos/arbitrary",
   "ibc-primitives/arbitrary",
 ]
