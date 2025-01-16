@@ -55,3 +55,9 @@ use ibc_core::channel::types::acknowledgement::StatusValue;
 pub fn ack_success_b64() -> StatusValue {
     StatusValue::new(ACK_SUCCESS_B64).expect("ack status value is never supposed to be empty")
 }
+
+#[cfg(feature = "arbitrary")]
+fn arb_uri(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<http::Uri> {
+    let raw: std::string::String = arbitrary::Arbitrary::arbitrary(u)?;
+    http::Uri::try_from(&raw).map_err(|_| arbitrary::Error::IncorrectFormat)
+}

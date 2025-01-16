@@ -10,10 +10,12 @@ use ibc_core::primitives::serializers;
 use primitive_types::U256;
 
 /// A type for representing token transfer amounts.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 #[derive(Copy, Clone, Debug, Eq, PartialEq, PartialOrd, Ord, Display, From, Into)]
 pub struct Amount(
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = arb_u256))]
     #[cfg_attr(feature = "schema", schemars(with = "String"))]
     #[cfg_attr(feature = "serde", serde(serialize_with = "serializers::serialize"))]
     #[cfg_attr(feature = "serde", serde(deserialize_with = "deserialize"))]
@@ -127,6 +129,12 @@ where
     use serde::Deserialize;
     U256::from_dec_str(<String>::deserialize(deserializer)?.as_str())
         .map_err(serde::de::Error::custom)
+}
+
+#[cfg(feature = "arbitrary")]
+fn arb_u256(u: &mut arbitrary::Unstructured<'_>) -> arbitrary::Result<U256> {
+    let parts: [u8; 32] = arbitrary::Arbitrary::arbitrary(u)?;
+    Ok(U256::from_big_endian(&parts))
 }
 
 #[cfg(test)]

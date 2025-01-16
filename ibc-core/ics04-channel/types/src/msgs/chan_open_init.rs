@@ -15,6 +15,7 @@ pub const CHAN_OPEN_INIT_TYPE_URL: &str = "/ibc.core.channel.v1.MsgChannelOpenIn
 /// Message definition for the first step in the channel open handshake (`ChanOpenInit` datagram).
 /// Per our convention, this message is sent to chain A.
 ///
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

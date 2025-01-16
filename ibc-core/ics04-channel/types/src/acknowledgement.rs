@@ -11,6 +11,7 @@ use crate::error::ChannelError;
 /// A generic Acknowledgement type that modules may interpret as they like.
 ///
 /// NOTE: An acknowledgement cannot be empty.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

@@ -200,7 +200,7 @@ instead of defaulting to `UPGRADED_IBC_STATE`.
   ([\#1283](https://github.com/cosmos/ibc-rs/pull/1283))
 - [cosmwasm] Move CosmWasm implementations to a separate workspace under
 `cosmwasm` directory to simplify dependency management and decouple `ibc-rs`
-MSRV from `cosmwasm`. ([\#1295](https://github.com/cosmos/ibc-rs/issue/1295))
+MSRV from `cosmwasm`. ([\#1295](https://github.com/cosmos/ibc-rs/issues/1295))
 
 ## v0.53.0
 
@@ -379,7 +379,7 @@ There are no consensus-breaking changes.
   ([\#1063](https://github.com/cosmos/ibc-rs/pull/1063))
 - [ibc-client-tendermint] Use header height for Tendermint consensus state storage
   ([\#1080](https://github.com/cosmos/ibc-rs/issues/1080))
-- [ibc] Upgrade `serde_json` to "1.0.1" to address an stack overflow issue
+- [ibc] Upgrade `serde_json` to "1.0.1" to address a stack overflow issue
   within the `serde-json-wasm` crate
   ([\#1083](https://github.com/cosmos/ibc-rs/pull/1083))
 - [ibc] Resolve potential `base64` dependency resolution issue by bringing it to

@@ -9,6 +9,7 @@ use crate::validate::validate_channel_identifier;
 
 const CHANNEL_ID_PREFIX: &str = "channel";
 
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

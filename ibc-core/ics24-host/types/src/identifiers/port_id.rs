@@ -9,6 +9,7 @@ use crate::validate::validate_port_identifier;
 
 const TRANSFER_PORT_ID: &str = "transfer";
 
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

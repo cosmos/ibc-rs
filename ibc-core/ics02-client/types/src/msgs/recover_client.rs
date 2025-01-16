@@ -17,6 +17,7 @@ pub const RECOVER_CLIENT_TYPE_URL: &str = "/ibc.core.client.v1.MsgRecoverClient"
 /// client recovery functionality is not part of ibc-rs's public API. The
 /// intended usage of this message type is to be integrated with hosts'
 /// governance modules, not to be called directly via `dispatch`.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

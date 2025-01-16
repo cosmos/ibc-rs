@@ -15,6 +15,7 @@ use super::error::ChannelError;
 /// This field is opaque to the core IBC protocol.
 /// No explicit validation is necessary, and the
 /// spec (v1) currently allows empty strings.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

@@ -6,6 +6,7 @@ use ibc_primitives::prelude::*;
 use crate::error::IdentifierError;
 use crate::validate::{validate_client_identifier, validate_client_type};
 
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

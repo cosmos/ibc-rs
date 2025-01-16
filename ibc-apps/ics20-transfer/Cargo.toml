@@ -55,3 +55,4 @@ parity-scale-codec = [
   "ibc-app-transfer-types/parity-scale-codec",
   "ibc-core/parity-scale-codec",
 ]
+arbitrary = [ "ibc-app-transfer-types/arbitrary", "ibc-core/arbitrary" ]

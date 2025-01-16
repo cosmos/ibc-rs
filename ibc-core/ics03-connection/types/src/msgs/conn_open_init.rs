@@ -14,6 +14,7 @@ pub const CONN_OPEN_INIT_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnection
 
 /// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[derive(Clone, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]
 pub struct MsgConnectionOpenInit {

@@ -13,6 +13,7 @@ use crate::error::ClientError;
 /// The core IBC height type, which represents the height of a chain,
 /// which typically is the number of blocks since genesis
 /// (or more generally, since the last revision/hard upgrade).
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

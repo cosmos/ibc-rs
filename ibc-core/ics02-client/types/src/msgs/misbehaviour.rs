@@ -14,6 +14,7 @@ pub const SUBMIT_MISBEHAVIOUR_TYPE_URL: &str = "/ibc.core.client.v1.MsgSubmitMis
 ///
 /// Deprecated since v0.51.0. Misbehaviour reports should be submitted via the `MsgUpdateClient`
 /// type through its `client_message` field.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[deprecated(
     since = "0.51.0",
     note = "Misbehaviour reports should be submitted via `MsgUpdateClient` through its `client_message` field"
@@ -28,6 +29,7 @@ pub struct MsgSubmitMisbehaviour {
     /// client unique identifier
     pub client_id: ClientId,
     /// misbehaviour, used for freezing the light client
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = ibc_primitives::arb_protobuf_any))]
     pub misbehaviour: ProtoAny,
     /// signer address
     pub signer: Signer,

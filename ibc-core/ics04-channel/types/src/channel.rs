@@ -430,6 +430,7 @@ impl From<Counterparty> for RawCounterparty {
 }
 
 /// Represents the channel ordering
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

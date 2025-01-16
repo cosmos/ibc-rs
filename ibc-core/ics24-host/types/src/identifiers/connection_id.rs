@@ -9,6 +9,7 @@ use crate::validate::validate_connection_identifier;
 
 const CONNECTION_ID_PREFIX: &str = "connection";
 
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(
