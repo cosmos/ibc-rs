@@ -85,6 +85,7 @@ parity-scale-codec = [
 arbitrary = [
   "ibc-core-client/arbitrary",
   "ibc-core-connection/arbitrary",
+  "ibc-core-channel/arbitrary",
   "ibc-core-commitment-types/arbitrary",
   "ibc-core-host/arbitrary",
   "ibc-core-handler/arbitrary",
