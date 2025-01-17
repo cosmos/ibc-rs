@@ -16,7 +16,8 @@ use ibc_core_router::module::Module;
 use ibc_primitives::prelude::*;
 
 use super::acknowledgement::{
-    commit_packet_acknowledgment, commit_packet_sequence_number, emit_packet_acknowledgement_event,
+    commit_packet_acknowledgment, commit_packet_sequence_number_with_chan_end,
+    emit_packet_acknowledgement_event_with_chan_end,
 };
 
 pub fn recv_packet_validate<ValCtx>(ctx_b: &ValCtx, msg: MsgRecvPacket) -> Result<(), ChannelError>
@@ -73,7 +74,7 @@ where
     let (extras, acknowledgement) = module.on_recv_packet_execute(&msg.packet, &msg.signer);
 
     // state changes
-    commit_packet_sequence_number(ctx_b, &msg.packet)?;
+    commit_packet_sequence_number_with_chan_end(ctx_b, &chan_end_on_b, &msg.packet)?;
 
     if let Some(acknowledgement) = acknowledgement.as_ref() {
         commit_packet_acknowledgment(ctx_b, &msg.packet, acknowledgement)?;
@@ -95,7 +96,12 @@ where
 
         // write ack events/logs
         if let Some(acknowledgement) = acknowledgement {
-            emit_packet_acknowledgement_event(ctx_b, msg.packet, acknowledgement)?;
+            emit_packet_acknowledgement_event_with_chan_end(
+                ctx_b,
+                &chan_end_on_b,
+                msg.packet,
+                acknowledgement,
+            )?;
         }
 
         // module specific events/logs
