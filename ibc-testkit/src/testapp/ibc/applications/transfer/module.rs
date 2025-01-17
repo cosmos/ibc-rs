@@ -64,10 +64,10 @@ impl Module for DummyTransferModule {
         &mut self,
         _packet: &Packet,
         _relayer: &Signer,
-    ) -> (ModuleExtras, Acknowledgement) {
+    ) -> (ModuleExtras, Option<Acknowledgement>) {
         (
             ModuleExtras::empty(),
-            Acknowledgement::try_from(vec![1u8]).expect("Never fails"),
+            Some(Acknowledgement::try_from(vec![1u8]).expect("Never fails")),
         )
     }
 
