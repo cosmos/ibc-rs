@@ -48,6 +48,14 @@ impl NftTransferValidationContext for DummyNftTransferModule {
     type Nft = DummyNft;
     type NftClass = DummyNftClass;
 
+    fn sender_account(&self, sender: &Signer) -> Result<Self::AccountId, HostError> {
+        Ok(sender.clone())
+    }
+
+    fn receiver_account(&self, receiver: &Signer) -> Result<Self::AccountId, HostError> {
+        Ok(receiver.clone())
+    }
+
     fn get_port(&self) -> Result<PortId, HostError> {
         Ok(PortId::transfer())
     }

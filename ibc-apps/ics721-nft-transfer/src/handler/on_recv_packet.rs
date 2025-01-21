@@ -25,12 +25,9 @@ where
         .can_receive_nft()
         .map_err(|err| (ModuleExtras::empty(), err.into()))?;
 
-    let receiver_account = data.receiver.clone().try_into().map_err(|_| {
-        (
-            ModuleExtras::empty(),
-            NftTransferError::FailedToParseAccount,
-        )
-    })?;
+    let receiver_account = ctx_b
+        .receiver_account(&data.receiver)
+        .map_err(|err| (ModuleExtras::empty(), err.into()))?;
 
     let extras = if is_receiver_chain_source(
         packet.port_id_on_a.clone(),
