@@ -218,4 +218,14 @@ mod tests {
         let decoding_err = decoding_err.to_string();
         assert!(decoding_err.contains("height `` not properly formatted"));
     }
+
+    #[test]
+    fn test_empty_rev_number_deserialization() {
+        // #1262: ibc-go uses `omitempty` in JSON serialization
+        let json_str = r#"{"revision_height": 10}"#;
+        let actual: Height = serde_json::from_str(json_str).unwrap();
+        let expected = Height::new(0, 10).unwrap();
+
+        assert_eq!(actual, expected);
+    }
 }

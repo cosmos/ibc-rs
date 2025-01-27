@@ -42,7 +42,8 @@ parity-scale-codec = { workspace = true, optional = true }
 scale-info         = { workspace = true, optional = true }
 
 [dev-dependencies]
-rstest = { workspace = true }
+rstest     = { workspace = true }
+serde-json = { workspace = true }
 
 [features]
 default = [ "std" ]
