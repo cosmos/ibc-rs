@@ -31,6 +31,7 @@ use crate::error::ClientError;
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Height {
     /// Previously known as "epoch"
+    #[serde(default)]
     revision_number: u64,
 
     /// The height of a block
