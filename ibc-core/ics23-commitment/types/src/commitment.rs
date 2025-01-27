@@ -63,6 +63,7 @@ impl From<Vec<u8>> for CommitmentRoot {
 ///
 /// For example, in the case of a proof of membership in a Merkle tree,
 /// this encodes a Merkle proof.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
@@ -128,6 +129,7 @@ impl<'a> TryFrom<&'a CommitmentProofBytes> for MerkleProof {
 /// Defines a store prefix of the commitment proof.
 ///
 /// See [spec](https://github.com/cosmos/ibc/blob/main/spec/core/ics-023-vector-commitments/README.md#prefix).
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

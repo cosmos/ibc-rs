@@ -15,6 +15,7 @@ use crate::memo::Memo;
 use crate::token::{TokenData, TokenIds, TokenUri};
 
 /// Defines the structure of token transfers' packet bytes
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 #[cfg_attr(feature = "serde", serde(rename_all = "camelCase"))]
 #[cfg_attr(feature = "schema", derive(schemars::JsonSchema))]

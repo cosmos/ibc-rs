@@ -20,6 +20,7 @@ all-features = true
 
 [dependencies]
 # external dependencies
+arbitrary   = { workspace = true, optional = true }
 borsh       = { workspace = true, optional = true }
 derive_more = { workspace = true }
 displaydoc  = { workspace = true }
@@ -67,3 +68,4 @@ parity-scale-codec = [
   "dep:scale-info",
   "ibc-proto/parity-scale-codec",
 ]
+arbitrary = [ "dep:arbitrary", "std" ]

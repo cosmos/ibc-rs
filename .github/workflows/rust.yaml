@@ -125,7 +125,7 @@ jobs:
       - name: Install cargo-msrv
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: cargo binstall --no-confirm cargo-msrv
+        run: cargo binstall --no-confirm cargo-msrv --force
 
       - name: Verify and Test Rust version
         run: |

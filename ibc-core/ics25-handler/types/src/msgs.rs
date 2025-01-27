@@ -23,6 +23,7 @@ use ibc_proto::google::protobuf::Any;
 use ibc_proto::Protobuf;
 
 /// Enumeration of all messages that the local ICS26 module is capable of routing.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

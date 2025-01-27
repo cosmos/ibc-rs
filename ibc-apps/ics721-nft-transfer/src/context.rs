@@ -36,9 +36,16 @@ pub trait NftClassContext {
 
 /// Read-only methods required in NFT transfer validation context.
 pub trait NftTransferValidationContext {
-    type AccountId: TryFrom<Signer> + PartialEq;
+    /// Native chain account id.
+    type AccountId: PartialEq;
     type Nft: NftContext;
     type NftClass: NftClassContext;
+
+    /// Attempt to convert a [`Signer`] to a native chain sender account.
+    fn sender_account(&self, sender: &Signer) -> Result<Self::AccountId, HostError>;
+
+    /// Attempt to convert a [`Signer`] to a native chain receiver account.
+    fn receiver_account(&self, receiver: &Signer) -> Result<Self::AccountId, HostError>;
 
     /// get_port returns the portID for the transfer module.
     fn get_port(&self) -> Result<PortId, HostError>;

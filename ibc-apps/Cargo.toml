@@ -44,3 +44,4 @@ parity-scale-codec = [
 nft-transfer = [
   "ibc-app-nft-transfer",
 ]
+arbitrary = [ "ibc-app-transfer/arbitrary", "ibc-app-nft-transfer/arbitrary" ]

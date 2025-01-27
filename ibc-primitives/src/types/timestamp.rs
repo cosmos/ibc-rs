@@ -34,6 +34,14 @@ pub struct Timestamp {
     time: PrimitiveDateTime,
 }
 
+#[cfg(feature = "arbitrary")]
+impl<'a> arbitrary::Arbitrary<'a> for Timestamp {
+    fn arbitrary(u: &mut arbitrary::Unstructured<'a>) -> arbitrary::Result<Self> {
+        let nanos: u64 = arbitrary::Arbitrary::arbitrary(u)?;
+        Ok(Timestamp::from_nanoseconds(nanos))
+    }
+}
+
 impl Timestamp {
     pub fn from_nanoseconds(nanoseconds: u64) -> Self {
         // As the `u64` can only represent times up to about year 2554, there is

@@ -111,11 +111,11 @@ asynchronously](https://github.com/cosmos/ibc/tree/main/spec/core/ics-004-channe
 This allows modules to receive the packet, but only applying the changes at a
 later time (after which they would write the acknowledgement).
 
-We currently force applications to process the packets as part of
-`onRecvPacket()`. If you need asynchronous acknowledgements for your
-application, please open an issue.
+Our implementation supports the same semantics, as part of the `on_recv_packet_execute`
+method of [`Module`]. The documentation of this method explains how packets should be
+acknowledged out of sync.
 
-Note that this still makes us 100% compatible with `ibc-go`.
+[`Module`]: https://github.com/cosmos/ibc-rs/blob/main/ibc-core/ics26-routing/src/module.rs
 
 ## Contributing
 

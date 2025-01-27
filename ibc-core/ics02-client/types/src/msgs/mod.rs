@@ -21,6 +21,7 @@ pub use upgrade_client::*;
 
 /// Encodes all the different client messages
 #[allow(dead_code)]
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

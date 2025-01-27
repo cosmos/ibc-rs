@@ -14,6 +14,7 @@ pub const CONN_OPEN_ACK_TYPE_URL: &str = "/ibc.core.connection.v1.MsgConnectionO
 
 /// Per our convention, this message is sent to chain A.
 /// The handler will check proofs of chain B.
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
@@ -26,6 +27,7 @@ pub struct MsgConnectionOpenAck {
     /// ConnectionId that chain B has chosen for its ConnectionEnd
     pub conn_id_on_b: ConnectionId,
     /// ClientState of client tracking chain A on chain B
+    #[cfg_attr(feature = "arbitrary", arbitrary(with = ibc_primitives::arb_protobuf_any))]
     pub client_state_of_a_on_b: Any,
     /// proof of ConnectionEnd stored on Chain B during ConnOpenTry
     pub proof_conn_end_on_b: CommitmentProofBytes,

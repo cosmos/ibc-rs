@@ -10,6 +10,7 @@ use core::str::FromStr;
 use ibc_core::primitives::prelude::*;
 
 /// Represents the token transfer memo
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "parity-scale-codec",
     derive(

@@ -33,8 +33,6 @@ pub enum NftTransferError {
     FailedToDeserializePacketData,
     /// failed to deserialize acknowledgement
     FailedToDeserializeAck,
-    /// failed to parse account ID
-    FailedToParseAccount,
     /// invalid channel state: cannot be closed
     InvalidClosedChannel,
 }

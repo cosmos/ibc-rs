@@ -29,6 +29,7 @@ pub use timeout::*;
 pub use timeout_on_close::*;
 
 /// All channel messages
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)
@@ -45,6 +46,7 @@ pub enum ChannelMsg {
 }
 
 /// All packet messages
+#[cfg_attr(feature = "arbitrary", derive(arbitrary::Arbitrary))]
 #[cfg_attr(
     feature = "borsh",
     derive(borsh::BorshSerialize, borsh::BorshDeserialize)

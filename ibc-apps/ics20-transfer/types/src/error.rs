@@ -30,8 +30,6 @@ pub enum TokenTransferError {
     FailedToDeserializePacketData,
     /// failed to deserialize acknowledgement
     FailedToDeserializeAck,
-    /// failed to parse account
-    FailedToParseAccount,
 }
 
 #[cfg(feature = "std")]
