@@ -31,6 +31,7 @@ use crate::error::ClientError;
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
 pub struct Height {
     /// Previously known as "epoch"
+    #[cfg_attr(feature = "serde", serde(default))]
     revision_number: u64,
 
     /// The height of a block
@@ -179,37 +180,52 @@ impl FromStr for Height {
     }
 }
 
-#[test]
-fn test_valid_height() {
-    assert_eq!(
-        "1-1".parse::<Height>().unwrap(),
-        Height {
-            revision_number: 1,
-            revision_height: 1
-        }
-    );
-    assert_eq!(
-        "1-10".parse::<Height>().unwrap(),
-        Height {
-            revision_number: 1,
-            revision_height: 10
-        }
-    );
-}
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-#[test]
-fn test_invalid_height() {
-    assert!("0-0".parse::<Height>().is_err());
-    assert!("0-".parse::<Height>().is_err());
-    assert!("-0".parse::<Height>().is_err());
-    assert!("-".parse::<Height>().is_err());
-    assert!("1-1-1".parse::<Height>().is_err());
+    #[test]
+    fn test_valid_height() {
+        assert_eq!(
+            "1-1".parse::<Height>().unwrap(),
+            Height {
+                revision_number: 1,
+                revision_height: 1
+            }
+        );
+        assert_eq!(
+            "1-10".parse::<Height>().unwrap(),
+            Height {
+                revision_number: 1,
+                revision_height: 10
+            }
+        );
+    }
 
-    let decoding_err = "1".parse::<Height>().unwrap_err();
-    let decoding_err = decoding_err.to_string();
-    assert!(decoding_err.contains("height `1` not properly formatted"));
+    #[test]
+    fn test_invalid_height() {
+        assert!("0-0".parse::<Height>().is_err());
+        assert!("0-".parse::<Height>().is_err());
+        assert!("-0".parse::<Height>().is_err());
+        assert!("-".parse::<Height>().is_err());
+        assert!("1-1-1".parse::<Height>().is_err());
 
-    let decoding_err = "".parse::<Height>().unwrap_err();
-    let decoding_err = decoding_err.to_string();
-    assert!(decoding_err.contains("height `` not properly formatted"));
+        let decoding_err = "1".parse::<Height>().unwrap_err();
+        let decoding_err = decoding_err.to_string();
+        assert!(decoding_err.contains("height `1` not properly formatted"));
+
+        let decoding_err = "".parse::<Height>().unwrap_err();
+        let decoding_err = decoding_err.to_string();
+        assert!(decoding_err.contains("height `` not properly formatted"));
+    }
+
+    #[test]
+    fn test_empty_rev_number_deserialization() {
+        // #1262: ibc-go uses `omitempty` in JSON serialization
+        let json_str = r#"{"revision_height": 10}"#;
+        let actual: Height = serde_json::from_str(json_str).unwrap();
+        let expected = Height::new(0, 10).unwrap();
+
+        assert_eq!(actual, expected);
+    }
 }
