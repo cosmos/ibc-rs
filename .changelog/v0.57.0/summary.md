@@ -1,4 +1,3 @@
-
 This release introduces improvements to better support the **Packet Forward
 Middleware**, including asynchronous packet acknowledgments and enhanced
 contextual parsing of sender and receiver instances in ICS-20. The update
