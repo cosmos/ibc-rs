@@ -1,5 +1,43 @@
 # CHANGELOG
 
+## v0.57.0
+
+*January 29, 2025*
+
+This release introduces improvements to better support the **Packet Forward
+Middleware**, including asynchronous packet acknowledgments and enhanced
+contextual parsing of sender and receiver instances in ICS-20. The update
+removes the reliance on `TryFrom<Signer>` for parsing, improving flexibility in
+transaction handling.
+
+Additionally, the "arbitrary" feature flag now enables the implementation of the
+`Arbitrary` trait, enhancing testing capabilities. Furthermore, `Serde` support
+has been added for `Height` without `revision_number`, facilitating better
+interoperability with CosmWasm light clients operating on the `08-wasm` module
+of `ibc-go`.
+
+There are no consensus-breaking changes in this release.
+
+### BREAKING CHANGES
+
+- [ibc] Update MSRV to `1.79.0`.
+  ([\#1382](https://github.com/cosmos/ibc-rs/issues/1382))
+- [ibc-apps] Replace the `TryFrom<Signer>` bound on `AccountId` with new
+  context methods, with the aim of contextually parsing `Signer` instances.
+  ([\#1393](https://github.com/cosmos/ibc-rs/pull/1393))
+
+### BUG FIXES
+
+- [ibc-core-client-types] Serde support for `Height` without `revision_number`
+  ([#1262](https://github.com/cosmos/ibc-rs/issues/1262)).
+
+### FEATURES
+
+- [ibc] Added arbitrary trait implementation behind "arbitrary" feature flag.
+  ([\#1390](https://github.com/cosmos/ibc-rs/pull/1390))
+- [ibc-core] Support asynchronous packet acknowledgements.
+  ([\#1392](https://github.com/cosmos/ibc-rs/pull/1392))
+
 ## v0.56.0
 
 *November 15, 2024*
@@ -505,7 +543,7 @@ There are no consensus-breaking changes.
   specificity in functionality.
   ([\#837](https://github.com/cosmos/ibc-rs/issues/837))
 - `[ibc-app-transfer]` Add `memo` field to `escrow-coins-*()` and
-  `burn-coins-*()` methods, allowing implementors to pass in arbitrary data
+  `burn-coins-*()` methods, allowing implementers to pass in arbitrary data
   necessary for their use case.
   ([\#839](https://github.com/cosmos/ibc-rs/issues/837))
 - `[ibc-core-host-type]` Optimize `IdentifierError` variants and make them

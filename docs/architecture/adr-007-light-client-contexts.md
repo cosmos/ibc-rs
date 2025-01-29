@@ -49,7 +49,7 @@ The `ClientStateValidation` and `ClientStateExecution` traits are the most impor
 
 #### `ClientStateValidation`
 
-Say the implementation of a light client needs a `get_resource_Y()` method from the host in `ClientState::verify_client_message()`. The implementor would first define a trait for the host to implement.
+Say the implementation of a light client needs a `get_resource_Y()` method from the host in `ClientState::verify_client_message()`. The implementer would first define a trait for the host to implement.
 
 ```rust
 trait MyClientValidationContext {

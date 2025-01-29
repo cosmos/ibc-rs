@@ -87,7 +87,7 @@ fn deliver<V: ValidationContext, E: ExecutionContext>(val_ctx: &V, exec_ctx: &mu
     exec_ctx.execute(message)
 }
 ```
-Note however that we will not implement `deliver()` this way for efficiency reasons (see [discussion](https://github.com/informalsystems/ibc-rs/issues/2582#issuecomment-1229988512)).
+Note however that we will not implement `deliver()` this way for efficiency reasons (see [discussion](https://github.com/cosmos/ibc-rs/issues/10#issuecomment-1229988512)).
 
 ### Host based API
 
@@ -219,7 +219,7 @@ See appendix C for an example of how we intend this to be used.
 
 ## References
 
-* [Issue #2582: ADR for redesigning the modules' API](https://github.com/informalsystems/ibc-rs/issues/2582)
+* [Issue #2582: ADR for redesigning the modules' API](https://github.com/cosmos/ibc-rs/issues/10)
 * [ICS24 spec](https://github.com/cosmos/ibc/blob/1b73c158dcd3b08c6af3917618dce259e30bc21b/spec/core/ics-024-host-requirements/README.md)
 
 ## Appendices
