@@ -12,7 +12,7 @@ ibc-core        = { path = "../../ibc-core", features = [ "serde", "parity-scale
 cosmwasm-std    = { version = "2.1.0", default-features = false, features = [ "std" ] }
 cosmwasm-schema = { version = "2.1.0", default-features = false }
 serde-json      = { package = "serde-json-wasm", version = "^1.0.1", default-features = false }
-thiserror       = { version = "^1.0", default-features = false }
+thiserror       = { version = "^2.0", default-features = false }
 
 [profile.release]
 lto              = true
