@@ -17,7 +17,7 @@ tendermint-light-client-verifier = { version = "0.40", default-features = false,
 
 sp-core    = { version = "34.0", default-features = false, optional = true }
 sp-io      = { version = "37.0", default-features = false, optional = true }
-sp-runtime = { version = "38.0", default-features = false, optional = true }
+sp-runtime = { version = "39.0", default-features = false, optional = true }
 sp-std     = { version = "14.0", default-features = false, optional = true }
 
 # The indirect dependency `syn` 2.0.4 has a bug that causes
