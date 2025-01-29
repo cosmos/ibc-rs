@@ -311,7 +311,7 @@ pub fn keep(
 
 > This section is very much a work in progress, as further investigation into what
 > a production-ready implementation of the `ctx` parameter of the top-level dispatcher
-> is required. As such, implementors should feel free to disregard the recommendations
+> is required. As such, implementers should feel free to disregard the recommendations
 > below, and are encouraged to come up with amendments to this ADR to better capture
 > the actual requirements.
 

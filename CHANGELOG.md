@@ -543,7 +543,7 @@ There are no consensus-breaking changes.
   specificity in functionality.
   ([\#837](https://github.com/cosmos/ibc-rs/issues/837))
 - `[ibc-app-transfer]` Add `memo` field to `escrow-coins-*()` and
-  `burn-coins-*()` methods, allowing implementors to pass in arbitrary data
+  `burn-coins-*()` methods, allowing implementers to pass in arbitrary data
   necessary for their use case.
   ([\#839](https://github.com/cosmos/ibc-rs/issues/837))
 - `[ibc-core-host-type]` Optimize `IdentifierError` variants and make them
