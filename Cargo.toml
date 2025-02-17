@@ -58,7 +58,7 @@ arbitrary       = { version = "1.4", features = [ "derive" ] }
 base64          = { version = "0.22", default-features = false }
 borsh           = { version = "1", default-features = false, features = [ "derive" ] }
 displaydoc      = { version = "0.2.5", default-features = false }
-prost           = { version = "0.13.2", default-features = false }
+prost           = { version = "0.13.5", default-features = false }
 derive_more     = { version = "1.0.0", default-features = false, features = [ "from", "into", "display", "try_into" ] }
 rstest          = { version = "0.24" }
 schemars        = { version = "0.8.21" }
